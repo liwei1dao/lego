@@ -1,0 +1,101 @@
+package gate
+
+import (
+	"fmt"
+	"lego/core"
+	cbase "lego/core/cbase"
+	"lego/sys/log"
+	"net"
+	"sync"
+	"time"
+)
+
+type TcpServerComp struct {
+	cbase.ModuleCompBase
+	tcpAddr     string
+	module      IGateModule
+	listener    net.Listener
+	wgLn        sync.WaitGroup
+	wgConns     sync.WaitGroup
+	NewTcpAgent func(gate IGateModule, coon IConn) (IAgent, error)
+}
+
+func (this *TcpServerComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, settings map[string]interface{}) (err error) {
+	if m, ok := module.(IGateModule); !ok {
+		return fmt.Errorf("TcpServerComp Init module is no IGateModule")
+	} else {
+		this.module = m
+	}
+	if TCPAddr, ok := settings["TcpAddr"]; ok {
+		this.tcpAddr = TCPAddr.(string)
+	} else {
+		err = fmt.Errorf("启动Tcp 组件失败 配置错误")
+		return
+	}
+
+	if this.NewTcpAgent == nil {
+		err = fmt.Errorf("启动Tcp 组件失败 代理接口没有实现")
+		return
+	}
+	err = this.ModuleCompBase.Init(service, module, comp, settings)
+	return
+}
+
+func (this *TcpServerComp) Start() (err error) {
+	err = this.ModuleCompBase.Start()
+	ln, err := net.Listen("tcp", this.tcpAddr)
+	if err != nil {
+		err = fmt.Errorf("TcpServerComp Listen 失败 %s", err.Error())
+		return
+	} else {
+		log.Infof("TcpServerComp Listen %s 成功", this.tcpAddr)
+	}
+	this.listener = ln
+	go this.run()
+	return
+}
+
+func (this *TcpServerComp) run() {
+	var tempDelay time.Duration
+locp:
+	for {
+		conn, err := this.listener.Accept()
+		if err != nil {
+			if ne, ok := err.(net.Error); ok && ne.Temporary() {
+				if tempDelay == 0 {
+					tempDelay = 5 * time.Millisecond
+				} else {
+					tempDelay *= 2
+				}
+				if max := 1 * time.Second; tempDelay > max {
+					tempDelay = max
+				}
+				log.Infof("accept error: %v; retrying in %v", err, tempDelay)
+				time.Sleep(tempDelay)
+				continue
+			}
+			break locp
+		}
+		tempDelay = 0
+		tc := NewTcpConn(conn)
+		agent, err := this.NewTcpAgent(this.module, tc)
+		if err == nil {
+			this.wgConns.Add(1)
+			go func() {
+				agent.OnRun()
+				agent.Destory()
+				this.wgConns.Done()
+			}()
+		} else {
+			tc.Close()
+		}
+	}
+	log.Infof("Tcp 监听退出")
+}
+
+func (this *TcpServerComp) Destroy() (err error) {
+	err = this.ModuleCompBase.Destroy()
+	this.listener.Close()
+	this.wgConns.Wait()
+	return
+}

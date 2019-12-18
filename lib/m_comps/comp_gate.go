@@ -1,0 +1,112 @@
+package m_comps
+
+import (
+	"context"
+	"fmt"
+	"lego/core"
+	"lego/core/cbase"
+	"lego/lib"
+	"lego/lib/modules/gate"
+	"lego/lib/s_comps"
+	"lego/sys/log"
+	"lego/sys/proto"
+	"lego/sys/workerpools"
+	"reflect"
+	"sync"
+	"time"
+)
+
+/*
+模块 网关组件
+接待网关 代理 的业务需求
+*/
+type MComp_GateComp struct {
+	cbase.ModuleCompBase
+	service      core.IService
+	ComId        uint16 //协议分类Id
+	IsLog        bool   //是否输出消息日志
+	msghandles   map[uint16]*msgRecep
+	mrlock       sync.RWMutex
+	MaxGoroutine int //最大并发数据
+	workerpool   workerpools.IWorkerPool
+}
+
+type msgRecep struct {
+	msgId   uint16
+	msgType reflect.Type
+	f       func(session core.IUserSession, msg interface{})
+}
+
+func (this *MComp_GateComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, setting map[string]interface{}) (err error) {
+	this.ModuleCompBase.Init(service, module, comp, setting)
+	this.service = service
+	this.msghandles = make(map[uint16]*msgRecep)
+	this.workerpool, err = workerpools.NewTaskPools(workerpools.SetMaxWorkers(this.MaxGoroutine), workerpools.SetTaskTimeOut(time.Second*2))
+	return
+}
+
+func (this *MComp_GateComp) Start() (err error) {
+	if err = this.ModuleCompBase.Start(); err != nil {
+		return
+	}
+	isRegisterLocalRoute := false
+	//注册本地路由
+	m, e := this.service.GetModule(lib.SM_GateModule)
+	if e == nil {
+		m.(gate.IGateModule).RegisterLocalRoute(this.ComId, this.ReceiveMsg)
+		isRegisterLocalRoute = true
+	}
+	if !isRegisterLocalRoute {
+		//注册远程路由
+		cc, e := this.service.GetComp(lib.SC_ServiceGateRouteComp)
+		if e == nil {
+			cc.(s_comps.ISC_GateRouteComp).RegisterRoute(this.ComId, this.ReceiveMsg)
+			isRegisterLocalRoute = true
+		}
+	}
+
+	if !isRegisterLocalRoute {
+		return fmt.Errorf("MC_GateComp 未成功注册路由!")
+	}
+	return
+}
+
+func (this *MComp_GateComp) ReceiveMsg(session core.IUserSession, msg proto.IMessage) (code int, err string) {
+	this.workerpool.Submit(func(ctx context.Context, cancel context.CancelFunc) {
+		defer cancel()        //任务结束通知上层
+		defer cbase.Recover() //打印消息处理异常信息
+
+		this.mrlock.RLock()
+		msghandles, ok := this.msghandles[msg.GetMsgId()]
+		this.mrlock.RUnlock()
+		if !ok {
+			log.Errorf("模块网关路由【%d】没有注册消息【%d】接口", this.ComId, msg.GetMsgId())
+			return
+		}
+		msgdata, e := proto.MsgUnMarshal(msghandles.msgType, msg.GetMsg())
+		if e != nil {
+			log.Errorf("收到异常消息【%d:%d】来自【%s】的消息err:%s", this.ComId, msg.GetMsgId(), session.GetSessionId(), e.Error())
+			session.Close()
+			return
+		}
+		if this.IsLog {
+			log.Infof("收到【%d:%d】来自【%s】的消息:%s", this.ComId, msg.GetMsgId(), session.GetSessionId(), proto.MsgToString(msgdata))
+		}
+		msghandles.f(session, msgdata)
+	})
+	return 0, ""
+}
+
+func (this *MComp_GateComp) RegisterHandle(mId uint16, msg interface{}, f func(session core.IUserSession, msg interface{})) {
+	if _, ok := this.msghandles[mId]; ok {
+		log.Errorf("重复 注册网关【%d】消息【%d】", this.ComId, mId)
+		return
+	}
+	this.mrlock.Lock()
+	this.msghandles[mId] = &msgRecep{
+		msgId:   mId,
+		msgType: reflect.TypeOf(msg),
+		f:       f,
+	}
+	this.mrlock.Unlock()
+}
