@@ -1,4 +1,4 @@
-# lego
+# github.com/liwei1dao/lego
 
 #### 介绍
 golang 服务开发框架
@@ -9,7 +9,7 @@ golang 服务开发框架
 
 #### 安装教程
 
-1.  go get github.com/liwei1dao/lego.git or  go get gitee.com/liwei1dao/lego.git
+1.  go get github.com/liwei1dao/github.com/liwei1dao/lego.git or  go get gitee.com/liwei1dao/github.com/liwei1dao/lego.git
 2.  xxxx
 3.  xxxx
 

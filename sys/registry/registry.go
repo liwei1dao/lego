@@ -2,9 +2,9 @@ package registry
 
 import (
 	"fmt"
-	"lego/base"
-	"lego/core"
-	"lego/sys/log"
+	"github.com/liwei1dao/lego/base"
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/log"
 	"time"
 )
 

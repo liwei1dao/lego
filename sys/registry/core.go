@@ -1,7 +1,7 @@
 package registry
 
 import (
-	"lego/core"
+	"github.com/liwei1dao/lego/core"
 )
 
 type ServiceNode struct {

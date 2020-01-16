@@ -3,9 +3,9 @@ package gate
 import (
 	"bufio"
 	"fmt"
-	"lego/sys/log"
-	"lego/sys/proto"
-	"lego/utils/id"
+	"github.com/liwei1dao/lego/sys/log"
+	"github.com/liwei1dao/lego/sys/proto"
+	"github.com/liwei1dao/lego/utils/id"
 	"sync"
 )
 

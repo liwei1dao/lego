@@ -3,8 +3,8 @@ package single
 import (
 	"fmt"
 	"github.com/BurntSushi/toml"
-	"lego/core"
-	"lego/utils"
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/utils"
 )
 
 type Option func(*Options)

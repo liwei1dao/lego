@@ -2,7 +2,7 @@ package proto
 
 import (
 	"bufio"
-	"lego/core"
+	"github.com/liwei1dao/lego/core"
 	"reflect"
 )
 

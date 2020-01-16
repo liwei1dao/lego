@@ -64,7 +64,7 @@ func newOptions(opts ...Option) Options {
 	opt := Options{
 		RegisterInterval: time.Second * time.Duration(10),
 		RegisterTTL:      time.Second * time.Duration(20),
-		Tag:              "lego",
+		Tag:              "github.com/liwei1dao/lego",
 	}
 	for _, o := range opts {
 		o(&opt)

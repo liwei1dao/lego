@@ -1,8 +1,8 @@
 package lego
 
 import (
-	"lego/core"
-	"lego/sys/log"
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/log"
 	"runtime"
 )
 

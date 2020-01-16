@@ -2,10 +2,10 @@ package gate
 
 import (
 	"fmt"
-	"lego/core"
-	cbase "lego/core/cbase"
-	"lego/sys/proto"
-	cont "lego/utils/concurrent"
+	"github.com/liwei1dao/lego/core"
+	cbase "github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/sys/proto"
+	cont "github.com/liwei1dao/lego/utils/concurrent"
 )
 
 type AgentMgrComp struct {

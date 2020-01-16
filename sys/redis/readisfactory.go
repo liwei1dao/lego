@@ -2,7 +2,7 @@ package redis
 
 import (
 	"github.com/garyburd/redigo/redis"
-	cont "lego/utils/concurrent"
+	cont "github.com/liwei1dao/lego/utils/concurrent"
 	"time"
 )
 

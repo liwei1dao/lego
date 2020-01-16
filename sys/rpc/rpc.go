@@ -2,9 +2,9 @@ package rpc
 
 import (
 	"fmt"
-	"lego/core"
-	rcore "lego/sys/rpc/rcore"
-	rpcserialize "lego/sys/rpc/serialize"
+	"github.com/liwei1dao/lego/core"
+	rcore "github.com/liwei1dao/lego/sys/rpc/rcore"
+	rpcserialize "github.com/liwei1dao/lego/sys/rpc/serialize"
 	"reflect"
 
 	"github.com/nats-io/nats.go"

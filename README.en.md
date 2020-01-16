@@ -1,4 +1,4 @@
-# lego
+# github.com/liwei1dao/lego
 
 #### Description
 golang 服务开发框架

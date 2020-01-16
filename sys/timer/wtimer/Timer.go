@@ -1,7 +1,7 @@
 package wtimer
 
 import (
-	"lego/utils/id"
+	"github.com/liwei1dao/lego/utils/id"
 	"sync"
 	"time"
 )

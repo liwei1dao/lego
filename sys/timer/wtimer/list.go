@@ -2,7 +2,7 @@ package wtimer
 
 import (
 	"fmt"
-	"lego/sys/log"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 //定义节点

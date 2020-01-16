@@ -1,8 +1,8 @@
 package single
 
 import (
-	"lego/core"
-	"lego/core/cbase"
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/core/cbase"
 )
 
 type SingleService struct {

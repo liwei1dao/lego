@@ -2,9 +2,9 @@ package rcore
 
 import (
 	"fmt"
-	"lego/sys/log"
-	rpcserialize "lego/sys/rpc/serialize"
-	"lego/utils/id"
+	"github.com/liwei1dao/lego/sys/log"
+	rpcserialize "github.com/liwei1dao/lego/sys/rpc/serialize"
+	"github.com/liwei1dao/lego/utils/id"
 	"time"
 
 	"github.com/golang/protobuf/proto"

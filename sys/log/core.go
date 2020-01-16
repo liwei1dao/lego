@@ -2,7 +2,7 @@ package log
 
 import (
 	"fmt"
-	"lego/utils/flietools"
+	"github.com/liwei1dao/lego/utils/flietools"
 	"os"
 	"strings"
 )

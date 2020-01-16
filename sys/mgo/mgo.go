@@ -3,7 +3,7 @@ package mgo
 import (
 	"context"
 	"fmt"
-	"lego/core"
+	"github.com/liwei1dao/lego/core"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"

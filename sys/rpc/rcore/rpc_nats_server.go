@@ -2,7 +2,7 @@ package rcore
 
 import (
 	"fmt"
-	"lego/sys/log"
+	"github.com/liwei1dao/lego/sys/log"
 	"runtime"
 	"time"
 

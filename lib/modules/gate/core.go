@@ -1,8 +1,8 @@
 package gate
 
 import (
-	"lego/core"
-	"lego/sys/proto"
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/proto"
 	"net"
 )
 

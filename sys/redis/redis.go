@@ -1,8 +1,8 @@
 package redis
 
 import (
-	"lego/core"
-	cont "lego/utils/concurrent"
+	"github.com/liwei1dao/lego/core"
+	cont "github.com/liwei1dao/lego/utils/concurrent"
 )
 
 var (

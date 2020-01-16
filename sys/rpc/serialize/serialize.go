@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"lego/core"
-	"lego/sys/log"
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/log"
 	"math"
 	"reflect"
 )

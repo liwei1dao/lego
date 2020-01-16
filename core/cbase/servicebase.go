@@ -2,9 +2,9 @@ package cbase
 
 import (
 	"fmt"
-	"lego/core"
-	"lego/sys/event"
-	"lego/sys/log"
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/event"
+	"github.com/liwei1dao/lego/sys/log"
 	"os"
 	"os/signal"
 	"runtime"

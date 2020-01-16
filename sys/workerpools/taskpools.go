@@ -2,7 +2,7 @@ package workerpools
 
 import (
 	"context"
-	"lego/core"
+	"github.com/liwei1dao/lego/core"
 )
 
 var (

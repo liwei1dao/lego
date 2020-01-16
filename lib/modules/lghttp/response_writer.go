@@ -3,7 +3,7 @@ package lghttp
 import (
 	"bufio"
 	"io"
-	"lego/sys/log"
+	"github.com/liwei1dao/lego/sys/log"
 	"net"
 	"net/http"
 )

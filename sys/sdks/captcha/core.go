@@ -2,7 +2,7 @@ package sdk_aliyun
 
 import (
 	"fmt"
-	"lego/core"
+	"github.com/liwei1dao/lego/core"
 )
 
 type (

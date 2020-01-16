@@ -2,15 +2,15 @@ package s_comps
 
 import (
 	"fmt"
-	"lego/base"
-	"lego/core"
-	"lego/core/cbase"
-	"lego/lib"
-	"lego/lib/modules/gate"
-	"lego/sys/event"
-	"lego/sys/log"
-	"lego/sys/proto"
-	"lego/sys/registry"
+	"github.com/liwei1dao/lego/base"
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/lib"
+	"github.com/liwei1dao/lego/lib/modules/gate"
+	"github.com/liwei1dao/lego/sys/event"
+	"github.com/liwei1dao/lego/sys/log"
+	"github.com/liwei1dao/lego/sys/proto"
+	"github.com/liwei1dao/lego/sys/registry"
 )
 
 type SComp_GateRouteComp struct {

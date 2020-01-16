@@ -3,7 +3,7 @@ package redis
 import (
 	"encoding/json"
 	"fmt"
-	"lego/sys/log"
+	"github.com/liwei1dao/lego/sys/log"
 	"reflect"
 
 	"github.com/garyburd/redigo/redis"

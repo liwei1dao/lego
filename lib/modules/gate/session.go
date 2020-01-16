@@ -2,9 +2,9 @@ package gate
 
 import (
 	"fmt"
-	"lego/base"
-	"lego/core"
-	"lego/sys/proto"
+	"github.com/liwei1dao/lego/base"
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/proto"
 )
 
 type SessionData struct {

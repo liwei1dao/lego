@@ -2,7 +2,7 @@ package log
 
 import (
 	"fmt"
-	"lego/core"
+	"github.com/liwei1dao/lego/core"
 
 	"go.uber.org/zap"
 )

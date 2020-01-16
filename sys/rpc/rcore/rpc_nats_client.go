@@ -2,8 +2,8 @@ package rcore
 
 import (
 	"fmt"
-	"lego/sys/log"
-	cont "lego/utils/concurrent"
+	"github.com/liwei1dao/lego/sys/log"
+	cont "github.com/liwei1dao/lego/utils/concurrent"
 	"runtime"
 	"time"
 

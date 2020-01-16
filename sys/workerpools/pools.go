@@ -2,7 +2,7 @@ package workerpools
 
 import (
 	"context"
-	cont "lego/utils/concurrent"
+	cont "github.com/liwei1dao/lego/utils/concurrent"
 	"runtime"
 	"sync"
 	"time"

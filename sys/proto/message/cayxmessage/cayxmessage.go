@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	legoproto "lego/sys/proto"
+	legoproto "github.com/liwei1dao/lego/sys/proto"
 
 	"github.com/golang/protobuf/proto"
 )

@@ -2,9 +2,9 @@ package cluster
 
 import (
 	"fmt"
-	"lego/core"
-	"lego/sys/log"
-	"lego/utils"
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/log"
+	"github.com/liwei1dao/lego/utils"
 
 	"github.com/BurntSushi/toml"
 )

@@ -1,7 +1,7 @@
 package lib
 
 import (
-	"lego/core"
+	"github.com/liwei1dao/lego/core"
 )
 
 const (

@@ -3,9 +3,9 @@ package lghttp
 import (
 	"io"
 	"io/ioutil"
-	"lego/lib/modules/lghttp/binding"
-	"lego/lib/modules/lghttp/render"
-	"lego/sys/log"
+	"github.com/liwei1dao/lego/lib/modules/lghttp/binding"
+	"github.com/liwei1dao/lego/lib/modules/lghttp/render"
+	"github.com/liwei1dao/lego/sys/log"
 	"mime/multipart"
 	"net/http"
 	"net/url"

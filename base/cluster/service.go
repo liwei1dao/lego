@@ -2,14 +2,14 @@ package cluster
 
 import (
 	"fmt"
-	"lego/base"
-	"lego/core"
-	"lego/core/cbase"
-	"lego/sys/event"
-	"lego/sys/log"
-	"lego/sys/registry"
-	"lego/sys/rpc"
-	"lego/utils"
+	"github.com/liwei1dao/lego/base"
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/sys/event"
+	"github.com/liwei1dao/lego/sys/log"
+	"github.com/liwei1dao/lego/sys/registry"
+	"github.com/liwei1dao/lego/sys/rpc"
+	"github.com/liwei1dao/lego/utils"
 	"sync"
 	"time"
 )

@@ -2,9 +2,9 @@ package gate
 
 import (
 	"fmt"
-	"lego/core"
-	cbase "lego/core/cbase"
-	"lego/sys/log"
+	"github.com/liwei1dao/lego/core"
+	cbase "github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/sys/log"
 	"net"
 	"sync"
 	"time"

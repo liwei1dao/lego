@@ -1,9 +1,9 @@
 package cbase
 
 import (
-	"lego/core"
-	"lego/sys/registry"
-	"lego/sys/rpc"
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/registry"
+	"github.com/liwei1dao/lego/sys/rpc"
 )
 
 func NewServiceSession(node *registry.ServiceNode) (ss core.IServiceSession, err error) {

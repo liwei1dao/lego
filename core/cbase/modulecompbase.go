@@ -1,7 +1,7 @@
 package cbase
 
 import (
-	"lego/core"
+	"github.com/liwei1dao/lego/core"
 )
 
 type ModuleCompBase struct{}

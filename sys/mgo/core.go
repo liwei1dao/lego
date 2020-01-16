@@ -3,7 +3,7 @@ package mgo
 import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"lego/core"
+	"github.com/liwei1dao/lego/core"
 )
 
 var (

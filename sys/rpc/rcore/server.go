@@ -3,8 +3,8 @@ package rcore
 import (
 	"encoding/json"
 	"fmt"
-	"lego/sys/log"
-	rpcserialize "lego/sys/rpc/serialize"
+	"github.com/liwei1dao/lego/sys/log"
+	rpcserialize "github.com/liwei1dao/lego/sys/rpc/serialize"
 	"reflect"
 	"runtime"
 	"sync"
