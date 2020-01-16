@@ -1,4 +1,4 @@
-module lego
+module gitee.com/liwei1dao/lego
 
 go 1.12
 
