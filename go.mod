@@ -1,6 +1,6 @@
-module gitee.com/liwei1dao/lego
+module github.com/liwei1dao/lego
 
-go 1.12
+go 1.13
 
 require (
 	github.com/BurntSushi/toml v0.3.1
