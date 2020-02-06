@@ -15,9 +15,8 @@ type Gate struct {
 	//TcpServerComp      *TcpServerComp
 }
 
-func (this *Gate) RegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string)) (err error) {
+func (this *Gate) RegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string)) {
 	//err = this.LocalRouteMgrComp.RegisterRoute(comId, f)
-	return
 }
 
 func (this *Gate) UnRegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage)) {
@@ -36,7 +35,7 @@ func (this *Gate) DisConnect(a IAgent) {
 }
 
 //接收代理消息
-func (this *Gate) OnRoute(a IAgent, msg proto.IMessage) (code int, err error) {
+func (this *Gate) OnRoute(a IAgent, msg proto.IMessage) (code int, err string) {
 	return
 }
 
