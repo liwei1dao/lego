@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/aliyun/alibaba-cloud-sdk-go v0.0.0-20191102133839-dd2e121ec8be
+	github.com/denisenkom/go-mssqldb v0.0.0-20200206145737-bbfc9a55622e
 	github.com/garyburd/redigo v1.6.0
 	github.com/go-gomail/gomail v0.0.0-20160411212932-81ebce5c23df
 	github.com/go-stack/stack v1.8.0 // indirect
