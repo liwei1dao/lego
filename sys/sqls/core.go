@@ -19,8 +19,8 @@ func OnInit(s core.IService, opt ...Option) (err error) {
 	return
 }
 
-func ExecContext(query string, args ...interface{}) (err error) {
-	return sqlserver.ExecContext(query, args...)
+func ExecContext(query string, agrs ...sql.NamedArg) (data *sql.Rows, err error) {
+	return sqlserver.ExecContext(query, agrs...)
 }
 
 func QueryContext(query string, args ...interface{}) (data *sql.Rows, err error) {

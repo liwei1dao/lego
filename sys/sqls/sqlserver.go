@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	_ "github.com/denisenkom/go-mssqldb"
 )
@@ -34,12 +35,29 @@ func (this *SqlServer) getContext() (ctx context.Context) {
 	return
 }
 
-func (this *SqlServer) ExecContext(query string, args ...interface{}) (err error) {
-	_, err = this.db.ExecContext(this.getContext(), query, args...)
-	return
-}
-
 func (this *SqlServer) QueryContext(query string, args ...interface{}) (data *sql.Rows, err error) {
 	data, err = this.db.QueryContext(this.getContext(), query, args...)
 	return
+}
+
+func (this *SqlServer) ExecContext(procName string, agrs ...sql.NamedArg) (data *sql.Rows, err error) {
+	sql := this.getExecProcSql(procName, agrs...)
+	return this.QueryContext(sql)
+}
+
+func (this *SqlServer) getExecProcSql(procName string, agrs ...sql.NamedArg) string {
+	var sql string
+	var paras string
+	for _, v := range agrs {
+		paras += fmt.Sprintf("%s=%v", v.Name, v.Value)
+		paras += ","
+	}
+	// for key, value := range agr {
+	// 	paras += key + " = " + value
+	// 	paras += ","
+	// }
+	paras = strings.TrimRight(paras, ",")
+	paras += ";"
+	sql = fmt.Sprintf("DECLARE    @return_value int; EXEC    @return_value = [dbo].[%s] %s SELECT 'Return Value' = @return_value", procName, paras)
+	return sql
 }
