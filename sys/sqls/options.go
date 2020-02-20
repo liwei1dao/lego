@@ -4,39 +4,19 @@ import "time"
 
 type Option func(*Options)
 type Options struct {
-	ServerAdd string
-	Port      int
-	User      string
-	Password  string
-	Database  string
-	TimeOut   time.Duration
+	SqlUrl  string
+	TimeOut time.Duration
 }
 
-func SetServerAdd(v string) Option {
+func SetSqlUrl(v string) Option {
 	return func(o *Options) {
-		o.ServerAdd = v
-	}
-}
-func SetPort(v int) Option {
-	return func(o *Options) {
-		o.Port = v
+		o.SqlUrl = v
 	}
 }
 
-func SetUser(v string) Option {
+func SetTimeOut(v time.Duration) Option {
 	return func(o *Options) {
-		o.User = v
-	}
-}
-
-func SetPassword(v string) Option {
-	return func(o *Options) {
-		o.Password = v
-	}
-}
-func SetDatabase(v string) Option {
-	return func(o *Options) {
-		o.Database = v
+		o.TimeOut = v
 	}
 }
 
