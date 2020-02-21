@@ -30,7 +30,7 @@ type (
 	IMessageFactory interface {
 		MessageDecodeBybufio(r *bufio.Reader) (IMessage, error)
 		MessageDecodeBybytes(buffer []byte) (msg IMessage, err error)
-		MsgMarshal(comId uint16, msgId uint16, msg interface{}) IMessage
+		MessageMarshal(comId uint16, msgId uint16, msg interface{}) IMessage
 	}
 	IMsgMarshalString interface { //消息输出结构
 		ToString() (string, error)
