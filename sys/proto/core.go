@@ -2,8 +2,9 @@ package proto
 
 import (
 	"bufio"
-	"github.com/liwei1dao/lego/core"
 	"reflect"
+
+	"github.com/liwei1dao/lego/core"
 )
 
 var (
@@ -11,12 +12,13 @@ var (
 	MsgProtoType         ProtoType
 	IsUseBigEndian       bool
 	MsgUnMarshal         func(t reflect.Type, d []byte) (interface{}, error)
-	MsgMarshal           func(comId uint16, msgId uint16, msg interface{}) IMessage
 	StructUnmarshal      func(d []byte, v interface{}) error
 	StructMarshal        func(v interface{}) ([]byte, error)
 	MsgToString          func(v interface{}) string
-	MessageDecodeBybufio func(r *bufio.Reader) (IMessage, error)
-	MessageDecodeBybytes func(buffer []byte) (msg IMessage, err error)
+	MessageFactory 		 IMessageFactory
+	// MsgMarshal           func(comId uint16, msgId uint16, msg interface{}) IMessage
+	// MessageDecodeBybufio func(r *bufio.Reader) (IMessage, error)
+	// MessageDecodeBybytes func(buffer []byte) (msg IMessage, err error)
 )
 
 type (
@@ -27,6 +29,11 @@ type (
 		GetMsg() []byte
 		Serializable() (bytes []byte, err error)
 		ToString() string
+	}
+	IMessageFactory interface {
+		MessageDecodeBybufio func(r *bufio.Reader) (IMessage, error)
+		MessageDecodeBybytes func(buffer []byte) (msg IMessage, err error)
+		MsgMarshal           func(comId uint16, msgId uint16, msg interface{}) IMessage
 	}
 	IMsgMarshalString interface { //消息输出结构
 		ToString() (string, error)
@@ -53,8 +60,6 @@ func OnInit(s core.IService, opt ...Option) (err error) {
 	}
 	IsUseBigEndian = option.IsUseBigEndian
 	MsgToString = msgToString
-	MessageDecodeBybufio = option.MessageDecodeBybufio
-	MessageDecodeBybytes = option.MessageDecodeBybytes
-	MsgMarshal = DefMessageMarshal
+	MessageFactory = option.MessageFactory
 	return
 }

@@ -74,7 +74,10 @@ func (this *Message) ToString() string {
 	}
 }
 
-func DefMessageDecodeBybufio(r *bufio.Reader) (msg IMessage, err error) {
+type DefMessageFactory struct {
+}
+
+func (this *DefMessageFactory) DefMessageDecodeBybufio(r *bufio.Reader) (msg IMessage, err error) {
 	message := &Message{}
 	message.ComId, err = ReadUInt16(r)
 	if err != nil {
@@ -106,7 +109,7 @@ func DefMessageDecodeBybufio(r *bufio.Reader) (msg IMessage, err error) {
 	return message, err
 }
 
-func DefMessageDecodeBybytes(buffer []byte) (msg IMessage, err error) {
+func (this *DefMessageFactory) DefMessageDecodeBybytes(buffer []byte) (msg IMessage, err error) {
 	if len(buffer) >= msgheadsize {
 		message := &Message{}
 		if IsUseBigEndian {
@@ -131,7 +134,7 @@ func DefMessageDecodeBybytes(buffer []byte) (msg IMessage, err error) {
 	return nil, fmt.Errorf("解析数据失败")
 }
 
-func DefMessageMarshal(comId uint16, msgId uint16, msg interface{}) IMessage {
+func (this *DefMessageFactory) DefMessageMarshal(comId uint16, msgId uint16, msg interface{}) IMessage {
 	if MsgProtoType == Proto_Json {
 		return jsonDefMessageMarshal(comId, msgId, msg)
 	} else {

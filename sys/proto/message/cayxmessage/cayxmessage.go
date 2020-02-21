@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+
 	legoproto "github.com/liwei1dao/lego/sys/proto"
 
 	"github.com/golang/protobuf/proto"
@@ -75,7 +76,10 @@ func (this *CayxMessage) ToString() string {
 	}
 }
 
-func MessageDecodeBybufio(r *bufio.Reader) (msg legoproto.IMessage, err error) {
+type CayxMessageFactory struct {
+}
+
+func (this *CayxMessageFactory) MessageDecodeBybufio(r *bufio.Reader) (msg legoproto.IMessage, err error) {
 	cbDataKind, err := legoproto.ReadByte(r)
 	if err != nil {
 		return nil, err
@@ -125,7 +129,7 @@ func MessageDecodeBybufio(r *bufio.Reader) (msg legoproto.IMessage, err error) {
 	return message, err
 }
 
-func MessageDecodeBybytes(buffer []byte) (msg legoproto.IMessage, err error) {
+func (this *CayxMessageFactory) MessageDecodeBybytes(buffer []byte) (msg legoproto.IMessage, err error) {
 	if len(buffer) < msgheadsize {
 		return nil, fmt.Errorf("解析数据失败 buffer 长度:%d", len(buffer))
 	}
@@ -148,7 +152,7 @@ func MessageDecodeBybytes(buffer []byte) (msg legoproto.IMessage, err error) {
 	return message, err
 }
 
-func MessageMarshal(comId uint16, msgId uint16, msg interface{}) legoproto.IMessage {
+func (this *CayxMessageFactory) MessageMarshal(comId uint16, msgId uint16, msg interface{}) legoproto.IMessage {
 	if legoproto.MsgProtoType == legoproto.Proto_Json {
 		return jsonDefMessageMarshal(comId, msgId, msg)
 	} else {
