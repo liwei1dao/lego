@@ -4,10 +4,12 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/sys/log"
 	"math"
 	"reflect"
+
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/log"
+	"github.com/liwei1dao/lego/sys/proto"
 )
 
 type SerializeData struct {
@@ -63,6 +65,7 @@ func SerializeInit() {
 	OnRegister(map[int32]interface{}{}, MapInt32InterfaceToBytes, BytesToMapInt32Rpc)
 	OnRegister(map[uint32]interface{}{}, MapUInt32InterfaceToBytes, BytesToMapUInt32Rpc)
 	OnRegister(map[string]*RpcData{}, JsonStructMarshal, BytesToMapStringRpc)
+	OnRegister(&proto.Message{}, ProtoStructMarshal, PrototructUnmarshal)
 	OnRegister(core.ErrorCode(0), ErrorCodeToBytes, BytesToErrorCode)
 }
 
@@ -249,7 +252,9 @@ func MapUInt32InterfaceToBytes(v interface{}) ([]byte, error) {
 func JsonStructMarshal(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
 }
-
+func ProtoStructMarshal(v interface{}) ([]byte, error) {
+	return v.(proto.IMessage).Serializable()
+}
 func ErrorCodeToBytes(v interface{}) ([]byte, error) {
 	var buf = make([]byte, 4)
 	binary.BigEndian.PutUint32(buf, uint32(v.(core.ErrorCode)))
@@ -324,7 +329,6 @@ func BytesToSliceString(dataType reflect.Type, buf []byte) (interface{}, error) 
 	err := json.Unmarshal(buf, &data)
 	return data, err
 }
-
 func BytesToSliceInterface(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := []*RpcData{}
 	err := json.Unmarshal(buf, &data)
@@ -401,6 +405,10 @@ func JsonStructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error)
 	msg := reflect.New(dataType.Elem()).Interface()
 	err := json.Unmarshal(buf, msg)
 	return msg, err
+}
+
+func PrototructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error) {
+	return proto.MessageDecodeBybytes(buf)
 }
 
 func BytesToErrorCode(dataType reflect.Type, buf []byte) (interface{}, error) {
