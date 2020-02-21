@@ -126,7 +126,7 @@ func (this *LocalSession) GetGateId() string {
 	return this.data.GateServerId
 }
 func (this *LocalSession) SendMsg(comdId uint16, msgId uint16, msg interface{}) (err error) {
-	m := proto.MsgMarshal(comdId, msgId, msg)
+	m := proto.MessageFactory.MessageMarshal(comdId, msgId, msg)
 	if _, e := this.module.SendMsg(this.GetSessionId(), m); e != "" {
 		err = fmt.Errorf(e)
 	}
