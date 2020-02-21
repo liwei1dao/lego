@@ -8,17 +8,14 @@ import (
 )
 
 var (
-	option               Options
-	MsgProtoType         ProtoType
-	IsUseBigEndian       bool
-	MsgUnMarshal         func(t reflect.Type, d []byte) (interface{}, error)
-	StructUnmarshal      func(d []byte, v interface{}) error
-	StructMarshal        func(v interface{}) ([]byte, error)
-	MsgToString          func(v interface{}) string
-	MessageFactory 		 IMessageFactory
-	// MsgMarshal           func(comId uint16, msgId uint16, msg interface{}) IMessage
-	// MessageDecodeBybufio func(r *bufio.Reader) (IMessage, error)
-	// MessageDecodeBybytes func(buffer []byte) (msg IMessage, err error)
+	option          Options
+	MsgProtoType    ProtoType
+	IsUseBigEndian  bool
+	MsgUnMarshal    func(t reflect.Type, d []byte) (interface{}, error)
+	StructUnmarshal func(d []byte, v interface{}) error
+	StructMarshal   func(v interface{}) ([]byte, error)
+	MsgToString     func(v interface{}) string
+	MessageFactory  IMessageFactory
 )
 
 type (
@@ -31,9 +28,9 @@ type (
 		ToString() string
 	}
 	IMessageFactory interface {
-		MessageDecodeBybufio func(r *bufio.Reader) (IMessage, error)
-		MessageDecodeBybytes func(buffer []byte) (msg IMessage, err error)
-		MsgMarshal           func(comId uint16, msgId uint16, msg interface{}) IMessage
+		MessageDecodeBybufio(r *bufio.Reader) (IMessage, error)
+		MessageDecodeBybytes(buffer []byte) (msg IMessage, err error)
+		MsgMarshal(comId uint16, msgId uint16, msg interface{}) IMessage
 	}
 	IMsgMarshalString interface { //消息输出结构
 		ToString() (string, error)

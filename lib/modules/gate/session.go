@@ -2,6 +2,7 @@ package gate
 
 import (
 	"fmt"
+
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/proto"
@@ -65,7 +66,7 @@ func (this *RemoteSession) GetGateId() string {
 }
 
 func (this *RemoteSession) SendMsg(comdId uint16, msgId uint16, msg interface{}) (err error) {
-	m := proto.MsgMarshal(comdId, msgId, msg)
+	m := proto.MessageFactory.MsgMarshal(comdId, msgId, msg)
 	_, err = this.service.RpcInvokeById(this.data.GateServerId, RPC_GateAgentSendMsg, false, this.GetSessionId(), m)
 	return err
 }

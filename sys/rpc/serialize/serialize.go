@@ -408,7 +408,7 @@ func JsonStructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error)
 }
 
 func PrototructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error) {
-	return proto.MessageDecodeBybytes(buf)
+	return protom.MessageFactory.MessageDecodeBybytes(buf)
 }
 
 func BytesToErrorCode(dataType reflect.Type, buf []byte) (interface{}, error) {

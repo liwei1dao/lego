@@ -3,28 +3,29 @@ package gate
 import (
 	"bufio"
 	"fmt"
+	"sync"
+
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/proto"
 	"github.com/liwei1dao/lego/utils/id"
-	"sync"
 )
 
 //远程链接代理
 type AgentBase struct {
-	Module      IGateModule
-	Agent       IAgent
-	Conn        IConn
-	id          string
-	ip          string
-	closeSignal chan bool
+	Module            IGateModule
+	Agent             IAgent
+	Conn              IConn
+	id                string
+	ip                string
+	closeSignal       chan bool
 	waitdestorySignal chan bool
-	writeChan   chan proto.IMessage
-	Isclose     bool
-	wg          sync.WaitGroup
-	r           *bufio.Reader
-	w           *bufio.Writer
-	rev_num     int64
-	send_num    int64
+	writeChan         chan proto.IMessage
+	Isclose           bool
+	wg                sync.WaitGroup
+	r                 *bufio.Reader
+	w                 *bufio.Writer
+	rev_num           int64
+	send_num          int64
 }
 
 func (this *AgentBase) Id() string {
@@ -64,7 +65,7 @@ func (this *AgentBase) OnRun() {
 	go this.listenwrite()
 loop:
 	for {
-		msg, err := proto.MessageDecodeBybufio(this.r)
+		msg, err := proto.MessageFactory.MessageDecodeBybufio(this.r)
 		if err != nil {
 			log.Errorf("[%s]接收消息异常 err:%s", this.id, err.Error())
 			this.OnClose()
@@ -116,7 +117,7 @@ func (this *AgentBase) OnCloseWait() {
 	this.Isclose = true
 	this.closeSignal <- true
 	this.Conn.Close()
-	<- this.waitdestorySignal
+	<-this.waitdestorySignal
 	close(this.waitdestorySignal)
 }
 
