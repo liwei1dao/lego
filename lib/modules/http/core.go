@@ -1,4 +1,4 @@
-package lghttp
+package http
 
 import (
 	"encoding/xml"

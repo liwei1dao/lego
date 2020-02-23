@@ -1,16 +1,17 @@
-package lghttp
+package http
 
 import (
 	"io"
 	"io/ioutil"
-	"github.com/liwei1dao/lego/lib/modules/lghttp/binding"
-	"github.com/liwei1dao/lego/lib/modules/lghttp/render"
-	"github.com/liwei1dao/lego/sys/log"
 	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/liwei1dao/lego/lib/modules/http/binding"
+	"github.com/liwei1dao/lego/lib/modules/http/render"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 const (

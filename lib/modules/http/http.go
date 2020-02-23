@@ -1,16 +1,17 @@
-package lghttp
+package http
 
 import (
 	"context"
 	"fmt"
 	"html/template"
-	"github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/core/cbase"
-	"github.com/liwei1dao/lego/lib/modules/lghttp/render"
-	"github.com/liwei1dao/lego/sys/log"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/lib/modules/http/render"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 type Http struct {
