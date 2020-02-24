@@ -22,20 +22,20 @@ type ServiceSttings struct {
 }
 
 type IService interface {
-	GetId() string
-	GetType() string
-	GetVersion() int32
-	GetWorkPath() string
-	GetSettings() ServiceSttings
-	Init(service IService) (err error)
-	InitSys()
-	OnInstallComp(cops ...IServiceComp)
-	Start() (err error)
-	Run(mods ...IModule)
-	Close(closemsg string)
-	Destroy() (err error)
-	GetComp(CompName S_Comps) (comp IServiceComp, err error)
-	GetModule(ModuleName M_Modules) (module IModule, err error)
+	GetId() string                                              //获取服务id
+	GetType() string                                            //获取服务类型
+	GetVersion() int32                                          //获取服务版本
+	GetWorkPath() string                                        //获取服务工作目录
+	GetSettings() ServiceSttings                                //获取服务配置表信息
+	Init(service IService) (err error)                          //初始化接口
+	InitSys()                                                   //初始化系统
+	OnInstallComp(cops ...IServiceComp)                         //组装服务组件
+	Start() (err error)                                         //启动服务
+	Run(mods ...IModule)                                        //运行服务
+	Close(closemsg string)                                      //关闭服务
+	Destroy() (err error)                                       //销毁服务
+	GetComp(CompName S_Comps) (comp IServiceComp, err error)    //获取组件
+	GetModule(ModuleName M_Modules) (module IModule, err error) //获取模块
 }
 
 type IServiceComp interface {

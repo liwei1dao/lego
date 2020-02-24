@@ -10,12 +10,12 @@ type ISingleService interface {
 
 type IClusterService interface {
 	core.IService
-	GetTag() string                                                                                                   //集群服务器标签
-	GetCategory() core.S_Category                                                                                     //服务类别
-	GetRpcId() string                                                                                                 //集群服务Rpc通信id
-	GetPreWeight() int32                                                                                              //集群服务负载值
-	GetSessionsByCategory(category core.S_Category) (ss []core.IServiceSession)                                       //获取服务会话
-	DefauleRpcRouteRules(stype string) (ss core.IServiceSession, err error)                                           //集群服务默认rpc路由规则
+	GetTag() string                                                                                                   //获取集群标签
+	GetCategory() core.S_Category                                                                                     //服务类别 例如游戏服
+	GetRpcId() string                                                                                                 //获取rpc通信id
+	GetPreWeight() int32                                                                                              //集群服务负载值 暂时可以不用理会
+	GetSessionsByCategory(category core.S_Category) (ss []core.IServiceSession)                                       //按服务类别获取服务列表
+	DefauleRpcRouteRules(stype string) (ss core.IServiceSession, err error)                                           //默认rpc路由规则
 	RpcInvokeById(sId string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error)     //执行远程服务Rpc方法
 	RpcInvokeByType(sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error) //根据路由规则执行远程方法
 	ReleaseRpc(rkey core.Rpc_Key, arg ...interface{})                                                                 //发布Rpc
