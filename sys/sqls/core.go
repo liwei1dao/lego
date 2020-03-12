@@ -18,6 +18,10 @@ func OnInit(s core.IService, opt ...Option) (err error) {
 	return
 }
 
+func Close() {
+	sqlserver.Close()
+}
+
 func ExecContext(query string, args ...interface{}) (data sql.Result, err error) {
 	return sqlserver.ExecContext(query, args...)
 }

@@ -28,6 +28,10 @@ func (this *SqlServer) init() (err error) {
 	return
 }
 
+func (this *SqlServer) Close() {
+	this.db.Close()
+}
+
 func (this *SqlServer) getContext() (ctx context.Context) {
 	ctx, _ = context.WithTimeout(context.Background(), this.opts.TimeOut)
 	return
