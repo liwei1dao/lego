@@ -3,8 +3,6 @@ package sqls
 import (
 	"database/sql"
 
-	_ "github.com/denisenkom/go-mssqldb"
-
 	"github.com/liwei1dao/lego/core"
 )
 

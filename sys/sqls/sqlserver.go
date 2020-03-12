@@ -3,8 +3,9 @@ package sqls
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
-	_ "github.com/denisenkom/go-mssqldb"
+	"github.com/jmoiron/sqlx"
 )
 
 func newSqlServer(opt ...Option) (*SqlServer, error) {
@@ -16,11 +17,14 @@ func newSqlServer(opt ...Option) (*SqlServer, error) {
 
 type SqlServer struct {
 	opts Options
-	db   *sql.DB
+	db   *sqlx.DB
 }
 
 func (this *SqlServer) init() (err error) {
-	this.db, err = sql.Open("sqlserver", this.opts.SqlUrl)
+	this.db, err = sqlx.Connect("sqlserver", this.opts.SqlUrl)
+	if err != nil {
+		fmt.Printf("err=%s\n", err)
+	}
 	return
 }
 
@@ -37,4 +41,21 @@ func (this *SqlServer) QueryContext(query string, args ...interface{}) (data *sq
 func (this *SqlServer) ExecContext(query string, args ...interface{}) (data sql.Result, err error) {
 	data, err = this.db.ExecContext(this.getContext(), query, args...)
 	return
+}
+
+func (this *SqlServer) QueryxContext(query string, args ...interface{}) (data *sqlx.Rows, err error) {
+	data, err = this.db.QueryxContext(this.getContext(), query, args...)
+	return
+}
+
+func (this *SqlServer) QueryRowContext(query string, args ...interface{}) (data *sql.Row) {
+	return this.db.QueryRowContext(this.getContext(), query, args...)
+}
+
+func (this *SqlServer) GetContext(dest interface{}, query string, args ...interface{}) error {
+	return this.db.GetContext(this.getContext(), dest, query, args...)
+}
+
+func (this *SqlServer) SelectContext(dest interface{}, query string, args ...interface{}) error {
+	return this.db.SelectContext(this.getContext(), dest, query, args...)
 }
