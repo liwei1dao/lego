@@ -48,8 +48,8 @@ func (this *SqlServer) QueryxContext(query string, args ...interface{}) (data *s
 	return
 }
 
-func (this *SqlServer) QueryRowContext(query string, args ...interface{}) (data *sql.Row) {
-	return this.db.QueryRowContext(this.getContext(), query, args...)
+func (this *SqlServer) QueryRowxContext(query string, args ...interface{}) (data *sqlx.Row) {
+	return this.db.QueryRowxContext(this.getContext(), query, args...)
 }
 
 func (this *SqlServer) GetContext(dest interface{}, query string, args ...interface{}) error {
