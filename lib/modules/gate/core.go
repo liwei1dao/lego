@@ -1,9 +1,10 @@
 package gate
 
 import (
+	"net"
+
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/proto"
-	"net"
 )
 
 const ( //Rpc
@@ -14,6 +15,7 @@ const ( //Rpc
 	RPC_GateAgentBuild    core.Rpc_Key = "GateAgentBuild"    //代理绑定
 	RPC_GateAgentUnBuild  core.Rpc_Key = "GateAgentUnBuild"  //代理解绑
 	RPC_GateAgentSendMsg  core.Rpc_Key = "GateAgentSendMsg"  //代理发送消息
+	RPC_GateAgentRadioMsg core.Rpc_Key = "GateAgentRadioMsg" //代理广播消息
 	RPC_GateAgentClose    core.Rpc_Key = "GateAgentClose"    //代理关闭
 )
 
@@ -47,7 +49,7 @@ type IAgent interface {
 	SendNum() int64
 	IsClosed() bool
 	OnRun()
-	OnClose() 		//主动关闭接口
-	OnCloseWait()   //主动关闭接口 等待链接销毁
-	Destory() 		//关闭销毁
+	OnClose()     //主动关闭接口
+	OnCloseWait() //主动关闭接口 等待链接销毁
+	Destory()     //关闭销毁
 }
