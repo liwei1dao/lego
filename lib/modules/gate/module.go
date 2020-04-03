@@ -46,7 +46,12 @@ func (this *Gate) CloseAgent(sId string) (result string, err string) {
 
 //发送代理消息
 func (this *Gate) SendMsg(sId string, msg proto.IMessage) (result int, err string) {
-	return
+	return 0, "为重构"
+}
+
+//广播代理消息
+func (this *Gate) RadioMsg(msg proto.IMessage, sIds []string) (result int, err string) {
+	return 0, "为重构"
 }
 
 //func (this *Gate) OnInstallComp() {

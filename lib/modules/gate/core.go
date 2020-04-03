@@ -28,7 +28,8 @@ type IGateModule interface {
 	Connect(a IAgent)
 	DisConnect(a IAgent)
 	CloseAgent(sId string) (result string, err string)
-	SendMsg(sId string, msg proto.IMessage) (result int, err string)
+	SendMsg(sId string, msg proto.IMessage) (result int, err string)     //发送消息
+	RadioMsg(msg proto.IMessage, sIds []string) (result int, err string) //广播消息
 }
 
 type IConn interface {
