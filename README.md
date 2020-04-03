@@ -5,7 +5,7 @@
 
 
 # lego  的导入
-go get github.com/liwei1dao/lego.git 
+go get github.com/liwei1dao/lego
 # lego 框架目录结构说明
 - logo 总目录
 	* base    //框架基础服务封装内置single(独立)和cluster(集群)两类服务基类
