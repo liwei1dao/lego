@@ -43,7 +43,7 @@ func (this *SComp_GateRouteComp) Start() (err error) {
 }
 
 func (this *SComp_GateRouteComp) registergateroute() {
-	if ss := this.Service.GetSessionsByCategory("GateService"); ss != nil {
+	if ss := this.Service.GetSessionsByCategory(lib.S_Category_GateService); ss != nil {
 		for _, s := range ss {
 			for k, _ := range this.Routes {
 				log.Infof("向网关【%s】服务器注册服务comId:%d", s.GetId(), k)
@@ -58,7 +58,7 @@ func (this *SComp_GateRouteComp) registergateroute() {
 ”GateService“ 这里是判断发现的服务是否是提供网关注册服务的服务
 */
 func (this *SComp_GateRouteComp) findnewservice(node registry.ServiceNode) {
-	if len(this.Routes) > 0 && node.Category == "GateService" {
+	if len(this.Routes) > 0 && node.Category == lib.S_Category_GateService {
 		for k, _ := range this.Routes {
 			log.Infof("向网关【%s】服务器注册服务comId:%d", node.Id, k)
 			this.Service.RpcInvokeById(node.Id, gate.Rpc_GateRouteRegister, false, k, this.Service.GetId()) //向所有网关服务注册
