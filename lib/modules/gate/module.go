@@ -50,7 +50,7 @@ func (this *Gate) SendMsg(sId string, msg proto.IMessage) (result int, err strin
 }
 
 //广播代理消息
-func (this *Gate) RadioMsg(msg proto.IMessage, sIds []string) (result int, err string) {
+func (this *Gate) RadioMsg(sIds []string, msg proto.IMessage) (result int, err string) {
 	return 0, "为重构"
 }
 
