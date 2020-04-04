@@ -3,6 +3,10 @@ package m_comps
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"sync"
+	"time"
+
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib"
@@ -11,9 +15,6 @@ import (
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/proto"
 	"github.com/liwei1dao/lego/sys/workerpools"
-	"reflect"
-	"sync"
-	"time"
 )
 
 /*
@@ -40,6 +41,12 @@ type msgRecep struct {
 func (this *MComp_GateComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, setting map[string]interface{}) (err error) {
 	this.ModuleCompBase.Init(service, module, comp, setting)
 	this.service = service
+	if v, ok := setting["GateMaxGoroutine"]; ok {
+		this.MaxGoroutine = v.(int)
+	} else {
+		log.Warnf("Module:%s Lack Config:GateMaxGoroutine", module.GetType())
+		this.MaxGoroutine = 100
+	}
 	this.msghandles = make(map[uint16]*msgRecep)
 	this.workerpool, err = workerpools.NewTaskPools(workerpools.SetMaxWorkers(this.MaxGoroutine), workerpools.SetTaskTimeOut(time.Second*2))
 	return
