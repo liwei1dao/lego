@@ -30,7 +30,7 @@ type MComp_GateComp struct {
 	msghandles   map[uint16]*msgRecep
 	mrlock       sync.RWMutex
 	MaxGoroutine int //最大并发数据
-	workerpool   workerpools.IWorkerPool
+	Workerpool   workerpools.IWorkerPool
 }
 
 type msgRecep struct {
@@ -50,7 +50,7 @@ func (this *MComp_GateComp) Init(service core.IService, module core.IModule, com
 		this.MaxGoroutine = 100
 	}
 	this.msghandles = make(map[uint16]*msgRecep)
-	this.workerpool, err = workerpools.NewTaskPools(workerpools.SetMaxWorkers(this.MaxGoroutine), workerpools.SetTaskTimeOut(time.Second*2))
+	this.Workerpool, err = workerpools.NewTaskPools(workerpools.SetMaxWorkers(this.MaxGoroutine), workerpools.SetTaskTimeOut(time.Second*2))
 	return
 }
 
@@ -81,7 +81,7 @@ func (this *MComp_GateComp) Start() (err error) {
 }
 
 func (this *MComp_GateComp) ReceiveMsg(session core.IUserSession, msg proto.IMessage) (code int, err string) {
-	this.workerpool.Submit(func(ctx context.Context, cancel context.CancelFunc) {
+	this.Workerpool.Submit(func(ctx context.Context, cancel context.CancelFunc) {
 		defer cancel()        //任务结束通知上层
 		defer cbase.Recover() //打印消息处理异常信息
 
