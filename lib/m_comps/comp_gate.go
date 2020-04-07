@@ -27,8 +27,8 @@ type MComp_GateComp struct {
 	comp         IMComp_GateComp
 	ComId        uint16 //协议分类Id
 	IsLog        bool   //是否输出消息日志
-	msghandles   map[uint16]*msgRecep
-	mrlock       sync.RWMutex
+	Msghandles   map[uint16]*msgRecep
+	Mrlock       sync.RWMutex
 	MaxGoroutine int //最大并发数据
 	Workerpool   workerpools.IWorkerPool
 }
@@ -49,7 +49,7 @@ func (this *MComp_GateComp) Init(service core.IService, module core.IModule, com
 		log.Warnf("Module:%s Lack Config:GateMaxGoroutine", module.GetType())
 		this.MaxGoroutine = 100
 	}
-	this.msghandles = make(map[uint16]*msgRecep)
+	this.Msghandles = make(map[uint16]*msgRecep)
 	this.Workerpool, err = workerpools.NewTaskPools(workerpools.SetMaxWorkers(this.MaxGoroutine), workerpools.SetTaskTimeOut(time.Second*2))
 	return
 }
@@ -85,9 +85,9 @@ func (this *MComp_GateComp) ReceiveMsg(session core.IUserSession, msg proto.IMes
 		defer cancel()        //任务结束通知上层
 		defer cbase.Recover() //打印消息处理异常信息
 
-		this.mrlock.RLock()
-		msghandles, ok := this.msghandles[msg.GetMsgId()]
-		this.mrlock.RUnlock()
+		this.Mrlock.RLock()
+		msghandles, ok := this.Msghandles[msg.GetMsgId()]
+		this.Mrlock.RUnlock()
 		if !ok {
 			log.Errorf("模块网关路由【%d】没有注册消息【%d】接口", this.ComId, msg.GetMsgId())
 			return
@@ -107,15 +107,15 @@ func (this *MComp_GateComp) ReceiveMsg(session core.IUserSession, msg proto.IMes
 }
 
 func (this *MComp_GateComp) RegisterHandle(mId uint16, msg interface{}, f func(session core.IUserSession, msg interface{})) {
-	if _, ok := this.msghandles[mId]; ok {
+	if _, ok := this.Msghandles[mId]; ok {
 		log.Errorf("重复 注册网关【%d】消息【%d】", this.ComId, mId)
 		return
 	}
-	this.mrlock.Lock()
-	this.msghandles[mId] = &msgRecep{
+	this.Mrlock.Lock()
+	this.Msghandles[mId] = &msgRecep{
 		msgId:   mId,
 		msgType: reflect.TypeOf(msg),
 		f:       f,
 	}
-	this.mrlock.Unlock()
+	this.Mrlock.Unlock()
 }
