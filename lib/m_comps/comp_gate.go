@@ -35,8 +35,8 @@ type MComp_GateComp struct {
 
 type msgRecep struct {
 	msgId   uint16
-	msgType reflect.Type
-	f       func(session core.IUserSession, msg interface{})
+	MsgType reflect.Type
+	F       func(session core.IUserSession, msg interface{})
 }
 
 func (this *MComp_GateComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, setting map[string]interface{}) (err error) {
@@ -92,7 +92,7 @@ func (this *MComp_GateComp) ReceiveMsg(session core.IUserSession, msg proto.IMes
 			log.Errorf("模块网关路由【%d】没有注册消息【%d】接口", this.ComId, msg.GetMsgId())
 			return
 		}
-		msgdata, e := proto.MsgUnMarshal(msghandles.msgType, msg.GetMsg())
+		msgdata, e := proto.MsgUnMarshal(msghandles.MsgType, msg.GetMsg())
 		if e != nil {
 			log.Errorf("收到异常消息【%d:%d】来自【%s】的消息err:%s", this.ComId, msg.GetMsgId(), session.GetSessionId(), e.Error())
 			session.Close()
@@ -101,7 +101,7 @@ func (this *MComp_GateComp) ReceiveMsg(session core.IUserSession, msg proto.IMes
 		if this.IsLog {
 			log.Infof("收到【%d:%d】来自【%s】的消息:%s", this.ComId, msg.GetMsgId(), session.GetSessionId(), proto.MsgToString(msgdata))
 		}
-		msghandles.f(session, msgdata)
+		msghandles.F(session, msgdata)
 	})
 	return 0, ""
 }
@@ -114,8 +114,8 @@ func (this *MComp_GateComp) RegisterHandle(mId uint16, msg interface{}, f func(s
 	this.Mrlock.Lock()
 	this.Msghandles[mId] = &msgRecep{
 		msgId:   mId,
-		msgType: reflect.TypeOf(msg),
-		f:       f,
+		MsgType: reflect.TypeOf(msg),
+		F:       f,
 	}
 	this.Mrlock.Unlock()
 }
