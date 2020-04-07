@@ -24,6 +24,7 @@ import (
 type MComp_GateComp struct {
 	cbase.ModuleCompBase
 	service      core.IService
+	comp         IMComp_GateComp
 	ComId        uint16 //协议分类Id
 	IsLog        bool   //是否输出消息日志
 	msghandles   map[uint16]*msgRecep
@@ -41,6 +42,7 @@ type msgRecep struct {
 func (this *MComp_GateComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, setting map[string]interface{}) (err error) {
 	this.ModuleCompBase.Init(service, module, comp, setting)
 	this.service = service
+	this.comp = comp.(IMComp_GateComp)
 	if v, ok := setting["GateMaxGoroutine"]; ok {
 		this.MaxGoroutine = v.(int)
 	} else {
@@ -60,14 +62,14 @@ func (this *MComp_GateComp) Start() (err error) {
 	//注册本地路由
 	m, e := this.service.GetModule(lib.SM_GateModule)
 	if e == nil {
-		m.(gate.IGateModule).RegisterLocalRoute(this.ComId, this.ReceiveMsg)
+		m.(gate.IGateModule).RegisterLocalRoute(this.ComId, this.comp.ReceiveMsg)
 		isRegisterLocalRoute = true
 	}
 	if !isRegisterLocalRoute {
 		//注册远程路由
 		cc, e := this.service.GetComp(lib.SC_ServiceGateRouteComp)
 		if e == nil {
-			cc.(s_comps.ISC_GateRouteComp).RegisterRoute(this.ComId, this.ReceiveMsg)
+			cc.(s_comps.ISC_GateRouteComp).RegisterRoute(this.ComId, this.comp.ReceiveMsg)
 			isRegisterLocalRoute = true
 		}
 	}
