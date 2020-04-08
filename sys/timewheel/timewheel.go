@@ -20,13 +20,13 @@ const (
 
 type (
 	taskType int64
-	taskID   int64
+	TaskID   int64
 	Task     struct {
 		delay    time.Duration
-		id       taskID
+		id       TaskID
 		round    int
 		args     []interface{}
-		callback func(taskID, ...interface{})
+		callback func(TaskID, ...interface{})
 		async    bool
 		stop     bool
 		circle   bool
@@ -37,8 +37,8 @@ type (
 		ticker        *time.Ticker
 		tickQueue     chan time.Time
 		bucketsNum    int
-		buckets       []map[taskID]*Task // key: added item, value: *Task
-		bucketIndexes map[taskID]int     // key: added item, value: bucket position
+		buckets       []map[TaskID]*Task // key: added item, value: *Task
+		bucketIndexes map[TaskID]int     // key: added item, value: bucket position
 		currentIndex  int
 		onceStart     sync.Once
 		addC          chan *Task
@@ -69,8 +69,8 @@ func NewTimeWheel(opt ...Option) (*TimeWheel, error) {
 
 		// store
 		bucketsNum:    opts.BucketsNum,
-		bucketIndexes: make(map[taskID]int, 1024*100),
-		buckets:       make([]map[taskID]*Task, opts.BucketsNum),
+		bucketIndexes: make(map[TaskID]int, 1024*100),
+		buckets:       make([]map[TaskID]*Task, opts.BucketsNum),
 		currentIndex:  0,
 
 		// signal
@@ -82,7 +82,7 @@ func NewTimeWheel(opt ...Option) (*TimeWheel, error) {
 	}
 
 	for i := 0; i < opts.BucketsNum; i++ {
-		tw.buckets[i] = make(map[taskID]*Task, 16)
+		tw.buckets[i] = make(map[TaskID]*Task, 16)
 	}
 
 	return tw, nil
@@ -100,12 +100,12 @@ func (this *TimeWheel) Start() {
 	)
 }
 
-func (tw *TimeWheel) Add(delay time.Duration, handler func(taskID, ...interface{}), args ...interface{}) *Task {
+func (tw *TimeWheel) Add(delay time.Duration, handler func(TaskID, ...interface{}), args ...interface{}) *Task {
 	return tw.addAny(delay, modeIsCircle, modeIsAsync, handler, args...)
 }
 
 // AddCron add interval task
-func (tw *TimeWheel) AddCron(delay time.Duration, handler func(taskID, ...interface{}), args ...interface{}) *Task {
+func (tw *TimeWheel) AddCron(delay time.Duration, handler func(TaskID, ...interface{}), args ...interface{}) *Task {
 	return tw.addAny(delay, modeIsCircle, modeIsAsync, handler, args...)
 }
 
@@ -209,7 +209,7 @@ func (tw *TimeWheel) handleTick() {
 	tw.currentIndex++
 }
 
-func (tw *TimeWheel) addAny(delay time.Duration, circle, async bool, callback func(taskID, ...interface{}), agr ...interface{}) *Task {
+func (tw *TimeWheel) addAny(delay time.Duration, circle, async bool, callback func(TaskID, ...interface{}), agr ...interface{}) *Task {
 	if delay <= 0 {
 		delay = tw.tick
 	}
@@ -279,7 +279,7 @@ func (tw *TimeWheel) NewTimer(delay time.Duration) *Timer {
 	task := tw.addAny(delay,
 		modeNotCircle,
 		modeNotAsync,
-		func(taskID, ...interface{}) {
+		func(TaskID, ...interface{}) {
 			notfiyChannel(queue)
 		},
 	)
@@ -301,7 +301,7 @@ func (tw *TimeWheel) AfterFunc(delay time.Duration, callback func()) *Timer {
 	queue := make(chan bool, 1)
 	task := tw.addAny(delay,
 		modeNotCircle, modeIsAsync,
-		func(taskID, ...interface{}) {
+		func(TaskID, ...interface{}) {
 			callback()
 			notfiyChannel(queue)
 		},
@@ -326,7 +326,7 @@ func (tw *TimeWheel) NewTicker(delay time.Duration) *Ticker {
 	task := tw.addAny(delay,
 		modeIsCircle,
 		modeNotAsync,
-		func(taskID, ...interface{}) {
+		func(TaskID, ...interface{}) {
 			notfiyChannel(queue)
 		},
 	)
@@ -348,7 +348,7 @@ func (tw *TimeWheel) After(delay time.Duration) <-chan time.Time {
 	queue := make(chan time.Time, 1)
 	tw.addAny(delay,
 		modeNotCircle, modeNotAsync,
-		func(taskID, ...interface{}) {
+		func(TaskID, ...interface{}) {
 			queue <- time.Now()
 		},
 	)
@@ -359,7 +359,7 @@ func (tw *TimeWheel) Sleep(delay time.Duration) {
 	queue := make(chan bool, 1)
 	tw.addAny(delay,
 		modeNotCircle, modeNotAsync,
-		func(taskID, ...interface{}) {
+		func(TaskID, ...interface{}) {
 			queue <- true
 		},
 	)
@@ -382,7 +382,7 @@ func (t *Timer) Reset(delay time.Duration) {
 	if t.fn != nil { // use AfterFunc
 		task = t.tw.addAny(delay,
 			modeNotCircle, modeIsAsync, // must async mode
-			func(taskID, ...interface{}) {
+			func(TaskID, ...interface{}) {
 				t.fn()
 				notfiyChannel(t.C)
 			},
@@ -390,7 +390,7 @@ func (t *Timer) Reset(delay time.Duration) {
 	} else {
 		task = t.tw.addAny(delay,
 			modeNotCircle, modeNotAsync,
-			func(taskID, ...interface{}) {
+			func(TaskID, ...interface{}) {
 				notfiyChannel(t.C)
 			},
 		)
@@ -431,7 +431,7 @@ func notfiyChannel(q chan bool) {
 	}
 }
 
-func (tw *TimeWheel) genUniqueID() taskID {
+func (tw *TimeWheel) genUniqueID() TaskID {
 	id := atomic.AddInt64(&tw.randomID, 1)
-	return taskID(id)
+	return TaskID(id)
 }

@@ -29,7 +29,7 @@ func TestAddFunc(t *testing.T) {
 	for index := 1; index < 6; index++ {
 		queue := make(chan bool, 0)
 		start := time.Now()
-		tw.Add(time.Duration(index)*time.Second, func(taskID, ...interface{}) {
+		tw.Add(time.Duration(index)*time.Second, func(TaskID, ...interface{}) {
 			queue <- true
 		})
 
