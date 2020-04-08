@@ -8,6 +8,8 @@ import (
 
 type (
 	ITimeWheel interface {
+		Start()
+		Stop()
 		Add(delay time.Duration, handler func(*Task, ...interface{}), args ...interface{}) *Task
 		AddCron(delay time.Duration, handler func(*Task, ...interface{}), args ...interface{}) *Task
 		Remove(task *Task) error
@@ -24,7 +26,9 @@ var (
 )
 
 func OnInit(s core.IService, opt ...Option) (err error) {
-	defaultTimeWheel, err = NewTimeWheel(opt...)
+	if defaultTimeWheel, err = NewTimeWheel(opt...); err == nil {
+		defaultTimeWheel.Start()
+	}
 	return
 }
 
