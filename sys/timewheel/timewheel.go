@@ -101,7 +101,7 @@ func (this *TimeWheel) Start() {
 }
 
 func (tw *TimeWheel) Add(delay time.Duration, handler func(*Task, ...interface{}), args ...interface{}) *Task {
-	return tw.addAny(delay, modeIsCircle, modeIsAsync, handler, args...)
+	return tw.addAny(delay, modeNotCircle, modeIsAsync, handler, args...)
 }
 
 // AddCron add interval task
@@ -165,7 +165,7 @@ func (tw *TimeWheel) collectTask(task *Task) {
 	delete(tw.bucketIndexes, task.id)
 	delete(tw.buckets[index], task.id)
 
-	if tw.syncPool {
+	if tw.syncPool && !task.circle {
 		defaultTaskPool.put(task)
 	}
 }
