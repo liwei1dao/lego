@@ -8,8 +8,8 @@ import (
 
 type (
 	ITimeWheel interface {
-		Add(delay time.Duration, callback func()) *Task
-		AddCron(delay time.Duration, callback func()) *Task
+		Add(delay time.Duration, handler func(taskID, ...interface{}), args ...interface{}) *Task
+		AddCron(delay time.Duration, handler func(taskID, ...interface{}), args ...interface{}) *Task
 		Remove(task *Task) error
 		NewTimer(delay time.Duration) *Timer
 		NewTicker(delay time.Duration) *Ticker
@@ -28,12 +28,12 @@ func OnInit(s core.IService, opt ...Option) (err error) {
 	return
 }
 
-func Add(delay time.Duration, callback func()) *Task {
-	return defaultTimeWheel.Add(delay, callback)
+func Add(delay time.Duration, handler func(taskID, ...interface{}), args ...interface{}) *Task {
+	return defaultTimeWheel.Add(delay, handler, args...)
 }
 
-func AddCron(delay time.Duration, callback func()) *Task {
-	return defaultTimeWheel.AddCron(delay, callback)
+func AddCron(delay time.Duration, handler func(taskID, ...interface{}), args ...interface{}) *Task {
+	return defaultTimeWheel.AddCron(delay, handler, args...)
 }
 
 func Remove(task *Task) error {

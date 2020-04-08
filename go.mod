@@ -11,6 +11,7 @@ require (
 	github.com/golang/protobuf v1.3.4
 	github.com/gorilla/websocket v1.4.1
 	github.com/hashicorp/consul/api v1.4.0
+	github.com/jinzhu/inflection v1.0.0
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/mitchellh/hashstructure v1.0.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
