@@ -3,8 +3,9 @@ package redis
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/liwei1dao/lego/sys/log"
 	"reflect"
+
+	"github.com/liwei1dao/lego/sys/log"
 
 	"github.com/garyburd/redigo/redis"
 )
@@ -109,7 +110,7 @@ func (this *RedisPool) UnLock(_Key string) (err error) {
 	return
 }
 
-//添加键值列表
+//添加键值到列表顶部
 func (this *RedisPool) SetKey_List(_Key string, _Value []interface{}) {
 	pool := this.Pool.Get()
 	defer pool.Close()
@@ -146,6 +147,24 @@ func (this *RedisPool) GetKey_List(_Key string, _Vakue_type reflect.Type) (Value
 	return Value
 }
 
+//移除并返回在列表的尾部数据。
+func (this *RedisPool) GetKey_ListByPop(key string, value interface{}) (err error) {
+	if !this.ContainsKey(key) {
+		return fmt.Errorf("GetKey_ListByPop 读取缓存哈希表数据失败 不存在的 key = %s", key)
+	}
+	pool := this.Pool.Get()
+	defer pool.Close()
+	movies, err := redis.String(pool.Do("RPOP", key))
+	if err != nil {
+		return fmt.Errorf("GetKey_ListByPop 读取缓存哈希表数据失败 key = %s", key)
+	}
+	err = json.Unmarshal([]byte(movies), value)
+	if err != nil {
+		return fmt.Errorf("移除并返回 Redis List【%s】尾部数据 错误 %s", key, err)
+	}
+	return nil
+}
+
 //判断键是否存在 Map中
 func (this *RedisPool) ContainsKey_Map(_Key string, _FieldKey string) bool {
 	pool := this.Pool.Get()
@@ -159,23 +178,6 @@ func (this *RedisPool) ContainsKey_Map(_Key string, _FieldKey string) bool {
 
 //添加键值 哈希表
 func (this *RedisPool) SetKey_Map(_Key string, _Value map[string]interface{}) {
-	pool := this.Pool.Get()
-	defer pool.Close()
-	Values := []interface{}{}
-	Values = append(Values, _Key)
-	for k, v := range _Value {
-		if b, err := json.Marshal(v); err == nil {
-			Values = append(Values, k, string(b))
-		}
-	}
-	_, err := pool.Do("HSET", Values...)
-	if err != nil {
-		log.Errorf("设置缓存SetKey_Map失败 key = %s err=%s", _Key, err.Error())
-	}
-}
-
-//添加键值 哈希表
-func (this *RedisPool) SetExKey_Map(_Key string, _Value map[string]interface{}) {
 	pool := this.Pool.Get()
 	defer pool.Close()
 	Values := []interface{}{}

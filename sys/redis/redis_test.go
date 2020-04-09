@@ -30,3 +30,18 @@ func TestRedisMutex_Lock(t *testing.T) {
 	wg.Wait()
 	t.Log("结束测试")
 }
+
+func TestRedisList_Lock(t *testing.T) {
+	if err := OnInit(nil, RedisUrl("redis://127.0.0.1:6379/3")); err != nil {
+		t.Errorf("初始化 redis 失败 err:%s", err.Error())
+		return
+	}
+	var item string
+	GetPool().SetKey_List("TestList", []interface{}{"liwei1dao"})
+	GetPool().SetKey_List("TestList", []interface{}{"liwei2dao"})
+	GetPool().SetKey_List("TestList", []interface{}{"liwei3dao"})
+	GetPool().SetKey_List("TestList", []interface{}{"liwei4dao"})
+	GetPool().SetKey_List("TestList", []interface{}{"liwei5dao"})
+	GetPool().GetKey_ListByPop("TestList", &item)
+	t.Log("结束测试")
+}
