@@ -2,6 +2,7 @@ package single
 
 import (
 	"fmt"
+
 	"github.com/BurntSushi/toml"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/utils"
@@ -49,7 +50,7 @@ func newOptions(opts ...Option) *Options {
 	for _, o := range opts {
 		o(opt)
 	}
-	confpath := fmt.Sprintf(opt.WorkPath+"bin/conf/%s.toml", opt.Id)
+	confpath := fmt.Sprintf(opt.WorkPath+"conf/%s.toml", opt.Id)
 	_, err := toml.DecodeFile(confpath, &opt.Setting)
 	if err != nil {
 		panic(fmt.Sprintf("读取服务配置【%s】文件失败err=%s:", confpath, err.Error()))

@@ -13,7 +13,7 @@ var (
 
 func OnInit(s core.IService, opt ...Option) (err error) {
 	service = s
-	opt = append(opt, SetFileName(fmt.Sprintf("%sbin/log/%s/%s.log", s.GetWorkPath(), s.GetId(), s.GetType())))
+	opt = append(opt, SetFileName(fmt.Sprintf("%slog/%s/%s.log", s.GetWorkPath(), s.GetId(), s.GetType())))
 	defaultlog, err = newLog(opt...)
 	return
 }
