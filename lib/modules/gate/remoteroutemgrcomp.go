@@ -2,20 +2,21 @@ package gate
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/proto"
 	"github.com/liwei1dao/lego/sys/registry"
-	"sync"
-	"time"
 )
 
 type RemoteRouteMgrComp struct {
 	cbase.ModuleCompBase
 	service    base.IClusterService
-	routs      map[uint16]*RemoteRoute
+	routs      map[uint16]map[string]*RemoteRoute
 	routslock  sync.RWMutex
 	NewSession func(service base.IClusterService, data map[string]interface{}) (s core.IUserSession, err error)
 }
@@ -30,7 +31,7 @@ func (this *RemoteRouteMgrComp) Init(service core.IService, module core.IModule,
 		return fmt.Errorf("RemoteRouteMgrComp Init is no install NewSession")
 	}
 	this.ModuleCompBase.Init(service, module, comp, settings)
-	this.routs = make(map[uint16]*RemoteRoute)
+	this.routs = make(map[uint16]map[string]*RemoteRoute)
 	return
 }
 
@@ -56,14 +57,20 @@ func (this *RemoteRouteMgrComp) RegisterRoute(comId uint16, sId string) (result 
 	}
 	this.routslock.Lock()
 	defer this.routslock.Unlock()
-	if r, ok := this.routs[comId]; ok {
-		e := r.RegisterRoute(*snode)
-		if e != nil {
-			return "", e.Error()
+	if _, ok := this.routs[comId]; ok {
+		if r, ok1 := this.routs[comId][snode.Type]; ok1 {
+			e := r.RegisterRoute(*snode)
+			if e != nil {
+				return "", e.Error()
+			}
+		} else {
+			route := NewRemoteRoute(this.service, comId, this.NewSession, *snode)
+			this.routs[comId][snode.Type] = route
 		}
+
 	} else {
 		route := NewRemoteRoute(this.service, comId, this.NewSession, *snode)
-		this.routs[comId] = route
+		this.routs[comId] = map[string]*RemoteRoute{snode.Type: route}
 	}
 	return
 }
@@ -72,9 +79,11 @@ func (this *RemoteRouteMgrComp) UnRegisterRoute(comId uint16, sId string) {
 	this.routslock.Lock()
 	defer this.routslock.Unlock()
 	if r, ok := this.routs[comId]; ok {
-		r.UnRegisterRoute(sId)
-		if r.Count() == 0 {
-			delete(this.routs, comId)
+		for _, v := range r {
+			v.UnRegisterRoute(sId)
+			if v.Count() == 0 {
+				delete(this.routs, comId)
+			}
 		}
 	}
 	return
@@ -82,11 +91,14 @@ func (this *RemoteRouteMgrComp) UnRegisterRoute(comId uint16, sId string) {
 
 func (this *RemoteRouteMgrComp) OnRoute(agent IAgent, msg proto.IMessage) (code int, err string) {
 	this.routslock.RLock()
-	route, ok := this.routs[msg.GetComId()]
+	routes, ok := this.routs[msg.GetComId()]
 	this.routslock.RUnlock()
 	if ok {
-		return route.OnRoute(agent, msg)
+		for _, v := range routes {
+			v.OnRoute(agent, msg)
+		}
 	} else {
 		return 0, fmt.Sprintf("网关没有注册Comid【%d】路由", msg.GetComId())
 	}
+	return
 }

@@ -2,17 +2,18 @@ package gate
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/proto"
-	"sync"
 )
 
 type LocalRouteMgrComp struct {
 	cbase.ModuleCompBase
 	module     IGateModule
-	routs      map[uint16]*LocalRoute
+	routs      map[uint16][]*LocalRoute
 	routslock  sync.RWMutex
 	NewSession func(module IGateModule, data map[string]interface{}) (s core.IUserSession, err error)
 }
@@ -27,19 +28,19 @@ func (this *LocalRouteMgrComp) Init(service core.IService, module core.IModule, 
 		return fmt.Errorf("LocalRouteMgrComp Init is no install NewLocalSession")
 	}
 	this.ModuleCompBase.Init(service, module, comp, settings)
-	this.routs = make(map[uint16]*LocalRoute)
+	this.routs = make(map[uint16][]*LocalRoute)
 	return
 }
 
 func (this *LocalRouteMgrComp) RegisterRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string)) {
-	log.Infof("注册本地服务 comId：%d ", comId)
+	log.Infof("注册本地服务 comId：%d f:&v", comId, f)
 	this.routslock.Lock()
 	defer this.routslock.Unlock()
+	route := NewLocalRoute(this.module, comId, this.NewSession, f)
 	if _, ok := this.routs[comId]; ok {
-		log.Errorf("重复注册网关路由【%d】", comId)
+		this.routs[comId] = append(this.routs[comId], route)
 	} else {
-		route := NewLocalRoute(this.module, comId, this.NewSession, f)
-		this.routs[comId] = route
+		this.routs[comId] = []*LocalRoute{route}
 	}
 	return
 }
@@ -53,11 +54,14 @@ func (this *LocalRouteMgrComp) UnRegisterRoute(comId uint16, f func(session core
 
 func (this *LocalRouteMgrComp) OnRoute(agent IAgent, msg proto.IMessage) (code int, err string) {
 	this.routslock.RLock()
-	route, ok := this.routs[msg.GetComId()]
+	routes, ok := this.routs[msg.GetComId()]
 	this.routslock.RUnlock()
 	if ok {
-		return route.OnRoute(agent, msg)
+		for _, v := range routes {
+			v.OnRoute(agent, msg)
+		}
 	} else {
 		return 0, fmt.Sprintf("网关没有注册Comid【%d】路由", msg.GetComId())
 	}
+	return
 }

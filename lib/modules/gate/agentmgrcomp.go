@@ -2,6 +2,7 @@ package gate
 
 import (
 	"fmt"
+
 	"github.com/liwei1dao/lego/core"
 	cbase "github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/sys/proto"
