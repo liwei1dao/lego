@@ -8,7 +8,6 @@ import (
 )
 
 const ( //Rpc
-
 	Rpc_GateRouteRegister core.Rpc_Key = "GateRouteRegister" //网关路由注册
 	Rpc_GateRoute         core.Rpc_Key = "GateRoute"         //网关路由
 	Rpc_GateAgentsIsKeep  core.Rpc_Key = "GateAgentsIsKeep"  //校验代理是否还在
@@ -30,6 +29,30 @@ type IGateModule interface {
 	CloseAgent(sId string) (result string, err string)
 	SendMsg(sId string, msg proto.IMessage) (result int, err string)     //发送消息
 	RadioMsg(sIds []string, msg proto.IMessage) (result int, err string) //广播消息
+}
+
+type ILocalRouteMgrComp interface {
+	core.IModuleComp
+	RegisterRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string))
+	UnRegisterRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string))
+	IsHaveRoute(comId uint16) bool
+	OnRoute(agent IAgent, msg proto.IMessage) (code int, err string)
+}
+
+type IRemoteRouteMgrComp interface {
+	core.IModuleComp
+	RegisterRoute(comId uint16, sId string) (result string, err string)
+	UnRegisterRoute(comId uint16, sType, sId string)
+	IsHaveRoute(comId uint16) bool
+	OnRoute(agent IAgent, msg proto.IMessage) (code int, err string)
+}
+
+type IAgentMgrComp interface {
+	core.IModuleComp
+	Connect(a IAgent)
+	DisConnect(a IAgent)
+	SendMsg(aId string, msg proto.IMessage) (result int, err string)
+	Close(aId string) (result string, err string)
 }
 
 type IConn interface {

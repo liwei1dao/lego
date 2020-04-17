@@ -52,6 +52,13 @@ func (this *LocalRouteMgrComp) UnRegisterRoute(comId uint16, f func(session core
 	return
 }
 
+func (this *LocalRouteMgrComp) IsHaveRoute(comId uint16) bool {
+	this.routslock.RLock()
+	_, ok := this.routs[comId]
+	this.routslock.RUnlock()
+	return ok
+}
+
 func (this *LocalRouteMgrComp) OnRoute(agent IAgent, msg proto.IMessage) (code int, err string) {
 	this.routslock.RLock()
 	routes, ok := this.routs[msg.GetComId()]

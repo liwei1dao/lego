@@ -89,6 +89,13 @@ func (this *RemoteRouteMgrComp) UnRegisterRoute(comId uint16, sId string) {
 	return
 }
 
+func (this *RemoteRouteMgrComp) IsHaveRoute(comId uint16) bool {
+	this.routslock.RLock()
+	_, ok := this.routs[comId]
+	this.routslock.RUnlock()
+	return ok
+}
+
 func (this *RemoteRouteMgrComp) OnRoute(agent IAgent, msg proto.IMessage) (code int, err string) {
 	this.routslock.RLock()
 	routes, ok := this.routs[msg.GetComId()]
