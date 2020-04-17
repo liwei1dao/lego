@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	_ "github.com/denisenkom/go-mssqldb" //需要提前导入否赠会连接失败
 	"github.com/jmoiron/sqlx"
 )
 
