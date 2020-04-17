@@ -33,22 +33,6 @@ type IGateModule interface {
 	RadioMsg(sIds []string, msg proto.IMessage) (result int, err string) //广播消息
 }
 
-type ILocalRouteMgrComp interface {
-	core.IModuleComp
-	RegisterRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string))
-	UnRegisterRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string))
-	IsHaveRoute(comId uint16) bool
-	OnRoute(agent IAgent, msg proto.IMessage) (code int, err string)
-}
-
-type IRemoteRouteMgrComp interface {
-	core.IModuleComp
-	RegisterRoute(comId uint16, sId string) (result string, err string)
-	UnRegisterRoute(comId uint16, sType, sId string)
-	IsHaveRoute(comId uint16) bool
-	OnRoute(agent IAgent, msg proto.IMessage) (code int, err string)
-}
-
 type IAgentMgrComp interface {
 	core.IModuleComp
 	Connect(a IAgent)

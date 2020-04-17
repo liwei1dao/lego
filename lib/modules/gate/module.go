@@ -8,8 +8,8 @@ import (
 
 type Gate struct {
 	cbase.ModuleBase
-	LocalRouteMgrComp  ILocalRouteMgrComp
-	RemoteRouteMgrComp IRemoteRouteMgrComp
+	LocalRouteMgrComp  *LocalRouteMgrComp
+	RemoteRouteMgrComp *RemoteRouteMgrComp
 	AgentMgrComp       IAgentMgrComp
 	//WsServerComp       *WsServerComp
 	//TcpServerComp      *TcpServerComp

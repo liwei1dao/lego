@@ -75,14 +75,17 @@ func (this *RemoteRouteMgrComp) RegisterRoute(comId uint16, sId string) (result 
 	return
 }
 
-func (this *RemoteRouteMgrComp) UnRegisterRoute(comId uint16, sId string) {
+func (this *RemoteRouteMgrComp) UnRegisterRoute(comId uint16, sType, sId string) {
 	this.routslock.Lock()
 	defer this.routslock.Unlock()
 	if r, ok := this.routs[comId]; ok {
-		for _, v := range r {
-			v.UnRegisterRoute(sId)
-			if v.Count() == 0 {
-				delete(this.routs, comId)
+		if r1, ok1 := r[sType]; ok1 {
+			r1.UnRegisterRoute(sId)
+			if r1.Count() == 0 {
+				delete(r, sType)
+				if len(r) == 0 {
+					delete(this.routs, comId)
+				}
 			}
 		}
 	}

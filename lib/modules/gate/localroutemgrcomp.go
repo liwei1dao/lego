@@ -13,7 +13,7 @@ import (
 type LocalRouteMgrComp struct {
 	cbase.ModuleCompBase
 	module     IGateModule
-	routs      map[uint16][]*LocalRoute
+	routs      map[uint16]map[*func(session core.IUserSession, msg proto.IMessage) (code int, err string)]*LocalRoute
 	routslock  sync.RWMutex
 	NewSession func(module IGateModule, data map[string]interface{}) (s core.IUserSession, err error)
 }
@@ -28,7 +28,7 @@ func (this *LocalRouteMgrComp) Init(service core.IService, module core.IModule, 
 		return fmt.Errorf("LocalRouteMgrComp Init is no install NewLocalSession")
 	}
 	this.ModuleCompBase.Init(service, module, comp, settings)
-	this.routs = make(map[uint16][]*LocalRoute)
+	this.routs = make(map[uint16]map[*func(session core.IUserSession, msg proto.IMessage) (code int, err string)]*LocalRoute)
 	return
 }
 
@@ -37,18 +37,22 @@ func (this *LocalRouteMgrComp) RegisterRoute(comId uint16, f func(session core.I
 	this.routslock.Lock()
 	defer this.routslock.Unlock()
 	route := NewLocalRoute(this.module, comId, this.NewSession, f)
-	if _, ok := this.routs[comId]; ok {
-		this.routs[comId] = append(this.routs[comId], route)
-	} else {
-		this.routs[comId] = []*LocalRoute{route}
+	if _, ok := this.routs[comId]; !ok {
+		this.routs[comId] = make(map[*func(session core.IUserSession, msg proto.IMessage) (code int, err string)]*LocalRoute)
 	}
+	this.routs[comId][&f] = route
 	return
 }
 
-func (this *LocalRouteMgrComp) UnRegisterRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage)) {
+func (this *LocalRouteMgrComp) UnRegisterRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string)) {
 	this.routslock.Lock()
 	defer this.routslock.Unlock()
-	delete(this.routs, comId)
+	if r, ok := this.routs[comId]; ok {
+		delete(r, &f)
+		if len(r) == 0 {
+			delete(this.routs, comId)
+		}
+	}
 	return
 }
 
