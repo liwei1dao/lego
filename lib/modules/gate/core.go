@@ -23,7 +23,7 @@ const ( //Rpc
 type IGateModule interface {
 	core.IModule
 	//需重构处理  内部函数为重构代码
-	GetLocalRouteMgrComp()
+	GetLocalRouteMgrComp() ILocalRouteMgrComp
 	RegisterRemoteRoute(comId uint16, sId string) (result string, err string)
 	UnRegisterRemoteRoute(comId uint16, sType, sId string)
 	RegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string))

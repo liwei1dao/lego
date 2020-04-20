@@ -16,6 +16,10 @@ type Gate struct {
 	//TcpServerComp      *TcpServerComp
 }
 
+func (this *Gate) GetLocalRouteMgrComp() ILocalRouteMgrComp {
+	return this.LocalRouteMgrComp
+}
+
 //需重构处理  内部函数为重构代码d
 func (this *Gate) RegisterRemoteRoute(comId uint16, sId string) (result string, err string) {
 	result, err = this.RemoteRouteMgrComp.RegisterRoute(comId, sId)
