@@ -67,6 +67,8 @@ func SerializeInit() {
 	OnRegister(map[string]*RpcData{}, JsonStructMarshal, BytesToMapStringRpc)
 	OnRegister(&proto.Message{}, ProtoStructMarshal, PrototructUnmarshal)
 	OnRegister(core.ErrorCode(0), ErrorCodeToBytes, BytesToErrorCode)
+	OnRegister(core.CustomRoute(0), CustomRouteToBytes, BytesToCustomRoute)
+	OnRegister(map[uint16][]uint16{}, JsonStructMarshal, BytesToMapUnit16SliceUInt16Rpc)
 }
 
 func OnRegister(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {
@@ -260,6 +262,11 @@ func ErrorCodeToBytes(v interface{}) ([]byte, error) {
 	binary.BigEndian.PutUint32(buf, uint32(v.(core.ErrorCode)))
 	return buf, nil
 }
+func CustomRouteToBytes(v interface{}) ([]byte, error) {
+	var buf = make([]byte, 4)
+	binary.BigEndian.PutUint32(buf, uint32(v.(core.CustomRoute)))
+	return buf, nil
+}
 
 //反序列化--------------------------------------------------------------------------------------------------------------
 func BytesToNull(dataType reflect.Type, buf []byte) (interface{}, error) {
@@ -413,4 +420,17 @@ func PrototructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error)
 
 func BytesToErrorCode(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return core.ErrorCode(binary.BigEndian.Uint32(buf)), nil
+}
+
+func BytesToCustomRoute(dataType reflect.Type, buf []byte) (interface{}, error) {
+	return core.CustomRoute(binary.BigEndian.Uint32(buf)), nil
+}
+
+func BytesToMapUnit16SliceUInt16Rpc(dataType reflect.Type, buf []byte) (interface{}, error) {
+	data := make(map[uint16][]uint16)
+	err := json.Unmarshal(buf, &data)
+	if err != nil {
+		return nil, err
+	}
+	return data, err
 }
