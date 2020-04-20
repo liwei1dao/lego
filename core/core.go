@@ -8,6 +8,7 @@ type Event_Key string  //事件Key
 type Rpc_Key string    //RPC
 type Redis_Key string  //Redis缓存
 type SqlTable string   //数据库表定义
+type CustomRoute uint8 //自定义网关
 
 const ( //默认事件
 	Event_ServiceStartEnd  Event_Key = "ServiceStartEnd"  //服务完全启动完毕

@@ -8,14 +8,15 @@ import (
 )
 
 const ( //Rpc
-	Rpc_GateRouteRegister core.Rpc_Key = "GateRouteRegister" //网关路由注册
-	Rpc_GateRoute         core.Rpc_Key = "GateRoute"         //网关路由
-	Rpc_GateAgentsIsKeep  core.Rpc_Key = "GateAgentsIsKeep"  //校验代理是否还在
-	RPC_GateAgentBuild    core.Rpc_Key = "GateAgentBuild"    //代理绑定
-	RPC_GateAgentUnBuild  core.Rpc_Key = "GateAgentUnBuild"  //代理解绑
-	RPC_GateAgentSendMsg  core.Rpc_Key = "GateAgentSendMsg"  //代理发送消息
-	RPC_GateAgentRadioMsg core.Rpc_Key = "GateAgentRadioMsg" //代理广播消息
-	RPC_GateAgentClose    core.Rpc_Key = "GateAgentClose"    //代理关闭
+	Rpc_GateRouteRegister       core.Rpc_Key = "GateRouteRegister"       //网关路由注册
+	Rpc_GateCustomRouteRegister core.Rpc_Key = "GateCustomRouteRegister" //自定义网关路由注册
+	Rpc_GateRoute               core.Rpc_Key = "GateRoute"               //网关路由
+	Rpc_GateAgentsIsKeep        core.Rpc_Key = "GateAgentsIsKeep"        //校验代理是否还在
+	RPC_GateAgentBuild          core.Rpc_Key = "GateAgentBuild"          //代理绑定
+	RPC_GateAgentUnBuild        core.Rpc_Key = "GateAgentUnBuild"        //代理解绑
+	RPC_GateAgentSendMsg        core.Rpc_Key = "GateAgentSendMsg"        //代理发送消息
+	RPC_GateAgentRadioMsg       core.Rpc_Key = "GateAgentRadioMsg"       //代理广播消息
+	RPC_GateAgentClose          core.Rpc_Key = "GateAgentClose"          //代理关闭
 )
 
 type IGateModule interface {
@@ -25,7 +26,7 @@ type IGateModule interface {
 	UnRegisterRemoteRoute(comId uint16, sType, sId string)
 	RegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string))
 	UnRegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string))
-	OnRoute(a IAgent, msg proto.IMessage) (code int, err string)
+	OnRoute(a IAgent, msg proto.IMessage) (code core.ErrorCode, err string)
 	Connect(a IAgent)
 	DisConnect(a IAgent)
 	CloseAgent(sId string) (result string, err string)

@@ -92,14 +92,7 @@ func (this *RemoteRouteMgrComp) UnRegisterRoute(comId uint16, sType, sId string)
 	return
 }
 
-func (this *RemoteRouteMgrComp) IsHaveRoute(comId uint16) bool {
-	this.routslock.RLock()
-	_, ok := this.routs[comId]
-	this.routslock.RUnlock()
-	return ok
-}
-
-func (this *RemoteRouteMgrComp) OnRoute(agent IAgent, msg proto.IMessage) (code int, err string) {
+func (this *RemoteRouteMgrComp) OnRoute(agent IAgent, msg proto.IMessage) (iscontinue bool) {
 	this.routslock.RLock()
 	routes, ok := this.routs[msg.GetComId()]
 	this.routslock.RUnlock()
@@ -108,7 +101,7 @@ func (this *RemoteRouteMgrComp) OnRoute(agent IAgent, msg proto.IMessage) (code 
 			v.OnRoute(agent, msg)
 		}
 	} else {
-		return 0, fmt.Sprintf("网关没有注册Comid【%d】路由", msg.GetComId())
+		return true
 	}
-	return
+	return false
 }

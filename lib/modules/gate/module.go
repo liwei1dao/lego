@@ -8,6 +8,7 @@ import (
 
 type Gate struct {
 	cbase.ModuleBase
+	CustomRouteComp    *CustomRouteComp
 	LocalRouteMgrComp  *LocalRouteMgrComp
 	RemoteRouteMgrComp *RemoteRouteMgrComp
 	AgentMgrComp       IAgentMgrComp
@@ -42,12 +43,17 @@ func (this *Gate) DisConnect(a IAgent) {
 }
 
 //接收代理消息
-func (this *Gate) OnRoute(a IAgent, msg proto.IMessage) (code int, err string) {
-	if this.LocalRouteMgrComp.IsHaveRoute(msg.GetComId()) {
-		this.LocalRouteMgrComp.OnRoute(a, msg)
+func (this *Gate) OnRoute(a IAgent, msg proto.IMessage) {
+	if !this.CustomRouteComp.OnRoute(a, msg) { //优先自定义网关
+		return
 	}
-	if this.RemoteRouteMgrComp.IsHaveRoute(msg.GetComId()) {
-		this.RemoteRouteMgrComp.OnRoute(a, msg)
+
+	if !this.LocalRouteMgrComp.OnRoute(a, msg) { //其次本地网关
+		return
+	}
+
+	if !this.RemoteRouteMgrComp.OnRoute(a, msg) { //最后远程网关
+		return
 	}
 	return
 }
@@ -70,13 +76,9 @@ func (this *Gate) RadioMsg(sIds []string, msg proto.IMessage) (result int, err s
 	return
 }
 
-//func (this *Gate) OnInstallComp() {
-//	this.ModuleBase.OnInstallComp()
-//	this.AgentMgrComp = this.RegisterComp(new(AgentMgrComp)).(*AgentMgrComp)
-//	this.LocalRouteMgrComp = this.RegisterComp(new(LocalRouteMgrComp)).(*LocalRouteMgrComp)
-//	this.RemoteRouteMgrComp = this.RegisterComp(new(LocalRouteMgrComp)).(*RemoteRouteMgrComp)
-//	this.TcpServerComp = this.RegisterComp(new(TcpServerComp)).(*TcpServerComp)
-//	this.WsServerComp = this.RegisterComp(new(WsServerComp)).(*WsServerComp)
-//	this.LocalRouteMgrComp.NewSession = NewLocalSession
-//	this.RemoteRouteMgrComp.NewSession = NewRemoteSession
-//}
+func (this *Gate) OnInstallComp() {
+	this.ModuleBase.OnInstallComp()
+	this.CustomRouteComp = this.RegisterComp(new(CustomRouteComp)).(*CustomRouteComp)
+	this.LocalRouteMgrComp = this.RegisterComp(new(LocalRouteMgrComp)).(*LocalRouteMgrComp)
+	this.RemoteRouteMgrComp = this.RegisterComp(new(LocalRouteMgrComp)).(*RemoteRouteMgrComp)
+}
