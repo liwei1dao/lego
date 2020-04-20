@@ -8,7 +8,7 @@ import (
 
 type Gate struct {
 	cbase.ModuleBase
-	CustomRouteComp    *CustomRouteComp
+	CustomRouteComp    ICustomRouteComp
 	LocalRouteMgrComp  *LocalRouteMgrComp
 	RemoteRouteMgrComp *RemoteRouteMgrComp
 	AgentMgrComp       IAgentMgrComp
@@ -44,7 +44,7 @@ func (this *Gate) DisConnect(a IAgent) {
 
 //接收代理消息
 func (this *Gate) OnRoute(a IAgent, msg proto.IMessage) {
-	if !this.CustomRouteComp.OnRoute(a, msg) { //优先自定义网关
+	if this.CustomRouteComp != nil && !this.CustomRouteComp.OnRoute(a, msg) { //优先自定义网关
 		return
 	}
 
@@ -78,7 +78,6 @@ func (this *Gate) RadioMsg(sIds []string, msg proto.IMessage) (result int, err s
 
 func (this *Gate) OnInstallComp() {
 	this.ModuleBase.OnInstallComp()
-	this.CustomRouteComp = this.RegisterComp(new(CustomRouteComp)).(*CustomRouteComp)
 	this.LocalRouteMgrComp = this.RegisterComp(new(LocalRouteMgrComp)).(*LocalRouteMgrComp)
 	this.RemoteRouteMgrComp = this.RegisterComp(new(LocalRouteMgrComp)).(*RemoteRouteMgrComp)
 }

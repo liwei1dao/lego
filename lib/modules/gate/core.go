@@ -42,6 +42,13 @@ type IAgentMgrComp interface {
 	Close(aId string) (result string, err string)
 }
 
+type ICustomRouteComp interface {
+	core.IModuleComp
+	RegisterRoute(route core.CustomRoute, msgs map[uint16][]uint16) (result string, err string)
+	RegisterRouteFunc(route core.CustomRoute, f func(a IAgent, msg proto.IMessage) (code core.ErrorCode, err string))
+	OnRoute(agent IAgent, msg proto.IMessage) (iscontinue bool)
+}
+
 type IConn interface {
 	Read(b []byte) (n int, err error)
 	Write(b []byte) (n int, err error)
