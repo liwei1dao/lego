@@ -3,6 +3,7 @@ package gate
 import (
 	"net"
 
+	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/proto"
 )
@@ -22,6 +23,7 @@ const ( //Rpc
 type IGateModule interface {
 	core.IModule
 	//需重构处理  内部函数为重构代码
+	GetLocalRouteMgrComp()
 	RegisterRemoteRoute(comId uint16, sId string) (result string, err string)
 	UnRegisterRemoteRoute(comId uint16, sType, sId string)
 	RegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string))
@@ -42,10 +44,26 @@ type IAgentMgrComp interface {
 	Close(aId string) (result string, err string)
 }
 
+type ILocalRouteMgrComp interface {
+	core.IModuleComp
+	SetNewSession(f func(module IGateModule, data map[string]interface{}) (s core.IUserSession, err error))
+	RegisterRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string))
+	UnRegisterRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string))
+	OnRoute(agent IAgent, msg proto.IMessage) (iscontinue bool)
+}
+
+type IRemoteRouteMgrComp interface {
+	core.IModuleComp
+	SetNewSession(f func(service base.IClusterService, data map[string]interface{}) (s core.IUserSession, err error))
+	RegisterRoute(comId uint16, sId string) (result string, err string)
+	UnRegisterRoute(comId uint16, sType, sId string)
+	OnRoute(agent IAgent, msg proto.IMessage) (iscontinue bool)
+}
+
 type ICustomRouteComp interface {
 	core.IModuleComp
 	RegisterRoute(route core.CustomRoute, msgs map[uint16][]uint16) (result string, err string)
-	RegisterRouteFunc(route core.CustomRoute, f func(a IAgent, msg proto.IMessage) (code core.ErrorCode, err string))
+	RegisterRouteFunc(route core.CustomRoute, f func(a IAgent, msg proto.IMessage))
 	OnRoute(agent IAgent, msg proto.IMessage) (iscontinue bool)
 }
 

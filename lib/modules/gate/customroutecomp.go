@@ -15,20 +15,19 @@ type CustomRouteComp struct {
 	cbase.ModuleCompBase
 	service   base.IClusterService
 	route     map[core.CustomRoute]map[uint16][]uint16
-	routeFunc map[core.CustomRoute]func(a IAgent, msg proto.IMessage) (code core.ErrorCode, err string)
+	routeFunc map[core.CustomRoute]func(a IAgent, msg proto.IMessage)
 }
 
 func (this *CustomRouteComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, settings map[string]interface{}) (err error) {
 	err = this.ModuleCompBase.Init(service, module, comp, settings)
 	this.service = service.(base.IClusterService)
 	this.route = make(map[core.CustomRoute]map[uint16][]uint16)
-	this.routeFunc = make(map[core.CustomRoute]func(a IAgent, msg proto.IMessage) (code core.ErrorCode, err string))
+	this.routeFunc = make(map[core.CustomRoute]func(a IAgent, msg proto.IMessage))
 	return
 }
 
 func (this *CustomRouteComp) Start() (err error) {
 	this.ModuleCompBase.Start()
-
 locp:
 	for { //保证rpc事件能成功写入
 		err = this.service.Subscribe(Rpc_GateCustomRouteRegister, this.RegisterRoute) //订阅网关注册接口
@@ -70,7 +69,7 @@ func (this *CustomRouteComp) RegisterRoute(route core.CustomRoute, msgs map[uint
 }
 
 //添加自定义网关组注册接口
-func (this *CustomRouteComp) RegisterRouteFunc(route core.CustomRoute, f func(a IAgent, msg proto.IMessage) (code core.ErrorCode, err string)) {
+func (this *CustomRouteComp) RegisterRouteFunc(route core.CustomRoute, f func(a IAgent, msg proto.IMessage)) {
 	if _, ok := this.routeFunc[route]; !ok {
 		this.routeFunc[route] = f
 	} else {

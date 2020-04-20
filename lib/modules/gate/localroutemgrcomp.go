@@ -32,6 +32,10 @@ func (this *LocalRouteMgrComp) Init(service core.IService, module core.IModule, 
 	return
 }
 
+func (this *LocalRouteMgrComp) SetNewSession(f func(module IGateModule, data map[string]interface{}) (s core.IUserSession, err error)) {
+	this.NewSession = f
+}
+
 func (this *LocalRouteMgrComp) RegisterRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string)) {
 	log.Infof("注册本地服务 comId：%d f:&v", comId, f)
 	this.routslock.Lock()

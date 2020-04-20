@@ -9,8 +9,8 @@ import (
 type Gate struct {
 	cbase.ModuleBase
 	CustomRouteComp    ICustomRouteComp
-	LocalRouteMgrComp  *LocalRouteMgrComp
-	RemoteRouteMgrComp *RemoteRouteMgrComp
+	LocalRouteMgrComp  ILocalRouteMgrComp
+	RemoteRouteMgrComp IRemoteRouteMgrComp
 	AgentMgrComp       IAgentMgrComp
 	//WsServerComp       *WsServerComp
 	//TcpServerComp      *TcpServerComp

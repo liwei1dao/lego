@@ -49,6 +49,10 @@ locp:
 	return
 }
 
+func (this *RemoteRouteMgrComp) SetNewSession(f func(service base.IClusterService, data map[string]interface{}) (s core.IUserSession, err error)) {
+	this.NewSession = f
+}
+
 func (this *RemoteRouteMgrComp) RegisterRoute(comId uint16, sId string) (result string, err string) {
 	log.Infof("注册远程服务 comId：%d sId:%s", comId, sId)
 	snode, e := registry.GetServiceById(sId)
