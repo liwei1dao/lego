@@ -83,5 +83,5 @@ func (this *Gate) RadioMsg(sIds []string, msg proto.IMessage) (result int, err s
 func (this *Gate) OnInstallComp() {
 	this.ModuleBase.OnInstallComp()
 	this.LocalRouteMgrComp = this.RegisterComp(new(LocalRouteMgrComp)).(*LocalRouteMgrComp)
-	this.RemoteRouteMgrComp = this.RegisterComp(new(LocalRouteMgrComp)).(*RemoteRouteMgrComp)
+	this.RemoteRouteMgrComp = this.RegisterComp(new(RemoteRouteMgrComp)).(*RemoteRouteMgrComp)
 }
