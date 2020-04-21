@@ -107,5 +107,5 @@ func (this *RemoteRouteMgrComp) OnRoute(agent IAgent, msg proto.IMessage) (iscon
 	} else {
 		return true
 	}
-	return false
+	return true
 }

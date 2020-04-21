@@ -71,5 +71,5 @@ func (this *LocalRouteMgrComp) OnRoute(agent IAgent, msg proto.IMessage) (iscont
 	} else {
 		return true
 	}
-	return false
+	return true
 }
