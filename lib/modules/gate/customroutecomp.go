@@ -14,6 +14,7 @@ import (
 type CustomRouteComp struct {
 	cbase.ModuleCompBase
 	service   base.IClusterService
+	comp      ICustomRouteComp
 	route     map[core.CustomRoute]map[uint16][]uint16
 	routeFunc map[core.CustomRoute]func(a IAgent, msg proto.IMessage)
 }
@@ -21,6 +22,7 @@ type CustomRouteComp struct {
 func (this *CustomRouteComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, settings map[string]interface{}) (err error) {
 	err = this.ModuleCompBase.Init(service, module, comp, settings)
 	this.service = service.(base.IClusterService)
+	this.comp = comp.(ICustomRouteComp)
 	this.route = make(map[core.CustomRoute]map[uint16][]uint16)
 	this.routeFunc = make(map[core.CustomRoute]func(a IAgent, msg proto.IMessage))
 	return
@@ -30,7 +32,7 @@ func (this *CustomRouteComp) Start() (err error) {
 	this.ModuleCompBase.Start()
 locp:
 	for { //保证rpc事件能成功写入
-		err = this.service.Subscribe(Rpc_GateCustomRouteRegister, this.RegisterRoute) //订阅网关注册接口
+		err = this.service.Subscribe(Rpc_GateCustomRouteRegister, this.comp.RegisterRoute) //订阅网关注册接口
 		if err == nil {
 			break locp
 		}
