@@ -37,7 +37,7 @@ func (this *LocalRouteMgrComp) SetNewSession(f func(module IGateModule, data map
 }
 
 func (this *LocalRouteMgrComp) RegisterRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string)) {
-	log.Infof("注册本地服务 comId：%d f:&v", comId, f)
+	log.Infof("注册本地服务 comId：%d f:%v", comId, f)
 	this.routslock.Lock()
 	defer this.routslock.Unlock()
 	route := NewLocalRoute(this.module, comId, this.NewSession, f)
