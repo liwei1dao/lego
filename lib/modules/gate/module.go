@@ -3,6 +3,7 @@ package gate
 import (
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/proto"
 )
 
@@ -38,11 +39,13 @@ func (this *Gate) UnRegisterLocalRoute(comId uint16, f func(session core.IUserSe
 //需重构处理  内部函数为重构代码
 //代理链接
 func (this *Gate) Connect(a IAgent) {
+	log.Debugf("有新的用户链接进来IP:[%s] Id:[%s]", a.IP, a.Id)
 	this.AgentMgrComp.Connect(a)
 }
 
 //代理关闭
 func (this *Gate) DisConnect(a IAgent) {
+	log.Debugf("有用户链接断开IP:[%s] Id:[%s]", a.IP, a.Id)
 	this.AgentMgrComp.DisConnect(a)
 }
 
