@@ -2,6 +2,9 @@ package cluster
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
@@ -10,8 +13,6 @@ import (
 	"github.com/liwei1dao/lego/sys/registry"
 	"github.com/liwei1dao/lego/sys/rpc"
 	"github.com/liwei1dao/lego/utils"
-	"sync"
-	"time"
 )
 
 type ClusterService struct {
@@ -19,6 +20,7 @@ type ClusterService struct {
 	opts           *Options
 	serverList     sync.Map
 	ClusterService base.IClusterService
+	preweight      int32
 }
 
 func (this *ClusterService) GetTag() string {
@@ -52,8 +54,13 @@ func (this *ClusterService) GetRpcId() string {
 	}
 }
 func (this *ClusterService) GetPreWeight() int32 {
-	return 0
+	return this.preweight
 }
+
+func (this *ClusterService) SetPreWeight(weight int32) {
+	this.preweight = weight
+}
+
 func (this *ClusterService) Options() *Options {
 	return this.opts
 }

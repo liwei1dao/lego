@@ -63,7 +63,7 @@ func SetTag(v string) Option {
 func newOptions(opts ...Option) Options {
 	opt := Options{
 		RegisterInterval: time.Second * time.Duration(10),
-		RegisterTTL:      time.Second * time.Duration(20),
+		RegisterTTL:      time.Second * time.Duration(30),
 		Tag:              "github.com/liwei1dao/lego",
 	}
 	for _, o := range opts {
