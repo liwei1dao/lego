@@ -2,14 +2,15 @@ package cbase
 
 import (
 	"fmt"
-	"github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/sys/event"
-	"github.com/liwei1dao/lego/sys/log"
 	"os"
 	"os/signal"
 	"runtime"
 	"sync"
 	"syscall"
+
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/event"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 type defaultModule struct {

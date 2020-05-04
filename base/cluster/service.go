@@ -92,12 +92,12 @@ func (this *ClusterService) InitSys() {
 		registry.LoseHandle(this.WatcherServiceSession)); err != nil {
 		panic(fmt.Sprintf("初始化registry系统失败 %s", err.Error()))
 	} else {
-		log.Infof("初始化registry系统完成!")
+		log.Debugf("初始化registry系统完成!")
 	}
 	if err := rpc.OnInit(this.Service, rpc.NatsAddr(this.Service.GetSettings().Settings["NatsAddr"].(string)), rpc.Log(this.opts.RpcLog)); err != nil {
 		panic(fmt.Sprintf("初始化rpc系统【%s】失败%s", this.Service.GetSettings().Settings["NatsAddr"].(string), err.Error()))
 	} else {
-		log.Infof("初始化rpc系统完成!")
+		log.Debugf("初始化rpc系统完成!")
 	}
 	event.Register(core.Event_ServiceStartEnd, func() { //阻塞 先注册服务集群 保证其他服务能及时发现
 		registry.Registry()
@@ -121,7 +121,7 @@ func (this *ClusterService) Destroy() (err error) {
 
 //注册服务会话 当有新的服务加入时
 func (this *ClusterService) registerServiceSession(node registry.ServiceNode) {
-	log.Infof("发现新的服务 %s", node.Id)
+	log.Debugf("发现新的服务 %s", node.Id)
 	if _, ok := this.serverList.Load(node.Id); ok { //已经在缓存中 需要更新节点信息
 		if s, err := cbase.NewServiceSession(&node); err != nil {
 			log.Error("创建服务会话失败【%s】 err = %s")
@@ -134,7 +134,7 @@ func (this *ClusterService) registerServiceSession(node registry.ServiceNode) {
 
 //更新服务会话 当有新的服务加入时
 func (this *ClusterService) updataServiceSession(node registry.ServiceNode) {
-	log.Infof("更新服务 %s", node.Id)
+	log.Debugf("更新服务 %s", node.Id)
 	if ss, ok := this.serverList.Load(node.Id); ok { //已经在缓存中 需要更新节点信息
 		session := ss.(core.IServiceSession)
 		if session.GetRpcId() != node.RpcId {
@@ -159,7 +159,7 @@ func (this *ClusterService) updataServiceSession(node registry.ServiceNode) {
 
 //注销服务会话
 func (this *ClusterService) WatcherServiceSession(sId string) {
-	log.Infof("丢失服务 %s", sId)
+	log.Debugf("丢失服务 %s", sId)
 	session, ok := this.serverList.Load(sId)
 	if ok && session != nil {
 		session.(core.IServiceSession).Done()
