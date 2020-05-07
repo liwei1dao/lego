@@ -2,26 +2,22 @@ package workerpools
 
 import (
 	"context"
-	cont "github.com/liwei1dao/lego/utils/concurrent"
-	"runtime"
 	"sync"
 	"time"
+
+	cont "github.com/liwei1dao/lego/utils/concurrent"
 )
 
 const (
-	readyQueueSize = 16
 	idleTimeoutSec = 5
 )
 
 func newWorkerPool(opt ...Option) IWorkerPool {
 	opts := newOptions(opt...)
-	if opts.maxWorkers < 1 {
-		opts.maxWorkers = runtime.NumCPU()
-	}
 	pool := &WorkerPool{
 		taskQueue:    make(chan func(ctx context.Context, cancel context.CancelFunc), 1),
 		maxWorkers:   opts.maxWorkers,
-		readyWorkers: make(chan chan func(ctx context.Context, cancel context.CancelFunc), readyQueueSize),
+		readyWorkers: make(chan chan func(ctx context.Context, cancel context.CancelFunc), opts.defWrokers),
 		timeout:      time.Second * idleTimeoutSec,
 		tasktimeout:  opts.tasktimeout,
 		stoppedChan:  make(chan struct{}),
