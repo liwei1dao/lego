@@ -141,7 +141,7 @@ func (this *RedisPool) GetKey_List(_Key string, _Vakue_type reflect.Type) (Value
 		v := reflect.New(_Vakue_type.Elem()).Interface()
 		err := json.Unmarshal([]byte(value.([]uint8)), &v)
 		if err == nil {
-			Value = append(Value, v)
+			Value = append(Value, &v)
 		}
 	}
 	return Value
@@ -207,7 +207,7 @@ func (this *RedisPool) GetKey_Map(_Key string, _Vakue_type reflect.Type) (Value 
 		v := reflect.New(_Vakue_type.Elem()).Interface()
 		err := json.Unmarshal([]byte(value), &v)
 		if err == nil {
-			Value[k] = v
+			Value[k] = &v
 		}
 	}
 	return Value
@@ -247,7 +247,7 @@ func (this *RedisPool) GetKey_MapByValues(_Key string, _Vakue_type reflect.Type)
 		v := reflect.New(_Vakue_type.Elem()).Interface()
 		err := json.Unmarshal([]byte(value), &v)
 		if err == nil {
-			Values = append(Values, v)
+			Values = append(Values, &v)
 		}
 	}
 	return Values
@@ -279,4 +279,26 @@ func (this *RedisPool) DelKey_MapKey(_Key string, _FieldKey string) {
 	if err != nil {
 		log.Errorf("删除键值哈希表字段失败 key=%s FieldKey=%s", _Key, _FieldKey)
 	}
+}
+
+//获取所有符合给定模式 pattern 的 key 的数据
+func (this *RedisPool) Get_PatternKeys(_Patternkey string, _Vakue_type reflect.Type) (Values []interface{}) {
+	pool := this.Pool.Get()
+	defer pool.Close()
+	Values = []interface{}{}
+	keys, err := redis.Strings(pool.Do("KEYS", _Patternkey))
+	if err != nil {
+		log.Errorf("SetKey_String 读取缓存列表数据失败 key = %s", _Patternkey)
+		return
+	}
+	for _, key := range keys {
+		if v, err := redis.String(pool.Do("GET", key)); err == nil {
+			value := reflect.New(_Vakue_type.Elem()).Interface()
+			err = json.Unmarshal([]byte(v), &value)
+			if err == nil {
+				Values = append(Values, &value)
+			}
+		}
+	}
+	return Values
 }
