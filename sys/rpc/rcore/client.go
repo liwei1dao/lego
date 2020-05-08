@@ -2,10 +2,11 @@ package rcore
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/liwei1dao/lego/sys/log"
 	rpcserialize "github.com/liwei1dao/lego/sys/rpc/serialize"
 	"github.com/liwei1dao/lego/utils/id"
-	"time"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -49,7 +50,11 @@ func (this *RpcClient) Call(_func string, params ...interface{}) (interface{}, e
 	if this.opts.Log {
 		log.Infof("RPC Call ServerId = %s f = %s Elapsed = %v Result = %v ERROR = %v", this.opts.sId, _func, time.Since(start), r, errstr)
 	}
-	return r, fmt.Errorf(errstr)
+	if errstr != "" {
+		return r, fmt.Errorf(errstr)
+	} else {
+		return r, nil
+	}
 }
 
 /**
