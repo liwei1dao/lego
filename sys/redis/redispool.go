@@ -141,7 +141,7 @@ func (this *RedisPool) GetKey_List(_Key string, _Vakue_type reflect.Type) (Value
 		v := reflect.New(_Vakue_type.Elem()).Interface()
 		err := json.Unmarshal([]byte(value.([]uint8)), &v)
 		if err == nil {
-			Value = append(Value, &v)
+			Value = append(Value, v)
 		}
 	}
 	return Value
@@ -207,7 +207,7 @@ func (this *RedisPool) GetKey_Map(_Key string, _Vakue_type reflect.Type) (Value 
 		v := reflect.New(_Vakue_type.Elem()).Interface()
 		err := json.Unmarshal([]byte(value), &v)
 		if err == nil {
-			Value[k] = &v
+			Value[k] = v
 		}
 	}
 	return Value
@@ -247,7 +247,7 @@ func (this *RedisPool) GetKey_MapByValues(_Key string, _Vakue_type reflect.Type)
 		v := reflect.New(_Vakue_type.Elem()).Interface()
 		err := json.Unmarshal([]byte(value), &v)
 		if err == nil {
-			Values = append(Values, &v)
+			Values = append(Values, v)
 		}
 	}
 	return Values
@@ -296,7 +296,7 @@ func (this *RedisPool) Get_PatternKeys(_Patternkey string, _Vakue_type reflect.T
 			value := reflect.New(_Vakue_type.Elem()).Interface()
 			err = json.Unmarshal([]byte(v), &value)
 			if err == nil {
-				Values = append(Values, &value)
+				Values = append(Values, value)
 			}
 		}
 	}
