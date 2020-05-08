@@ -56,6 +56,7 @@ func SerializeInit() {
 	OnRegister(float32(0), Float32ToBytes, BytesToFloat32)
 	OnRegister(float64(0), Float64ToBytes, BytesToFloat64)
 	OnRegister(string(""), StringToBytes, BytesToString)
+	OnRegister([]byte{}, SliceByteToBytes, BytesToSliceByte)
 	OnRegister([]int32{}, SliceInt32ToBytes, BytesToSliceInt32)
 	OnRegister([]uint32{}, SliceUInt32ToBytes, BytesToSliceUInt32)
 	OnRegister([]string{}, SliceStringToBytes, BytesToSliceString)
@@ -180,6 +181,9 @@ func Float64ToBytes(v interface{}) ([]byte, error) {
 }
 func StringToBytes(v interface{}) ([]byte, error) {
 	return []byte(v.(string)), nil
+}
+func SliceByteToBytes(v interface{}) ([]byte, error) {
+	return v.([]byte), nil
 }
 func SliceInt32ToBytes(v interface{}) ([]byte, error) {
 	d := v.([]int32)
@@ -356,6 +360,9 @@ func BytesToMapString(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := make(map[string]string)
 	err := json.Unmarshal(buf, &data)
 	return data, err
+}
+func BytesToSliceByte(dataType reflect.Type, buf []byte) (interface{}, error) {
+	return buf, nil
 }
 func BytesToMapStringRpc(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := make(map[string]*RpcData)
