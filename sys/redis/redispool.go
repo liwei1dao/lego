@@ -43,6 +43,14 @@ func (this *RedisPool) ContainsKey(key string) bool {
 	return iskeep
 }
 
+//查询缓存keys
+func (this *RedisPool) QueryKeys(patternkey string) (keys []string) {
+	pool := this.Pool.Get()
+	defer pool.Close()
+	keys, _ = redis.Strings(pool.Do("KEYS", patternkey))
+	return
+}
+
 //删除Redis 缓存键数据
 func (this *RedisPool) Delete(key string) {
 	pool := this.Pool.Get()
