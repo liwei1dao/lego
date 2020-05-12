@@ -62,7 +62,7 @@ func (this *RedisPool) Delete(key string) {
 }
 
 //添加键值对
-func (this *RedisPool) SetKeyvalue(key string, value interface{}) {
+func (this *RedisPool) SetKeyForValue(key string, value interface{}) {
 	if b, err := json.Marshal(value); err == nil {
 		pool := this.Pool.Get()
 		defer pool.Close()
@@ -74,7 +74,7 @@ func (this *RedisPool) SetKeyvalue(key string, value interface{}) {
 }
 
 //添加过期键值对
-func (this *RedisPool) SetExKeyvalue(key string, value interface{}, expire int) {
+func (this *RedisPool) SetExKeyForValue(key string, value interface{}, expire int) {
 	if b, err := json.Marshal(value); err == nil {
 		pool := this.Pool.Get()
 		defer pool.Close()
@@ -86,7 +86,7 @@ func (this *RedisPool) SetExKeyvalue(key string, value interface{}, expire int) 
 }
 
 //添加键值对
-func (this *RedisPool) GetKeyvalue(key string, value interface{}) (err error) {
+func (this *RedisPool) GetKeyForValue(key string, value interface{}) (err error) {
 	pool := this.Pool.Get()
 	defer pool.Close()
 	v, err := redis.String(pool.Do("GET", key))
