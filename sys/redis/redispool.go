@@ -33,77 +33,77 @@ func (this *RedisPool) CustomFunc(f func(pool redis.Conn)) {
 }
 
 //判断键是否存在
-func (this *RedisPool) ContainsKey(_Key string) bool {
+func (this *RedisPool) ContainsKey(key string) bool {
 	pool := this.Pool.Get()
 	defer pool.Close()
-	iskeep, err := redis.Bool(pool.Do("EXISTS", _Key))
+	iskeep, err := redis.Bool(pool.Do("EXISTS", key))
 	if err != nil {
-		log.Errorf("检测缓存键失败 key = %s err = %s", _Key, err.Error())
+		log.Errorf("检测缓存键失败 key = %s err = %s", key, err.Error())
 	}
 	return iskeep
 }
 
 //删除Redis 缓存键数据
-func (this *RedisPool) Delete(_Key string) {
+func (this *RedisPool) Delete(key string) {
 	pool := this.Pool.Get()
 	defer pool.Close()
-	_, err := pool.Do("DEL", _Key)
+	_, err := pool.Do("DEL", key)
 	if err != nil {
-		log.Errorf("删除缓存数据失败 key = %s", _Key)
+		log.Errorf("删除缓存数据失败 key = %s", key)
 	}
 }
 
 //添加键值对
-func (this *RedisPool) SetKey_Value(_Key string, _Value interface{}) {
-	if b, err := json.Marshal(_Value); err == nil {
+func (this *RedisPool) SetKeyvalue(key string, value interface{}) {
+	if b, err := json.Marshal(value); err == nil {
 		pool := this.Pool.Get()
 		defer pool.Close()
-		_, err := pool.Do("SET", _Key, b)
+		_, err := pool.Do("SET", key, b)
 		if err != nil {
-			log.Errorf("SetKey_String 设置缓存数据失败 key = %s", _Key)
+			log.Errorf("SetKey_String 设置缓存数据失败 key = %s", key)
 		}
 	}
 }
 
 //添加过期键值对
-func (this *RedisPool) SetExKey_Value(_Key string, _Value interface{}, expire int) {
-	if b, err := json.Marshal(_Value); err == nil {
+func (this *RedisPool) SetExKeyvalue(key string, value interface{}, expire int) {
+	if b, err := json.Marshal(value); err == nil {
 		pool := this.Pool.Get()
 		defer pool.Close()
-		_, err := pool.Do("SET", _Key, b, "ex", expire)
+		_, err := pool.Do("SET", key, b, "ex", expire)
 		if err != nil {
-			log.Errorf("SetKey_String 设置缓存数据失败 key = %s", _Key)
+			log.Errorf("SetKey_String 设置缓存数据失败 key = %s", key)
 		}
 	}
 }
 
 //添加键值对
-func (this *RedisPool) GetKey_Value(_Key string, _Value interface{}) (err error) {
+func (this *RedisPool) GetKeyvalue(key string, value interface{}) (err error) {
 	pool := this.Pool.Get()
 	defer pool.Close()
-	v, err := redis.String(pool.Do("GET", _Key))
+	v, err := redis.String(pool.Do("GET", key))
 	if err != nil {
-		return fmt.Errorf("GetKey_String 获取缓存数据失败 key = %s err:%s", _Key, err.Error())
+		return fmt.Errorf("GetKey_String 获取缓存数据失败 key = %s err:%s", key, err.Error())
 	}
-	err = json.Unmarshal([]byte(v), _Value)
+	err = json.Unmarshal([]byte(v), value)
 	if err != nil {
-		return fmt.Errorf("GetKey_String 解析缓存数据失败 key = %s Value=%s err:%s", _Key, v, err.Error())
+		return fmt.Errorf("GetKey_String 解析缓存数据失败 key = %s Value=%s err:%s", key, v, err.Error())
 	}
 	return nil
 }
 
-func (this *RedisPool) Lock(_Key string, outTime int) (err error) {
+func (this *RedisPool) Lock(key string, outTime int) (err error) {
 	//从连接池中娶一个con链接，pool可以自己定义。
 	pool := this.Pool.Get()
 	defer pool.Close()
 	//这里需要redis.String包一下，才能返回redis.ErrNil
-	_, err = redis.String(pool.Do("set", _Key, 1, "ex", outTime, "nx"))
+	_, err = redis.String(pool.Do("set", key, 1, "ex", outTime, "nx"))
 	return
 }
-func (this *RedisPool) UnLock(_Key string) (err error) {
+func (this *RedisPool) UnLock(key string) (err error) {
 	pool := this.Pool.Get()
 	defer pool.Close()
-	_, err = pool.Do("del", _Key)
+	_, err = pool.Do("del", key)
 	if err != nil {
 		return
 	}
@@ -111,34 +111,34 @@ func (this *RedisPool) UnLock(_Key string) (err error) {
 }
 
 //添加键值到列表顶部
-func (this *RedisPool) SetKey_List(_Key string, _Value []interface{}) {
+func (this *RedisPool) SetKey_List(key string, value []interface{}) {
 	pool := this.Pool.Get()
 	defer pool.Close()
 	Values := []interface{}{}
-	Values = append(Values, _Key)
-	for _, v := range _Value {
+	Values = append(Values, key)
+	for _, v := range value {
 		if b, err := json.Marshal(v); err == nil {
 			Values = append(Values, string(b))
 		}
 	}
 	_, err := pool.Do("LPUSH", Values...)
 	if err != nil {
-		log.Errorf("SetKey_String 设置缓存列表数据失败 err = %v key = %s", err, _Key)
+		log.Errorf("SetKey_String 设置缓存列表数据失败 err = %v key = %s", err, key)
 	}
 }
 
 //读取键值列表
-func (this *RedisPool) GetKey_List(_Key string, _Vakue_type reflect.Type) (Value []interface{}) {
+func (this *RedisPool) GetKey_List(key string, valuetype reflect.Type) (Value []interface{}) {
 	pool := this.Pool.Get()
 	defer pool.Close()
 	Value = []interface{}{}
-	movies, err := redis.Values(pool.Do("LRANGE", _Key, 0, -1))
+	movies, err := redis.Values(pool.Do("LRANGE", key, 0, -1))
 	if err != nil {
-		log.Errorf("SetKey_String 读取缓存列表数据失败 key = %s", _Key)
+		log.Errorf("SetKey_String 读取缓存列表数据失败 key = %s", key)
 		return
 	}
 	for _, value := range movies {
-		v := reflect.New(_Vakue_type.Elem()).Interface()
+		v := reflect.New(valuetype.Elem()).Interface()
 		err := json.Unmarshal([]byte(value.([]uint8)), &v)
 		if err == nil {
 			Value = append(Value, v)
@@ -147,7 +147,7 @@ func (this *RedisPool) GetKey_List(_Key string, _Vakue_type reflect.Type) (Value
 	return Value
 }
 
-//移除并返回在列表的尾部数据。
+//移除并返回在列表的尾部数据
 func (this *RedisPool) GetKey_ListByPop(key string, value interface{}) (err error) {
 	if !this.ContainsKey(key) {
 		return fmt.Errorf("GetKey_ListByPop 读取缓存哈希表数据失败 不存在的 key = %s", key)
@@ -165,46 +165,61 @@ func (this *RedisPool) GetKey_ListByPop(key string, value interface{}) (err erro
 	return nil
 }
 
-//判断键是否存在 Map中
-func (this *RedisPool) ContainsKey_Map(_Key string, _FieldKey string) bool {
+//移除列表中于值相等的所有元素
+func (this *RedisPool) Remove_ListByValue(key string, value interface{}) (err error) {
 	pool := this.Pool.Get()
 	defer pool.Close()
-	iskeep, err := redis.Bool(pool.Do("Hexists", _Key, _FieldKey))
+	valueStr := ""
+	if b, err := json.Marshal(value); err == nil {
+		valueStr = string(b)
+		return log.Errorf("Remove_ListByValue 移除列表中于值相等的所有元素失败 err = %v key = %s", err, key)
+	}
+	_, err := pool.Do("LREM", key, 0, valueStr)
 	if err != nil {
-		log.Errorf("检测缓存键失败 key = %s field = %s", _Key, _FieldKey)
+		log.Errorf("Remove_ListByValue 移除列表中于值相等的所有元素失败 err = %v key = %s", err, key)
+	}
+}
+
+//判断键是否存在 Map中
+func (this *RedisPool) ContainsKey_Map(key string, _FieldKey string) bool {
+	pool := this.Pool.Get()
+	defer pool.Close()
+	iskeep, err := redis.Bool(pool.Do("Hexists", key, _FieldKey))
+	if err != nil {
+		log.Errorf("检测缓存键失败 key = %s field = %s", key, _FieldKey)
 	}
 	return iskeep
 }
 
 //添加键值 哈希表
-func (this *RedisPool) SetKey_Map(_Key string, _Value map[string]interface{}) {
+func (this *RedisPool) SetKey_Map(key string, value map[string]interface{}) {
 	pool := this.Pool.Get()
 	defer pool.Close()
 	Values := []interface{}{}
-	Values = append(Values, _Key)
-	for k, v := range _Value {
+	Values = append(Values, key)
+	for k, v := range value {
 		if b, err := json.Marshal(v); err == nil {
 			Values = append(Values, k, string(b))
 		}
 	}
 	_, err := pool.Do("HSET", Values...)
 	if err != nil {
-		log.Errorf("设置缓存SetKey_Map失败 key = %s err=%s", _Key, err.Error())
+		log.Errorf("设置缓存SetKey_Map失败 key = %s err=%s", key, err.Error())
 	}
 }
 
 //读取键值 哈希表
-func (this *RedisPool) GetKey_Map(_Key string, _Vakue_type reflect.Type) (Value map[string]interface{}) {
+func (this *RedisPool) GetKey_Map(key string, valuetype reflect.Type) (Value map[string]interface{}) {
 	pool := this.Pool.Get()
 	defer pool.Close()
 	Value = make(map[string]interface{})
-	movies, err := redis.StringMap(pool.Do("HGETALL", _Key))
+	movies, err := redis.StringMap(pool.Do("HGETALL", key))
 	if err != nil {
-		log.Errorf("SetKey_String 读取缓存哈希表数据失败 key = %s", _Key)
+		log.Errorf("SetKey_String 读取缓存哈希表数据失败 key = %s", key)
 		return
 	}
 	for k, value := range movies {
-		v := reflect.New(_Vakue_type.Elem()).Interface()
+		v := reflect.New(valuetype.Elem()).Interface()
 		err := json.Unmarshal([]byte(value), &v)
 		if err == nil {
 			Value[k] = v
@@ -213,38 +228,38 @@ func (this *RedisPool) GetKey_Map(_Key string, _Vakue_type reflect.Type) (Value 
 	return Value
 }
 
-func (this *RedisPool) GetKey_MapByLen(_Key string) (count int, err error) {
+func (this *RedisPool) GetKey_MapByLen(key string) (count int, err error) {
 	pool := this.Pool.Get()
 	defer pool.Close()
-	count, err = redis.Int(pool.Do("HLEN", _Key))
+	count, err = redis.Int(pool.Do("HLEN", key))
 	if err != nil {
 		return 0, err
 	}
 	return count, err
 }
 
-func (this *RedisPool) GetKey_MapByKeys(_Key string) (keys []string, err error) {
+func (this *RedisPool) GetKey_MapByKeys(key string) (keys []string, err error) {
 	pool := this.Pool.Get()
 	defer pool.Close()
-	keys, err = redis.Strings(pool.Do("HKEYS", _Key))
+	keys, err = redis.Strings(pool.Do("HKEYS", key))
 	if err != nil {
-		log.Errorf("SetKey_String 读取缓存哈希表数据失败 key = %s", _Key)
+		log.Errorf("SetKey_String 读取缓存哈希表数据失败 key = %s", key)
 		return []string{}, err
 	}
 	return
 }
 
-func (this *RedisPool) GetKey_MapByValues(_Key string, _Vakue_type reflect.Type) (Values []interface{}) {
+func (this *RedisPool) GetKey_MapByValues(key string, valuetype reflect.Type) (Values []interface{}) {
 	pool := this.Pool.Get()
 	defer pool.Close()
 	Values = make([]interface{}, 0)
-	movies, err := redis.StringMap(pool.Do("HGETALL", _Key))
+	movies, err := redis.StringMap(pool.Do("HGETALL", key))
 	if err != nil {
-		log.Errorf("SetKey_String 读取缓存哈希表数据失败 key = %s", _Key)
+		log.Errorf("SetKey_String 读取缓存哈希表数据失败 key = %s", key)
 		return
 	}
 	for _, value := range movies {
-		v := reflect.New(_Vakue_type.Elem()).Interface()
+		v := reflect.New(valuetype.Elem()).Interface()
 		err := json.Unmarshal([]byte(value), &v)
 		if err == nil {
 			Values = append(Values, v)
@@ -253,7 +268,7 @@ func (this *RedisPool) GetKey_MapByValues(_Key string, _Vakue_type reflect.Type)
 	return Values
 }
 
-//读取键值 哈希表_key 值
+//读取键值 哈希表key 值
 func (this *RedisPool) GetKey_MapByKey(key string, fieldkey string, value interface{}) (err error) {
 	if !this.ContainsKey_Map(key, fieldkey) {
 		return fmt.Errorf("GetKey_MapByKey 读取缓存哈希表数据失败 不存在的 key = %s", key)
@@ -272,17 +287,17 @@ func (this *RedisPool) GetKey_MapByKey(key string, fieldkey string, value interf
 }
 
 //删除键值 哈希表 字段
-func (this *RedisPool) DelKey_MapKey(_Key string, _FieldKey string) {
+func (this *RedisPool) DelKey_MapKey(key string, _FieldKey string) {
 	pool := this.Pool.Get()
 	defer pool.Close()
-	_, err := pool.Do("HDEL", _Key, _FieldKey)
+	_, err := pool.Do("HDEL", key, _FieldKey)
 	if err != nil {
-		log.Errorf("删除键值哈希表字段失败 key=%s FieldKey=%s", _Key, _FieldKey)
+		log.Errorf("删除键值哈希表字段失败 key=%s FieldKey=%s", key, _FieldKey)
 	}
 }
 
 //获取所有符合给定模式 pattern 的 key 的数据
-func (this *RedisPool) Get_PatternKeys(_Patternkey string, _Vakue_type reflect.Type) (Values []interface{}) {
+func (this *RedisPool) Get_PatternKeys(_Patternkey string, valuetype reflect.Type) (Values []interface{}) {
 	pool := this.Pool.Get()
 	defer pool.Close()
 	Values = []interface{}{}
@@ -293,7 +308,7 @@ func (this *RedisPool) Get_PatternKeys(_Patternkey string, _Vakue_type reflect.T
 	}
 	for _, key := range keys {
 		if v, err := redis.String(pool.Do("GET", key)); err == nil {
-			value := reflect.New(_Vakue_type.Elem()).Interface()
+			value := reflect.New(valuetype.Elem()).Interface()
 			err = json.Unmarshal([]byte(v), &value)
 			if err == nil {
 				Values = append(Values, value)
