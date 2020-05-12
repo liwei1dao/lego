@@ -179,9 +179,10 @@ func (this *RedisPool) Remove_ListByValue(key string, value interface{}) (err er
 	defer pool.Close()
 	valueStr := ""
 	if b, err := json.Marshal(value); err != nil {
-		valueStr = string(b)
 		log.Errorf("Remove_ListByValue 移除列表中于值相等的所有元素失败 err = %v key = %s", err, key)
 		return err
+	} else {
+		valueStr = string(b)
 	}
 	_, err = pool.Do("LREM", key, 0, valueStr)
 	if err != nil {
