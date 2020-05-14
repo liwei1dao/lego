@@ -11,11 +11,6 @@ var (
 	defaultlog Ilog
 )
 
-//增加init函数,避免gotest和debug时调用log导致panic
-func init() {
-	defaultlog, _ = newLog(SetFileName("./test.log"), SetDebugMode(true), SetLoglevel(DebugLevel))
-}
-
 func OnInit(s core.IService, opt ...Option) (err error) {
 	service = s
 	opt = append(opt, SetFileName(fmt.Sprintf("%slog/%s/%s.log", s.GetWorkPath(), s.GetId(), s.GetType())))
