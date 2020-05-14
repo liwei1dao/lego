@@ -17,6 +17,11 @@ const ( //默认事件
 	Event_LoseService      Event_Key = "LoseService"      //丢失服务
 )
 
+const (
+	S_Category_SystemService S_Category = "SystemService" //系统服务类型
+	S_Category_GateService   S_Category = "GateService"   //网关服务类型
+)
+
 type ServiceSttings struct {
 	Settings map[string]interface{}
 	Modules  map[string]map[string]interface{}

@@ -5,10 +5,6 @@ import (
 )
 
 const (
-	S_Category_GateService core.S_Category = "GateService"
-)
-
-const (
 	SC_ServiceGateRouteComp core.S_Comps = "SC_GateRouteComp" //s_comps.ISC_GateRouteComp
 )
 
