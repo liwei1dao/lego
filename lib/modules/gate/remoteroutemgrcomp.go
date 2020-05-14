@@ -96,16 +96,19 @@ func (this *RemoteRouteMgrComp) UnRegisterRoute(comId uint16, sType, sId string)
 	return
 }
 
-func (this *RemoteRouteMgrComp) OnRoute(agent IAgent, msg proto.IMessage) (iscontinue bool) {
+func (this *RemoteRouteMgrComp) OnRoute(agent IAgent, msg proto.IMessage) (code core.ErrorCode, err error) {
 	this.routslock.RLock()
 	routes, ok := this.routs[msg.GetComId()]
 	this.routslock.RUnlock()
 	if ok {
 		for _, v := range routes {
-			v.OnRoute(agent, msg)
+			if cd, e := v.OnRoute(agent, msg); cd != core.ErrorCode_Success || e != "" {
+				return cd, fmt.Errorf("LocalRoute err:%s", e)
+			}
 		}
+		return core.ErrorCode_Success, nil
 	} else {
-		return true
+		return core.ErrorCode_NoRoute, nil
 	}
-	return true
+	return core.ErrorCode_NoRoute, nil
 }

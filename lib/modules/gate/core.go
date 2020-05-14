@@ -26,9 +26,9 @@ type IGateModule interface {
 	GetLocalRouteMgrComp() ILocalRouteMgrComp
 	RegisterRemoteRoute(comId uint16, sId string) (result string, err string)
 	UnRegisterRemoteRoute(comId uint16, sType, sId string)
-	RegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string))
-	UnRegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string))
-	OnRoute(a IAgent, msg proto.IMessage)
+	RegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string))
+	UnRegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string))
+	OnRoute(a IAgent, msg proto.IMessage) (err error)
 	Connect(a IAgent)
 	DisConnect(a IAgent)
 	CloseAgent(sId string) (result string, err string)
@@ -47,9 +47,9 @@ type IAgentMgrComp interface {
 type ILocalRouteMgrComp interface {
 	core.IModuleComp
 	SetNewSession(f func(module IGateModule, data map[string]interface{}) (s core.IUserSession, err error))
-	RegisterRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string))
-	UnRegisterRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string))
-	OnRoute(agent IAgent, msg proto.IMessage) (iscontinue bool)
+	RegisterRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string))
+	UnRegisterRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string))
+	OnRoute(agent IAgent, msg proto.IMessage) (code core.ErrorCode, err error)
 }
 
 type IRemoteRouteMgrComp interface {
@@ -57,14 +57,14 @@ type IRemoteRouteMgrComp interface {
 	SetNewSession(f func(service base.IClusterService, data map[string]interface{}) (s core.IUserSession, err error))
 	RegisterRoute(comId uint16, sId string) (result string, err string)
 	UnRegisterRoute(comId uint16, sType, sId string)
-	OnRoute(agent IAgent, msg proto.IMessage) (iscontinue bool)
+	OnRoute(agent IAgent, msg proto.IMessage) (code core.ErrorCode, err error)
 }
 
 type ICustomRouteComp interface {
 	core.IModuleComp
 	RegisterRoute(route core.CustomRoute, msgs map[uint16][]uint16) (result string, err string)
 	RegisterRouteFunc(route core.CustomRoute, f func(a IAgent, msg proto.IMessage))
-	OnRoute(agent IAgent, msg proto.IMessage) (iscontinue bool)
+	OnRoute(agent IAgent, msg proto.IMessage) (code core.ErrorCode, err error)
 }
 
 type IConn interface {

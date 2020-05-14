@@ -8,7 +8,7 @@ import (
 type (
 	ISC_GateRouteComp interface {
 		core.IServiceComp
-		RegisterRoute(comId uint16, f func(s core.IUserSession, msg proto.IMessage) (code int, err string)) (err error)
+		RegisterRoute(comId uint16, f func(s core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string)) (err error)
 	}
 )
 

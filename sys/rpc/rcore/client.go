@@ -47,9 +47,7 @@ func (this *RpcClient) Call(_func string, params ...interface{}) (interface{}, e
 	}
 	start := time.Now()
 	r, errstr := this.CallArgs(_func, ArgsType, args)
-	if this.opts.Log {
-		log.Infof("RPC Call ServerId = %s f = %s Elapsed = %v Result = %v ERROR = %v", this.opts.sId, _func, time.Since(start), r, errstr)
-	}
+	log.Debugf("RPC Call ServerId = %s f = %s Elapsed = %v Result = %v ERROR = %v", this.opts.sId, _func, time.Since(start), r, errstr)
 	if errstr != "" {
 		return r, fmt.Errorf(errstr)
 	} else {
@@ -71,9 +69,7 @@ func (this *RpcClient) CallNR(_func string, params ...interface{}) (err error) {
 	}
 	start := time.Now()
 	err = this.CallNRArgs(_func, ArgsType, args)
-	if this.opts.Log {
-		log.Infof("RPC CallNR ServerId = %s f = %s Elapsed = %v ERROR = %v", this.opts.sId, _func, time.Since(start), err)
-	}
+	log.Debugf("RPC CallNR ServerId = %s f = %s Elapsed = %v ERROR = %v", this.opts.sId, _func, time.Since(start), err)
 	return err
 }
 

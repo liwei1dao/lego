@@ -50,18 +50,18 @@ func (this *Gate) DisConnect(a IAgent) {
 }
 
 //接收代理消息
-func (this *Gate) OnRoute(a IAgent, msg proto.IMessage) {
-	if this.CustomRouteComp != nil && !this.CustomRouteComp.OnRoute(a, msg) { //优先自定义网关
+func (this *Gate) OnRoute(a IAgent, msg proto.IMessage) (code core.ErrorCode, err error) {
+	if this.CustomRouteComp != nil { //优先自定义网关
+		if code, err = this.CustomRouteComp.OnRoute(a, msg); code == core.ErrorCode_Success || err != nil { //优先自定义网关
+			return
+		}
+	}
+
+	if code, err = this.LocalRouteMgrComp.OnRoute(a, msg); code == core.ErrorCode_Success || err != nil { //其次本地网关
 		return
 	}
 
-	if !this.LocalRouteMgrComp.OnRoute(a, msg) { //其次本地网关
-		return
-	}
-
-	if !this.RemoteRouteMgrComp.OnRoute(a, msg) { //最后远程网关
-		return
-	}
+	code, err = this.RemoteRouteMgrComp.OnRoute(a, msg)
 	return
 }
 

@@ -3,12 +3,13 @@ package rcore
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/liwei1dao/lego/sys/log"
-	rpcserialize "github.com/liwei1dao/lego/sys/rpc/serialize"
 	"reflect"
 	"runtime"
 	"sync"
 	"time"
+
+	"github.com/liwei1dao/lego/sys/log"
+	rpcserialize "github.com/liwei1dao/lego/sys/rpc/serialize"
 )
 
 func NewRpcServer(opt ...sOption) (srpc *RpcServer, err error) {
@@ -216,9 +217,7 @@ func (this *RpcServer) runFunc(callInfo CallInfo) {
 			)
 			callInfo.Result = *resultInfo
 			this.doCallback(callInfo)
-			if this.opts.Log {
-				log.Infof("RPC Exec ModuleType = %v f = %v Elapsed = %v", this.opts.sId, callInfo.RpcInfo.Fn, time.Since(start))
-			}
+			log.Debugf("RPC Exec ModuleType = %v f = %v Elapsed = %v", this.opts.sId, callInfo.RpcInfo.Fn, time.Since(start))
 			if this.listener != nil {
 				this.listener.OnComplete(callInfo.RpcInfo.Fn, &callInfo, resultInfo, time.Since(start).Nanoseconds())
 			}

@@ -2,6 +2,7 @@ package s_comps
 
 import (
 	"fmt"
+
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
@@ -16,7 +17,7 @@ import (
 type SComp_GateRouteComp struct {
 	cbase.ServiceCompBase
 	Service base.IClusterService
-	Routes  map[uint16]func(s core.IUserSession, msg proto.IMessage) (code int, err string)
+	Routes  map[uint16]func(s core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string)
 }
 
 func (this *SComp_GateRouteComp) GetName() core.S_Comps {
@@ -30,7 +31,7 @@ func (this *SComp_GateRouteComp) Init(service core.IService, comp core.IServiceC
 		this.Service = s
 	}
 	err = this.ServiceCompBase.Init(service, comp)
-	this.Routes = make(map[uint16]func(s core.IUserSession, msg proto.IMessage) (code int, err string))
+	this.Routes = make(map[uint16]func(s core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string))
 	return err
 }
 
@@ -74,7 +75,7 @@ func (this *SComp_GateRouteComp) ReceiveMsg(s core.IUserSession, msg proto.IMess
 	return
 }
 
-func (this *SComp_GateRouteComp) RegisterRoute(comId uint16, f func(s core.IUserSession, msg proto.IMessage) (code int, err string)) (err error) {
+func (this *SComp_GateRouteComp) RegisterRoute(comId uint16, f func(s core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string)) (err error) {
 	if _, ok := this.Routes[comId]; !ok {
 		this.Routes[comId] = f
 		return

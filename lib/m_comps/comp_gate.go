@@ -80,7 +80,7 @@ func (this *MComp_GateComp) Start() (err error) {
 	return
 }
 
-func (this *MComp_GateComp) ReceiveMsg(session core.IUserSession, msg proto.IMessage) (code int, err string) {
+func (this *MComp_GateComp) ReceiveMsg(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string) {
 	this.Workerpool.Submit(func(ctx context.Context, cancel context.CancelFunc) {
 		defer cancel()        //任务结束通知上层
 		defer cbase.Recover() //打印消息处理异常信息
@@ -103,7 +103,7 @@ func (this *MComp_GateComp) ReceiveMsg(session core.IUserSession, msg proto.IMes
 		}
 		msghandles.F(session, msgdata)
 	})
-	return 0, ""
+	return core.ErrorCode_Success, ""
 }
 
 func (this *MComp_GateComp) RegisterHandle(mId uint16, msg interface{}, f func(session core.IUserSession, msg interface{})) {
