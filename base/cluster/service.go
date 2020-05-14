@@ -94,7 +94,7 @@ func (this *ClusterService) InitSys() {
 	} else {
 		log.Debugf("初始化registry系统完成!")
 	}
-	if err := rpc.OnInit(this.Service, rpc.NatsAddr(this.Service.GetSettings().Settings["NatsAddr"].(string)), rpc.Log(this.opts.RpcLog)); err != nil {
+	if err := rpc.OnInit(this.Service, rpc.NatsAddr(this.Service.GetSettings().Settings["NatsAddr"].(string))); err != nil {
 		panic(fmt.Sprintf("初始化rpc系统【%s】失败%s", this.Service.GetSettings().Settings["NatsAddr"].(string), err.Error()))
 	} else {
 		log.Debugf("初始化rpc系统完成!")

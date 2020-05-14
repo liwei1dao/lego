@@ -22,7 +22,6 @@ type Options struct {
 	Setting   core.ServiceSttings
 	Debugmode bool
 	LogLvel   log.Loglevel
-	RpcLog    bool
 }
 
 func SetTag(v string) Option {
@@ -64,12 +63,6 @@ func SetWorkPath(v string) Option {
 	}
 }
 
-func SetRpcLog(v bool) Option {
-	return func(o *Options) {
-		o.RpcLog = v
-	}
-}
-
 func SetDebugMode(v bool) Option {
 	return func(o *Options) {
 		o.Debugmode = v
@@ -90,7 +83,6 @@ func newOptions(opts ...Option) *Options {
 		Version:   1,
 		WorkPath:  utils.GetApplicationDir(),
 		LogLvel:   log.InfoLevel,
-		RpcLog:    false,
 		Debugmode: false,
 		Setting: core.ServiceSttings{Settings: map[string]interface{}{
 			"ConsulAddr": "127.0.0.1:8500",

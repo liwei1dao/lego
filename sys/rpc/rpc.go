@@ -2,10 +2,11 @@ package rpc
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/liwei1dao/lego/core"
 	rcore "github.com/liwei1dao/lego/sys/rpc/rcore"
 	rpcserialize "github.com/liwei1dao/lego/sys/rpc/serialize"
-	"reflect"
 
 	"github.com/nats-io/nats.go"
 )
@@ -27,8 +28,7 @@ func OnInit(s core.IService, opt ...Option) (err error) {
 	srpc, err = rcore.NewRpcServer(
 		rcore.SId(options.sId),
 		rcore.SNats(rnats),
-		rcore.SMaxCoroutine(options.MaxCoroutine),
-		rcore.SLog(options.Log))
+		rcore.SMaxCoroutine(options.MaxCoroutine))
 	return
 }
 
@@ -44,7 +44,6 @@ func NewRpcClient(sId, rId string) (clent IRpcClient, err error) {
 		rcore.CId(sId),
 		rcore.CrpcId(rId),
 		rcore.CRpcExpired(options.RpcExpired),
-		rcore.CLog(options.Log),
 		rcore.CNats(rnats))
 	return
 }

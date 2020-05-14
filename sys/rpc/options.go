@@ -10,7 +10,6 @@ type Options struct {
 	NatsAddr     string
 	MaxCoroutine int
 	RpcExpired   int
-	Log          bool
 }
 
 func Id(v string) Option {
@@ -36,17 +35,10 @@ func RpcExpired(v int) Option {
 	}
 }
 
-func Log(v bool) Option {
-	return func(o *Options) {
-		o.Log = v
-	}
-}
-
 func newOptions(opts ...Option) *Options {
 	opt := Options{
 		MaxCoroutine: 10000,
 		RpcExpired:   5,
-		Log:          false,
 	}
 	for _, o := range opts {
 		o(&opt)
