@@ -26,13 +26,13 @@ func (this *Gate) RegisterRemoteRoute(comId uint16, sId string) (result string, 
 	result, err = this.RemoteRouteMgrComp.RegisterRoute(comId, sId)
 	return
 }
-func (this *Gate) RegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string)) {
+func (this *Gate) RegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string)) {
 	this.LocalRouteMgrComp.RegisterRoute(comId, f)
 }
 func (this *Gate) UnRegisterRemoteRoute(comId uint16, sType, sId string) {
 	this.RemoteRouteMgrComp.UnRegisterRoute(comId, sType, sId)
 }
-func (this *Gate) UnRegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string)) {
+func (this *Gate) UnRegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string)) {
 	this.LocalRouteMgrComp.UnRegisterRoute(comId, f)
 }
 

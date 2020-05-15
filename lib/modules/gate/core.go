@@ -28,7 +28,7 @@ type IGateModule interface {
 	UnRegisterRemoteRoute(comId uint16, sType, sId string)
 	RegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string))
 	UnRegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string))
-	OnRoute(a IAgent, msg proto.IMessage) (err error)
+	OnRoute(a IAgent, msg proto.IMessage) (core.ErrorCode, error)
 	Connect(a IAgent)
 	DisConnect(a IAgent)
 	CloseAgent(sId string) (result string, err string)
