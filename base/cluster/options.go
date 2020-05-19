@@ -95,7 +95,7 @@ func newOptions(opts ...Option) *Options {
 	confpath := fmt.Sprintf("conf/%s.toml", opt.Id)
 	_, err := toml.DecodeFile(confpath, &opt.Setting)
 	if err != nil {
-		fmt.Printf("警告 读取服务配置【%s】文件失败err=%s:", confpath, err.Error())
+		fmt.Printf("警告 读取服务配置【%s】文件失败err=%s:\n", confpath, err.Error())
 		//panic(fmt.Sprintf("读取服务配置【%s】文件失败err=%s:", confpath, err.Error()))
 	}
 	return opt
