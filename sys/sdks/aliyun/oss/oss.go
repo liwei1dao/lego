@@ -1,6 +1,7 @@
 package oss
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
@@ -59,6 +60,20 @@ func (this *OSS) UploadFile(objectName string, localFileName string) (err error)
 func (this *OSS) DownloadFile(objectName string, downloadedFileName string) (err error) {
 	err = this.bucket.GetObjectToFile(objectName, downloadedFileName)
 	return err
+}
+
+// 下载文件到缓存
+func (this *OSS) GetObject(objectName string, options ...oss.Option) ([]byte, error) {
+	if file, err := this.bucket.GetObject(objectName, options...); err != nil {
+		return nil, err
+	} else {
+		buf := new(bytes.Buffer)
+		if _, err := buf.ReadFrom(file); err != nil {
+			return nil, err
+		} else {
+			return buf.Bytes(), nil
+		}
+	}
 }
 
 //删除文件
