@@ -132,6 +132,7 @@ func (this *Http) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	this.handleHTTPRequest(c)
 	this.pool.Put(c)
 }
+
 func (this *Http) handleHTTPRequest(c *Context) {
 	httpMethod := c.Request.Method
 	rPath := c.Request.URL.Path
@@ -167,11 +168,6 @@ func (engine *Http) rebuild404Handlers() {
 }
 
 func (this *Http) LoadHTMLFiles(files ...string) {
-	//if IsDebugging() {
-	//	engine.HTMLRender = render.HTMLDebug{Files: files, FuncMap: engine.FuncMap, Delims: engine.delims}
-	//	return
-	//}
-
 	templ := template.Must(template.New("").Delims(this.delims.Left, this.delims.Right).Funcs(this.FuncMap).ParseFiles(files...))
 	this.SetHTMLTemplate(templ)
 }
@@ -179,18 +175,8 @@ func (this *Http) LoadHTMLGlob(pattern string) {
 	left := this.delims.Left
 	right := this.delims.Right
 	templ := template.Must(template.New("").Delims(left, right).Funcs(this.FuncMap).ParseGlob(pattern))
-
-	//if IsDebugging() {
-	//	debugPrintLoadTemplate(templ)
-	//	engine.HTMLRender = render.HTMLDebug{Glob: pattern, FuncMap: engine.FuncMap, Delims: engine.delims}
-	//	return
-	//}
-
 	this.SetHTMLTemplate(templ)
 }
 func (this *Http) SetHTMLTemplate(templ *template.Template) {
-	if len(this.trees) > 0 {
-		//debugPrintWARNINGSetHTMLTemplate()
-	}
 	this.HTMLRender = render.HTMLProduction{Template: templ.Funcs(this.FuncMap)}
 }
