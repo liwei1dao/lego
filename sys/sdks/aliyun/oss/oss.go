@@ -39,7 +39,7 @@ func (this *OSS) Init() (err error) {
 	}
 	return err
 }
-
+                                                                                     
 //创建存储空间。
 func (this *OSS) CreateBucket(bucketName string) (err error) {
 	err = this.client.CreateBucket(bucketName)

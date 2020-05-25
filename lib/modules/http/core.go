@@ -3,9 +3,10 @@ package http
 import (
 	"encoding/xml"
 	"fmt"
+	"math"
+
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
-	"math"
 )
 
 type (
@@ -30,7 +31,12 @@ type (
 		OPTIONS(string, ...HandlerFunc) IRoutes
 		HEAD(string, ...HandlerFunc) IRoutes
 	}
-	H map[string]interface{}
+	H       map[string]interface{}
+	OutJson struct {
+		ErrorCode core.ErrorCode `json:"code"`
+		Msg       string         `json:"msg"`
+		Data      interface{}    `json:"data"`
+	}
 )
 
 func (h H) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
