@@ -155,16 +155,35 @@ func (this *RedisPool) GetKey_List(key string, valuetype reflect.Type) (Value []
 	return Value
 }
 
+//读取返回目标区域的数据
+func (this *RedisPool) GetListByLrange(key string, start, end int32, valuetype reflect.Type) (values []interface{}) {
+	pool := this.Pool.Get()
+	datas, err := redis.Strings(pool.Do("LRANGE", key, start, end))
+	values = make([]interface{}, 0)
+	if err != nil {
+		log.Errorf("GetListByLrange 执行异常 key:%s err:%s", key, err.Error())
+		return
+	}
+	for _, value := range datas {
+		v := reflect.New(valuetype.Elem()).Interface()
+		err := json.Unmarshal([]byte(value), &v)
+		if err == nil {
+			values = append(values, v)
+		}
+	}
+	return
+}
+
 //移除并返回在列表的尾部数据
-func (this *RedisPool) GetKey_ListByPop(key string, value interface{}) (err error) {
+func (this *RedisPool) GetListByPop(key string, value interface{}) (err error) {
 	if !this.ContainsKey(key) {
-		return fmt.Errorf("GetKey_ListByPop 读取缓存哈希表数据失败 不存在的 key = %s", key)
+		return fmt.Errorf("GetListByPop 读取缓存哈希表数据失败 不存在的 key = %s", key)
 	}
 	pool := this.Pool.Get()
 	defer pool.Close()
 	movies, err := redis.String(pool.Do("RPOP", key))
 	if err != nil {
-		return fmt.Errorf("GetKey_ListByPop 读取缓存哈希表数据失败 key = %s", key)
+		return fmt.Errorf("GetListByPop 读取缓存哈希表数据失败 key = %s", key)
 	}
 	err = json.Unmarshal([]byte(movies), value)
 	if err != nil {
@@ -174,26 +193,26 @@ func (this *RedisPool) GetKey_ListByPop(key string, value interface{}) (err erro
 }
 
 //移除列表中于值相等的所有元素
-func (this *RedisPool) Remove_ListByValue(key string, value interface{}) (err error) {
+func (this *RedisPool) RemoveListByValue(key string, value interface{}) (err error) {
 	pool := this.Pool.Get()
 	defer pool.Close()
 	valueStr := ""
 	if b, err := json.Marshal(value); err != nil {
-		log.Errorf("Remove_ListByValue 移除列表中于值相等的所有元素失败 err = %v key = %s", err, key)
+		log.Errorf("RemoveListByValue 移除列表中于值相等的所有元素失败 err = %v key = %s", err, key)
 		return err
 	} else {
 		valueStr = string(b)
 	}
 	_, err = pool.Do("LREM", key, 0, valueStr)
 	if err != nil {
-		log.Errorf("Remove_ListByValue 移除列表中于值相等的所有元素失败 err = %v key = %s", err, key)
+		log.Errorf("RemoveListByValue 移除列表中于值相等的所有元素失败 err = %v key = %s", err, key)
 		return err
 	}
 	return
 }
 
 //判断键是否存在 Map中
-func (this *RedisPool) ContainsKey_Map(key string, _FieldKey string) bool {
+func (this *RedisPool) ContainsByMap(key string, _FieldKey string) bool {
 	pool := this.Pool.Get()
 	defer pool.Close()
 	iskeep, err := redis.Bool(pool.Do("Hexists", key, _FieldKey))
@@ -282,7 +301,7 @@ func (this *RedisPool) GetKey_MapByValues(key string, valuetype reflect.Type) (V
 
 //读取键值 哈希表key 值
 func (this *RedisPool) GetKey_MapByKey(key string, fieldkey string, value interface{}) (err error) {
-	if !this.ContainsKey_Map(key, fieldkey) {
+	if !this.ContainsByMap(key, fieldkey) {
 		return fmt.Errorf("GetKey_MapByKey 读取缓存哈希表数据失败 不存在的 key = %s", key)
 	}
 	pool := this.Pool.Get()

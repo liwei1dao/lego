@@ -42,6 +42,6 @@ func TestRedisList_Lock(t *testing.T) {
 	GetPool().SetKey_List("TestList", []interface{}{"liwei3dao"})
 	GetPool().SetKey_List("TestList", []interface{}{"liwei4dao"})
 	GetPool().SetKey_List("TestList", []interface{}{"liwei5dao"})
-	GetPool().GetKey_ListByPop("TestList", &item)
+	GetPool().GetListByPop("TestList", &item)
 	t.Log("结束测试")
 }
