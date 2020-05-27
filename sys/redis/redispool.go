@@ -198,7 +198,7 @@ func (this *RedisPool) SetListByLPush(key string, value []interface{}) {
 }
 
 //将一个或多个值插入到列表的尾部(最右边)
-func (this *RedisPool) SetListByRpush(key string, value []interface{}) {
+func (this *RedisPool) SetListByRPush(key string, value []interface{}) {
 	pool := this.Pool.Get()
 	defer pool.Close()
 	Values := []interface{}{}

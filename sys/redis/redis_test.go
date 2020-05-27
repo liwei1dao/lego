@@ -36,12 +36,12 @@ func TestRedisList_Lock(t *testing.T) {
 		t.Errorf("初始化 redis 失败 err:%s", err.Error())
 		return
 	}
-	var item string
+	// var item string
 	GetPool().SetListByLPush("TestList", []interface{}{"liwei1dao"})
 	GetPool().SetListByLPush("TestList", []interface{}{"liwei2dao"})
 	GetPool().SetListByLPush("TestList", []interface{}{"liwei3dao"})
 	GetPool().SetListByLPush("TestList", []interface{}{"liwei4dao"})
 	GetPool().SetListByLPush("TestList", []interface{}{"liwei5dao"})
-	GetPool().GetListByRPop("TestList", &item)
+	// GetPool().GetListByLPop("TestList", &item)
 	t.Log("结束测试")
 }
