@@ -118,8 +118,70 @@ func (this *RedisPool) UnLock(key string) (err error) {
 	return
 }
 
-//添加键值到列表顶部
-func (this *RedisPool) SetKey_List(key string, value []interface{}) {
+//List---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//读取列表长度
+func (this *RedisPool) GetListCount(key string) (count int, err error) {
+	pool := this.Pool.Get()
+	defer pool.Close()
+	count, err = redis.Int(pool.Do("LLEN", key))
+	if err != nil {
+		return count, fmt.Errorf("GetListCount 执行异常 key:%s err:%s", key, err.Error())
+	}
+	return count, nil
+}
+
+//读取列表
+func (this *RedisPool) GetList(key string, valuetype reflect.Type) (values []interface{}) {
+	pool := this.Pool.Get()
+	defer pool.Close()
+	values = []interface{}{}
+	movies, err := redis.Values(pool.Do("LRANGE", key, 0, -1))
+	if err != nil {
+		log.Errorf("SetKey_String 读取缓存列表数据失败 key = %s", key)
+		return
+	}
+	for _, value := range movies {
+		v := reflect.New(valuetype.Elem()).Interface()
+		err := json.Unmarshal([]byte(value.([]uint8)), &v)
+		if err == nil {
+			values = append(values, v)
+		}
+	}
+	return values
+}
+
+//通过索引获取列表中的元素
+func (this *RedisPool) GetListByLIndex(key string, index int32, value interface{}) (err error) {
+	pool := this.Pool.Get()
+	defer pool.Close()
+	data, err := redis.String(pool.Do("LINDEX", key, index))
+	if err != nil {
+		return fmt.Errorf("GetListByLIndex 执行异常 key:%s index:%d err:%s", key, index, err.Error())
+	}
+	err = json.Unmarshal([]byte(data), value)
+	if err != nil {
+		return fmt.Errorf("GetListByLIndex 执行异常 key:%s index:%d err:%s", key, index, err.Error())
+	}
+	return nil
+}
+
+//通过索引来设置元素的值
+func (this *RedisPool) SetListByLIndex(key string, index int32, value interface{}) (err error) {
+	pool := this.Pool.Get()
+	defer pool.Close()
+	if data, err := json.Marshal(value); err == nil {
+		_, err := pool.Do("LSET", key, index, data)
+		if err != nil {
+			return fmt.Errorf("GetListByLIndex 执行异常 key:%s index:%d err:%s", key, index, err.Error())
+		}
+	} else {
+		return fmt.Errorf("GetListByLIndex 执行异常 key:%s index:%d err:%s", key, index, err.Error())
+	}
+	return
+}
+
+//将一个或多个值插入到列表头部(最左边)
+func (this *RedisPool) SetListByLPush(key string, value []interface{}) {
 	pool := this.Pool.Get()
 	defer pool.Close()
 	Values := []interface{}{}
@@ -135,24 +197,21 @@ func (this *RedisPool) SetKey_List(key string, value []interface{}) {
 	}
 }
 
-//读取键值列表
-func (this *RedisPool) GetKey_List(key string, valuetype reflect.Type) (Value []interface{}) {
+//将一个或多个值插入到列表的尾部(最右边)
+func (this *RedisPool) SetListByRpush(key string, value []interface{}) {
 	pool := this.Pool.Get()
 	defer pool.Close()
-	Value = []interface{}{}
-	movies, err := redis.Values(pool.Do("LRANGE", key, 0, -1))
-	if err != nil {
-		log.Errorf("SetKey_String 读取缓存列表数据失败 key = %s", key)
-		return
-	}
-	for _, value := range movies {
-		v := reflect.New(valuetype.Elem()).Interface()
-		err := json.Unmarshal([]byte(value.([]uint8)), &v)
-		if err == nil {
-			Value = append(Value, v)
+	Values := []interface{}{}
+	Values = append(Values, key)
+	for _, v := range value {
+		if b, err := json.Marshal(v); err == nil {
+			Values = append(Values, string(b))
 		}
 	}
-	return Value
+	_, err := pool.Do("RPUSH", Values...)
+	if err != nil {
+		log.Errorf("SetKey_String 设置缓存列表数据失败 err = %v key = %s", err, key)
+	}
 }
 
 //读取返回目标区域的数据
@@ -174,43 +233,56 @@ func (this *RedisPool) GetListByLrange(key string, start, end int32, valuetype r
 	return
 }
 
-//移除并返回在列表的尾部数据
-func (this *RedisPool) GetListByPop(key string, value interface{}) (err error) {
-	if !this.ContainsKey(key) {
-		return fmt.Errorf("GetListByPop 读取缓存哈希表数据失败 不存在的 key = %s", key)
-	}
+//移除列表的最后一个元素，返回值为移除的元素
+func (this *RedisPool) GetListByRPop(key string, value interface{}) (err error) {
 	pool := this.Pool.Get()
 	defer pool.Close()
-	movies, err := redis.String(pool.Do("RPOP", key))
+	data, err := redis.String(pool.Do("RPOP", key))
 	if err != nil {
-		return fmt.Errorf("GetListByPop 读取缓存哈希表数据失败 key = %s", key)
+		return fmt.Errorf("GetListByRPop  key:%s err:%s", key, err.Error())
 	}
-	err = json.Unmarshal([]byte(movies), value)
+	err = json.Unmarshal([]byte(data), value)
 	if err != nil {
-		return fmt.Errorf("移除并返回 Redis List【%s】尾部数据 错误 %s", key, err)
+		return fmt.Errorf("GetListByRPop  key:%s err:%s", key, err.Error())
 	}
 	return nil
 }
 
-//移除列表中于值相等的所有元素
+//移除并返回列表的第一个元素
+func (this *RedisPool) GetListByLPop(key string, value interface{}) (err error) {
+	pool := this.Pool.Get()
+	defer pool.Close()
+	data, err := redis.String(pool.Do("LPOP", key))
+	if err != nil {
+		return fmt.Errorf("GetListByLPop  key:%s err:%s", key, err.Error())
+	}
+	err = json.Unmarshal([]byte(data), value)
+	if err != nil {
+		return fmt.Errorf("GetListByLPop  key:%s err:%s", key, err.Error())
+	}
+	return nil
+}
+
+//移除列表中与参数 VALUE 相等的元素。
 func (this *RedisPool) RemoveListByValue(key string, value interface{}) (err error) {
 	pool := this.Pool.Get()
 	defer pool.Close()
 	valueStr := ""
 	if b, err := json.Marshal(value); err != nil {
-		log.Errorf("RemoveListByValue 移除列表中于值相等的所有元素失败 err = %v key = %s", err, key)
+		log.Errorf("RemoveListByValue  key:%s err:%s ", key, err.Error())
 		return err
 	} else {
 		valueStr = string(b)
 	}
 	_, err = pool.Do("LREM", key, 0, valueStr)
 	if err != nil {
-		log.Errorf("RemoveListByValue 移除列表中于值相等的所有元素失败 err = %v key = %s", err, key)
+		log.Errorf("RemoveListByValue  key:%s err:%s ", key, err.Error())
 		return err
 	}
 	return
 }
 
+//Map--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //判断键是否存在 Map中
 func (this *RedisPool) ContainsByMap(key string, _FieldKey string) bool {
 	pool := this.Pool.Get()

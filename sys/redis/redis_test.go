@@ -37,11 +37,11 @@ func TestRedisList_Lock(t *testing.T) {
 		return
 	}
 	var item string
-	GetPool().SetKey_List("TestList", []interface{}{"liwei1dao"})
-	GetPool().SetKey_List("TestList", []interface{}{"liwei2dao"})
-	GetPool().SetKey_List("TestList", []interface{}{"liwei3dao"})
-	GetPool().SetKey_List("TestList", []interface{}{"liwei4dao"})
-	GetPool().SetKey_List("TestList", []interface{}{"liwei5dao"})
-	GetPool().GetListByPop("TestList", &item)
+	GetPool().SetListByLPush("TestList", []interface{}{"liwei1dao"})
+	GetPool().SetListByLPush("TestList", []interface{}{"liwei2dao"})
+	GetPool().SetListByLPush("TestList", []interface{}{"liwei3dao"})
+	GetPool().SetListByLPush("TestList", []interface{}{"liwei4dao"})
+	GetPool().SetListByLPush("TestList", []interface{}{"liwei5dao"})
+	GetPool().GetListByRPop("TestList", &item)
 	t.Log("结束测试")
 }
