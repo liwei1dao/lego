@@ -62,6 +62,7 @@ func SerializeInit() {
 	OnRegister([]string{}, SliceStringToBytes, BytesToSliceString)
 	OnRegister([]interface{}{}, SliceInterfaceToBytes, BytesToSliceInterface)
 	OnRegister(map[string]string{}, JsonStructMarshal, BytesToMapString)
+	OnRegister(map[int32]string{}, JsonStructMarshal, Int32ToMapString)
 	OnRegister(map[string]interface{}{}, MapStringInterfaceToBytes, BytesToMapStringRpc)
 	OnRegister(map[int32]interface{}{}, MapInt32InterfaceToBytes, BytesToMapInt32Rpc)
 	OnRegister(map[uint32]interface{}{}, MapUInt32InterfaceToBytes, BytesToMapUInt32Rpc)
@@ -358,6 +359,12 @@ func BytesToSliceInterface(dataType reflect.Type, buf []byte) (interface{}, erro
 }
 func BytesToMapString(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := make(map[string]string)
+	err := json.Unmarshal(buf, &data)
+	return data, err
+}
+
+func Int32ToMapString(dataType reflect.Type, buf []byte) (interface{}, error) {
+	data := make(map[int32]string)
 	err := json.Unmarshal(buf, &data)
 	return data, err
 }

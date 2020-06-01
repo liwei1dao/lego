@@ -1,9 +1,10 @@
 package redis
 
 import (
+	"time"
+
 	"github.com/garyburd/redigo/redis"
 	cont "github.com/liwei1dao/lego/utils/concurrent"
-	"time"
 )
 
 type RedisFactory struct {

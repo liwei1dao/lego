@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -36,12 +37,13 @@ func TestRedisList_Lock(t *testing.T) {
 		t.Errorf("初始化 redis 失败 err:%s", err.Error())
 		return
 	}
-	// var item string
+	var item string
 	GetPool().SetListByLPush("TestList", []interface{}{"liwei1dao"})
 	GetPool().SetListByLPush("TestList", []interface{}{"liwei2dao"})
 	GetPool().SetListByLPush("TestList", []interface{}{"liwei3dao"})
 	GetPool().SetListByLPush("TestList", []interface{}{"liwei4dao"})
 	GetPool().SetListByLPush("TestList", []interface{}{"liwei5dao"})
+	data := GetPool().GetListByLrange("TestList", 0, 100, reflect.TypeOf(&item))
 	// GetPool().GetListByLPop("TestList", &item)
-	t.Log("结束测试")
+	t.Logf("结束测试 data:%v", data)
 }
