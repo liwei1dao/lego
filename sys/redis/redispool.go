@@ -217,6 +217,7 @@ func (this *RedisPool) SetListByRPush(key string, value []interface{}) {
 //读取返回目标区域的数据
 func (this *RedisPool) GetListByLrange(key string, start, end int32, valuetype reflect.Type) (values []interface{}) {
 	pool := this.Pool.Get()
+	defer pool.Close()
 	datas, err := redis.Strings(pool.Do("LRANGE", key, start, end))
 	values = make([]interface{}, 0)
 	if err != nil {
