@@ -81,7 +81,7 @@ func (this *MComp_GateComp) Start() (err error) {
 }
 
 func (this *MComp_GateComp) ReceiveMsg(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string) {
-	this.Workerpool.Submit(func(ctx context.Context, cancel context.CancelFunc) {
+	this.Workerpool.Submit(func(ctx context.Context, cancel context.CancelFunc, agrs ...interface{}) {
 		defer cancel()        //任务结束通知上层
 		defer cbase.Recover() //打印消息处理异常信息
 
