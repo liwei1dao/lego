@@ -12,7 +12,7 @@ type Point struct {
 	x, y int
 }
 
-func BuildJiuGong(src []io.Reader, dst io.Writer, format imaging.Format, opts ...imaging.EncodeOption) (err error) {
+func BuildJiuGong(src []io.Reader, dst io.ReadWriter, format imaging.Format, opts ...imaging.EncodeOption) (err error) {
 	imagePoints := getXy(len(src))
 	width := getWidth(len(src))
 
