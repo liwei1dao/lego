@@ -7,6 +7,7 @@ require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.187
 	github.com/aliyun/aliyun-oss-go-sdk v2.1.0+incompatible
 	github.com/denisenkom/go-mssqldb v0.0.0-20200428022330-06a60b6afbbc
+	github.com/disintegration/imaging v1.6.2
 	github.com/garyburd/redigo v1.6.0
 	github.com/go-gomail/gomail v0.0.0-20160411212932-81ebce5c23df
 	github.com/golang/protobuf v1.4.1
