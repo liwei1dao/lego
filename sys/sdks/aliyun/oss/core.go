@@ -1,6 +1,8 @@
 package oss
 
 import (
+	"io"
+
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/liwei1dao/lego/core"
 )
@@ -13,6 +15,7 @@ var (
 type (
 	IOSS interface {
 		CreateBucket(bucketName string) (err error)
+		UploadObject(objectKey string, reader io.Reader, options ...oss.Option) (err error)
 		UploadFile(objectName string, localFileName string) (err error)
 		GetObject(objectName string, options ...oss.Option) ([]byte, error)
 		DownloadFile(objectName string, downloadedFileName string) (err error)
@@ -27,6 +30,10 @@ func OnInit(s core.IService, opt ...Option) (err error) {
 
 func CreateBucket(bucketName string) (err error) {
 	return defoss.CreateBucket(bucketName)
+}
+
+func UploadObject(objectKey string, reader io.Reader, options ...oss.Option) (err error) {
+	return defoss.UploadObject(objectKey, reader, options...)
 }
 
 func UploadFile(localFileName string, objectName string) (err error) {

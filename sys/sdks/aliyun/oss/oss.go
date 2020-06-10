@@ -3,6 +3,7 @@ package oss
 import (
 	"bytes"
 	"fmt"
+	"io"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
@@ -39,7 +40,7 @@ func (this *OSS) Init() (err error) {
 	}
 	return err
 }
-                                                                                     
+
 //创建存储空间。
 func (this *OSS) CreateBucket(bucketName string) (err error) {
 	err = this.client.CreateBucket(bucketName)
@@ -52,6 +53,15 @@ func (this *OSS) CreateBucket(bucketName string) (err error) {
 // 上传文件。
 func (this *OSS) UploadFile(objectName string, localFileName string) (err error) {
 	err = this.bucket.PutObjectFromFile(objectName, localFileName)
+	return err
+}
+
+//上传对象
+// <objectName>上传文件到OSS时需要指定包含文件后缀在内的完整路径，例如abc/efg/123.jpg。
+// <localFileName>由本地文件路径加文件名包括后缀组成，例如/users/local/myfile.txt。
+// 上传文件。
+func (this *OSS) UploadObject(objectKey string, reader io.Reader, options ...oss.Option) (err error) {
+	err = this.bucket.PutObject(objectKey, reader, options...)
 	return err
 }
 
