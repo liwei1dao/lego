@@ -29,7 +29,7 @@ func BuildJiuGong(src []io.Reader, dst io.ReadWriter, format imaging.Format, opt
 	return nil
 }
 
-func BuildJiuGongToFlie(dstpath string, src []io.Reader, format imaging.Format, opts ...imaging.EncodeOption) (err error) {
+func BuildJiuGongToFlie(dstpath string, src []io.Reader, opts ...imaging.EncodeOption) (err error) {
 	imagePoints := getXy(len(src))
 	width := getWidth(len(src))
 
@@ -42,7 +42,7 @@ func BuildJiuGongToFlie(dstpath string, src []io.Reader, format imaging.Format, 
 			background = imaging.Paste(background, src, image.Pt(x, y))
 		}
 	}
-	err = imaging.Save(background, dstpath)
+	err = imaging.Save(background, dstpath, opts...)
 	return nil
 }
 
