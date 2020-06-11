@@ -29,6 +29,23 @@ func BuildJiuGong(src []io.Reader, dst io.ReadWriter, format imaging.Format, opt
 	return nil
 }
 
+func BuildJiuGongToFlie(dstpath string, src []io.Reader, format imaging.Format, opts ...imaging.EncodeOption) (err error) {
+	imagePoints := getXy(len(src))
+	width := getWidth(len(src))
+
+	background := imaging.New(132, 132, color.RGBA{233, 233, 233, 255})
+	for i, v := range imagePoints {
+		x := v.x
+		y := v.y
+		if src, err := imaging.Decode(src[i]); err == nil {
+			src = imaging.Resize(src, width, width, imaging.Lanczos)
+			background = imaging.Paste(background, src, image.Pt(x, y))
+		}
+	}
+	err = imaging.Save(background, dstpath)
+	return nil
+}
+
 func getXy(size int) []*Point {
 	s := make([]*Point, size)
 	var _x, _y int
