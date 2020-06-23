@@ -75,6 +75,21 @@ func (c *Context) Next() {
 	}
 }
 
+// IsAborted returns true if the current context was aborted.
+func (c *Context) IsAborted() bool {
+	return c.index >= abortIndex
+}
+
+func (c *Context) Abort() {
+	c.index = abortIndex
+}
+
+func (c *Context) AbortWithStatus(code int) {
+	c.Status(code)
+	c.Writer.WriteHeaderNow()
+	c.Abort()
+}
+
 // Set is used to store a new key/value pair exclusively for this context.
 // It also lazy initializes  c.Keys if it was not used previously.
 func (c *Context) Set(key string, value interface{}) {
