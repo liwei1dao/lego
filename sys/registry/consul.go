@@ -65,7 +65,6 @@ type Consulregistry struct {
 	rpclegoP *watch.Plan
 	watchers *cont.BeeMap
 	hash     uint64
-	//shash    *cont.BeeMap
 	snodes *cont.BeeMap
 	rpcs   *cont.BeeMap
 }
