@@ -24,6 +24,8 @@ type Http struct {
 	keyPath            string
 	MaxMultipartMemory int64 //上传文件最大尺寸
 	allNoRoute         HandlersChain
+	allNoMethod        HandlersChain
+	noMethod           HandlersChain
 	noRoute            HandlersChain
 	delims             render.Delims
 	FuncMap            template.FuncMap
@@ -101,6 +103,13 @@ func (this *Http) closehttp() {
 	this.wg.Done()
 }
 
+func (this *Http) Use(middleware ...HandlerFunc) IRoutes {
+	this.RouterGroup.Use(middleware...)
+	this.rebuild404Handlers()
+	this.rebuild405Handlers()
+	return this
+}
+
 //添加到路由树中
 func (this *Http) addRoute(method, path string, handlers HandlersChain) (err error) {
 	if err = outErr(path[0] == '/', "path must begin with '/'"); err != nil {
@@ -159,12 +168,22 @@ func (this *Http) handleHTTPRequest(c *Context) {
 }
 
 // NoRoute adds handlers for NoRoute. It return a 404 code by default.
-func (engine *Http) NoRoute(handlers ...HandlerFunc) {
-	engine.noRoute = handlers
-	engine.rebuild404Handlers()
+func (this *Http) NoRoute(handlers ...HandlerFunc) {
+	this.noRoute = handlers
+	this.rebuild404Handlers()
 }
-func (engine *Http) rebuild404Handlers() {
-	engine.allNoRoute = engine.combineHandlers(engine.noRoute)
+
+// NoMethod sets the handlers called when... TODO.
+func (this *Http) NoMethod(handlers ...HandlerFunc) {
+	this.noMethod = handlers
+	this.rebuild405Handlers()
+}
+
+func (this *Http) rebuild404Handlers() {
+	this.allNoRoute = this.combineHandlers(this.noRoute)
+}
+func (this *Http) rebuild405Handlers() {
+	this.allNoMethod = this.combineHandlers(this.noMethod)
 }
 
 func (this *Http) LoadHTMLFiles(files ...string) {
