@@ -260,9 +260,27 @@ func (c *Context) SaveUploadedFile(file *multipart.FileHeader, dst string) error
 	return err
 }
 
+func (c *Context) requestHeader(key string) string {
+	return c.Request.Header.Get(key)
+}
+
 func (c *Context) Status(code int) {
 	c.writermem.WriteHeader(code)
 }
+
+func (c *Context) Header(key, value string) {
+	if value == "" {
+		c.Writer.Header().Del(key)
+		return
+	}
+	c.Writer.Header().Set(key, value)
+}
+
+// GetHeader returns value from request headers.
+func (c *Context) GetHeader(key string) string {
+	return c.requestHeader(key)
+}
+
 func bodyAllowedForStatus(status int) bool {
 	switch {
 	case status >= 100 && status <= 199:
