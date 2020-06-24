@@ -3,7 +3,6 @@ package gate
 import (
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
@@ -37,15 +36,7 @@ func (this *RemoteRouteMgrComp) Init(service core.IService, module core.IModule,
 
 func (this *RemoteRouteMgrComp) Start() (err error) {
 	this.ModuleCompBase.Start()
-
-locp:
-	for { //保证rpc事件能成功写入
-		err = this.service.Subscribe(Rpc_GateRouteRegister, this.RegisterRoute) //订阅网关注册接口
-		if err == nil {
-			break locp
-		}
-		time.Sleep(time.Second)
-	}
+	this.service.Subscribe(Rpc_GateRouteRegister, this.RegisterRoute)
 	return
 }
 

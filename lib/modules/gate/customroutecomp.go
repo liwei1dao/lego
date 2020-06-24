@@ -1,8 +1,6 @@
 ﻿package gate
 
 import (
-	"time"
-
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	cbase "github.com/liwei1dao/lego/core/cbase"
@@ -30,14 +28,7 @@ func (this *CustomRouteComp) Init(service core.IService, module core.IModule, co
 
 func (this *CustomRouteComp) Start() (err error) {
 	this.ModuleCompBase.Start()
-locp:
-	for { //保证rpc事件能成功写入
-		err = this.service.Subscribe(Rpc_GateCustomRouteRegister, this.comp.RegisterRoute) //订阅网关注册接口
-		if err == nil {
-			break locp
-		}
-		time.Sleep(time.Second)
-	}
+	this.service.Subscribe(Rpc_GateCustomRouteRegister, this.comp.RegisterRoute)
 	return
 }
 
