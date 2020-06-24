@@ -56,6 +56,13 @@ func RpcId() (rpcId string, err error) {
 	return
 }
 
+func GetRpcInfo() (rfs []core.Rpc_Key) {
+	if srpc == nil {
+		return []core.Rpc_Key{}
+	}
+	return srpc.GetRpcInfo()
+}
+
 func Register(id string, f interface{}) (err error) {
 	if srpc == nil {
 		return fmt.Errorf("rpc 系统未初始化")

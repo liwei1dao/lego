@@ -12,9 +12,14 @@ require (
 	github.com/go-gomail/gomail v0.0.0-20160411212932-81ebce5c23df
 	github.com/golang/protobuf v1.4.1
 	github.com/gorilla/websocket v1.4.2
-	github.com/hashicorp/consul/api v1.4.0
+	github.com/hashicorp/consul v1.8.0
+	github.com/hashicorp/consul/api v1.5.0
+	github.com/hashicorp/go.net v0.0.1 // indirect
+	github.com/hashicorp/vault/api v1.0.4
 	github.com/jmoiron/sqlx v1.2.0
+	github.com/mitchellh/gox v0.4.0 // indirect
 	github.com/mitchellh/hashstructure v1.0.0
+	github.com/mitchellh/iochan v1.0.0 // indirect
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/nats-io/nats-server/v2 v2.1.6 // indirect
 	github.com/nats-io/nats.go v1.9.2

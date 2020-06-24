@@ -2,9 +2,10 @@ package event
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
-	"reflect"
 )
 
 var (
@@ -90,7 +91,7 @@ func TriggerEvent(eId core.Event_Key, agr ...interface{}) {
 			case error:
 				rn = r.(error).Error()
 			}
-			log.Errorf("Event [%s] recover", eId, rn)
+			log.Errorf("Event:[%d] recover:[%s]", eId, rn)
 		}
 	}()
 	if v, ok := functions[eId]; ok {
