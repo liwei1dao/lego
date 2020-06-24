@@ -166,8 +166,8 @@ func (this *Consulregistry) PushServiceInfo() (err error) {
 func (this *Consulregistry) getRpcInfo() (rfs []core.Rpc_Key) {
 	rpcSubscribe := rpc.GetRpcInfo()
 	a := sort.StringSlice{}
-	for k, _ := range rpcSubscribe {
-		a = append(a, string(k))
+	for _, v := range rpcSubscribe {
+		a = append(a, string(v))
 	}
 	sort.Sort(a)
 	rfs = make([]core.Rpc_Key, len(a))
