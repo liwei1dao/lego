@@ -3,6 +3,7 @@ package registry
 import (
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 var (
@@ -24,6 +25,7 @@ func Stop() error {
 }
 
 func PushServiceInfo() (err error) {
+	log.Debugf("主动推送服务信息")
 	return defregistry.PushServiceInfo()
 }
 

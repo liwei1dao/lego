@@ -1,7 +1,9 @@
 package registry
 
 import (
+	"encoding/json"
 	"fmt"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -33,6 +35,7 @@ func newConsulregistry(opts ...Option) (c *Consulregistry, err error) {
 	}
 	c.snodeWP.Handler = c.shandler
 	c.options.Address = config.Address
+	c.shash = make(map[string]uint64)
 	c.services = make(map[string]*ServiceNode)
 	c.rpcsubs = make(map[core.Rpc_Key][]*ServiceNode)
 	c.watchers = make(map[string]*watch.Plan)
@@ -44,7 +47,7 @@ func newConsulregistry(opts ...Option) (c *Consulregistry, err error) {
 type Consulregistry struct {
 	options  Options
 	client   *api.Client
-	hosthash uint64
+	shash    map[string]uint64
 	isstart  bool
 	closeSig chan bool
 	snodeWP  *watch.Plan
@@ -60,7 +63,16 @@ func (this *Consulregistry) Start() (err error) {
 	if err = this.getServices(); err != nil {
 		return
 	}
-	if err = this.PushServiceInfo(); err != nil {
+	if err = this.registerSNode(&ServiceNode{
+		Tag:          service.GetTag(),
+		Id:           service.GetId(),
+		Type:         service.GetType(),
+		Category:     service.GetCategory(),
+		Version:      service.GetVersion(),
+		RpcId:        service.GetRpcId(),
+		PreWeight:    service.GetPreWeight(),
+		RpcSubscribe: this.getRpcInfo(),
+	}); err != nil {
 		return
 	}
 	go this.snodeWP.Run(this.options.Address)
@@ -84,7 +96,7 @@ func (this *Consulregistry) registerSNode(snode *ServiceNode) (err error) {
 		return err
 	}
 
-	if this.hosthash != 0 && this.hosthash == h {
+	if v, ok := this.shash[snode.Id]; ok && v != 0 && v == h {
 		if err := this.client.Agent().PassTTL("service:"+snode.Id, ""); err == nil {
 			return nil
 		}
@@ -94,24 +106,24 @@ func (this *Consulregistry) registerSNode(snode *ServiceNode) (err error) {
 		TTL:                            fmt.Sprintf("%v", this.options.RegisterTTL),
 		DeregisterCriticalServiceAfter: fmt.Sprintf("%v", deregTTL),
 	}
-
+	rpcsubscribe, _ := json.Marshal(snode.RpcSubscribe)
 	asr := &api.AgentServiceRegistration{
 		ID:    snode.Id,
 		Name:  snode.Type,
 		Tags:  []string{this.options.Tag},
 		Check: check,
 		Meta: map[string]string{
-			"tag":       snode.Tag,
-			"category":  string(snode.Category),
-			"version":   fmt.Sprintf("%d", snode.Version),
-			"rpcid":     snode.RpcId,
-			"preweight": fmt.Sprintf("%d", snode.PreWeight),
+			"tag":          snode.Tag,
+			"category":     string(snode.Category),
+			"version":      fmt.Sprintf("%d", snode.Version),
+			"rpcid":        snode.RpcId,
+			"preweight":    fmt.Sprintf("%d", snode.PreWeight),
+			"rpcsubscribe": string(rpcsubscribe),
 		},
 	}
 	if err := this.client.Agent().ServiceRegister(asr); err != nil {
 		return err
 	}
-	this.hosthash = h
 	return this.client.Agent().PassTTL("service:"+snode.Id, "")
 }
 
@@ -136,16 +148,32 @@ func (this *Consulregistry) run() {
 }
 
 func (this *Consulregistry) PushServiceInfo() (err error) {
-	err = this.registerSNode(&ServiceNode{
-		Tag:          service.GetTag(),
-		Id:           service.GetId(),
-		Type:         service.GetType(),
-		Category:     service.GetCategory(),
-		Version:      service.GetVersion(),
-		RpcId:        service.GetRpcId(),
-		PreWeight:    service.GetPreWeight(),
-		RpcSubscribe: rpc.GetRpcInfo(),
-	})
+	if this.isstart {
+		err = this.registerSNode(&ServiceNode{
+			Tag:          service.GetTag(),
+			Id:           service.GetId(),
+			Type:         service.GetType(),
+			Category:     service.GetCategory(),
+			Version:      service.GetVersion(),
+			RpcId:        service.GetRpcId(),
+			PreWeight:    service.GetPreWeight(),
+			RpcSubscribe: this.getRpcInfo(),
+		})
+	}
+	return
+}
+
+func (this *Consulregistry) getRpcInfo() (rfs []core.Rpc_Key) {
+	rpcSubscribe := rpc.GetRpcInfo()
+	a := sort.StringSlice{}
+	for k, _ := range rpcSubscribe {
+		a = append(a, string(k))
+	}
+	sort.Sort(a)
+	rfs = make([]core.Rpc_Key, len(a))
+	for i, k := range a {
+		rfs[i] = core.Rpc_Key(k)
+	}
 	return
 }
 
@@ -298,28 +326,39 @@ func (this *Consulregistry) addandupdataServiceNode(as *api.AgentService) (sn *S
 		log.Errorf("registry 读取服务节点异常:%v", as.Meta["preweight"])
 		return
 	}
+
 	snode := &ServiceNode{
-		Tag:       tag,
-		Type:      as.Service,
-		Category:  core.S_Category(category),
-		Id:        as.ID,
-		Version:   int32(version),
-		RpcId:     rpcid,
-		PreWeight: int32(preweight),
+		Tag:          tag,
+		Type:         as.Service,
+		Category:     core.S_Category(category),
+		Id:           as.ID,
+		Version:      int32(version),
+		RpcId:        rpcid,
+		PreWeight:    int32(preweight),
+		RpcSubscribe: make([]core.Rpc_Key, 0),
 	}
-	_, ok := this.services[snode.Id]
-	if !ok {
-		log.Debugf("发现新的服务【%s】", snode.Id)
-		this.services[snode.Id] = snode
-		if this.options.Listener != nil { //异步通知
-			go this.options.Listener.FindServiceHandlefunc(*snode)
+	json.Unmarshal([]byte(as.Meta["rpcsubscribe"]), &snode.RpcSubscribe)
+	if h, err := hash.Hash(snode, nil); err == nil {
+		_, ok := this.services[snode.Id]
+		if !ok {
+			log.Debugf("发现新的服务【%s】", snode.Id)
+			this.services[snode.Id] = snode
+			this.shash[snode.Id] = h
+			if this.options.Listener != nil { //异步通知
+				go this.options.Listener.FindServiceHandlefunc(*snode)
+			}
+		} else {
+			if v, ok := this.shash[snode.Id]; !ok || v != h { //校验不一致
+				log.Debugf("更新服务【%s】", snode.Id)
+				this.services[snode.Id] = snode
+				this.shash[snode.Id] = h
+				if this.options.Listener != nil { //异步通知
+					go this.options.Listener.UpDataServiceHandlefunc(*snode)
+				}
+			}
 		}
 	} else {
-		log.Debugf("更新服务【%s】", snode.Id)
-		this.services[snode.Id] = snode
-		if this.options.Listener != nil { //异步通知
-			go this.options.Listener.UpDataServiceHandlefunc(*snode)
-		}
+		log.Errorf("registry 校验服务 hash 值异常:%s", err.Error())
 	}
 	this.SyncRpcInfo()
 	return
