@@ -168,18 +168,14 @@ func (this *RedisPool) GetListByRandom(key string, num int, valuetype reflect.Ty
 	n := 0
 	for _, i := range r.Perm(count) {
 		n++
-		data, err := redis.String(pool.Do("LINDEX", key, i))
-		if err != nil {
-			log.Errorf("GetListByRandom 执行异常 key:%s index:%d err:%s", key, i, err.Error())
-		}
-		v := reflect.New(valuetype.Elem()).Interface()
-		err = json.Unmarshal([]byte(data), &v)
-		if err != nil {
-			log.Errorf("GetListByLIndex 执行异常 key:%s index:%d err:%s", key, i, err.Error())
-		}
-		values = append(values, v)
-		if n >= num {
-			break
+		if data, err := redis.String(pool.Do("LINDEX", key, i)); err != nil {
+			v := reflect.New(valuetype.Elem()).Interface()
+			if err = json.Unmarshal([]byte(data), &v); err != nil {
+				values = append(values, v)
+				if n >= num {
+					break
+				}
+			}
 		}
 	}
 	return
