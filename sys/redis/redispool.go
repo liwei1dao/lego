@@ -3,7 +3,9 @@ package redis
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"reflect"
+	"time"
 
 	"github.com/liwei1dao/lego/sys/log"
 
@@ -148,6 +150,39 @@ func (this *RedisPool) GetList(key string, valuetype reflect.Type) (values []int
 		}
 	}
 	return values
+}
+
+//随机从列表中获取指定数量的元素
+func (this *RedisPool) GetListByRandom(key string, num int, valuetype reflect.Type) (values []interface{}) {
+	values = make([]interface{}, 0)
+	pool := this.Pool.Get()
+	defer pool.Close()
+	count, err := redis.Int(pool.Do("LLEN", key))
+	if err != nil || count == 0 {
+		return
+	}
+	if num > count {
+		num = count
+	}
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+	n := 0
+	for _, i := range r.Perm(count) {
+		n++
+		data, err := redis.String(pool.Do("LINDEX", key, i))
+		if err != nil {
+			log.Errorf("GetListByRandom 执行异常 key:%s index:%d err:%s", key, i, err.Error())
+		}
+		v := reflect.New(valuetype.Elem()).Interface()
+		err = json.Unmarshal([]byte(data), &v)
+		if err != nil {
+			log.Errorf("GetListByLIndex 执行异常 key:%s index:%d err:%s", key, i, err.Error())
+		}
+		values = append(values, v)
+		if n >= num {
+			break
+		}
+	}
+	return
 }
 
 //通过索引获取列表中的元素
