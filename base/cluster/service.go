@@ -19,6 +19,7 @@ type ClusterService struct {
 	opts           *Options
 	serverList     sync.Map
 	ClusterService base.IClusterService
+	IsInClustered  bool
 	preweight      int32
 }
 
@@ -126,7 +127,14 @@ func (this *ClusterService) FindServiceHandlefunc(node registry.ServiceNode) {
 			this.serverList.Store(node.Id, s)
 		}
 	}
-	event.TriggerEvent(core.Event_FindNewService, node) //触发发现新的服务事件
+	if this.IsInClustered {
+		event.TriggerEvent(core.Event_FindNewService, node) //触发发现新的服务事件
+	} else {
+		if node.Id == this.opts.Id { //发现自己 加入集群成功
+			this.IsInClustered = true
+			event.TriggerEvent(core.Event_RegistryStart)
+		}
+	}
 }
 
 //更新服务会话 当有新的服务加入时

@@ -72,7 +72,6 @@ func (this *LocalRouteMgrComp) OnRoute(agent IAgent, msg proto.IMessage) (code c
 		}
 		return core.ErrorCode_Success, nil
 	} else {
-		return core.ErrorCode_NoRoute, nil
+		return core.ErrorCode_NoRoute, fmt.Errorf("NoRoute ComId:%d", msg.GetComId())
 	}
-	return core.ErrorCode_NoRoute, nil
 }

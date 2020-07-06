@@ -15,6 +15,7 @@ const ( //默认事件
 	Event_FindNewService   Event_Key = "FindNewService"   //发现新的服务
 	Event_UpDataOldService Event_Key = "UpDataOldService" //发现新的服务
 	Event_LoseService      Event_Key = "LoseService"      //丢失服务
+	Event_RegistryStart    Event_Key = "RegistryStart"    //注册表系统启动成功
 )
 
 const (

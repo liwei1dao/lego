@@ -93,7 +93,7 @@ type LocalRoute struct {
 
 func (this *LocalRoute) OnRoute(a IAgent, msg proto.IMessage) (code core.ErrorCode, err string) {
 	if s, err := this.sessionFun(this.Module, a.GetSessionData()); err != nil {
-		return 0, err.Error()
+		return core.ErrorCode_RpcFuncExecutionError, err.Error()
 	} else {
 		return this.f(s, msg)
 	}

@@ -37,8 +37,8 @@ func (this *SComp_GateRouteComp) Init(service core.IService, comp core.IServiceC
 
 func (this *SComp_GateRouteComp) Start() (err error) {
 	err = this.ServiceCompBase.Start()
-	this.Service.RegisterGO(gate.Rpc_GateRoute, this.ReceiveMsg) //注册网关路由接收接口
-	event.RegisterGO(core.Event_ServiceStartEnd, this.registergateroute)
+	this.Service.RegisterGO(gate.Rpc_GateRoute, this.ReceiveMsg)       //注册网关路由接收接口
+	event.RegisterGO(core.Event_RegistryStart, this.registergateroute) //注册表启动成功
 	event.RegisterGO(core.Event_FindNewService, this.findnewservice)
 	return
 }
