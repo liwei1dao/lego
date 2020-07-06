@@ -7,7 +7,6 @@ import (
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
-	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/proto"
 	"github.com/liwei1dao/lego/sys/registry"
 )
@@ -44,11 +43,15 @@ func (this *RemoteRouteMgrComp) SetNewSession(f func(service base.IClusterServic
 	this.NewSession = f
 }
 
-func (this *RemoteRouteMgrComp) RegisterRoute(comId uint16, sId string) (result string, err string) {
-	log.Infof("注册远程服务 comId：%d sId:%s", comId, sId)
-	snode, e := registry.GetServiceById(sId)
-	if e != nil {
-		return "", fmt.Sprintf("未发现目标服务【%s】", sId)
+func (this *RemoteRouteMgrComp) RegisterRoute(comId uint16, sId, sType string) (result string, err string) {
+	// log.Infof("注册远程服务 comId：%d sId:%s", comId, sId)
+	// snode, e := registry.GetServiceById(sId)
+	// if e != nil {
+	// 	return "", fmt.Sprintf("未发现目标服务【%s】", sId)
+	// }
+	snode := &registry.ServiceNode{
+		Id:   sId,
+		Type: sType,
 	}
 	this.routslock.Lock()
 	defer this.routslock.Unlock()

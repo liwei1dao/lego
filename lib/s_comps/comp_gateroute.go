@@ -48,7 +48,7 @@ func (this *SComp_GateRouteComp) registergateroute() {
 		for _, s := range ss {
 			for k, _ := range this.Routes {
 				log.Infof("向网关【%s】服务器注册服务comId:%d", s.GetId(), k)
-				this.Service.RpcInvokeById(s.GetId(), gate.Rpc_GateRouteRegister, false, k, this.Service.GetId()) //向所有网关服务注册
+				this.Service.RpcInvokeById(s.GetId(), gate.Rpc_GateRouteRegister, false, k, this.Service.GetId(), this.Service.GetType()) //向所有网关服务注册
 			}
 		}
 	}

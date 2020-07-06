@@ -55,7 +55,7 @@ type ILocalRouteMgrComp interface {
 type IRemoteRouteMgrComp interface {
 	core.IModuleComp
 	SetNewSession(f func(service base.IClusterService, data map[string]interface{}) (s core.IUserSession, err error))
-	RegisterRoute(comId uint16, sId string) (result string, err string)
+	RegisterRoute(comId uint16, sId, sType string) (result string, err string)
 	UnRegisterRoute(comId uint16, sType, sId string)
 	OnRoute(agent IAgent, msg proto.IMessage) (code core.ErrorCode, err error)
 }
