@@ -62,7 +62,7 @@ func (this *SComp_GateRouteComp) findnewservice(node registry.ServiceNode) {
 	if len(this.Routes) > 0 && node.Category == core.S_Category_GateService {
 		for k, _ := range this.Routes {
 			log.Infof("向网关【%s】服务器注册服务comId:%d", node.Id, k)
-			this.Service.RpcInvokeById(node.Id, gate.Rpc_GateRouteRegister, false, k, this.Service.GetId()) //向所有网关服务注册
+			this.Service.RpcInvokeById(node.Id, gate.Rpc_GateRouteRegister, false, k, this.Service.GetId(), this.Service.GetType()) //向所有网关服务注册
 		}
 	}
 }
