@@ -6,8 +6,10 @@ import (
 	"github.com/go-gomail/gomail"
 )
 
-func NewEmail(serverhost, fromemail, fompasswd string, serverport int) *sdk_email {
-	return &sdk_email{serverhost, serverport, fromemail, fompasswd}
+func newEmail(opt ...Option) (IEmail, error) {
+	opts := newOptions(opt...)
+	eml := &sdk_email{opts.Serverhost, opts.Serverport, opts.Fromemail, opts.Fompasswd}
+	return eml, nil
 }
 
 type sdk_email struct {
