@@ -1,4 +1,4 @@
-package emails
+package email
 
 import (
 	"testing"
