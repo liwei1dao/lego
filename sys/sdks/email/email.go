@@ -1,4 +1,4 @@
-package sdk_email
+package email
 
 import (
 	"fmt"
