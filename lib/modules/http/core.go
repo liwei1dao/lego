@@ -34,7 +34,7 @@ type (
 	H       map[string]interface{}
 	OutJson struct {
 		ErrorCode core.ErrorCode `json:"code"`
-		Msg       string         `json:"msg"`
+		Message   string         `json:"message"`
 		Data      interface{}    `json:"data"`
 	}
 )
