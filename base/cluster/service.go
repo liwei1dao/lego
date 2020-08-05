@@ -172,8 +172,8 @@ func (this *ClusterService) LoseServiceHandlefunc(sId string) {
 }
 func (this *ClusterService) getServiceSessionByType(sType string) (ss []core.IServiceSession, err error) {
 	ss = make([]core.IServiceSession, 0)
-	if nodes, err := registry.GetServiceByType(sType); err != nil {
-		log.Errorf("获取目标类型【%s】服务集失败err = %s", sType, err.Error())
+	if nodes := registry.GetServiceByType(sType); nodes == nil {
+		log.Errorf("获取目标类型【%s】服务集失败", sType)
 		return nil, err
 	} else {
 		for _, v := range nodes {
@@ -196,15 +196,15 @@ func (this *ClusterService) getServiceSessionByType(sType string) (ss []core.ISe
 
 func (this *ClusterService) GetSessionsByCategory(category core.S_Category) (ss []core.IServiceSession) {
 	ss = make([]core.IServiceSession, 0)
-	if nodes, err := registry.GetServiceByCategory(category); err != nil {
-		log.Errorf("获取目标类型【%s】服务集失败err = %s", category, err.Error())
+	if nodes := registry.GetServiceByCategory(category); nodes == nil {
+		log.Errorf("获取目标类型【%s】服务集失败", category)
 		return ss
 	} else {
 		for _, v := range nodes {
 			if s, ok := this.serverList.Load(v.Id); ok {
 				ss = append(ss, s.(core.IServiceSession))
 			} else {
-				s, err = cbase.NewServiceSession(v)
+				s, err := cbase.NewServiceSession(v)
 				if err != nil {
 					log.Errorf("创建服务会话失败【%s】 err = %s", v.Id, err.Error())
 					continue
