@@ -19,8 +19,9 @@ type (
 		Stop() error
 		PushServiceInfo() (err error)
 		GetServiceById(sId string) (n *ServiceNode, err error)
-		GetServiceByType(sType string) (n []*ServiceNode, err error)
-		GetServiceByCategory(category core.S_Category) (n []*ServiceNode, err error)
+		GetServiceByType(sType string) (n []*ServiceNode)
+		GetAllServices() (n []*ServiceNode)
+		GetServiceByCategory(category core.S_Category) (n []*ServiceNode)
 		GetRpcSubById(rId core.Rpc_Key) (n []*ServiceNode)
 	}
 )

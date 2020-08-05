@@ -186,7 +186,7 @@ func (this *Consulregistry) GetServiceById(sId string) (n *ServiceNode, err erro
 	}
 	return
 }
-func (this *Consulregistry) GetServiceByType(sType string) (n []*ServiceNode, err error) {
+func (this *Consulregistry) GetServiceByType(sType string) (n []*ServiceNode) {
 	this.slock.RLock()
 	defer this.slock.RUnlock()
 	n = make([]*ServiceNode, 0)
@@ -197,7 +197,18 @@ func (this *Consulregistry) GetServiceByType(sType string) (n []*ServiceNode, er
 	}
 	return
 }
-func (this *Consulregistry) GetServiceByCategory(category core.S_Category) (n []*ServiceNode, err error) {
+
+func (this *Consulregistry) GetAllServices() (n []*ServiceNode) {
+	this.slock.RLock()
+	defer this.slock.RUnlock()
+	n = make([]*ServiceNode, 0)
+	for _, v := range this.services {
+		n = append(n, v)
+	}
+	return
+}
+
+func (this *Consulregistry) GetServiceByCategory(category core.S_Category) (n []*ServiceNode) {
 	this.slock.RLock()
 	defer this.slock.RUnlock()
 	n = make([]*ServiceNode, 0)
