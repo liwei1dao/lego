@@ -28,15 +28,39 @@ func (this *Monitor) GetType() core.M_Modules {
 func (this *Monitor) Init(service core.IService, module core.IModule, setting map[string]interface{}) (err error) {
 	this.service = service.(base.IClusterService)
 	this.ServiceMonitor = &core.ServiceMonitor{
-		ServiceId:     this.service.GetId(),
-		ServiceType:   this.service.GetType(),
-		ServiceTag:    this.service.GetTag(),
-		Setting:       make(map[string]*core.SettingItem),
-		ModuleMonitor: make(map[core.M_Modules]*core.ModuleMonitor),
+		ServiceId:        this.service.GetId(),
+		ServiceType:      this.service.GetType(),
+		ServiceCategory:  this.service.GetCategory(),
+		ServiceVersion:   this.service.GetVersion(),
+		ServicePreWeight: this.service.GetPreWeight(),
+		ServiceTag:       this.service.GetTag(),
+		Setting:          make(map[string]*core.SettingItem),
+		ModuleMonitor:    make(map[core.M_Modules]*core.ModuleMonitor),
 	}
 	this.ServiceSetting = make(map[string]func(new interface{}))
 	this.ModulesSetting = make(map[core.M_Modules]map[string]func(new interface{}))
 	err = this.ModuleBase.Init(service, module, setting)
+	for k, v := range this.service.GetSettings().Settings {
+		this.ServiceMonitor.Setting[k] = &core.SettingItem{
+			ItemName: k,
+			IsWrite:  false,
+			Data:     v,
+		}
+	}
+	for k, v := range this.service.GetSettings().Modules {
+		this.ServiceMonitor.ModuleMonitor[core.M_Modules(k)] = &core.ModuleMonitor{
+			ModuleName: core.M_Modules(k),
+			Setting:    make(map[string]*core.SettingItem),
+		}
+		for k1, v1 := range v {
+			this.ServiceMonitor.ModuleMonitor[core.M_Modules(k)].Setting[k1] = &core.SettingItem{
+				ItemName: k1,
+				IsWrite:  false,
+				Data:     v1,
+			}
+		}
+	}
+
 	return
 }
 

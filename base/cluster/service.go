@@ -8,6 +8,7 @@ import (
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib/modules/monitor"
+	"github.com/liwei1dao/lego/sys/cron"
 	"github.com/liwei1dao/lego/sys/event"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/registry"
@@ -104,6 +105,9 @@ func (this *ClusterService) InitSys() {
 			panic(fmt.Sprintf("加入集群服务失败 err:%s", err.Error()))
 		}
 	})
+	if err := cron.OnInit(this.Service); err != nil {
+		panic(fmt.Sprintf("初始化cron系统【%s】失败%s", err.Error()))
+	}
 }
 
 func (this *ClusterService) Start() (err error) {
