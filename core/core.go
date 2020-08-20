@@ -84,3 +84,31 @@ type IUserSession interface {
 	SendMsg(comdId uint16, msgId uint16, msg interface{}) (err error)
 	Close() (err error)
 }
+
+//Monitor 数据
+type (
+	SettingItem struct {
+		ItemName string
+		IsWrite  bool
+		Data     interface{}
+	}
+	ServiceMonitor struct { //服务监听
+		ServiceId        string                       //服务Id
+		ServiceType      string                       //服务类型
+		ServiceCategory  S_Category                   //服务列表
+		ServiceVersion   int32                        //服务版本
+		ServicePreWeight int32                        //服务权重
+		ServiceTag       string                       //服务集群
+		Pid              int32                        //进程Id
+		Pname            string                       //进程名称
+		MemoryInfo       []float32                    //内存使用量
+		CpuInfo          []float64                    //Cpu使用量
+		TotalGoroutine   []int                        //总的协程数
+		Setting          map[string]*SettingItem      //服务器配置信息
+		ModuleMonitor    map[M_Modules]*ModuleMonitor //模块监听信息
+	}
+	ModuleMonitor struct { //模块监听
+		ModuleName M_Modules               //模块名称
+		Setting    map[string]*SettingItem //模块配置信息
+	}
+)

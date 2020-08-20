@@ -1,0 +1,85 @@
+package monitor
+
+import (
+	"github.com/liwei1dao/lego/base"
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/lib"
+)
+
+func NewModule() core.IModule {
+	m := new(Monitor)
+	return m
+}
+
+type Monitor struct {
+	cbase.ModuleBase
+	service            base.IClusterService
+	ServiceMonitor     *core.ServiceMonitor
+	ServiceSetting     map[string]func(new interface{})
+	ModulesSetting     map[core.M_Modules]map[string]func(new interface{})
+	ServiceMonitorComp *ServiceMonitorComp
+}
+
+func (this *Monitor) GetType() core.M_Modules {
+	return lib.SM_MonitorModule
+}
+
+func (this *Monitor) Init(service core.IService, module core.IModule, setting map[string]interface{}) (err error) {
+	this.service = service.(base.IClusterService)
+	this.ServiceMonitor = &core.ServiceMonitor{
+		ServiceId:     this.service.GetId(),
+		ServiceType:   this.service.GetType(),
+		ServiceTag:    this.service.GetTag(),
+		Setting:       make(map[string]*core.SettingItem),
+		ModuleMonitor: make(map[core.M_Modules]*core.ModuleMonitor),
+	}
+	this.ServiceSetting = make(map[string]func(new interface{}))
+	this.ModulesSetting = make(map[core.M_Modules]map[string]func(new interface{}))
+	err = this.ModuleBase.Init(service, module, setting)
+	return
+}
+
+func (this *Monitor) Start() (err error) {
+	err = this.ModuleBase.Start()
+	this.service.RegisterGO(Rpc_GetServiceMonitorInfo, this.Rpc_GetServiceMonitorInfo)
+	return
+}
+
+func (this *Monitor) OnInstallComp() {
+	this.ModuleBase.OnInstallComp()
+	this.ServiceMonitorComp = this.RegisterComp(new(ServiceMonitorComp)).(*ServiceMonitorComp)
+}
+
+//注册服务配置信息
+func (this *Monitor) RegisterServiceSettingItem(name string, iswrite bool, value interface{}, f func(new interface{})) {
+	this.ServiceMonitor.Setting[name] = &core.SettingItem{
+		ItemName: name,
+		IsWrite:  iswrite,
+		Data:     value,
+	}
+	this.ServiceSetting[name] = f
+}
+
+//注册模块配置信息
+func (this *Monitor) RegisterModuleSettingItem(module core.M_Modules, name string, iswrite bool, value interface{}, f func(new interface{})) {
+	if _, ok := this.ServiceMonitor.ModuleMonitor[module]; !ok {
+		this.ServiceMonitor.ModuleMonitor[module] = &core.ModuleMonitor{
+			ModuleName: module,
+			Setting:    make(map[string]*core.SettingItem),
+		}
+		this.ModulesSetting[module] = make(map[string]func(new interface{}))
+	}
+	this.ServiceMonitor.ModuleMonitor[module].Setting[name] = &core.SettingItem{
+		ItemName: name,
+		IsWrite:  iswrite,
+		Data:     value,
+	}
+	this.ModulesSetting[module][name] = f
+}
+
+//RPC------------------------------------------------------------------------------------------------------------------------------------------
+//读取服务监控信息
+func (this *Monitor) Rpc_GetServiceMonitorInfo() (result *core.ServiceMonitor, err string) {
+	return this.ServiceMonitor, ""
+}

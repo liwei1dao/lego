@@ -7,6 +7,7 @@ import (
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/lib/modules/monitor"
 	"github.com/liwei1dao/lego/sys/event"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/registry"
@@ -76,6 +77,7 @@ func (this *ClusterService) Init(service core.IService) (err error) {
 	}
 	return this.ServiceBase.Init(service)
 }
+
 func (this *ClusterService) InitSys() {
 	// this.ServiceBase.InitSys()
 	if err := log.OnInit(this.Service, log.SetLoglevel(this.opts.LogLvel), log.SetDebugMode(this.opts.Debugmode)); err != nil {
@@ -103,11 +105,19 @@ func (this *ClusterService) InitSys() {
 		}
 	})
 }
+
 func (this *ClusterService) Start() (err error) {
 	if err = this.ServiceBase.Start(); err != nil {
 		return
 	}
 	return
+}
+
+func (this *ClusterService) Run(mod ...core.IModule) {
+	modules := make([]core.IModule, 0)
+	modules = append(modules, monitor.NewModule())
+	modules = append(modules, mod...)
+	this.ServiceBase.Run(modules...)
 }
 
 func (this *ClusterService) Destroy() (err error) {

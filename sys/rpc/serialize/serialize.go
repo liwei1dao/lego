@@ -71,6 +71,7 @@ func SerializeInit() {
 	OnRegister(core.ErrorCode(0), ErrorCodeToBytes, BytesToErrorCode)
 	OnRegister(core.CustomRoute(0), CustomRouteToBytes, BytesToCustomRoute)
 	OnRegister(map[uint16][]uint16{}, JsonStructMarshal, BytesToMapUnit16SliceUInt16Rpc)
+	OnRegister(&core.ServiceMonitor{}, JsonStructMarshal, JsonStructUnmarshal)
 }
 
 func OnRegister(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {
