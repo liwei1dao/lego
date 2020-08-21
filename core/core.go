@@ -97,13 +97,13 @@ type (
 		ServiceType      string                       //服务类型
 		ServiceCategory  S_Category                   //服务列表
 		ServiceVersion   int32                        //服务版本
-		ServicePreWeight int32                        //服务权重
 		ServiceTag       string                       //服务集群
 		Pid              int32                        //进程Id
 		Pname            string                       //进程名称
 		MemoryInfo       []float32                    //内存使用量
 		CpuInfo          []float64                    //Cpu使用量
 		TotalGoroutine   []int                        //总的协程数
+		ServicePreWeight []int32                      //服务权重
 		Setting          map[string]*SettingItem      //服务器配置信息
 		ModuleMonitor    map[M_Modules]*ModuleMonitor //模块监听信息
 	}

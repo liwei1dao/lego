@@ -28,14 +28,13 @@ func (this *Monitor) GetType() core.M_Modules {
 func (this *Monitor) Init(service core.IService, module core.IModule, setting map[string]interface{}) (err error) {
 	this.service = service.(base.IClusterService)
 	this.ServiceMonitor = &core.ServiceMonitor{
-		ServiceId:        this.service.GetId(),
-		ServiceType:      this.service.GetType(),
-		ServiceCategory:  this.service.GetCategory(),
-		ServiceVersion:   this.service.GetVersion(),
-		ServicePreWeight: this.service.GetPreWeight(),
-		ServiceTag:       this.service.GetTag(),
-		Setting:          make(map[string]*core.SettingItem),
-		ModuleMonitor:    make(map[core.M_Modules]*core.ModuleMonitor),
+		ServiceId:       this.service.GetId(),
+		ServiceType:     this.service.GetType(),
+		ServiceCategory: this.service.GetCategory(),
+		ServiceVersion:  this.service.GetVersion(),
+		ServiceTag:      this.service.GetTag(),
+		Setting:         make(map[string]*core.SettingItem),
+		ModuleMonitor:   make(map[core.M_Modules]*core.ModuleMonitor),
 	}
 	this.ServiceSetting = make(map[string]func(new interface{}))
 	this.ModulesSetting = make(map[core.M_Modules]map[string]func(new interface{}))
