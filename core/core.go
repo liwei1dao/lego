@@ -85,6 +85,12 @@ type IUserSession interface {
 	Close() (err error)
 }
 
+type IServiceMonitor interface {
+	IModule
+	RegisterServiceSettingItem(name string, iswrite bool, value interface{}, f func(newvalue string) (err error))                  //注册服务级别的Setting
+	RegisterModuleSettingItem(module M_Modules, name string, iswrite bool, value interface{}, f func(newvalue string) (err error)) //注册模块级别的Setting
+}
+
 //Monitor 数据
 type (
 	SettingItem struct {

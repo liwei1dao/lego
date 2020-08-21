@@ -21,6 +21,7 @@ type ClusterService struct {
 	opts           *Options
 	serverList     sync.Map
 	ClusterService base.IClusterService
+	ServiceMonitor core.IServiceMonitor
 	IsInClustered  bool
 	preweight      int32
 }
@@ -61,6 +62,10 @@ func (this *ClusterService) GetPreWeight() int32 {
 
 func (this *ClusterService) SetPreWeight(weight int32) {
 	this.preweight = weight
+}
+
+func (this *ClusterService) GetServiceMonitor() core.IServiceMonitor {
+	return this.ServiceMonitor
 }
 
 func (this *ClusterService) Options() *Options {
@@ -118,8 +123,9 @@ func (this *ClusterService) Start() (err error) {
 }
 
 func (this *ClusterService) Run(mod ...core.IModule) {
+	this.ServiceMonitor = monitor.NewModule()
 	modules := make([]core.IModule, 0)
-	modules = append(modules, monitor.NewModule())
+	modules = append(modules, this.ServiceMonitor)
 	modules = append(modules, mod...)
 	this.ServiceBase.Run(modules...)
 }

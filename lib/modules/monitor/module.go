@@ -7,7 +7,7 @@ import (
 	"github.com/liwei1dao/lego/lib"
 )
 
-func NewModule() core.IModule {
+func NewModule() core.IServiceMonitor {
 	m := new(Monitor)
 	return m
 }
@@ -16,8 +16,8 @@ type Monitor struct {
 	cbase.ModuleBase
 	service            base.IClusterService
 	ServiceMonitor     *core.ServiceMonitor
-	ServiceSetting     map[string]func(new interface{})
-	ModulesSetting     map[core.M_Modules]map[string]func(new interface{})
+	ServiceSetting     map[string]func(newvalue string) (err error)
+	ModulesSetting     map[core.M_Modules]map[string]func(newvalue string) (err error)
 	ServiceMonitorComp *ServiceMonitorComp
 }
 
@@ -36,8 +36,8 @@ func (this *Monitor) Init(service core.IService, module core.IModule, setting ma
 		Setting:         make(map[string]*core.SettingItem),
 		ModuleMonitor:   make(map[core.M_Modules]*core.ModuleMonitor),
 	}
-	this.ServiceSetting = make(map[string]func(new interface{}))
-	this.ModulesSetting = make(map[core.M_Modules]map[string]func(new interface{}))
+	this.ServiceSetting = make(map[string]func(newvalue string) (err error))
+	this.ModulesSetting = make(map[core.M_Modules]map[string]func(newvalue string) (err error))
 	err = this.ModuleBase.Init(service, module, setting)
 	for k, v := range this.service.GetSettings().Settings {
 		this.ServiceMonitor.Setting[k] = &core.SettingItem{
@@ -51,6 +51,7 @@ func (this *Monitor) Init(service core.IService, module core.IModule, setting ma
 			ModuleName: core.M_Modules(k),
 			Setting:    make(map[string]*core.SettingItem),
 		}
+		this.ModulesSetting[core.M_Modules(k)] = make(map[string]func(newvalue string) (err error))
 		for k1, v1 := range v {
 			this.ServiceMonitor.ModuleMonitor[core.M_Modules(k)].Setting[k1] = &core.SettingItem{
 				ItemName: k1,
@@ -75,7 +76,7 @@ func (this *Monitor) OnInstallComp() {
 }
 
 //注册服务配置信息
-func (this *Monitor) RegisterServiceSettingItem(name string, iswrite bool, value interface{}, f func(new interface{})) {
+func (this *Monitor) RegisterServiceSettingItem(name string, iswrite bool, value interface{}, f func(newvalue string) (err error)) {
 	this.ServiceMonitor.Setting[name] = &core.SettingItem{
 		ItemName: name,
 		IsWrite:  iswrite,
@@ -85,14 +86,7 @@ func (this *Monitor) RegisterServiceSettingItem(name string, iswrite bool, value
 }
 
 //注册模块配置信息
-func (this *Monitor) RegisterModuleSettingItem(module core.M_Modules, name string, iswrite bool, value interface{}, f func(new interface{})) {
-	if _, ok := this.ServiceMonitor.ModuleMonitor[module]; !ok {
-		this.ServiceMonitor.ModuleMonitor[module] = &core.ModuleMonitor{
-			ModuleName: module,
-			Setting:    make(map[string]*core.SettingItem),
-		}
-		this.ModulesSetting[module] = make(map[string]func(new interface{}))
-	}
+func (this *Monitor) RegisterModuleSettingItem(module core.M_Modules, name string, iswrite bool, value interface{}, f func(newvalue string) (err error)) {
 	this.ServiceMonitor.ModuleMonitor[module].Setting[name] = &core.SettingItem{
 		ItemName: name,
 		IsWrite:  iswrite,
