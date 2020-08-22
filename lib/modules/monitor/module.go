@@ -1,6 +1,8 @@
 package monitor
 
 import (
+	"fmt"
+
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
@@ -67,6 +69,8 @@ func (this *Monitor) Init(service core.IService, module core.IModule, setting ma
 func (this *Monitor) Start() (err error) {
 	err = this.ModuleBase.Start()
 	this.service.RegisterGO(Rpc_GetServiceMonitorInfo, this.Rpc_GetServiceMonitorInfo)
+	this.service.RegisterGO(Rpc_SetMonitorServiceSetting, this.Rpc_SetMonitorServiceSetting)
+	this.service.RegisterGO(Rpc_SetMonitorModuleSetting, this.Rpc_SetMonitorModuleSetting)
 	return
 }
 
@@ -99,4 +103,32 @@ func (this *Monitor) RegisterModuleSettingItem(module core.M_Modules, name strin
 //读取服务监控信息
 func (this *Monitor) Rpc_GetServiceMonitorInfo() (result *core.ServiceMonitor, err string) {
 	return this.ServiceMonitor, ""
+}
+
+//读取服务监控信息
+func (this *Monitor) Rpc_SetMonitorServiceSetting(key, value string) (result string, err string) {
+	if f, ok := this.ServiceSetting[key]; ok {
+		if e := f(value); e != nil {
+			return "", fmt.Sprintf("modifier key:%s err:%s", key, e.Error())
+		}
+	} else {
+		return "", fmt.Sprintf("no register key:%s modifier", key)
+	}
+	return
+}
+
+//读取服务监控信息
+func (this *Monitor) Rpc_SetMonitorModuleSetting(module, key, value string) (result string, err string) {
+	if m, ok := this.ModulesSetting[core.M_Modules(module)]; ok {
+		if f, ok := m[key]; ok {
+			if e := f(value); e != nil {
+				return "", fmt.Sprintf("modifier key:%s err:%s", key, e.Error())
+			}
+		} else {
+			return "", fmt.Sprintf("no register module:%s key:%s modifier", module, key)
+		}
+	} else {
+		return "", fmt.Sprintf("no register module:%s modifier", module)
+	}
+	return
 }
