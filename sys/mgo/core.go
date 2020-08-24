@@ -1,9 +1,11 @@
 package mgo
 
 import (
+	"context"
+
+	"github.com/liwei1dao/lego/core"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"github.com/liwei1dao/lego/core"
 )
 
 var (
@@ -45,12 +47,20 @@ func InsertMany(sqltable core.SqlTable, data []interface{}, opts ...*options.Ins
 	return mgodb.Collection(sqltable).InsertMany(mgodb.getContext(), data, opts...)
 }
 
+func InsertManyByCtx(sqltable core.SqlTable, ctx context.Context, data []interface{}, opts ...*options.InsertManyOptions) (*mongo.InsertManyResult, error) {
+	return mgodb.Collection(sqltable).InsertMany(ctx, data, opts...)
+}
+
 func UpdateOne(sqltable core.SqlTable, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
 	return mgodb.Collection(sqltable).UpdateOne(mgodb.getContext(), filter, update, opts...)
 }
 
 func UpdateMany(sqltable core.SqlTable, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
 	return mgodb.Collection(sqltable).UpdateMany(mgodb.getContext(), filter, update, opts...)
+}
+
+func UpdateManyByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
+	return mgodb.Collection(sqltable).UpdateMany(ctx, filter, update, opts...)
 }
 
 func FindOneAndDelete(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOneAndDeleteOptions) *mongo.SingleResult {
@@ -63,4 +73,8 @@ func DeleteOne(sqltable core.SqlTable, filter interface{}, opts ...*options.Dele
 
 func DeleteMany(sqltable core.SqlTable, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
 	return mgodb.Collection(sqltable).DeleteMany(mgodb.getContext(), filter, opts...)
+}
+
+func DeleteManyByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
+	return mgodb.Collection(sqltable).DeleteMany(ctx, filter, opts...)
 }
