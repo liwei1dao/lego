@@ -98,8 +98,6 @@ func Serialize(d interface{}) (dtype string, b []byte, err error) {
 	if v, ok := SerializeObjs[dtype]; ok {
 		b, err = v.SerializeFunc(d)
 		return
-	} else {
-		log.Panicf("没有注册序列化数据结构 dtype = %s", dtype)
 	}
 	return dtype, nil, fmt.Errorf("没有注册序列化数据结构 dtype = %s", dtype)
 }
@@ -107,8 +105,6 @@ func Serialize(d interface{}) (dtype string, b []byte, err error) {
 func UnSerialize(dtype string, d []byte) (interface{}, error) {
 	if v, ok := SerializeObjs[dtype]; ok {
 		return v.UnSerializeFunc(v.dataType, d)
-	} else {
-		log.Panicf("没有注册序列化数据结构 dtype = %s", dtype)
 	}
 	return nil, fmt.Errorf("没有注册序列化数据结构 dtype = %s", dtype)
 }

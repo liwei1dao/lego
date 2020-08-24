@@ -114,7 +114,7 @@ func (this *Monitor) Rpc_SetMonitorServiceSetting(key, value string) (result str
 	} else {
 		return "", fmt.Sprintf("no register key:%s modifier", key)
 	}
-	return
+	return "", ""
 }
 
 //读取服务监控信息
@@ -130,5 +130,5 @@ func (this *Monitor) Rpc_SetMonitorModuleSetting(module, key, value string) (res
 	} else {
 		return "", fmt.Sprintf("no register module:%s modifier", module)
 	}
-	return
+	return "", ""
 }

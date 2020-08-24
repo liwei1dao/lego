@@ -98,6 +98,9 @@ func (this *RpcClient) CallArgs(_func string, ArgsType []string, args [][]byte) 
 		if !ok {
 			return nil, "client closed"
 		}
+		if resultInfo.Error != "" {
+			return nil, resultInfo.Error
+		}
 		result, err := rpcserialize.UnSerialize(resultInfo.ResultType, resultInfo.Result)
 		if err != nil {
 			return nil, err.Error()
