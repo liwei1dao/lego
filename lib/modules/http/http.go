@@ -12,6 +12,7 @@ import (
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib/modules/http/render"
 	"github.com/liwei1dao/lego/sys/log"
+	"github.com/liwei1dao/lego/sys/utils"
 )
 
 type Http struct {
@@ -32,6 +33,7 @@ type Http struct {
 	HTMLRender         render.HTMLRender
 	pool               sync.Pool
 	trees              methodTrees
+	Ip                 string
 }
 
 func (this *Http) Init(service core.IService, module core.IModule, setting map[string]interface{}) (err error) {
@@ -64,6 +66,7 @@ func (this *Http) Init(service core.IService, module core.IModule, setting map[s
 	if err = this.ModuleBase.Init(service, module, setting); err != nil {
 		return
 	}
+	this.Ip = utils.GetOutboundIP()
 	return
 }
 func (this *Http) Start() (err error) {
