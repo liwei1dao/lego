@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
 
 	"github.com/liwei1dao/lego/base"
@@ -23,7 +24,6 @@ type ClusterService struct {
 	ClusterService base.IClusterService
 	ServiceMonitor core.IServiceMonitor
 	IsInClustered  bool
-	preweight      int32
 }
 
 func (this *ClusterService) GetTag() string {
@@ -57,11 +57,11 @@ func (this *ClusterService) GetRpcId() string {
 	}
 }
 func (this *ClusterService) GetPreWeight() int32 {
-	return this.preweight
+	return int32(runtime.NumGoroutine())
 }
 
 func (this *ClusterService) SetPreWeight(weight int32) {
-	this.preweight = weight
+
 }
 
 func (this *ClusterService) GetServiceMonitor() core.IServiceMonitor {
