@@ -185,6 +185,7 @@ func (this *Http) NoMethod(handlers ...HandlerFunc) {
 func (this *Http) rebuild404Handlers() {
 	this.allNoRoute = this.combineHandlers(this.noRoute)
 }
+
 func (this *Http) rebuild405Handlers() {
 	this.allNoMethod = this.combineHandlers(this.noMethod)
 }
