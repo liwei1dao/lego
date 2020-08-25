@@ -17,6 +17,7 @@ type (
 		core.IModule
 		IRoutes
 		addRoute(method, path string, handlers HandlersChain) (err error)
+		GetIp() string
 	}
 
 	IRoutes interface {

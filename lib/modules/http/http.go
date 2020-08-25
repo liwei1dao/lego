@@ -202,3 +202,6 @@ func (this *Http) LoadHTMLGlob(pattern string) {
 func (this *Http) SetHTMLTemplate(templ *template.Template) {
 	this.HTMLRender = render.HTMLProduction{Template: templ.Funcs(this.FuncMap)}
 }
+func (this *Http) GetIp() string {
+	return this.Ip
+}
