@@ -19,8 +19,9 @@ const ( //默认事件
 )
 
 const (
-	S_Category_SystemService S_Category = "SystemService" //系统服务类型
-	S_Category_GateService   S_Category = "GateService"   //网关服务类型
+	S_Category_SystemService   S_Category = "SystemService"   //系统服务类型
+	S_Category_GateService     S_Category = "GateService"     //网关服务类型
+	S_Category_BusinessService S_Category = "BusinessService" //业务服务器
 )
 
 type ServiceSttings struct {
@@ -44,7 +45,6 @@ type IService interface {
 	GetComp(CompName S_Comps) (comp IServiceComp, err error)    //获取组件
 	GetModule(ModuleName M_Modules) (module IModule, err error) //获取模块
 }
-
 type IServiceComp interface {
 	GetName() S_Comps
 	Init(service IService, comp IServiceComp) (err error)
@@ -76,7 +76,6 @@ type IServiceSession interface {
 	CallNR(_func Rpc_Key, params ...interface{}) (err error)
 	Call(_func Rpc_Key, params ...interface{}) (interface{}, error)
 }
-
 type IUserSession interface {
 	GetSessionId() string
 	GetIP() string
@@ -84,7 +83,6 @@ type IUserSession interface {
 	SendMsg(comdId uint16, msgId uint16, msg interface{}) (err error)
 	Close() (err error)
 }
-
 type IServiceMonitor interface {
 	IModule
 	RegisterServiceSettingItem(name string, iswrite bool, value interface{}, f func(newvalue string) (err error))                  //注册服务级别的Setting

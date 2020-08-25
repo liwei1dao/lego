@@ -80,6 +80,7 @@ func newOptions(opts ...Option) *Options {
 		Tag:       "liwie1dao",
 		Id:        "cluster_1",
 		Type:      "cluster",
+		Category:  core.S_Category_BusinessService,
 		Version:   1,
 		WorkPath:  utils.GetApplicationDir(),
 		LogLvel:   log.InfoLevel,
@@ -96,7 +97,6 @@ func newOptions(opts ...Option) *Options {
 	_, err := toml.DecodeFile(confpath, &opt.Setting)
 	if err != nil {
 		fmt.Printf("警告 读取服务配置【%s】文件失败err=%s:\n", confpath, err.Error())
-		//panic(fmt.Sprintf("读取服务配置【%s】文件失败err=%s:", confpath, err.Error()))
 	}
 	return opt
 }

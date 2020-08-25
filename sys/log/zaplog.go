@@ -15,9 +15,9 @@ func newLog(opt ...Option) (log Ilog, err error) {
 	var allCore []zapcore.Core
 	hook := lumberjack.Logger{
 		Filename:   opts.fileName, //日志文件路径
-		MaxSize:    300,           // megabytes
+		MaxSize:    2,             //每个日志文件保存的最大尺寸 单位：M
 		MaxBackups: 30,            //最多保留备份个数
-		MaxAge:     7,             //days
+		MaxAge:     7,             //文件最多保存多少天
 		Compress:   false,         //是否压缩 disabled by default
 	}
 	var level zapcore.Level
