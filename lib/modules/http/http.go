@@ -12,7 +12,7 @@ import (
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib/modules/http/render"
 	"github.com/liwei1dao/lego/sys/log"
-	"github.com/liwei1dao/lego/sys/utils"
+	"github.com/liwei1dao/lego/utils"
 )
 
 type Http struct {
