@@ -12,7 +12,7 @@ import (
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib/modules/http/render"
 	"github.com/liwei1dao/lego/sys/log"
-	"github.com/liwei1dao/lego/utils"
+	"github.com/liwei1dao/lego/utils/ip"
 )
 
 type Http struct {
@@ -66,7 +66,7 @@ func (this *Http) Init(service core.IService, module core.IModule, setting map[s
 	if err = this.ModuleBase.Init(service, module, setting); err != nil {
 		return
 	}
-	this.Ip = utils.GetOutboundIP()
+	this.Ip = ip.GetEthernetInfo().IP
 	return
 }
 func (this *Http) Start() (err error) {

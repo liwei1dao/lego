@@ -6,6 +6,7 @@ require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.187
 	github.com/aliyun/aliyun-oss-go-sdk v2.1.0+incompatible
+	github.com/axgle/mahonia v0.0.0-20180208002826-3358181d7394
 	github.com/denisenkom/go-mssqldb v0.0.0-20200428022330-06a60b6afbbc
 	github.com/disintegration/imaging v1.6.2
 	github.com/garyburd/redigo v1.6.0

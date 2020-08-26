@@ -3,7 +3,6 @@ package utils
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"net"
 	"os"
 	"reflect"
 	"strings"
@@ -133,14 +132,4 @@ func copyRecursive(src, dst reflect.Value) {
 	default:
 		dst.Set(src)
 	}
-}
-
-func GetOutboundIP() string {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		return ""
-	}
-	defer conn.Close()
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-	return localAddr.IP.String()
 }
