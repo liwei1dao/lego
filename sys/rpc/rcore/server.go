@@ -227,7 +227,7 @@ func (this *RpcServer) runFunc(callInfo CallInfo) {
 			)
 			callInfo.Result = *resultInfo
 			this.doCallback(callInfo)
-			log.Debugf("RPC Exec ModuleType = %v f = %v Elapsed = %v", this.opts.sId, callInfo.RpcInfo.Fn, time.Since(start))
+			// log.Debugf("RPC Exec ModuleType = %v f = %v Elapsed = %v", this.opts.sId, callInfo.RpcInfo.Fn, time.Since(start))
 			if this.listener != nil {
 				this.listener.OnComplete(callInfo.RpcInfo.Fn, &callInfo, resultInfo, time.Since(start).Nanoseconds())
 			}
