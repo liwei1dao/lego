@@ -1,0 +1,1 @@
+abigen --sol pay.sol --pkg mytoken --out pay.go
