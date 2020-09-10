@@ -1,12 +1,19 @@
 package ethpay
 
-import "github.com/liwei1dao/lego/core"
+import (
+	"encoding/hex"
+	"time"
+
+	"github.com/liwei1dao/lego/core"
+	"golang.org/x/crypto/sha3"
+)
 
 type (
 	IETHPay interface {
-		LookBalance(addr string) uint64                       //查看余额
-		GetUserPayAddr(uhash string) (addr string, err error) //获取用户支付地址
-		RecycleUserMoney(uaddr string) (trans string,err error) //回收资金
+		LookBalance(addr string) uint64                          //查看余额
+		GetUserPayAddr(uhash string) (addr string, err error)    //获取用户支付地址
+		RecycleUserMoney(uaddr string) (trans string, err error) //回收资金
+		MonitorUserPay(uaddr string, timeout time.Duration) (value uint64, err error)
 	}
 )
 
@@ -27,10 +34,13 @@ func GetUserPayAddr(uhash string) (addr string, err error) {
 	return pay.GetUserPayAddr(uhash)
 }
 
-func RecycleUserMoney(uaddr string) (trans string,err error){
+func RecycleUserMoney(uaddr string) (trans string, err error) {
 	return pay.RecycleUserMoney(uaddr)
 }
 
+func MonitorUserPay(uaddr string, timeout time.Duration) (value uint64, err error) {
+	return pay.MonitorUserPay(uaddr, timeout)
+}
 
 func mustHexDecode(raw string) []byte {
 	if raw == "0x" {
@@ -53,4 +63,3 @@ func keccak256(data ...[]byte) []byte {
 	}
 	return d.Sum(nil)
 }
-

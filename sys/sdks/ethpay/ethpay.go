@@ -5,12 +5,15 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"strings"
-
+	"time"
 	"github.com/liwei1dao/lego/sys/sdks/ethpay/pay"
-
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -94,14 +97,14 @@ func (this *EthPay) GetUserPayAddr(uhash string) (addr string, err error) {
 }
 
 //部署支付账号合约
-func (this *EthPay)DeployAccountContract(uhash string)(trans string,err error){
+func (this *EthPay) DeployAccountContract(uhash string) (trans string, err error) {
 	nonce, err := this.client.PendingNonceAt(context.Background(), this.ControllerAddr)
 	if err != nil {
-		return "",err
+		return "", err
 	}
 	gasPrice, err := this.client.SuggestGasPrice(context.Background())
 	if err != nil {
-		return "",err
+		return "", err
 	}
 	auth := bind.NewKeyedTransactor(this.privateKey)
 	auth.Nonce = big.NewInt(int64(nonce))
@@ -111,30 +114,30 @@ func (this *EthPay)DeployAccountContract(uhash string)(trans string,err error){
 
 	instance, err := pay.NewWallet(this.WalletAdrr, this.client)
 	if err != nil {
-		return "",err
+		return "", err
 	}
-	
+
 	salt := [32]byte{}
 	copy(salt[:], MustHexDecode(uhash))
 
 	tx, err := instance.Create(auth, this.RecieverAddr, salt)
 	if err != nil {
-		return "",err
+		return "", err
 	}
-	
+
 	trans = tx.Hash().Hex()
-	return trans,nil
+	return trans, nil
 }
 
 //回收用户支付合约下的金额
-func (this *EthPay) RecycleUserMoney(uaddr string)(trans string,err error) {
+func (this *EthPay) RecycleUserMoney(uaddr string) (trans string, err error) {
 	nonce, err := this.client.PendingNonceAt(context.Background(), this.ControllerAddr)
 	if err != nil {
-		return  "",err
-	}s
+		return "", err
+	}
 	gasPrice, err := this.client.SuggestGasPrice(context.Background())
 	if err != nil {
-		return  "",err
+		return "", err
 	}
 
 	auth := bind.NewKeyedTransactor(this.privateKey)
@@ -146,18 +149,57 @@ func (this *EthPay) RecycleUserMoney(uaddr string)(trans string,err error) {
 	address := common.HexToAddress(uaddr)
 	instance, err := pay.NewAccount(address, this.client)
 	if err != nil {
-		return  "",err
+		return "", err
 	}
 
 	tx, err := instance.Flush(auth)
 	if err != nil {
-		return  "",err
+		return "", err
 	}
 	trans = tx.Hash().Hex()
-	return trans,nil
+	return trans, nil
 }
 
 //监听用户支付行为
-func (this *EthPay)MonitorUserPay(uaddr string){
+func (this *EthPay) MonitorUserPay(uaddr string, timeout time.Duration) (value uint64, err error) {
+	contractAbi, err := abi.JSON(strings.NewReader(string(pay.AccountABI)))
+	if err != nil {
+		return err
+	}
 
+	contractAddress := common.HexToAddress(uaddr)
+	query := ethereum.FilterQuery{
+		Addresses: []common.Address{contractAddress},
+	}
+
+	logs := make(chan types.Log)
+	sub, err := client.SubscribeFilterLogs(context.Background(), query, logs)
+	if err != nil {
+		return 0, err
+	}
+
+	ctx, cancel := context.WithDeadline(context.Background(), timeout)
+
+	for {
+		select {
+		case err := <-sub.Err():
+			return 0, err
+		case <-ctx.Done():
+			cancel()
+			return 0, fmt.Errorf("Time Out")
+		case vLog := <-logs:
+			// fmt.Println(vLog.BlockHash.Hex()) // 0x3404b8c050aa0aacd0223e91b5c32fee6400f357764771d0684fa7b3f448f1a8
+			// fmt.Println(vLog.BlockNumber)     // 2394201
+			// fmt.Println(vLog.TxHash.Hex())    // 0x280201eda63c9ff6f305fcee51d5eb86167fab40ca3108ec784e8652a0e2b1a6
+			event := struct {
+				Vaule *big.Int
+			}{}
+			err := contractAbi.Unpack(&event, "Recharge", vLog.Data)
+			if err != nil {
+				return err
+			}
+			// fmt.Println(event.Vaule)
+			return event.Vaule.Uint64(), nil
+		}
+	}
 }
