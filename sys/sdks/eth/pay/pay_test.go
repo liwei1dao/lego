@@ -1,4 +1,4 @@
-package ethpay
+package pay
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/liwei1dao/lego/sys/sdks/ethpay/pay"
+	"github.com/liwei1dao/lego/sys/sdks/ethpay/solidity"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"

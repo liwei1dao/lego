@@ -1,4 +1,4 @@
-package ethpay
+package pay
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"strings"
 	"time"
-	"github.com/liwei1dao/lego/sys/sdks/ethpay/pay"
+	"github.com/liwei1dao/lego/sys/sdks/pay/solidity"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -18,19 +18,19 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-func newEthPay(opt ...Option) (IETHPay, error) {
+func newPay(opt ...Option) (IPay, error) {
 	opts, err := newOptions(opt...)
 	if err != nil {
 		return nil, err
 	}
-	ethpay := &EthPay{
+	Pay := &Pay{
 		opt: opts,
 	}
-	err = ethpay.Init()
-	return ethpay, err
+	err = Pay.Init()
+	return Pay, err
 }
 
-type EthPay struct {
+type Pay struct {
 	opt            *Options
 	client         *ethclient.Client
 	privateKey     *ecdsa.PrivateKey
@@ -39,7 +39,7 @@ type EthPay struct {
 	RecieverAddr   common.Address //回收账号钱包地址
 }
 
-func (this *EthPay) Init() (err error) {
+func (this *Pay) Init() (err error) {
 	this.client, err = ethclient.Dial(this.opt.EthPoolAdrr)
 	if err != nil {
 		return
@@ -62,7 +62,7 @@ func (this *EthPay) Init() (err error) {
 }
 
 //查看钱包余额
-func (this *EthPay) LookBalance(addr string) uint64 {
+func (this *Pay) LookBalance(addr string) uint64 {
 	account := common.HexToAddress(addr)
 	balance, err := this.client.BalanceAt(context.Background(), account, nil)
 	if err != nil {
@@ -72,7 +72,7 @@ func (this *EthPay) LookBalance(addr string) uint64 {
 }
 
 //获取用户支付合约地址
-func (this *EthPay) GetUserPayAddr(uhash string) (addr string, err error) {
+func (this *Pay) GetUserPayAddr(uhash string) (addr string, err error) {
 	parsed, err := abi.JSON(strings.NewReader(pay.AccountABI))
 	if err != nil {
 		return "", err
@@ -97,7 +97,7 @@ func (this *EthPay) GetUserPayAddr(uhash string) (addr string, err error) {
 }
 
 //部署支付账号合约
-func (this *EthPay) DeployAccountContract(uhash string) (trans string, err error) {
+func (this *Pay) DeployAccountContract(uhash string) (trans string, err error) {
 	nonce, err := this.client.PendingNonceAt(context.Background(), this.ControllerAddr)
 	if err != nil {
 		return "", err
@@ -112,7 +112,7 @@ func (this *EthPay) DeployAccountContract(uhash string) (trans string, err error
 	auth.GasLimit = uint64(300000) // in units
 	auth.GasPrice = gasPrice
 
-	instance, err := pay.NewWallet(this.WalletAdrr, this.client)
+	instance, err := solidity.NewWallet(this.WalletAdrr, this.client)
 	if err != nil {
 		return "", err
 	}
@@ -130,7 +130,7 @@ func (this *EthPay) DeployAccountContract(uhash string) (trans string, err error
 }
 
 //回收用户支付合约下的金额
-func (this *EthPay) RecycleUserMoney(uaddr string) (trans string, err error) {
+func (this *Pay) RecycleUserMoney(uaddr string) (trans string, err error) {
 	nonce, err := this.client.PendingNonceAt(context.Background(), this.ControllerAddr)
 	if err != nil {
 		return "", err
@@ -147,7 +147,7 @@ func (this *EthPay) RecycleUserMoney(uaddr string) (trans string, err error) {
 	auth.GasPrice = gasPrice
 
 	address := common.HexToAddress(uaddr)
-	instance, err := pay.NewAccount(address, this.client)
+	instance, err := solidity.NewAccount(address, this.client)
 	if err != nil {
 		return "", err
 	}
@@ -161,7 +161,7 @@ func (this *EthPay) RecycleUserMoney(uaddr string) (trans string, err error) {
 }
 
 //监听用户支付行为
-func (this *EthPay) MonitorUserPay(uaddr string, timeout time.Duration) (value uint64, err error) {
+func (this *Pay) MonitorUserPay(uaddr string, timeout time.Duration) (value uint64, err error) {
 	contractAbi, err := abi.JSON(strings.NewReader(string(pay.AccountABI)))
 	if err != nil {
 		return err
@@ -184,7 +184,7 @@ func (this *EthPay) MonitorUserPay(uaddr string, timeout time.Duration) (value u
 		select {
 		case err := <-sub.Err():
 			return 0, err
-		case <-ctx.Done():
+		case <- ctx.Done():
 			cancel()
 			return 0, fmt.Errorf("Time Out")
 		case vLog := <-logs:

@@ -1,4 +1,4 @@
-package ethpay
+package pay
 
 import (
 	"encoding/hex"
@@ -9,7 +9,7 @@ import (
 )
 
 type (
-	IETHPay interface {
+	IPay interface {
 		LookBalance(addr string) uint64                          //查看余额
 		GetUserPayAddr(uhash string) (addr string, err error)    //获取用户支付地址
 		RecycleUserMoney(uaddr string) (trans string, err error) //回收资金
@@ -18,11 +18,11 @@ type (
 )
 
 var (
-	pay IETHPay
+	pay IPay
 )
 
 func OnInit(s core.IService, opt ...Option) (err error) {
-	pay, err = newEthPay(opt...)
+	pay, err = newPay(opt...)
 	return
 }
 

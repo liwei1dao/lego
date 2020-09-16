@@ -1,4 +1,4 @@
-package ethpay
+package pay
 
 import (
 	"fmt"
