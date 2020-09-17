@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"strings"
 	"time"
-	"github.com/liwei1dao/lego/sys/sdks/pay/solidity"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/liwei1dao/lego/sys/sdks/eth/pay/solidity"
 )
 
 func newPay(opt ...Option) (IPay, error) {
@@ -34,8 +35,9 @@ type Pay struct {
 	opt            *Options
 	client         *ethclient.Client
 	privateKey     *ecdsa.PrivateKey
-	ControllerAddr common.Address //控制账号钱包地址
 	WalletAdrr     common.Address //钱包合约地址
+	walletInstance *solidity.Wallet
+	ControllerAddr common.Address //控制账号钱包地址
 	RecieverAddr   common.Address //回收账号钱包地址
 }
 
@@ -55,8 +57,13 @@ func (this *Pay) Init() (err error) {
 	if !ok {
 		fmt.Errorf("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
 	}
-	this.ControllerAddr = crypto.PubkeyToAddress(*publicKeyECDSA)
 	this.WalletAdrr = common.HexToAddress(this.opt.WalletAdrr)
+	this.walletInstance, err = solidity.NewWallet(this.WalletAdrr, this.client)
+	if err != nil {
+		return
+	}
+
+	this.ControllerAddr = crypto.PubkeyToAddress(*publicKeyECDSA)
 	this.RecieverAddr = common.HexToAddress(this.opt.FundRecoveryAddr)
 	return
 }
@@ -73,26 +80,23 @@ func (this *Pay) LookBalance(addr string) uint64 {
 
 //获取用户支付合约地址
 func (this *Pay) GetUserPayAddr(uhash string) (addr string, err error) {
-	parsed, err := abi.JSON(strings.NewReader(pay.AccountABI))
+	parsed, err := abi.JSON(strings.NewReader(solidity.AccountABI))
 	if err != nil {
 		return "", err
 	}
-
 	// Account 合约构造函数设置了 reciever 参数
 	// 为了以后能生成这个地址，这个需要持久化保存
 	param, err := parsed.Pack("", this.RecieverAddr)
 	if err != nil {
 		return "", err
 	}
-
 	// 计算 Account 合约初始化哈希
 	// 360c3c0304ab4f09eee311be7433387a83c3d62c7150e7654dfa339f5294eb45
-	inithash := keccak256(mustHexDecode(pay.AccountBin), param)
-
+	inithash := keccak256(mustHexDecode(solidity.AccountBin), param)
 	// Wallet 合约地址
 	address := mustHexDecode(this.opt.WalletAdrr)
 	salt := mustHexDecode(uhash)
-	addr = "0x" + hex.EncodeToString(Keccak256([]byte{0xff}, address, salt, inithash)[12:])
+	addr = "0x" + hex.EncodeToString(keccak256([]byte{0xff}, address, salt, inithash)[12:])
 	return
 }
 
@@ -112,15 +116,10 @@ func (this *Pay) DeployAccountContract(uhash string) (trans string, err error) {
 	auth.GasLimit = uint64(300000) // in units
 	auth.GasPrice = gasPrice
 
-	instance, err := solidity.NewWallet(this.WalletAdrr, this.client)
-	if err != nil {
-		return "", err
-	}
-
 	salt := [32]byte{}
-	copy(salt[:], MustHexDecode(uhash))
+	copy(salt[:], mustHexDecode(uhash))
 
-	tx, err := instance.Create(auth, this.RecieverAddr, salt)
+	tx, err := this.walletInstance.Create(auth, this.RecieverAddr, salt)
 	if err != nil {
 		return "", err
 	}
@@ -161,10 +160,10 @@ func (this *Pay) RecycleUserMoney(uaddr string) (trans string, err error) {
 }
 
 //监听用户支付行为
-func (this *Pay) MonitorUserPay(uaddr string, timeout time.Duration) (value uint64, err error) {
-	contractAbi, err := abi.JSON(strings.NewReader(string(pay.AccountABI)))
+func (this *Pay) MonitorUserPay(uaddr string, timeout time.Time) (value uint64, err error) {
+	contractAbi, err := abi.JSON(strings.NewReader(string(solidity.AccountABI)))
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	contractAddress := common.HexToAddress(uaddr)
@@ -173,7 +172,7 @@ func (this *Pay) MonitorUserPay(uaddr string, timeout time.Duration) (value uint
 	}
 
 	logs := make(chan types.Log)
-	sub, err := client.SubscribeFilterLogs(context.Background(), query, logs)
+	sub, err := this.client.SubscribeFilterLogs(context.Background(), query, logs)
 	if err != nil {
 		return 0, err
 	}
@@ -184,7 +183,7 @@ func (this *Pay) MonitorUserPay(uaddr string, timeout time.Duration) (value uint
 		select {
 		case err := <-sub.Err():
 			return 0, err
-		case <- ctx.Done():
+		case <-ctx.Done():
 			cancel()
 			return 0, fmt.Errorf("Time Out")
 		case vLog := <-logs:
@@ -196,7 +195,7 @@ func (this *Pay) MonitorUserPay(uaddr string, timeout time.Duration) (value uint
 			}{}
 			err := contractAbi.Unpack(&event, "Recharge", vLog.Data)
 			if err != nil {
-				return err
+				return 0, err
 			}
 			// fmt.Println(event.Vaule)
 			return event.Vaule.Uint64(), nil

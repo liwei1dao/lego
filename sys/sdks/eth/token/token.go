@@ -1,10 +1,10 @@
 package token
 
 import (
+	"context"
 	"crypto/ecdsa"
-	"fmt"
-	"github.com/liwei1dao/lego/sys/log"
-	"github.com/liwei1dao/lego/sys/sdks/token/solidity"
+	"strings"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -12,6 +12,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/liwei1dao/lego/sys/log"
+	"github.com/liwei1dao/lego/sys/sdks/eth/token/solidity"
 )
 
 func newPay(opt ...Option) (IToken, error) {
@@ -27,11 +29,11 @@ func newPay(opt ...Option) (IToken, error) {
 }
 
 type Token struct {
-	opt        	*Options
-	client     		*ethclient.Client
-	privateKey     *ecdsa.PrivateKey
-	tokenInstance	*solidity.HiToolCoin
-	closesignal chan bool
+	opt           *Options
+	client        *ethclient.Client
+	privateKey    *ecdsa.PrivateKey
+	tokenInstance *solidity.HiToolCoin
+	closesignal   chan bool
 }
 
 func (this *Token) Init() (err error) {
@@ -61,50 +63,50 @@ func (this *Token) Stop() (err error) {
 }
 
 //获取目标地址的代币存量
-func (this *Token)BalanceOf(_address string)(uint64, error){
+func (this *Token) BalanceOf(_address string) (uint64, error) {
 	address := common.HexToAddress(_address)
-    bal, err := this.tokenInstance.BalanceOf(&bind.CallOpts{}, address)
-    if err != nil {
-		return 0,err
+	bal, err := this.tokenInstance.BalanceOf(&bind.CallOpts{}, address)
+	if err != nil {
+		return 0, err
 	}
-	return bal.Uint64(),nil
+	return bal.Uint64(), nil
 }
 
 //设置代币汇率
-func (this *Token)SetTokenExchangeRate(exchange uint32)(error){
+func (this *Token) SetTokenExchangeRate(exchange uint32) error {
 	auth := bind.NewKeyedTransactor(this.privateKey)
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)     // in wei
 	auth.GasLimit = uint64(300000) // in units
 	auth.GasPrice = gasPrice
-    bal, err := this.tokenInstance.SetTokenExchangeRate(auth, big.NewInt(exchange))
-    if err != nil {
+	bal, err := this.tokenInstance.SetTokenExchangeRate(auth, big.NewInt(exchange))
+	if err != nil {
 		return err
 	}
 	return nil
 }
 
 //设置合约eth接收地址
-func (this *Token)ChangeEthFundDeposit(newFundDeposit string)(error){
+func (this *Token) ChangeEthFundDeposit(newFundDeposit string) (common.Address, error) {
 	auth := bind.NewKeyedTransactor(this.privateKey)
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)     // in wei
 	auth.GasLimit = uint64(300000) // in units
 	auth.GasPrice = gasPrice
 	address := common.HexToAddress(newFundDeposit)
-    bal, err := this.tokenInstance.SetTokenExchangeRate(auth, address)
-    if err != nil {
+	bal, err := this.tokenInstance.SetTokenExchangeRate(auth, address)
+	if err != nil {
 		return err
 	}
 	return nil
 }
 
 //监听代币事件
-func (this *Token) MonitorTokenEvent(){
+func (this *Token) MonitorTokenEvent() {
 	contractAbi, err := abi.JSON(strings.NewReader(string(solidity.HiToolCoinABI)))
 	if err != nil {
-		log.Fatalf("Eth Token MonitorTokenEvent Fatal:%s",err.Error())
-		return 
+		log.Fatalf("Eth Token MonitorTokenEvent Fatal:%s", err.Error())
+		return
 	}
 
 	contractAddress := common.HexToAddress(this.opt.TokenAddr)
@@ -115,39 +117,39 @@ func (this *Token) MonitorTokenEvent(){
 	logs := make(chan types.Log)
 	sub, err := client.SubscribeFilterLogs(context.Background(), query, logs)
 	if err != nil {
-		log.Fatalf("Eth Token MonitorTokenEvent Fatal:%s",err.Error())
-		return 
+		log.Fatalf("Eth Token MonitorTokenEvent Fatal:%s", err.Error())
+		return
 	}
 	ctx, cancel := context.WithDeadline(context.Background(), timeout)
 
 	transferevent := struct {
-		from common.Address, 
-		to common.Address, 
-		value *big.Int,
+		from  common.Address
+		to    common.Address
+		value *big.Ints
 	}{}
 	approvalevent := struct {
-		from common.Address, 
-		to common.Address, 
-		value *big.Int,
+		from  common.Address
+		to    common.Address
+		value *big.Int
 	}{}
 
 	for {
 		select {
 		case err := <-sub.Err():
-			log.Errorf("Eth Token MonitorTokenEvent Fatal:%s",err.Error())
+			log.Errorf("Eth Token MonitorTokenEvent Fatal:%s", err.Error())
 			return
-		case <- this.opt.closesignal:
+		case <-this.opt.closesignal:
 			return
 		case vLog := <-logs:
 			//交易事件
 			err := contractAbi.Unpack(&transferevent, "Transfer", vLog.Data)
 			if err == nil && this.opt.TransferEvent != nil {
-				this.opt.TransferEvent(transferevent.from,transferevent.to,transferevent.value)
+				this.opt.TransferEvent(transferevent.from, transferevent.to, transferevent.value)
 			}
 			//授权事件
-			err := contractAbi.Unpack(&approvalevent, "Approval", vLog.Data)
-			if err == nil && this.opt.ApprovalEvent != nil{
-				this.opt.ApprovalEvent(transferevent.from,transferevent.to,transferevent.value)
+			err = contractAbi.Unpack(&approvalevent, "Approval", vLog.Data)
+			if err == nil && this.opt.ApprovalEvent != nil {
+				this.opt.ApprovalEvent(transferevent.from, transferevent.to, transferevent.value)
 			}
 		}
 	}
