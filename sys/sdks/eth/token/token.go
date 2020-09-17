@@ -27,9 +27,10 @@ func newPay(opt ...Option) (IToken, error) {
 }
 
 type Token struct {
-	opt        *Options
-	client     *ethclient.Client
-	tokeninstance 
+	opt        	*Options
+	client     		*ethclient.Client
+	privateKey     *ecdsa.PrivateKey
+	tokenInstance	*solidity.HiToolCoin
 	closesignal chan bool
 }
 
@@ -38,9 +39,13 @@ func (this *Token) Init() (err error) {
 	if err != nil {
 		return
 	}
-	// Golem (GNT) Address
-	tokenAddress := common.HexToAddress(this.opt.TokenAddr)
-	this.tokeninstance, err = solidity.NewToken(tokenAddress, this.client)
+	this.privateKey, err = crypto.HexToECDSA(this.opt.ControllerPrivateKey)
+	if err != nil {
+		return
+	}
+	//代币合约
+	tokenaddress := common.HexToAddress(this.opt.TokenAddr)
+	tokenInstance, err := solidity.NewHiToolCoin(tokenaddress, client)
 	if err != nil {
 		return
 	}
@@ -55,17 +60,44 @@ func (this *Token) Stop() (err error) {
 	this.closesignal <- true
 }
 
-func (this *Token)BalanceOf(_address string){
-
-
-
+//获取目标地址的代币存量
+func (this *Token)BalanceOf(_address string)(uint64, error){
 	address := common.HexToAddress(_address)
-    bal, err := instance.BalanceOf(&bind.CallOpts{}, address)
+    bal, err := this.tokenInstance.BalanceOf(&bind.CallOpts{}, address)
     if err != nil {
-        log.Fatal(err)
-    }
+		return 0,err
+	}
+	return bal.Uint64(),nil
 }
 
+//设置代币汇率
+func (this *Token)SetTokenExchangeRate(exchange uint32)(error){
+	auth := bind.NewKeyedTransactor(this.privateKey)
+	auth.Nonce = big.NewInt(int64(nonce))
+	auth.Value = big.NewInt(0)     // in wei
+	auth.GasLimit = uint64(300000) // in units
+	auth.GasPrice = gasPrice
+    bal, err := this.tokenInstance.SetTokenExchangeRate(auth, big.NewInt(exchange))
+    if err != nil {
+		return err
+	}
+	return nil
+}
+
+//设置合约eth接收地址
+func (this *Token)ChangeEthFundDeposit(newFundDeposit string)(error){
+	auth := bind.NewKeyedTransactor(this.privateKey)
+	auth.Nonce = big.NewInt(int64(nonce))
+	auth.Value = big.NewInt(0)     // in wei
+	auth.GasLimit = uint64(300000) // in units
+	auth.GasPrice = gasPrice
+	address := common.HexToAddress(newFundDeposit)
+    bal, err := this.tokenInstance.SetTokenExchangeRate(auth, address)
+    if err != nil {
+		return err
+	}
+	return nil
+}
 
 //监听代币事件
 func (this *Token) MonitorTokenEvent(){

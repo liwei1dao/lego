@@ -37,7 +37,7 @@ contract HiToolCoin is Context, ERC20, ERC20Detailed {
     }
 
     //@func                             设置新的所有者地址
-    function changeOwner(address payable newFundDeposit) onlyOwner external {
+    function changeEthFundDeposit(address payable newFundDeposit) onlyOwner external {
         require (newFundDeposit != address(0x0));
         _ethFundDeposit = newFundDeposit;
     }

@@ -41,7 +41,7 @@ func newOptions(opts ...Option) (opt *Options, err error) {
 	for _, o := range opts {
 		o(opt)
 	}
-	if opt.ControllerPrivateKey == "" || opt.FundRecoveryAddr == "" {
+	if opt.EthPoolAdrr == "" || opt.ControllerPrivateKey == "" || opt.FundRecoveryAddr == "" {
 		return nil, fmt.Errorf("")
 	}
 
