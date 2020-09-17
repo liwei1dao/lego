@@ -55,7 +55,7 @@ func (this *Pay) Init() (err error) {
 	publicKey := this.privateKey.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
-		fmt.Errorf("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
+		return fmt.Errorf("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
 	}
 	this.WalletAdrr = common.HexToAddress(this.opt.WalletAdrr)
 	this.walletInstance, err = solidity.NewWallet(this.WalletAdrr, this.client)

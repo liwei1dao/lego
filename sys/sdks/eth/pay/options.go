@@ -42,7 +42,7 @@ func newOptions(opts ...Option) (opt *Options, err error) {
 		o(opt)
 	}
 	if opt.EthPoolAdrr == "" || opt.ControllerPrivateKey == "" || opt.FundRecoveryAddr == "" {
-		return nil, fmt.Errorf("")
+		return nil, fmt.Errorf("Eth Pay options Error")
 	}
 
 	return opt, nil

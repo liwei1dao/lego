@@ -3,6 +3,8 @@ package token
 import (
 	"context"
 	"crypto/ecdsa"
+	"fmt"
+	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum"
@@ -16,7 +18,7 @@ import (
 	"github.com/liwei1dao/lego/sys/sdks/eth/token/solidity"
 )
 
-func newPay(opt ...Option) (IToken, error) {
+func newToken(opt ...Option) (IToken, error) {
 	opts, err := newOptions(opt...)
 	if err != nil {
 		return nil, err
@@ -29,11 +31,12 @@ func newPay(opt ...Option) (IToken, error) {
 }
 
 type Token struct {
-	opt           *Options
-	client        *ethclient.Client
-	privateKey    *ecdsa.PrivateKey
-	tokenInstance *solidity.HiToolCoin
-	closesignal   chan bool
+	opt            *Options
+	client         *ethclient.Client
+	privateKey     *ecdsa.PrivateKey
+	ControllerAddr common.Address //控制账号钱包地址
+	tokenInstance  *solidity.HiToolCoin
+	closesignal    chan bool
 }
 
 func (this *Token) Init() (err error) {
@@ -45,20 +48,26 @@ func (this *Token) Init() (err error) {
 	if err != nil {
 		return
 	}
+	publicKey := this.privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		return fmt.Errorf("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
+	}
+	this.ControllerAddr = crypto.PubkeyToAddress(*publicKeyECDSA)
 	//代币合约
 	tokenaddress := common.HexToAddress(this.opt.TokenAddr)
-	tokenInstance, err := solidity.NewHiToolCoin(tokenaddress, client)
+	this.tokenInstance, err = solidity.NewHiToolCoin(tokenaddress, this.client)
 	if err != nil {
 		return
 	}
 	return
 }
 
-func (this *Token) Start() (err error) {
+func (this *Token) Start() {
 	go this.MonitorTokenEvent()
 }
 
-func (this *Token) Stop() (err error) {
+func (this *Token) Stop() {
 	this.closesignal <- true
 }
 
@@ -73,32 +82,48 @@ func (this *Token) BalanceOf(_address string) (uint64, error) {
 }
 
 //设置代币汇率
-func (this *Token) SetTokenExchangeRate(exchange uint32) error {
+func (this *Token) SetTokenExchangeRate(exchange uint32) (string, error) {
+	gasPrice, err := this.client.SuggestGasPrice(context.Background())
+	if err != nil {
+		return "", err
+	}
+	nonce, err := this.client.PendingNonceAt(context.Background(), this.ControllerAddr)
+	if err != nil {
+		return "", err
+	}
 	auth := bind.NewKeyedTransactor(this.privateKey)
 	auth.Nonce = big.NewInt(int64(nonce))
-	auth.Value = big.NewInt(0)     // in wei
-	auth.GasLimit = uint64(300000) // in units
+	auth.Value = big.NewInt(0)      // in wei
+	auth.GasLimit = uint64(1000000) // in units
 	auth.GasPrice = gasPrice
-	bal, err := this.tokenInstance.SetTokenExchangeRate(auth, big.NewInt(exchange))
+	tx, err := this.tokenInstance.SetTokenExchangeRate(auth, big.NewInt(int64(exchange)))
 	if err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return tx.Hash().Hex(), nil
 }
 
 //设置合约eth接收地址
-func (this *Token) ChangeEthFundDeposit(newFundDeposit string) (common.Address, error) {
+func (this *Token) ChangeEthFundDeposit(newFundDeposit string) (string, error) {
+	gasPrice, err := this.client.SuggestGasPrice(context.Background())
+	if err != nil {
+		return "", err
+	}
+	nonce, err := this.client.PendingNonceAt(context.Background(), this.ControllerAddr)
+	if err != nil {
+		return "", err
+	}
 	auth := bind.NewKeyedTransactor(this.privateKey)
 	auth.Nonce = big.NewInt(int64(nonce))
-	auth.Value = big.NewInt(0)     // in wei
-	auth.GasLimit = uint64(300000) // in units
+	auth.Value = big.NewInt(0)      // in wei
+	auth.GasLimit = uint64(1000000) // in units
 	auth.GasPrice = gasPrice
 	address := common.HexToAddress(newFundDeposit)
-	bal, err := this.tokenInstance.SetTokenExchangeRate(auth, address)
+	tx, err := this.tokenInstance.ChangeEthFundDeposit(auth, address)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return tx.Hash().Hex(), nil
 }
 
 //监听代币事件
@@ -115,17 +140,16 @@ func (this *Token) MonitorTokenEvent() {
 	}
 
 	logs := make(chan types.Log)
-	sub, err := client.SubscribeFilterLogs(context.Background(), query, logs)
+	sub, err := this.client.SubscribeFilterLogs(context.Background(), query, logs)
 	if err != nil {
 		log.Fatalf("Eth Token MonitorTokenEvent Fatal:%s", err.Error())
 		return
 	}
-	ctx, cancel := context.WithDeadline(context.Background(), timeout)
 
 	transferevent := struct {
 		from  common.Address
 		to    common.Address
-		value *big.Ints
+		value *big.Int
 	}{}
 	approvalevent := struct {
 		from  common.Address
@@ -138,7 +162,7 @@ func (this *Token) MonitorTokenEvent() {
 		case err := <-sub.Err():
 			log.Errorf("Eth Token MonitorTokenEvent Fatal:%s", err.Error())
 			return
-		case <-this.opt.closesignal:
+		case <-this.closesignal:
 			return
 		case vLog := <-logs:
 			//交易事件
@@ -149,7 +173,7 @@ func (this *Token) MonitorTokenEvent() {
 			//授权事件
 			err = contractAbi.Unpack(&approvalevent, "Approval", vLog.Data)
 			if err == nil && this.opt.ApprovalEvent != nil {
-				this.opt.ApprovalEvent(transferevent.from, transferevent.to, transferevent.value)
+				this.opt.ApprovalEvent(approvalevent.from, approvalevent.to, approvalevent.value)
 			}
 		}
 	}

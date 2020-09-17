@@ -6,8 +6,11 @@ import (
 
 type (
 	IToken interface {
-		Start() (err error)
-		Stop() (err error)
+		Start()
+		Stop()
+		ChangeEthFundDeposit(newFundDeposit string) (string, error) //更改以太币接受地址
+		SetTokenExchangeRate(exchange uint32) (string, error)       //设置代币汇率
+		BalanceOf(_address string) (uint64, error)                  //查询地址代币值
 	}
 )
 
@@ -16,14 +19,26 @@ var (
 )
 
 func OnInit(s core.IService, opt ...Option) (err error) {
-	tokne, err = newEthPay(opt...)
+	tokne, err = newToken(opt...)
 	return
 }
 
-func Start() (err error) {
-	return tokne.Start()
+func Start() {
+	tokne.Start()
 }
 
-func Stop() (err error) {
-	return tokne.Stop()
+func Stop() {
+	tokne.Stop()
+}
+
+func ChangeEthFundDeposit(newFundDeposit string) (string, error) {
+	return tokne.ChangeEthFundDeposit(newFundDeposit)
+}
+
+func SetTokenExchangeRate(exchange uint32) (string, error) {
+	return tokne.SetTokenExchangeRate(exchange)
+}
+
+func BalanceOf(_address string) (uint64, error) {
+	return tokne.BalanceOf(_address)
 }
