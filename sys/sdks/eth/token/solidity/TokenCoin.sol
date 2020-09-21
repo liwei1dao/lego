@@ -27,7 +27,7 @@ contract HiToolCoin is Context, ERC20, ERC20Detailed {
         _mint(_msgSender(), 1000000 * (10 ** uint256(decimal)));
     }
 
-    //@func                             访问修饰符 合约管理账号
+    //@func访问修饰符 合约管理账号
     modifier onlyOwner {
         require(
             msg.sender == _owner,
@@ -36,23 +36,28 @@ contract HiToolCoin is Context, ERC20, ERC20Detailed {
         _;
     }
 
-    //@func                             设置新的所有者地址
+    //@func设置新的所有者地址
     function changeEthFundDeposit(address payable newFundDeposit) onlyOwner external {
         require (newFundDeposit != address(0x0));
         _ethFundDeposit = newFundDeposit;
     }
  
-    //@func                             设置token汇率
+    //@func设置token汇率
     function setTokenExchangeRate(uint256 tokenExchangeRate) onlyOwner external {
         require (tokenExchangeRate != 0);
         require (tokenExchangeRate != _tokenExchangeRate);
         _tokenExchangeRate = tokenExchangeRate;
     }
  
-    //@func                             转账ETH 到ETH存放地址
+    //@func转账ETH 到ETH存放地址
     function transferETH() onlyOwner external {
         require (address(this).balance != 0);
         _ethFundDeposit.transfer(address(this).balance);
+    }
+
+    //@func增发代币
+    function addmint(uint256 amount) onlyOwner external{
+        _mint(_msgSender(), amount * (10 ** uint256(decimals())));
     }
  
     //@func                             购买代币

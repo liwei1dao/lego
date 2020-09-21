@@ -126,6 +126,50 @@ func (this *Token) ChangeEthFundDeposit(newFundDeposit string) (string, error) {
 	return tx.Hash().Hex(), nil
 }
 
+//设置合约eth接收地址
+func (this *Token) TransferETH() (string, error) {
+	gasPrice, err := this.client.SuggestGasPrice(context.Background())
+	if err != nil {
+		return "", err
+	}
+	nonce, err := this.client.PendingNonceAt(context.Background(), this.ControllerAddr)
+	if err != nil {
+		return "", err
+	}
+	auth := bind.NewKeyedTransactor(this.privateKey)
+	auth.Nonce = big.NewInt(int64(nonce))
+	auth.Value = big.NewInt(0)      // in wei
+	auth.GasLimit = uint64(1000000) // in units
+	auth.GasPrice = gasPrice
+	tx, err := this.tokenInstance.TransferETH(auth)
+	if err != nil {
+		return "", err
+	}
+	return tx.Hash().Hex(), nil
+}
+
+//设置合约eth接收地址
+func (this *Token) Addmint(amount uint32) (string, error) {
+	gasPrice, err := this.client.SuggestGasPrice(context.Background())
+	if err != nil {
+		return "", err
+	}
+	nonce, err := this.client.PendingNonceAt(context.Background(), this.ControllerAddr)
+	if err != nil {
+		return "", err
+	}
+	auth := bind.NewKeyedTransactor(this.privateKey)
+	auth.Nonce = big.NewInt(int64(nonce))
+	auth.Value = big.NewInt(0)      // in wei
+	auth.GasLimit = uint64(1000000) // in units
+	auth.GasPrice = gasPrice
+	tx, err := this.tokenInstance.Addmint(auth, big.NewInt(int64(amount)))
+	if err != nil {
+		return "", err
+	}
+	return tx.Hash().Hex(), nil
+}
+
 //监听代币事件
 func (this *Token) MonitorTokenEvent() {
 	contractAbi, err := abi.JSON(strings.NewReader(string(solidity.HiToolCoinABI)))

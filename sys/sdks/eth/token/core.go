@@ -11,6 +11,8 @@ type (
 		ChangeEthFundDeposit(newFundDeposit string) (string, error) //更改以太币接受地址
 		SetTokenExchangeRate(exchange uint32) (string, error)       //设置代币汇率
 		BalanceOf(_address string) (uint64, error)                  //查询地址代币值
+		TransferETH() (string, error)                               //转移以太币到接受账号下
+		Addmint(amount uint32) (string, error)                      //增发代币
 	}
 )
 
@@ -41,4 +43,11 @@ func SetTokenExchangeRate(exchange uint32) (string, error) {
 
 func BalanceOf(_address string) (uint64, error) {
 	return tokne.BalanceOf(_address)
+}
+
+func TransferETH() (string, error) { //转移以太币到接受账号下
+	tokne.TransferETH()
+}
+func Addmint(amount uint32) (string, error) { //增发代币
+	tokne.Addmint(amount)
 }
