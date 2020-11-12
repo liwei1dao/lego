@@ -297,6 +297,7 @@ func (this *ClusterService) RpcInvokeById(sId string, rkey core.Rpc_Key, iscall 
 func (this *ClusterService) RpcInvokeByType(sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error) {
 	ss, err := this.ClusterService.DefauleRpcRouteRules(sType)
 	if err != nil {
+		log.Errorf("未找到目标服务【%s】节点 err:%s", sType, err.Error())
 		return nil, err
 	}
 	if iscall {

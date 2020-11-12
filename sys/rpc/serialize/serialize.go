@@ -59,6 +59,7 @@ func SerializeInit() {
 	OnRegister([]byte{}, SliceByteToBytes, BytesToSliceByte)
 	OnRegister([]int32{}, SliceInt32ToBytes, BytesToSliceInt32)
 	OnRegister([]uint32{}, SliceUInt32ToBytes, BytesToSliceUInt32)
+	OnRegister([]uint64{}, SliceUInt64ToBytes, BytesToSliceUInt64)
 	OnRegister([]string{}, SliceStringToBytes, BytesToSliceString)
 	OnRegister([]interface{}{}, SliceInterfaceToBytes, BytesToSliceInterface)
 	OnRegister(map[string]string{}, JsonStructMarshal, BytesToMapString)
@@ -203,6 +204,17 @@ func SliceUInt32ToBytes(v interface{}) ([]byte, error) {
 	}
 	return data, nil
 }
+func SliceUInt64ToBytes(v interface{}) ([]byte, error) {
+	d := v.([]uint64)
+	data := []byte{}
+	for _, v := range d {
+		var buf = make([]byte, 8)
+		binary.BigEndian.PutUint64(buf, v)
+		data = append(data, buf[0:]...)
+	}
+	return data, nil
+}
+
 func SliceStringToBytes(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
 }
@@ -330,6 +342,13 @@ func BytesToSliceUInt32(dataType reflect.Type, buf []byte) (interface{}, error) 
 	data := make([]uint32, len(buf)/4)
 	for i, _ := range data {
 		data[i] = binary.BigEndian.Uint32(buf[i*4:])
+	}
+	return data, nil
+}
+func BytesToSliceUInt64(dataType reflect.Type, buf []byte) (interface{}, error) {
+	data := make([]uint64, len(buf)/8)
+	for i, _ := range data {
+		data[i] = binary.BigEndian.Uint64(buf[i*8:])
 	}
 	return data, nil
 }
