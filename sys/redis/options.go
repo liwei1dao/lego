@@ -13,17 +13,17 @@ func RedisUrl(v string) Option {
 	}
 }
 
-func newOptions(opts ...Option) *Options {
+func newOptions(opts ...Option) Options {
 	opt := Options{
-		RedisUrl: "redis://127.0.0.1:6379",
+		RedisUrl: "redis://127.0.0.1:6379/1",
 	}
 	for _, o := range opts {
 		o(&opt)
 	}
 	if len(opt.RedisUrl) == 0 {
-		opt.RedisUrl = "redis://127.0.0.1:6379"
+		opt.RedisUrl = "redis://127.0.0.1:6379/1"
 	}
-	return &opt
+	return opt
 }
 
 type RMutexOption func(*RMutexOptions)

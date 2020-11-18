@@ -7,12 +7,21 @@ import (
 	cont "github.com/liwei1dao/lego/utils/concurrent"
 )
 
+func newRedisFactory(opt ...Option) *RedisFactory {
+	opts := newOptions(opt...)
+	return &RedisFactory{
+		url:   opts.RedisUrl,
+		pools: cont.NewBeeMap(),
+	}
+}
+
 type RedisFactory struct {
+	url   string
 	pools *cont.BeeMap
 }
 
-func (this RedisFactory) GetPool(url string) *RedisPool {
-	if pool, ok := this.pools.Items()[url]; ok {
+func (this RedisFactory) GetPool() *RedisPool {
+	if pool, ok := this.pools.Items()[this.url]; ok {
 		return pool.(*RedisPool)
 	}
 	pool := &RedisPool{
@@ -26,7 +35,7 @@ func (this RedisFactory) GetPool(url string) *RedisPool {
 			//当链接数达到最大后是否阻塞，如果不的话，达到最大后返回错误
 			Wait: true,
 			Dial: func() (redis.Conn, error) {
-				c, err := redis.DialURL(url)
+				c, err := redis.DialURL(this.url)
 				if err != nil {
 					return nil, err
 				}
@@ -43,10 +52,11 @@ func (this RedisFactory) GetPool(url string) *RedisPool {
 		},
 	}
 	if pool != nil {
-		this.pools.Set(url, pool)
+		this.pools.Set(this.url, pool)
 	}
 	return pool
 }
+
 func (this RedisFactory) CloseAllPool() {
 	for _, pool := range this.pools.Items() {
 		pool.(*redis.Pool).Close()
