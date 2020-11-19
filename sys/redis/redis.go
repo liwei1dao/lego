@@ -16,12 +16,12 @@ type (
 )
 
 func OnInit(s core.IService, opt ...Option) (err error) {
-	deffactory = newRedisFactory()
+	deffactory = newRedisFactory(opt...)
 	return
 }
 
 func NewRedisSys(opt ...Option) (factory IRedisFactory, err error) {
-	factory = newRedisFactory()
+	factory = newRedisFactory(opt...)
 	return
 }
 
