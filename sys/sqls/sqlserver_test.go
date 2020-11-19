@@ -41,12 +41,6 @@ func TestSqlserverInit(t *testing.T) {
 				fmt.Printf("%d,%s,%s,%s", uid, a, p, n)
 			}
 		}
-		// data, err := QueryContext("SELECT * FROM dbo.[user]")
-		// if err != nil {
-		// 	t.Logf("执行存储工程失败:%s", err.Error())
-		// } else {
-		// 	t.Log("执行存储工程失败", data)
-		// }
 	}
 }
 

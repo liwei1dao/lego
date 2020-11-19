@@ -352,7 +352,7 @@ func (this *Consulregistry) addandupdataServiceNode(as *api.AgentService) (sn *S
 	if h, err := hash.Hash(snode, nil); err == nil {
 		_, ok := this.services[snode.Id]
 		if !ok {
-			log.Debugf("发现新的服务【%s】", snode.Id)
+			log.Infof("发现新的服务【%s】", snode.Id)
 			this.services[snode.Id] = snode
 			this.shash[snode.Id] = h
 			if this.options.Listener != nil { //异步通知
@@ -360,7 +360,7 @@ func (this *Consulregistry) addandupdataServiceNode(as *api.AgentService) (sn *S
 			}
 		} else {
 			if v, ok := this.shash[snode.Id]; !ok || v != h { //校验不一致
-				log.Debugf("更新服务【%s】", snode.Id)
+				// log.Debugf("更新服务【%s】", snode.Id)
 				this.services[snode.Id] = snode
 				this.shash[snode.Id] = h
 				if this.options.Listener != nil { //异步通知
@@ -379,7 +379,7 @@ func (this *Consulregistry) removeServiceNode(sId string) {
 	if !ok {
 		return
 	}
-	log.Debugf("丢失服务【%s】", sId)
+	log.Infof("丢失服务【%s】", sId)
 	delete(this.services, sId)
 	this.SyncRpcInfo()
 	if this.options.Listener != nil { //异步通知
