@@ -34,11 +34,16 @@ func (this *OSS) Init() (err error) {
 		return err
 	}
 	if ok, err := this.client.IsBucketExist(this.BucketName); !ok || err != nil {
-		this.CreateBucket(this.BucketName)
+		if err = this.CreateBucket(this.BucketName); err == nil {
+			this.bucket, err = this.client.Bucket(this.BucketName)
+			return err
+		} else {
+			return err
+		}
 	} else {
 		this.bucket, err = this.client.Bucket(this.BucketName)
+		return err
 	}
-	return err
 }
 
 //创建存储空间。

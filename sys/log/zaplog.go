@@ -19,6 +19,7 @@ func newLog(opt ...Option) (log Ilog, err error) {
 		MaxBackups: 30,            //最多保留备份个数
 		MaxAge:     7,             //文件最多保存多少天
 		Compress:   false,         //是否压缩 disabled by default
+		LocalTime:  true,          //使用本地时间
 	}
 	var level zapcore.Level
 	switch opts.loglevel {
