@@ -2,6 +2,8 @@ package mgo
 
 import (
 	"time"
+
+	"github.com/liwei1dao/utils/mapstructure"
 )
 
 type Option func(*Options)

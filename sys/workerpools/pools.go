@@ -8,22 +8,17 @@ import (
 	cont "github.com/liwei1dao/lego/utils/concurrent"
 )
 
-const (
-	idleTimeoutSec = 5
-)
-
-func newWorkerPool(opt ...Option) IWorkerPool {
-	opts := newOptions(opt...)
-	pool := &WorkerPool{
+func newSys(options Options) (sys *WorkerPool, err error) {
+	sys = &WorkerPool{
 		taskQueue:    make(chan *Task, 1),
-		maxWorkers:   opts.maxWorkers,
-		readyWorkers: make(chan chan *Task, opts.defWrokers),
-		timeout:      time.Second * idleTimeoutSec,
-		tasktimeout:  opts.tasktimeout,
+		maxWorkers:   options.MaxWorkers,
+		readyWorkers: make(chan chan *Task, options.DefWrokers),
+		timeout:      options.IdleTimeoutSec,
+		tasktimeout:  options.Tasktimeout,
 		stoppedChan:  make(chan struct{}),
 	}
 	go pool.dispatch()
-	return pool
+	return
 }
 
 type Task struct {
