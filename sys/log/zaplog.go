@@ -9,20 +9,19 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func newLog(opt ...Option) (log Ilog, err error) {
-	opts := newOptions(opt...)
-	createlogfile(opts.fileName)
+func newSys(options Options) (log Logger, err error) {
+	createlogfile(options.Filename)
 	var allCore []zapcore.Core
 	hook := lumberjack.Logger{
-		Filename:   opts.fileName, //日志文件路径
-		MaxSize:    2,             //每个日志文件保存的最大尺寸 单位：M
-		MaxBackups: 30,            //最多保留备份个数
-		MaxAge:     7,             //文件最多保存多少天
-		Compress:   false,         //是否压缩 disabled by default
-		LocalTime:  true,          //使用本地时间
+		Filename:   options.Filename, //日志文件路径
+		MaxSize:    2,                //每个日志文件保存的最大尺寸 单位：M
+		MaxBackups: 30,               //最多保留备份个数
+		MaxAge:     7,                //文件最多保存多少天
+		Compress:   false,            //是否压缩 disabled by default
+		LocalTime:  true,             //使用本地时间
 	}
 	var level zapcore.Level
-	switch opts.loglevel {
+	switch options.Loglevel {
 	case DebugLevel:
 		level = zap.DebugLevel
 	case InfoLevel:
@@ -44,11 +43,11 @@ func newLog(opt ...Option) (log Ilog, err error) {
 	timeFormat := func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 		enc.AppendString(t.Format("2006/01/02 15:04:05.000"))
 	}
-	_, err = os.OpenFile(opts.fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+	_, err = os.OpenFile(options.FileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 	if err != nil {
 		return
 	}
-	if opts.debugmode {
+	if options.Debugmode {
 		//重新生成文件
 		encoderConfig = zap.NewDevelopmentEncoderConfig()
 		encoderConfig.EncodeTime = timeFormat
@@ -59,7 +58,7 @@ func newLog(opt ...Option) (log Ilog, err error) {
 	}
 	allCore = append(allCore, zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig), fileWriter, level))
 	core := zapcore.NewTee(allCore...)
-	tlog := zap.New(core).WithOptions(zap.AddCaller(), zap.AddCallerSkip(opts.loglayer))
+	tlog := zap.New(core).WithOptions(zap.AddCaller(), zap.AddCallerSkip(options.Loglayer))
 	log = &Logger{
 		tlog: tlog,
 		log:  tlog.Sugar(),
@@ -67,12 +66,10 @@ func newLog(opt ...Option) (log Ilog, err error) {
 	return
 }
 
-type (
-	Logger struct {
-		tlog *zap.Logger
-		log  *zap.SugaredLogger
-	}
-)
+type Logger struct {
+	tlog *zap.Logger
+	log  *zap.SugaredLogger
+}
 
 func FieldTozapField(fields ...Field) (fds []zap.Field) {
 	fds = make([]zap.Field, 0)

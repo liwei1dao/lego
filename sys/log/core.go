@@ -2,9 +2,10 @@ package log
 
 import (
 	"fmt"
-	"github.com/liwei1dao/lego/utils/flietools"
 	"os"
 	"strings"
+
+	"github.com/liwei1dao/lego/utils/flietools"
 )
 
 type (
@@ -15,7 +16,7 @@ type (
 		Key   string
 		Value interface{}
 	}
-	Ilog interface {
+	ILog interface {
 		Debug(msg string, fields ...Field)
 		Info(msg string, fields ...Field)
 		Warn(msg string, fields ...Field)
@@ -30,6 +31,32 @@ type (
 		Fatalf(format string, a ...interface{})
 	}
 )
+
+var (
+	defsys ILog
+)
+
+func OnInit(config map[string]interface{}) (err error) {
+	defsys, err = newSys(newOptionsByConfig(config))
+	return
+}
+func NewSys(opt ...Option) (sys Ilog, err error) {
+	sys, err = newSys(newOptionsByOption(opt...))
+	return
+}
+
+func Debug(msg string, fields ...Field)      { defsys.Debug(msg, fields...) }
+func Info(msg string, fields ...Field)       { defsys.Info(msg, fields...) }
+func Warn(msg string, fields ...Field)       { defsys.Warn(msg, fields...) }
+func Error(msg string, fields ...Field)      { defsys.Error(msg, fields...) }
+func Panic(msg string, fields ...Field)      { defsys.Panic(msg, fields...) }
+func Fatal(msg string, fields ...Field)      { defsys.Fatal(msg, fields...) }
+func Debugf(format string, a ...interface{}) { defsys.Debugf(format, a...) }
+func Infof(format string, a ...interface{})  { defsys.Infof(format, a...) }
+func Warnf(format string, a ...interface{})  { defsys.Warnf(format, a...) }
+func Errorf(format string, a ...interface{}) { defsys.Errorf(format, a...) }
+func Panicf(format string, a ...interface{}) { defsys.Panicf(format, a...) }
+func Fatalf(format string, a ...interface{}) { defsys.Fatalf(format, a...) }
 
 //创建日志文件
 func createlogfile(logpath string) error {

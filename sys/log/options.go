@@ -1,5 +1,9 @@
 package log
 
+import (
+	"github.com/liwei1dao/utils/mapstructure"
+)
+
 type Loglevel int8
 
 const (
@@ -13,43 +17,56 @@ const (
 
 type Option func(*Options)
 type Options struct {
-	fileName  string
-	loglevel  Loglevel
-	debugmode bool
-	loglayer  int //日志堆栈信息打印层级
+	FileName  string   //日志文件名包含
+	Loglevel  Loglevel //日志输出级别
+	Debugmode bool     //是否debug模式
+	Loglayer  int      //日志堆栈信息打印层级
 }
 
 func SetFileName(v string) Option {
 	return func(o *Options) {
-		o.fileName = v
+		o.FileName = v
 	}
 }
 
 func SetLoglevel(v Loglevel) Option {
 	return func(o *Options) {
-		o.loglevel = v
+		o.Loglevel = v
 	}
 }
 
 func SetDebugMode(v bool) Option {
 	return func(o *Options) {
-		o.debugmode = v
+		o.Debugmode = v
 	}
 }
 
 func SetLoglayer(v int) Option {
 	return func(o *Options) {
-		o.loglayer = v
+		o.Loglayer = v
 	}
 }
-func newOptions(opts ...Option) Options {
-	opt := Options{
-		loglevel:  WarnLevel,
-		debugmode: false,
-		loglayer:  2,
+
+func newOptionsByConfig(config map[string]interface{}) Options {
+	options := Options{
+		Loglevel:  WarnLevel,
+		Debugmode: false,
+		Loglayer:  2,
+	}
+	if config != nil {
+		mapstructure.Decode(config, &options)
+	}
+	return options
+}
+
+func newOptionsByOption(opts ...Option) Options {
+	options := Options{
+		Loglevel:  WarnLevel,
+		Debugmode: false,
+		Loglayer:  2,
 	}
 	for _, o := range opts {
-		o(&opt)
+		o(&options)
 	}
-	return opt
+	return options
 }

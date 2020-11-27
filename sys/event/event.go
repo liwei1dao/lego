@@ -8,7 +8,7 @@ import (
 	"github.com/liwei1dao/lego/sys/log"
 )
 
-func newSys(sptions Options) (sys *EventSys, err error) {
+func newSys(options Options) (sys *EventSys, err error) {
 	sys = &EventSys{
 		functions:make(map[core.Event_Key][]*FunctionInfo)
 	}
