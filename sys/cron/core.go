@@ -1,7 +1,6 @@
 package cron
 
 import (
-	"github.com/liwei1dao/lego/core"
 	tcron "github.com/robfig/cron/v3"
 )
 
@@ -14,24 +13,31 @@ type (
 )
 
 var (
-	defcron Icron
+	defsys Icron
 )
 
-func OnInit(s core.IService, opt ...Option) (err error) {
-	if defcron, err = newCron(opt...); err == nil {
+func OnInit(config map[string]interface{}) (err error) {
+	if defsys, err = newCron(newOptionsByConfig(config)); err == nil {
+		Start()
+	}
+	return
+}
+
+func NewSys(option ...Option) (sys Icron, err error) {
+	if sys, err = newCron(opt...); err == nil {
 		Start()
 	}
 	return
 }
 
 func Start() {
-	defcron.Start()
+	defsys.Start()
 }
 
 func Stop() {
-	defcron.Stop()
+	defsys.Stop()
 }
 
 func AddFunc(spec string, cmd func()) (tcron.EntryID, error) {
-	return defcron.AddFunc(spec, cmd)
+	return defsys.AddFunc(spec, cmd)
 }
