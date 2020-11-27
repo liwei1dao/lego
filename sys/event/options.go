@@ -1,14 +1,25 @@
 package event
 
+import (
+	"github.com/liwei1dao/utils/mapstructure"
+)
+
 type Option func(*Options)
 type Options struct {
 }
 
-func newOptions(opts ...Option) Options {
-	opt := Options{}
-	for _, o := range opts {
-		o(&opt)
+func newOptionsByConfig(config map[string]interface{}) Options {
+	options := Options{}
+	if config != nil {
+		mapstructure.Decode(config, &options)
 	}
+	return options
+}
 
-	return opt
+func newOptionsByOption(opts ...Option) Options {
+	options := Options{}
+	for _, o := range opts {
+		o(&options)
+	}
+	return options
 }
