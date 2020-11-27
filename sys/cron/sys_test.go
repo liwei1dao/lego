@@ -1,4 +1,4 @@
-package cron_test
+package cron
 
 import (
 	"fmt"

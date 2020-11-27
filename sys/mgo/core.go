@@ -8,10 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var (
-	defmgodb IMongodb
-)
-
 type (
 	IMongodb interface {
 		CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options.CountOptions) (int64, error)
@@ -31,68 +27,72 @@ type (
 	}
 )
 
-func OnInit(s core.IService, opt ...Option) (err error) {
-	defmgodb, err = newMongodb(opt...)
+var (
+	defsys IMongodb
+)
+
+func OnInit(config map[string]interface{}) (err error) {
+	defsys, err = newSys(newOptionsByConfig(config))
 	return
 }
 
-func NewMongodb(opt ...Option) (mgodb IMongodb, err error) {
-	mgodb, err = newMongodb(opt...)
+func NewSys(option ...Option) (sys IMongodb, err error) {
+	sys, err = newSys(newOptionsByOption(option...))
 	return
 }
 
 func CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options.CountOptions) (int64, error) {
-	return defmgodb.CountDocuments(sqltable, filter, opts...)
+	return defsys.CountDocuments(sqltable, filter, opts...)
 }
 
 func Find(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error) {
-	return defmgodb.Find(sqltable, filter, opts...)
+	return defsys.Find(sqltable, filter, opts...)
 }
 
 func FindOne(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOneOptions) *mongo.SingleResult {
-	return defmgodb.FindOne(sqltable, filter, opts...)
+	return defsys.FindOne(sqltable, filter, opts...)
 }
 
 func FindOneAndUpdate(sqltable core.SqlTable, filter interface{}, update interface{}, opts ...*options.FindOneAndUpdateOptions) *mongo.SingleResult {
-	return defmgodb.FindOneAndUpdate(sqltable, filter, update, opts...)
+	return defsys.FindOneAndUpdate(sqltable, filter, update, opts...)
 }
 
 func InsertOne(sqltable core.SqlTable, data interface{}, opts ...*options.InsertOneOptions) (*mongo.InsertOneResult, error) {
-	return defmgodb.InsertOne(sqltable, data, opts...)
+	return defsys.InsertOne(sqltable, data, opts...)
 }
 
 func InsertMany(sqltable core.SqlTable, data []interface{}, opts ...*options.InsertManyOptions) (*mongo.InsertManyResult, error) {
-	return defmgodb.InsertMany(sqltable, data, opts...)
+	return defsys.InsertMany(sqltable, data, opts...)
 }
 
 func InsertManyByCtx(sqltable core.SqlTable, ctx context.Context, data []interface{}, opts ...*options.InsertManyOptions) (*mongo.InsertManyResult, error) {
-	return defmgodb.InsertManyByCtx(sqltable, ctx, data, opts...)
+	return defsys.InsertManyByCtx(sqltable, ctx, data, opts...)
 }
 
 func UpdateOne(sqltable core.SqlTable, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
-	return defmgodb.UpdateOne(sqltable, filter, update, opts...)
+	return defsys.UpdateOne(sqltable, filter, update, opts...)
 }
 
 func UpdateMany(sqltable core.SqlTable, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
-	return defmgodb.UpdateMany(sqltable, filter, update, opts...)
+	return defsys.UpdateMany(sqltable, filter, update, opts...)
 }
 
 func UpdateManyByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
-	return defmgodb.UpdateManyByCtx(sqltable, ctx, filter, update, opts...)
+	return defsys.UpdateManyByCtx(sqltable, ctx, filter, update, opts...)
 }
 
 func FindOneAndDelete(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOneAndDeleteOptions) *mongo.SingleResult {
-	return defmgodb.FindOneAndDelete(sqltable, filter, opts...)
+	return defsys.FindOneAndDelete(sqltable, filter, opts...)
 }
 
 func DeleteOne(sqltable core.SqlTable, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
-	return defmgodb.DeleteOne(sqltable, filter, opts...)
+	return defsys.DeleteOne(sqltable, filter, opts...)
 }
 
 func DeleteMany(sqltable core.SqlTable, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
-	return defmgodb.DeleteMany(sqltable, filter, opts...)
+	return defsys.DeleteMany(sqltable, filter, opts...)
 }
 
 func DeleteManyByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
-	return defmgodb.DeleteManyByCtx(sqltable, ctx, filter, opts...)
+	return defsys.DeleteManyByCtx(sqltable, ctx, filter, opts...)
 }

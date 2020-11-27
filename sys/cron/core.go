@@ -24,7 +24,7 @@ func OnInit(config map[string]interface{}) (err error) {
 }
 
 func NewSys(option ...Option) (sys Icron, err error) {
-	if sys, err = newCron(opt...); err == nil {
+	if sys, err = newCron(option...); err == nil {
 		Start()
 	}
 	return

@@ -14,15 +14,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 )
 
-func newMongodb(opt ...Option) (*Mongodb, error) {
-	mogodb := new(Mongodb)
-	mogodb.opts = newOptions(opt...)
-	err := mogodb.init()
-	return mogodb, err
+func newSys(options Options) (sys *Mongodb, err error) {
+	sys = &Mongodb{options: options}
+	err = mogodb.init()
+	return
 }
 
 type Mongodb struct {
-	opts     Options
+	options  Options
 	Client   *mongo.Client
 	Database *mongo.Database
 }
@@ -35,10 +34,10 @@ func (this *Mongodb) init() (err error) {
 	wc := writeconcern.New(writeconcern.WMajority())
 	readconcern.Majority()
 	//链接mongo服务
-	opt := options.Client().ApplyURI(this.opts.MongodbUrl)
+	opt := options.Client().ApplyURI(this.options.MongodbUrl)
 	opt.SetLocalThreshold(3 * time.Second)     //只使用与mongo操作耗时小于3秒的
 	opt.SetMaxConnIdleTime(5 * time.Second)    //指定连接可以保持空闲的最大毫秒数
-	opt.SetMaxPoolSize(this.opts.MaxPoolSize)  //使用最大的连接数
+	opt.SetMaxPoolSize(this.options.MaxPoolSize)  //使用最大的连接数
 	opt.SetReadPreference(want)                //表示只使用辅助节点
 	opt.SetReadConcern(readconcern.Majority()) //指定查询应返回实例的最新数据确认为，已写入副本集中的大多数成员
 	opt.SetWriteConcern(wc)                    //请求确认写操作传播到大多数mongod实例
@@ -49,17 +48,17 @@ func (this *Mongodb) init() (err error) {
 		if err = client.Ping(this.getContext(), readpref.Primary()); err != nil {
 			return fmt.Errorf("数据库不可用 err=%s", err.Error())
 		}
-		this.Database = client.Database(this.opts.MongodbDatabase)
+		this.Database = client.Database(this.options.MongodbDatabase)
 	}
 	return
 }
 
 func (this *Mongodb) Collection(sqltable core.SqlTable) *mongo.Collection {
-	return this.Client.Database(this.opts.MongodbDatabase).Collection(string(sqltable))
+	return this.Client.Database(this.options.MongodbDatabase).Collection(string(sqltable))
 }
 
 func (this *Mongodb) getContext() (ctx context.Context) {
-	ctx, _ = context.WithTimeout(context.Background(), this.opts.TimeOut)
+	ctx, _ = context.WithTimeout(context.Background(), this.options.TimeOut)
 	return
 }
 

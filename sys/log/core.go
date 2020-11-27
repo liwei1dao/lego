@@ -40,8 +40,8 @@ func OnInit(config map[string]interface{}) (err error) {
 	defsys, err = newSys(newOptionsByConfig(config))
 	return
 }
-func NewSys(opt ...Option) (sys Ilog, err error) {
-	sys, err = newSys(newOptionsByOption(opt...))
+func NewSys(option ...Option) (sys Ilog, err error) {
+	sys, err = newSys(newOptionsByOption(option...))
 	return
 }
 

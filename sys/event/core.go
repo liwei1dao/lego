@@ -28,8 +28,8 @@ func OnInit(config map[string]interface{}) (err error) {
 	return
 }
 
-func NewSys(opts ...Option) (err error) {
-	defsys, err = newSys(newOptionsByOption(opts...))
+func NewSys(option ...Option) (err error) {
+	defsys, err = newSys(newOptionsByOption(option...))
 	return
 }
 
