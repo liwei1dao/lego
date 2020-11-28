@@ -8,7 +8,9 @@ import (
 )
 
 func TestRedisMutex_Lock(t *testing.T) {
-	if err := OnInit(nil, RedisUrl("redis://127.0.0.1:6379/3")); err != nil {
+	if err := OnInit(map[string]interface{}{
+		"RedisUrl":"redis://127.0.0.1:6379/1"
+	}); err != nil {
 		t.Errorf("初始化 redis 失败 err:%s", err.Error())
 		return
 	}
@@ -33,7 +35,9 @@ func TestRedisMutex_Lock(t *testing.T) {
 }
 
 func TestRedisList_Lock(t *testing.T) {
-	if err := OnInit(nil, RedisUrl("redis://127.0.0.1:6379/3")); err != nil {
+	if err := OnInit(map[string]interface{}{
+		"RedisUrl":"redis://127.0.0.1:6379/1"
+	}); err != nil {
 		t.Errorf("初始化 redis 失败 err:%s", err.Error())
 		return
 	}

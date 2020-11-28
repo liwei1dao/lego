@@ -13,17 +13,24 @@ func RedisUrl(v string) Option {
 	}
 }
 
-func newOptions(opts ...Option) Options {
-	opt := Options{
+func newOptionsByConfig(config map[string]interface{}) Options {
+	options := Options{
+		RedisUrl: "redis://127.0.0.1:6379/1",
+	}
+	if config != nil {
+		mapstructure.Decode(config, &options)
+	}
+	return options
+}
+
+func newOptionsByOption(opts ...Option) Options {
+	options := Options{
 		RedisUrl: "redis://127.0.0.1:6379/1",
 	}
 	for _, o := range opts {
-		o(&opt)
+		o(&options)
 	}
-	if len(opt.RedisUrl) == 0 {
-		opt.RedisUrl = "redis://127.0.0.1:6379/1"
-	}
-	return opt
+	return options
 }
 
 type RMutexOption func(*RMutexOptions)

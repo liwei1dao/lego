@@ -7,12 +7,12 @@ import (
 	cont "github.com/liwei1dao/lego/utils/concurrent"
 )
 
-func newRedisFactory(opt ...Option) *RedisFactory {
-	opts := newOptions(opt...)
-	return &RedisFactory{
-		url:   opts.RedisUrl,
+func newsys(options Options) (sys *RedisFactory, err error) {
+	sys = &RedisFactory{
+		url:   options.RedisUrl,
 		pools: cont.NewBeeMap(),
 	}
+	return
 }
 
 type RedisFactory struct {
