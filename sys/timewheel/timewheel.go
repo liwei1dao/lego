@@ -7,6 +7,33 @@ import (
 	"time"
 )
 
+// 创建一个时间轮
+func newsys(options Options) (sys *TimeWheel, err error) {
+	sys = &TimeWheel{
+		// tick
+		tick:      options.Tick * time.Millisecond,
+		tickQueue: make(chan time.Time, 10),
+
+		// store
+		bucketsNum:    options.BucketsNum,
+		bucketIndexes: make(map[taskID]int, 1024*100),
+		buckets:       make([]map[taskID]*Task, options.BucketsNum),
+		currentIndex:  0,
+
+		// signal
+		addC:     make(chan *Task, 1024*5),
+		removeC:  make(chan *Task, 1024*2),
+		stopC:    make(chan struct{}),
+		syncPool: options.IsSyncPool,
+	}
+
+	for i := 0; i < options.BucketsNum; i++ {
+		tw.buckets[i] = make(map[taskID]*Task, 16)
+	}
+
+	return
+}
+
 const (
 	typeTimer taskType = iota
 	typeTicker
@@ -57,35 +84,6 @@ func (t *Task) Reset() {
 	t.async = false
 	t.stop = false
 	t.circle = false
-}
-
-// 创建一个时间轮
-func NewTimeWheel(opt ...Option) (*TimeWheel, error) {
-	opts := newOptions(opt...)
-	tw := &TimeWheel{
-		// tick
-		tick:      opts.Tick,
-		tickQueue: make(chan time.Time, 10),
-
-		// store
-		bucketsNum:    opts.BucketsNum,
-		bucketIndexes: make(map[taskID]int, 1024*100),
-		buckets:       make([]map[taskID]*Task, opts.BucketsNum),
-		currentIndex:  0,
-
-		// signal
-		addC:    make(chan *Task, 1024*5),
-		removeC: make(chan *Task, 1024*2),
-		stopC:   make(chan struct{}),
-
-		syncPool: opts.IsSyncPool,
-	}
-
-	for i := 0; i < opts.BucketsNum; i++ {
-		tw.buckets[i] = make(map[taskID]*Task, 16)
-	}
-
-	return tw, nil
 }
 
 //启动时间轮

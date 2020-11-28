@@ -2,8 +2,6 @@ package timewheel
 
 import (
 	"time"
-
-	"github.com/liwei1dao/lego/core"
 )
 
 type (
@@ -22,44 +20,51 @@ type (
 )
 
 var (
-	defaultTimeWheel ITimeWheel
+	defsys ITimeWheel
 )
 
-func OnInit(s core.IService, opt ...Option) (err error) {
-	if defaultTimeWheel, err = NewTimeWheel(opt...); err == nil {
-		defaultTimeWheel.Start()
+func OnInit(config map[string]interface{}) (err error) {
+	if defsys, err = newsys(newOptionsByConfig(config)); err == nil {
+		defsys.Start()
+	}
+	return
+}
+
+func NewSys(option ...Option) (sys ITimeWheel, err error) {
+	if sys, err = newsys(newOptionsByOption(option...)); err == nil {
+		sys.Start()
 	}
 	return
 }
 
 func Add(delay time.Duration, handler func(*Task, ...interface{}), args ...interface{}) *Task {
-	return defaultTimeWheel.Add(delay, handler, args...)
+	return defsys.Add(delay, handler, args...)
 }
 
 func AddCron(delay time.Duration, handler func(*Task, ...interface{}), args ...interface{}) *Task {
-	return defaultTimeWheel.AddCron(delay, handler, args...)
+	return defsys.AddCron(delay, handler, args...)
 }
 
 func Remove(task *Task) error {
-	return defaultTimeWheel.Remove(task)
+	return defsys.Remove(task)
 }
 
 func NewTimer(delay time.Duration) *Timer {
-	return defaultTimeWheel.NewTimer(delay)
+	return defsys.NewTimer(delay)
 }
 
 func NewTicker(delay time.Duration) *Ticker {
-	return defaultTimeWheel.NewTicker(delay)
+	return defsys.NewTicker(delay)
 }
 
 func AfterFunc(delay time.Duration, callback func()) *Timer {
-	return defaultTimeWheel.AfterFunc(delay, callback)
+	return defsys.AfterFunc(delay, callback)
 }
 
 func After(delay time.Duration) <-chan time.Time {
-	return defaultTimeWheel.After(delay)
+	return defsys.After(delay)
 }
 
 func Sleep(delay time.Duration) {
-	defaultTimeWheel.Sleep(delay)
+	defsys.Sleep(delay)
 }

@@ -8,7 +8,7 @@ import (
 
 type Option func(*Options)
 type Options struct {
-	Tick       time.Duration
+	Tick       int //单位毫秒
 	BucketsNum int
 	IsSyncPool bool
 }
@@ -31,22 +31,43 @@ func SetIsSyncPool(v bool) Option {
 	}
 }
 
-func newOptions(opts ...Option) Options {
-	opt := Options{
-		Tick:       time.Second,
+
+func newOptionsByConfig(config map[string]interface{}) Options {
+	options := Options{
+		Tick:       1000,
 		BucketsNum: 1,
 		IsSyncPool: true,
 	}
-	for _, o := range opts {
-		o(&opt)
+	if config != nil {
+		mapstructure.Decode(config, &options)
 	}
-	if opt.Tick.Seconds() < 0.1 {
+	if opt.Tick < 100 {
 		log.Errorf("创建时间轮参数异常 Tick 必须大于 100 ms ")
-		opt.Tick = 100 * time.Millisecond
+		opt.Tick = 100
 	}
 	if opt.BucketsNum < 0 {
 		log.Errorf("创建时间轮参数异常 BucketsNum 必须大于 0 ")
 		opt.BucketsNum = 1
 	}
-	return opt
+	return options
+}
+
+func newOptionsByOption(opts ...Option) Options {
+	options := Options{
+		Tick:       1000,
+		BucketsNum: 1,
+		IsSyncPool: true,
+	}
+	for _, o := range opts {
+		o(&options)
+	}
+	if opt.Tick < 100 {
+		log.Errorf("创建时间轮参数异常 Tick 必须大于 100 ms ")
+		opt.Tick = 100
+	}
+	if opt.BucketsNum < 0 {
+		log.Errorf("创建时间轮参数异常 BucketsNum 必须大于 0 ")
+		opt.BucketsNum = 1
+	}
+	return options
 }
