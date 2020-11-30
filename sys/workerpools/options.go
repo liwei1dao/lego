@@ -32,7 +32,7 @@ func SetTaskTimeOut(v time.Duration) Option {
 	}
 }
 
-func newOptionsByConfig(config map[string]interface{}) Options {
+func newOptions(config map[string]interface{},opts ...Option) Options {
 	options := Options{
 		DefWrokers:  10,
 		MaxWorkers:  20,
@@ -40,6 +40,9 @@ func newOptionsByConfig(config map[string]interface{}) Options {
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
+	}
+	for _, o := range opts {
+		o(&options)
 	}
 	if opt.DefWrokers < 1 {
 		opt.DefWrokers = 10

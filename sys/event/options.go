@@ -8,10 +8,13 @@ type Option func(*Options)
 type Options struct {
 }
 
-func newOptionsByConfig(config map[string]interface{}) Options {
+func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{}
 	if config != nil {
 		mapstructure.Decode(config, &options)
+	}
+	for _, o := range opts {
+		o(&options)
 	}
 	return options
 }

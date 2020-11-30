@@ -38,13 +38,16 @@ func TimeOut(v time.Duration) Option {
 	}
 }
 
-func newOptionsByConfig(config map[string]interface{}) Options {
+func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
 		MaxPoolSize: 1000,
 		TimeOut:     time.Second * 3,
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
+	}
+	for _, o := range opts {
+		o(&options)
 	}
 	return options
 }

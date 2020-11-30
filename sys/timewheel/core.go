@@ -23,8 +23,8 @@ var (
 	defsys ITimeWheel
 )
 
-func OnInit(config map[string]interface{}) (err error) {
-	if defsys, err = newsys(newOptionsByConfig(config)); err == nil {
+func OnInit(config map[string]interface{}, option ...Option) (err error) {
+	if defsys, err = newsys(newOptions(config, option...)); err == nil {
 		defsys.Start()
 	}
 	return

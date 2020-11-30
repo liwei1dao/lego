@@ -17,8 +17,8 @@ var (
 	defsys IWorkerPool
 )
 
-func OnInit(config map[string]interface{}) (err error) {
-	defsys, err = newSys(newOptionsByConfig(config))
+func OnInit(config map[string]interface{}, option ...Option) (err error) {
+	defsys, err = newSys(newOptions(config, option...))
 	return
 }
 
