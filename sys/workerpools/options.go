@@ -3,7 +3,7 @@ package workerpools
 import (
 	"time"
 
-	"github.com/liwei1dao/utils/mapstructure"
+	"github.com/liwei1dao/lego/utils/mapstructure"
 )
 
 type Option func(*Options)
@@ -11,7 +11,7 @@ type Options struct {
 	DefWrokers     int
 	MaxWorkers     int
 	Tasktimeout    time.Duration //任务执行操超时间
-	IdleTimeoutSec time.Duration  //超时释放空闲工作人员
+	IdleTimeoutSec time.Duration //超时释放空闲工作人员
 }
 
 func SetDefWorkers(v int) Option {
@@ -32,7 +32,7 @@ func SetTaskTimeOut(v time.Duration) Option {
 	}
 }
 
-func newOptions(config map[string]interface{},opts ...Option) Options {
+func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
 		DefWrokers:  10,
 		MaxWorkers:  20,
@@ -44,17 +44,17 @@ func newOptions(config map[string]interface{},opts ...Option) Options {
 	for _, o := range opts {
 		o(&options)
 	}
-	if opt.DefWrokers < 1 {
-		opt.DefWrokers = 10
+	if options.DefWrokers < 1 {
+		options.DefWrokers = 10
 	}
-	if opt.MaxWorkers < 1 {
-		opt.MaxWorkers = 20
+	if options.MaxWorkers < 1 {
+		options.MaxWorkers = 20
 	}
-	if opt.Tasktimeout < time.Millisecond {
-		opt.Tasktimeout = time.Second * 3
+	if options.Tasktimeout < time.Millisecond {
+		options.Tasktimeout = time.Second * 3
 	}
-	if opt.IdleTimeoutSec < time.Second*5 {
-		opt.IdleTimeoutSec = time.Second*5
+	if options.IdleTimeoutSec < time.Second*5 {
+		options.IdleTimeoutSec = time.Second * 5
 	}
 	return options
 }
@@ -68,17 +68,17 @@ func newOptionsByOption(opts ...Option) Options {
 	for _, o := range opts {
 		o(&options)
 	}
-	if opt.DefWrokers < 1 {
-		opt.DefWrokers = 10
+	if options.DefWrokers < 1 {
+		options.DefWrokers = 10
 	}
-	if opt.MaxWorkers < 1 {
-		opt.MaxWorkers = 20
+	if options.MaxWorkers < 1 {
+		options.MaxWorkers = 20
 	}
-	if opt.Tasktimeout < time.Millisecond {
-		opt.Tasktimeout = time.Second * 3
+	if options.Tasktimeout < time.Millisecond {
+		options.Tasktimeout = time.Second * 3
 	}
-	if opt.IdleTimeoutSec < time.Second*5 {
-		opt.IdleTimeoutSec = time.Second*5
+	if options.IdleTimeoutSec < time.Second*5 {
+		options.IdleTimeoutSec = time.Second * 5
 	}
 	return options
 }

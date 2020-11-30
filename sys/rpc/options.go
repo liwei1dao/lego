@@ -48,8 +48,8 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 	for _, o := range opts {
 		o(&options)
 	}
-	if len(opt.NatsAddr) == 0 {
-		opt.NatsAddr = nats.DefaultURL
+	if len(options.NatsAddr) == 0 {
+		options.NatsAddr = nats.DefaultURL
 	}
 	return options
 }
@@ -63,8 +63,8 @@ func newOptionsByOption(opts ...Option) Options {
 	for _, o := range opts {
 		o(&options)
 	}
-	if len(opt.NatsAddr) == 0 {
-		opt.NatsAddr = nats.DefaultURL
+	if len(options.NatsAddr) == 0 {
+		options.NatsAddr = nats.DefaultURL
 	}
 	return options
 }
