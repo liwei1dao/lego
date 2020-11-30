@@ -76,7 +76,7 @@ func (this *Consulregistry) Start() (err error) {
 	}); err != nil {
 		return
 	}
-	go this.snodeWP.Run(this.options.Address)
+	go this.snodeWP.Run(this.options.ConsulAddr)
 	go this.run()
 	this.isstart = true
 	return
@@ -260,7 +260,7 @@ func (this *Consulregistry) shandler(idx uint64, data interface{}) {
 				})
 				if err == nil {
 					wp.Handler = this.snodehandler
-					go wp.Run(this.options.Address)
+					go wp.Run(this.options.ConsulAddr)
 					this.watchers[k] = wp
 				}
 			}
