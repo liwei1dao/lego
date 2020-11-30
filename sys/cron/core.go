@@ -16,15 +16,15 @@ var (
 	defsys Icron
 )
 
-func OnInit(config map[string]interface{}) (err error) {
-	if defsys, err = newCron(newOptionsByConfig(config)); err == nil {
+func OnInit(config map[string]interface{}, option ...Option) (err error) {
+	if defsys, err = newCron(newOptions(config, option...)); err == nil {
 		Start()
 	}
 	return
 }
 
 func NewSys(option ...Option) (sys Icron, err error) {
-	if sys, err = newCron(option...); err == nil {
+	if sys, err = newCron(newOptionsByOption(option...)); err == nil {
 		Start()
 	}
 	return
