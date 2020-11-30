@@ -97,7 +97,7 @@ func (this *RpcServer) UnRegister(id string, f interface{}) {
 func (this *RpcServer) runFunc(callInfo CallInfo) {
 	start := time.Now()
 	_errorCallback := func(Cid string, Error string) {
-		resultInfo := NewResultInfo(Cid, Error, rpc.NULL, nil)
+		resultInfo := NewResultInfo(Cid, Error, NULL, nil)
 		callInfo.Result = *resultInfo
 		this.doCallback(callInfo)
 		if this.listener != nil {
@@ -165,7 +165,7 @@ func (this *RpcServer) runFunc(callInfo CallInfo) {
 			if len(ArgsType) > 0 {
 				in = make([]reflect.Value, len(params))
 				for k, v := range ArgsType {
-					ty, err := rpc.UnSerialize(v, params[k])
+					ty, err := UnSerialize(v, params[k])
 					if err != nil {
 						_errorCallback(callInfo.RpcInfo.Cid, err.Error())
 						return
@@ -213,7 +213,7 @@ func (this *RpcServer) runFunc(callInfo CallInfo) {
 					rs[i] = v.Interface()
 				}
 			}
-			argsType, args, err := rpc.Serialize(rs[0])
+			argsType, args, err := Serialize(rs[0])
 			if err != nil {
 				_errorCallback(callInfo.RpcInfo.Cid, err.Error())
 				return

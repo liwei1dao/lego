@@ -22,8 +22,8 @@ func newSys(options Options) (sys *Consulregistry, err error) {
 		options: options,
 	}
 	config := api.DefaultConfig()
-	if len(c.options.Address) > 0 {
-		config.Address = sys.options.Address
+	if len(options.ConsulAddr) > 0 {
+		config.Address = sys.options.ConsulAddr
 	}
 	if sys.options.Timeout > 0 {
 		config.HttpClient.Timeout = sys.options.Timeout
@@ -35,7 +35,7 @@ func newSys(options Options) (sys *Consulregistry, err error) {
 		return nil, err
 	}
 	sys.snodeWP.Handler = sys.shandler
-	sys.options.Address = config.Address
+	sys.options.ConsulAddr = config.Address
 	sys.shash = make(map[string]uint64)
 	sys.services = make(map[string]*ServiceNode)
 	sys.rpcsubs = make(map[core.Rpc_Key][]*ServiceNode)
@@ -65,13 +65,13 @@ func (this *Consulregistry) Start() (err error) {
 		return
 	}
 	if err = this.registerSNode(&ServiceNode{
-		Tag:          service.GetTag(),
-		Id:           service.GetId(),
-		Type:         service.GetType(),
-		Category:     service.GetCategory(),
-		Version:      service.GetVersion(),
-		RpcId:        service.GetRpcId(),
-		PreWeight:    service.GetPreWeight(),
+		Tag:          this.options.Service.GetTag(),
+		Id:           this.options.Service.GetId(),
+		Type:         this.options.Service.GetType(),
+		Category:     this.options.Service.GetCategory(),
+		Version:      this.options.Service.GetVersion(),
+		RpcId:        this.options.Service.GetRpcId(),
+		PreWeight:    this.options.Service.GetPreWeight(),
 		RpcSubscribe: this.getRpcInfo(),
 	}); err != nil {
 		return
@@ -111,7 +111,7 @@ func (this *Consulregistry) registerSNode(snode *ServiceNode) (err error) {
 	asr := &api.AgentServiceRegistration{
 		ID:    snode.Id,
 		Name:  snode.Type,
-		Tags:  []string{this.options.Tag},
+		Tags:  []string{this.options.Service.GetTag()},
 		Check: check,
 		Meta: map[string]string{
 			"tag":          snode.Tag,
@@ -129,7 +129,7 @@ func (this *Consulregistry) registerSNode(snode *ServiceNode) (err error) {
 }
 
 func (this *Consulregistry) deregisterSNode() (err error) {
-	return this.client.Agent().ServiceDeregister(service.GetId())
+	return this.client.Agent().ServiceDeregister(this.options.Service.GetId())
 }
 
 func (this *Consulregistry) run() {
@@ -151,13 +151,13 @@ func (this *Consulregistry) run() {
 func (this *Consulregistry) PushServiceInfo() (err error) {
 	if this.isstart {
 		err = this.registerSNode(&ServiceNode{
-			Tag:          service.GetTag(),
-			Id:           service.GetId(),
-			Type:         service.GetType(),
-			Category:     service.GetCategory(),
-			Version:      service.GetVersion(),
-			RpcId:        service.GetRpcId(),
-			PreWeight:    service.GetPreWeight(),
+			Tag:          this.options.Service.GetTag(),
+			Id:           this.options.Service.GetId(),
+			Type:         this.options.Service.GetType(),
+			Category:     this.options.Service.GetCategory(),
+			Version:      this.options.Service.GetVersion(),
+			RpcId:        this.options.Service.GetRpcId(),
+			PreWeight:    this.options.Service.GetPreWeight(),
 			RpcSubscribe: this.getRpcInfo(),
 		})
 	}
@@ -249,7 +249,7 @@ func (this *Consulregistry) shandler(idx uint64, data interface{}) {
 	}
 	for k, v := range services {
 		if len(v) > 0 {
-			if v[0] == service.GetTag() {
+			if v[0] == this.options.Service.GetTag() {
 				_, ok := this.watchers[k]
 				if ok {
 					continue
@@ -317,7 +317,7 @@ func (this *Consulregistry) getServices() (err error) {
 	services, err := this.client.Agent().Services()
 	if err == nil {
 		for _, v := range services {
-			if v.Tags[0] == service.GetTag() { //自能读取相同标签的服务
+			if v.Tags[0] == this.options.Service.GetTag() { //自能读取相同标签的服务
 				this.addandupdataServiceNode(v)
 			}
 		}

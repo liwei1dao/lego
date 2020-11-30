@@ -63,12 +63,6 @@ func (this *ServiceBase) Init(service core.IService) (err error) {
 	return nil
 }
 
-//初始化服务系统模块
-func (this *ServiceBase) InitSys() {
-	if err := log.OnInit(this.Service); err != nil {
-		panic(fmt.Sprintf("初始化log系统失败 %s", err.Error()))
-	}
-}
 
 //配置服务组件
 func (this *ServiceBase) OnInstallComp(cops ...core.IServiceComp) {

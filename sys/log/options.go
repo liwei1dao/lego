@@ -1,6 +1,8 @@
 package log
 
 import (
+	"log"
+
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
 
@@ -59,6 +61,10 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 	for _, o := range opts {
 		o(&options)
 	}
+	if len(options.FileName) == 0 {
+		log.Panicf("start log Missing necessary configuration : FileName is nul")
+	}
+
 	return options
 }
 
@@ -70,6 +76,9 @@ func newOptionsByOption(opts ...Option) Options {
 	}
 	for _, o := range opts {
 		o(&options)
+	}
+	if len(options.FileName) == 0 {
+		log.Panicf("start log Missing necessary configuration : FileName is nul")
 	}
 	return options
 }

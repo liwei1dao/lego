@@ -50,7 +50,7 @@ func (this *MComp_GateComp) Init(service core.IService, module core.IModule, com
 		this.MaxGoroutine = 100
 	}
 	this.Msghandles = make(map[uint16]*msgRecep)
-	this.Workerpool, err = workerpools.NewTaskPools(workerpools.SetMaxWorkers(this.MaxGoroutine), workerpools.SetTaskTimeOut(time.Second*2))
+	this.Workerpool, err = workerpools.NewSys(workerpools.SetMaxWorkers(this.MaxGoroutine), workerpools.SetTaskTimeOut(time.Second*2))
 	return
 }
 

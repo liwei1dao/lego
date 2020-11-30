@@ -17,7 +17,7 @@ func newSys(options Options) (sys *WorkerPool, err error) {
 		tasktimeout:  options.Tasktimeout,
 		stoppedChan:  make(chan struct{}),
 	}
-	go pool.dispatch()
+	go sys.dispatch()
 	return
 }
 

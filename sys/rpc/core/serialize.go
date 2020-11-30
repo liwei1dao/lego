@@ -1,4 +1,4 @@
-package rpc
+package core
 
 import (
 	"encoding/binary"
@@ -42,37 +42,37 @@ var (
 
 func init() {
 	serializeObjs = make(map[string]*SerializeData)
-	onRegister(nil, nullToBytes, bytesToNull)
-	onRegister(byte(0), byteToBytes, bytesTobyte)
-	onRegister(false, boolToBytes, bytesToBool)
-	onRegister(int8(0), int8ToBytes, bytesToInt8)
-	onRegister(int16(0), int16ToBytes, bytesToInt16)
-	onRegister(uint16(0), uInt16ToBytes, bytesToUInt16)
-	onRegister(int(0), intToBytes, bytesToInt)
-	onRegister(int32(0), int32ToBytes, bytesToInt32)
-	onRegister(uint32(0), uInt32ToBytes, bytesToUInt32)
-	onRegister(int64(0), int64ToBytes, bytesToInt64)
-	onRegister(uint64(0), uInt64ToBytes, bytesToUInt64)
-	onRegister(float32(0), float32ToBytes, bytesToFloat32)
-	onRegister(float64(0), float64ToBytes, bytesToFloat64)
-	onRegister(string(""), stringToBytes, bytesToString)
-	onRegister([]byte{}, sliceByteToBytes, bytesToSliceByte)
-	onRegister([]int32{}, sliceInt32ToBytes, bytesToSliceInt32)
-	onRegister([]uint32{}, sliceUInt32ToBytes, bytesToSliceUInt32)
-	onRegister([]uint64{}, sliceUInt64ToBytes, bytesToSliceUInt64)
-	onRegister([]string{}, sliceStringToBytes, bytesToSliceString)
-	onRegister([]interface{}{}, sliceInterfaceToBytes, bytesToSliceInterface)
-	onRegister(map[string]string{}, jsonStructMarshal, bytesToMapString)
-	onRegister(map[int32]string{}, jsonStructMarshal, int32ToMapString)
-	onRegister(map[string]interface{}{}, mapStringInterfaceToBytes, bytesToMapStringRpc)
-	onRegister(map[int32]interface{}{}, mapInt32InterfaceToBytes, bytesToMapInt32Rpc)
-	onRegister(map[uint32]interface{}{}, mapUInt32InterfaceToBytes, bytesToMapUInt32Rpc)
-	onRegister(map[string]*RpcData{}, jsonStructMarshal, bytesToMapStringRpc)
-	onRegister(&proto.Message{}, protoStructMarshal, prototructUnmarshal)
-	onRegister(core.ErrorCode(0), errorCodeToBytes, bytesToErrorCode)
-	onRegister(core.CustomRoute(0), customRouteToBytes, bytesToCustomRoute)
-	onRegister(map[uint16][]uint16{}, jsonStructMarshal, bytesToMapUnit16SliceUInt16Rpc)
-	onRegister(&core.ServiceMonitor{}, jsonStructMarshal, jsonStructUnmarshal)
+	OnRegisterRpcData(nil, nullToBytes, bytesToNull)
+	OnRegisterRpcData(byte(0), byteToBytes, bytesTobyte)
+	OnRegisterRpcData(false, boolToBytes, bytesToBool)
+	OnRegisterRpcData(int8(0), int8ToBytes, bytesToInt8)
+	OnRegisterRpcData(int16(0), int16ToBytes, bytesToInt16)
+	OnRegisterRpcData(uint16(0), uInt16ToBytes, bytesToUInt16)
+	OnRegisterRpcData(int(0), intToBytes, bytesToInt)
+	OnRegisterRpcData(int32(0), int32ToBytes, bytesToInt32)
+	OnRegisterRpcData(uint32(0), uInt32ToBytes, bytesToUInt32)
+	OnRegisterRpcData(int64(0), int64ToBytes, bytesToInt64)
+	OnRegisterRpcData(uint64(0), uInt64ToBytes, bytesToUInt64)
+	OnRegisterRpcData(float32(0), float32ToBytes, bytesToFloat32)
+	OnRegisterRpcData(float64(0), float64ToBytes, bytesToFloat64)
+	OnRegisterRpcData(string(""), stringToBytes, bytesToString)
+	OnRegisterRpcData([]byte{}, sliceByteToBytes, bytesToSliceByte)
+	OnRegisterRpcData([]int32{}, sliceInt32ToBytes, bytesToSliceInt32)
+	OnRegisterRpcData([]uint32{}, sliceUInt32ToBytes, bytesToSliceUInt32)
+	OnRegisterRpcData([]uint64{}, sliceUInt64ToBytes, bytesToSliceUInt64)
+	OnRegisterRpcData([]string{}, sliceStringToBytes, bytesToSliceString)
+	OnRegisterRpcData([]interface{}{}, sliceInterfaceToBytes, bytesToSliceInterface)
+	OnRegisterRpcData(map[string]string{}, jsonStructMarshal, bytesToMapString)
+	OnRegisterRpcData(map[int32]string{}, jsonStructMarshal, int32ToMapString)
+	OnRegisterRpcData(map[string]interface{}{}, mapStringInterfaceToBytes, bytesToMapStringRpc)
+	OnRegisterRpcData(map[int32]interface{}{}, mapInt32InterfaceToBytes, bytesToMapInt32Rpc)
+	OnRegisterRpcData(map[uint32]interface{}{}, mapUInt32InterfaceToBytes, bytesToMapUInt32Rpc)
+	OnRegisterRpcData(map[string]*RpcData{}, jsonStructMarshal, bytesToMapStringRpc)
+	OnRegisterRpcData(&proto.Message{}, protoStructMarshal, prototructUnmarshal)
+	OnRegisterRpcData(core.ErrorCode(0), errorCodeToBytes, bytesToErrorCode)
+	OnRegisterRpcData(core.CustomRoute(0), customRouteToBytes, bytesToCustomRoute)
+	OnRegisterRpcData(map[uint16][]uint16{}, jsonStructMarshal, bytesToMapUnit16SliceUInt16Rpc)
+	OnRegisterRpcData(&core.ServiceMonitor{}, jsonStructMarshal, jsonStructUnmarshal)
 }
 
 func Serialize(d interface{}) (dtype string, b []byte, err error) {
@@ -94,7 +94,7 @@ func UnSerialize(dtype string, d []byte) (interface{}, error) {
 	return nil, fmt.Errorf("没有注册序列化数据结构 dtype = %s", dtype)
 }
 
-func onRegister(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {
+func OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {
 	dtype := "Null"
 	if d != nil {
 		dtype = reflect.TypeOf(d).String()

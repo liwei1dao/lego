@@ -21,8 +21,8 @@ type IClusterService interface {
 	RpcInvokeById(sId string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error)     //执行远程服务Rpc方法
 	RpcInvokeByType(sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error) //根据路由规则执行远程方法
 	ReleaseRpc(rkey core.Rpc_Key, arg ...interface{})                                                                 //发布Rpc
-	Register(id core.Rpc_Key, f interface{}) (err error)                                                              //注册RPC远程方法
-	RegisterGO(id core.Rpc_Key, f interface{}) (err error)                                                            //注册RPC远程方法
+	Register(id core.Rpc_Key, f interface{})                                                                          //注册RPC远程方法
+	RegisterGO(id core.Rpc_Key, f interface{})                                                                        //注册RPC远程方法
 	Subscribe(id core.Rpc_Key, f interface{}) (err error)                                                             //订阅Rpc
 	UnSubscribe(id core.Rpc_Key, f interface{}) (err error)                                                           //订阅Rpc
 }

@@ -2,10 +2,11 @@ package core
 
 import (
 	"fmt"
-	"github.com/liwei1dao/lego/sys/log"
-	cont "github.com/liwei1dao/lego/utils/concurrent"
 	"runtime"
 	"time"
+
+	"github.com/liwei1dao/lego/sys/log"
+	cont "github.com/liwei1dao/lego/utils/concurrent"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/nats-io/nats.go"

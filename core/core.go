@@ -26,6 +26,7 @@ const (
 
 type ServiceSttings struct {
 	Settings map[string]interface{}
+	Sys      map[string]map[string]interface{}
 	Modules  map[string]map[string]interface{}
 }
 

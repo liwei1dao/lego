@@ -11,7 +11,7 @@ import (
 func newsys(options Options) (sys *TimeWheel, err error) {
 	sys = &TimeWheel{
 		// tick
-		tick:      options.Tick * time.Millisecond,
+		tick:      time.Millisecond * time.Duration(options.Tick),
 		tickQueue: make(chan time.Time, 10),
 
 		// store
@@ -28,7 +28,7 @@ func newsys(options Options) (sys *TimeWheel, err error) {
 	}
 
 	for i := 0; i < options.BucketsNum; i++ {
-		tw.buckets[i] = make(map[taskID]*Task, 16)
+		sys.buckets[i] = make(map[taskID]*Task, 16)
 	}
 
 	return

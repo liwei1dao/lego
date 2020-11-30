@@ -1,8 +1,6 @@
 package timewheel
 
 import (
-	"time"
-
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
@@ -14,7 +12,7 @@ type Options struct {
 	IsSyncPool bool
 }
 
-func SetTick(v time.Duration) Option {
+func SetTick(v int) Option {
 	return func(o *Options) {
 		o.Tick = v
 	}
@@ -44,13 +42,13 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 	for _, o := range opts {
 		o(&options)
 	}
-	if opt.Tick < 100 {
+	if options.Tick < 100 {
 		log.Errorf("创建时间轮参数异常 Tick 必须大于 100 ms ")
-		opt.Tick = 100
+		options.Tick = 100
 	}
-	if opt.BucketsNum < 0 {
+	if options.BucketsNum < 0 {
 		log.Errorf("创建时间轮参数异常 BucketsNum 必须大于 0 ")
-		opt.BucketsNum = 1
+		options.BucketsNum = 1
 	}
 	return options
 }

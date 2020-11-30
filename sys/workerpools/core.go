@@ -27,11 +27,6 @@ func NewSys(option ...Option) (sys IWorkerPool, err error) {
 	return
 }
 
-func NewTaskPools(opt ...Option) (pools IWorkerPool, err error) {
-	pools = newWorkerPool(opt...)
-	return
-}
-
 func Stop()        { defsys.Stop() }
 func StopWait()    { defsys.StopWait() }
 func IsStop() bool { return defsys.IsStop() }

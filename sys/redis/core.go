@@ -12,7 +12,7 @@ var (
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
-	defsys, err = newsys(newOptions(config, option))
+	defsys, err = newsys(newOptions(config, option...))
 	return
 }
 
