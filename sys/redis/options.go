@@ -1,6 +1,10 @@
 package redis
 
-import "time"
+import (
+	"time"
+
+	"github.com/liwei1dao/lego/utils/mapstructure"
+)
 
 type Option func(*Options)
 type Options struct {
@@ -13,7 +17,7 @@ func RedisUrl(v string) Option {
 	}
 }
 
-func newOptions(config map[string]interface{},opts ...Option) Options {
+func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
 		RedisUrl: "redis://127.0.0.1:6379/1",
 	}

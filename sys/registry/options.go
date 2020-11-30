@@ -1,6 +1,10 @@
 package registry
 
-import "time"
+import (
+	"time"
+
+	"github.com/liwei1dao/lego/utils/mapstructure"
+)
 
 type IListener interface {
 	FindServiceHandlefunc(snode ServiceNode)
@@ -35,7 +39,6 @@ func SetListener(v IListener) Option {
 		o.Listener = v
 	}
 }
-
 
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{

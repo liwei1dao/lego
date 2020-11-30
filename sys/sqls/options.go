@@ -1,6 +1,8 @@
 package sqls
 
-import "time"
+import (
+	"time"
+)
 
 type Option func(*Options)
 type Options struct {

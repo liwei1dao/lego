@@ -1,7 +1,7 @@
 package cron
 
 import (
-	"github.com/liwei1dao/utils/mapstructure"
+	"github.com/liwei1dao/lego/utils/mapstructure"
 )
 
 type Option func(*Options)
