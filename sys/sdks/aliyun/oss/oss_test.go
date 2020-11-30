@@ -8,9 +8,9 @@ import (
 func Test_OSSUploadFile(t *testing.T) {
 	if err := OnInit(nil,
 		SetEndpoint("http://gohitool.oss-accelerate.aliyuncs.com"),
-		SetAccessKeyId("LTAI4G1hvDpFe6gP7QyDeJK7"),
-		SetAccessKeySecret("mJfDBKS4GewCPwpPsDWaqYhYGf1qUZ"),
-		SetBucketName("gohitool"),
+		SetAccessKeyId("xxxxxxx"),
+		SetAccessKeySecret("xxxxxxxxxxxxxxxxxxxxxxxxxx"),
+		SetBucketName("xxxxxxxxxxx"),
 	); err != nil {
 		fmt.Printf("初始化OSS 系统失败 err:%v", err)
 		t.Logf("初始化OSS 系统失败 err:%s", err.Error())
