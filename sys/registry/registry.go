@@ -19,7 +19,7 @@ import (
 
 func newSys(options Options) (sys *Consulregistry, err error) {
 	sys = &Consulregistry{
-		options:options,
+		options: options,
 	}
 	config := api.DefaultConfig()
 	if len(c.options.Address) > 0 {

@@ -1,4 +1,4 @@
-package serialize
+package rpc
 
 import (
 	"encoding/binary"
@@ -37,42 +37,42 @@ const (
 )
 
 var (
-	SerializeObjs map[string]*SerializeData
+	serializeObjs map[string]*SerializeData
 )
 
 func init() {
-	SerializeObjs = make(map[string]*SerializeData)
-	onRegister(nil, NullToBytes, BytesToNull)
-	onRegister(byte(0), ByteToBytes, BytesTobyte)
-	onRegister(false, BoolToBytes, BytesToBool)
-	onRegister(int8(0), Int8ToBytes, BytesToInt8)
-	onRegister(int16(0), Int16ToBytes, BytesToInt16)
-	onRegister(uint16(0), UInt16ToBytes, BytesToUInt16)
-	onRegister(int(0), IntToBytes, BytesToInt)
-	onRegister(int32(0), Int32ToBytes, BytesToInt32)
-	onRegister(uint32(0), UInt32ToBytes, BytesToUInt32)
-	onRegister(int64(0), Int64ToBytes, BytesToInt64)
-	onRegister(uint64(0), UInt64ToBytes, BytesToUInt64)
-	onRegister(float32(0), Float32ToBytes, BytesToFloat32)
-	onRegister(float64(0), Float64ToBytes, BytesToFloat64)
-	onRegister(string(""), StringToBytes, BytesToString)
-	onRegister([]byte{}, SliceByteToBytes, BytesToSliceByte)
-	onRegister([]int32{}, SliceInt32ToBytes, BytesToSliceInt32)
-	onRegister([]uint32{}, SliceUInt32ToBytes, BytesToSliceUInt32)
-	onRegister([]uint64{}, SliceUInt64ToBytes, BytesToSliceUInt64)
-	onRegister([]string{}, SliceStringToBytes, BytesToSliceString)
-	onRegister([]interface{}{}, SliceInterfaceToBytes, BytesToSliceInterface)
-	onRegister(map[string]string{}, JsonStructMarshal, BytesToMapString)
-	onRegister(map[int32]string{}, JsonStructMarshal, Int32ToMapString)
-	onRegister(map[string]interface{}{}, MapStringInterfaceToBytes, BytesToMapStringRpc)
-	onRegister(map[int32]interface{}{}, MapInt32InterfaceToBytes, BytesToMapInt32Rpc)
-	onRegister(map[uint32]interface{}{}, MapUInt32InterfaceToBytes, BytesToMapUInt32Rpc)
-	onRegister(map[string]*RpcData{}, JsonStructMarshal, BytesToMapStringRpc)
-	onRegister(&proto.Message{}, ProtoStructMarshal, PrototructUnmarshal)
-	onRegister(core.ErrorCode(0), ErrorCodeToBytes, BytesToErrorCode)
-	onRegister(core.CustomRoute(0), CustomRouteToBytes, BytesToCustomRoute)
-	onRegister(map[uint16][]uint16{}, JsonStructMarshal, BytesToMapUnit16SliceUInt16Rpc)
-	onRegister(&core.ServiceMonitor{}, JsonStructMarshal, JsonStructUnmarshal)
+	serializeObjs = make(map[string]*SerializeData)
+	onRegister(nil, nullToBytes, bytesToNull)
+	onRegister(byte(0), byteToBytes, bytesTobyte)
+	onRegister(false, boolToBytes, bytesToBool)
+	onRegister(int8(0), int8ToBytes, bytesToInt8)
+	onRegister(int16(0), int16ToBytes, bytesToInt16)
+	onRegister(uint16(0), uInt16ToBytes, bytesToUInt16)
+	onRegister(int(0), intToBytes, bytesToInt)
+	onRegister(int32(0), int32ToBytes, bytesToInt32)
+	onRegister(uint32(0), uInt32ToBytes, bytesToUInt32)
+	onRegister(int64(0), int64ToBytes, bytesToInt64)
+	onRegister(uint64(0), uInt64ToBytes, bytesToUInt64)
+	onRegister(float32(0), float32ToBytes, bytesToFloat32)
+	onRegister(float64(0), float64ToBytes, bytesToFloat64)
+	onRegister(string(""), stringToBytes, bytesToString)
+	onRegister([]byte{}, sliceByteToBytes, bytesToSliceByte)
+	onRegister([]int32{}, sliceInt32ToBytes, bytesToSliceInt32)
+	onRegister([]uint32{}, sliceUInt32ToBytes, bytesToSliceUInt32)
+	onRegister([]uint64{}, sliceUInt64ToBytes, bytesToSliceUInt64)
+	onRegister([]string{}, sliceStringToBytes, bytesToSliceString)
+	onRegister([]interface{}{}, sliceInterfaceToBytes, bytesToSliceInterface)
+	onRegister(map[string]string{}, jsonStructMarshal, bytesToMapString)
+	onRegister(map[int32]string{}, jsonStructMarshal, int32ToMapString)
+	onRegister(map[string]interface{}{}, mapStringInterfaceToBytes, bytesToMapStringRpc)
+	onRegister(map[int32]interface{}{}, mapInt32InterfaceToBytes, bytesToMapInt32Rpc)
+	onRegister(map[uint32]interface{}{}, mapUInt32InterfaceToBytes, bytesToMapUInt32Rpc)
+	onRegister(map[string]*RpcData{}, jsonStructMarshal, bytesToMapStringRpc)
+	onRegister(&proto.Message{}, protoStructMarshal, prototructUnmarshal)
+	onRegister(core.ErrorCode(0), errorCodeToBytes, bytesToErrorCode)
+	onRegister(core.CustomRoute(0), customRouteToBytes, bytesToCustomRoute)
+	onRegister(map[uint16][]uint16{}, jsonStructMarshal, bytesToMapUnit16SliceUInt16Rpc)
+	onRegister(&core.ServiceMonitor{}, jsonStructMarshal, jsonStructUnmarshal)
 }
 
 func Serialize(d interface{}) (dtype string, b []byte, err error) {
@@ -80,7 +80,7 @@ func Serialize(d interface{}) (dtype string, b []byte, err error) {
 	if d != nil {
 		dtype = reflect.TypeOf(d).String()
 	}
-	if v, ok := SerializeObjs[dtype]; ok {
+	if v, ok := serializeObjs[dtype]; ok {
 		b, err = v.SerializeFunc(d)
 		return
 	}
@@ -88,7 +88,7 @@ func Serialize(d interface{}) (dtype string, b []byte, err error) {
 }
 
 func UnSerialize(dtype string, d []byte) (interface{}, error) {
-	if v, ok := SerializeObjs[dtype]; ok {
+	if v, ok := serializeObjs[dtype]; ok {
 		return v.UnSerializeFunc(v.dataType, d)
 	}
 	return nil, fmt.Errorf("没有注册序列化数据结构 dtype = %s", dtype)
@@ -99,11 +99,11 @@ func onRegister(d interface{}, sf func(d interface{}) ([]byte, error), unsf func
 	if d != nil {
 		dtype = reflect.TypeOf(d).String()
 	}
-	if _, ok := SerializeObjs[dtype]; ok {
+	if _, ok := serializeObjs[dtype]; ok {
 		log.Warnf("注册重复序列化数据结构 dtype = %s", dtype)
 		return
 	}
-	SerializeObjs[dtype] = &SerializeData{
+	serializeObjs[dtype] = &SerializeData{
 		dataType:        reflect.TypeOf(d),
 		SerializeFunc:   sf,
 		UnSerializeFunc: unsf,
@@ -112,14 +112,14 @@ func onRegister(d interface{}, sf func(d interface{}) ([]byte, error), unsf func
 
 //----------------------------------------------内置序列化--------------------------------------------------------------
 //序列化----------------------------------------------------------------------------------------------------------------
-func NullToBytes(v interface{}) ([]byte, error) {
+func nullToBytes(v interface{}) ([]byte, error) {
 	var buf = make([]byte, 0)
 	return buf, nil
 }
-func ByteToBytes(v interface{}) ([]byte, error) {
+func byteToBytes(v interface{}) ([]byte, error) {
 	return []byte{v.(byte)}, nil
 }
-func BoolToBytes(v interface{}) ([]byte, error) {
+func boolToBytes(v interface{}) ([]byte, error) {
 	var buf = make([]byte, 1)
 	if v.(bool) {
 		buf[0] = 1
@@ -128,63 +128,63 @@ func BoolToBytes(v interface{}) ([]byte, error) {
 	}
 	return buf, nil
 }
-func Int8ToBytes(v interface{}) ([]byte, error) {
+func int8ToBytes(v interface{}) ([]byte, error) {
 	return []byte{(byte(v.(int8)))}, nil
 }
-func Int16ToBytes(v interface{}) ([]byte, error) {
+func int16ToBytes(v interface{}) ([]byte, error) {
 	var buf = make([]byte, 2)
 	binary.BigEndian.PutUint16(buf, uint16(v.(int16)))
 	return buf, nil
 }
-func UInt16ToBytes(v interface{}) ([]byte, error) {
+func uInt16ToBytes(v interface{}) ([]byte, error) {
 	var buf = make([]byte, 2)
 	binary.BigEndian.PutUint16(buf, v.(uint16))
 	return buf, nil
 }
-func IntToBytes(v interface{}) ([]byte, error) {
+func intToBytes(v interface{}) ([]byte, error) {
 	var buf = make([]byte, 4)
 	binary.BigEndian.PutUint32(buf, uint32(v.(int)))
 	return buf, nil
 }
-func Int32ToBytes(v interface{}) ([]byte, error) {
+func int32ToBytes(v interface{}) ([]byte, error) {
 	var buf = make([]byte, 4)
 	binary.BigEndian.PutUint32(buf, uint32(v.(int32)))
 	return buf, nil
 }
-func UInt32ToBytes(v interface{}) ([]byte, error) {
+func uInt32ToBytes(v interface{}) ([]byte, error) {
 	var buf = make([]byte, 4)
 	binary.BigEndian.PutUint32(buf, v.(uint32))
 	return buf, nil
 }
-func Int64ToBytes(v interface{}) ([]byte, error) {
+func int64ToBytes(v interface{}) ([]byte, error) {
 	var buf = make([]byte, 8)
 	binary.BigEndian.PutUint64(buf, uint64(v.(int64)))
 	return buf, nil
 }
-func UInt64ToBytes(v interface{}) ([]byte, error) {
+func uInt64ToBytes(v interface{}) ([]byte, error) {
 	var buf = make([]byte, 8)
 	binary.BigEndian.PutUint64(buf, v.(uint64))
 	return buf, nil
 }
-func Float32ToBytes(v interface{}) ([]byte, error) {
+func float32ToBytes(v interface{}) ([]byte, error) {
 	bits := math.Float32bits(v.(float32))
 	bytes := make([]byte, 4)
 	binary.LittleEndian.PutUint32(bytes, bits)
 	return bytes, nil
 }
-func Float64ToBytes(v interface{}) ([]byte, error) {
+func float64ToBytes(v interface{}) ([]byte, error) {
 	bits := math.Float64bits(v.(float64))
 	bytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bytes, bits)
 	return bytes, nil
 }
-func StringToBytes(v interface{}) ([]byte, error) {
+func stringToBytes(v interface{}) ([]byte, error) {
 	return []byte(v.(string)), nil
 }
-func SliceByteToBytes(v interface{}) ([]byte, error) {
+func sliceByteToBytes(v interface{}) ([]byte, error) {
 	return v.([]byte), nil
 }
-func SliceInt32ToBytes(v interface{}) ([]byte, error) {
+func sliceInt32ToBytes(v interface{}) ([]byte, error) {
 	d := v.([]int32)
 	data := []byte{}
 	for _, v := range d {
@@ -194,7 +194,7 @@ func SliceInt32ToBytes(v interface{}) ([]byte, error) {
 	}
 	return data, nil
 }
-func SliceUInt32ToBytes(v interface{}) ([]byte, error) {
+func sliceUInt32ToBytes(v interface{}) ([]byte, error) {
 	d := v.([]uint32)
 	data := []byte{}
 	for _, v := range d {
@@ -204,7 +204,7 @@ func SliceUInt32ToBytes(v interface{}) ([]byte, error) {
 	}
 	return data, nil
 }
-func SliceUInt64ToBytes(v interface{}) ([]byte, error) {
+func sliceUInt64ToBytes(v interface{}) ([]byte, error) {
 	d := v.([]uint64)
 	data := []byte{}
 	for _, v := range d {
@@ -214,10 +214,10 @@ func SliceUInt64ToBytes(v interface{}) ([]byte, error) {
 	}
 	return data, nil
 }
-func SliceStringToBytes(v interface{}) ([]byte, error) {
+func sliceStringToBytes(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
 }
-func SliceInterfaceToBytes(v interface{}) ([]byte, error) {
+func sliceInterfaceToBytes(v interface{}) ([]byte, error) {
 	data := []*RpcData{}
 	for _, v := range v.([]interface{}) {
 		t, d, e := Serialize(v)
@@ -228,7 +228,7 @@ func SliceInterfaceToBytes(v interface{}) ([]byte, error) {
 	}
 	return json.Marshal(data)
 }
-func MapStringInterfaceToBytes(v interface{}) ([]byte, error) {
+func mapStringInterfaceToBytes(v interface{}) ([]byte, error) {
 	data := make(map[string]*RpcData)
 	for k, v := range v.(map[string]interface{}) {
 		t, d, e := Serialize(v)
@@ -239,7 +239,7 @@ func MapStringInterfaceToBytes(v interface{}) ([]byte, error) {
 	}
 	return json.Marshal(data)
 }
-func MapInt32InterfaceToBytes(v interface{}) ([]byte, error) {
+func mapInt32InterfaceToBytes(v interface{}) ([]byte, error) {
 	data := make(map[int32]*RpcData)
 	for k, v := range v.(map[int32]interface{}) {
 		t, d, e := Serialize(v)
@@ -250,7 +250,7 @@ func MapInt32InterfaceToBytes(v interface{}) ([]byte, error) {
 	}
 	return json.Marshal(data)
 }
-func MapUInt32InterfaceToBytes(v interface{}) ([]byte, error) {
+func mapUInt32InterfaceToBytes(v interface{}) ([]byte, error) {
 	data := make(map[uint32]*RpcData)
 	for k, v := range v.(map[uint32]interface{}) {
 		t, d, e := Serialize(v)
@@ -261,99 +261,99 @@ func MapUInt32InterfaceToBytes(v interface{}) ([]byte, error) {
 	}
 	return json.Marshal(data)
 }
-func JsonStructMarshal(v interface{}) ([]byte, error) {
+func jsonStructMarshal(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
 }
-func ProtoStructMarshal(v interface{}) ([]byte, error) {
+func protoStructMarshal(v interface{}) ([]byte, error) {
 	return v.(proto.IMessage).Serializable()
 }
-func ErrorCodeToBytes(v interface{}) ([]byte, error) {
+func errorCodeToBytes(v interface{}) ([]byte, error) {
 	var buf = make([]byte, 4)
 	binary.BigEndian.PutUint32(buf, uint32(v.(core.ErrorCode)))
 	return buf, nil
 }
-func CustomRouteToBytes(v interface{}) ([]byte, error) {
+func customRouteToBytes(v interface{}) ([]byte, error) {
 	var buf = make([]byte, 4)
 	binary.BigEndian.PutUint32(buf, uint32(v.(core.CustomRoute)))
 	return buf, nil
 }
 
 //反序列化--------------------------------------------------------------------------------------------------------------
-func BytesToNull(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToNull(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return nil, nil
 }
-func BytesTobyte(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesTobyte(dataType reflect.Type, buf []byte) (interface{}, error) {
 	var data byte = buf[0]
 	return data, nil
 }
-func BytesToBool(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToBool(dataType reflect.Type, buf []byte) (interface{}, error) {
 	var data bool = buf[0] != 0
 	return data, nil
 }
-func BytesToInt8(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToInt8(dataType reflect.Type, buf []byte) (interface{}, error) {
 	var data int8 = int8(buf[0])
 	return data, nil
 }
-func BytesToInt16(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToInt16(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return int16(binary.BigEndian.Uint16(buf)), nil
 }
-func BytesToUInt16(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToUInt16(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return binary.BigEndian.Uint16(buf), nil
 }
-func BytesToInt(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToInt(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return int(binary.BigEndian.Uint32(buf)), nil
 }
-func BytesToInt32(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToInt32(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return int32(binary.BigEndian.Uint32(buf)), nil
 }
-func BytesToUInt32(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToUInt32(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return binary.BigEndian.Uint32(buf), nil
 }
-func BytesToInt64(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToInt64(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return int64(binary.BigEndian.Uint64(buf)), nil
 }
-func BytesToUInt64(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToUInt64(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return binary.BigEndian.Uint64(buf), nil
 }
-func BytesToFloat32(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToFloat32(dataType reflect.Type, buf []byte) (interface{}, error) {
 	bits := binary.LittleEndian.Uint32(buf)
 	return math.Float32frombits(bits), nil
 }
-func BytesToFloat64(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToFloat64(dataType reflect.Type, buf []byte) (interface{}, error) {
 	bits := binary.LittleEndian.Uint64(buf)
 	return math.Float64frombits(bits), nil
 }
-func BytesToString(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToString(dataType reflect.Type, buf []byte) (interface{}, error) {
 	bits := string(buf)
 	return bits, nil
 }
-func BytesToSliceInt32(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToSliceInt32(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := make([]int32, len(buf)/4)
 	for i, _ := range data {
 		data[i] = int32(binary.BigEndian.Uint32(buf[i*4:]))
 	}
 	return data, nil
 }
-func BytesToSliceUInt32(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToSliceUInt32(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := make([]uint32, len(buf)/4)
 	for i, _ := range data {
 		data[i] = binary.BigEndian.Uint32(buf[i*4:])
 	}
 	return data, nil
 }
-func BytesToSliceUInt64(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToSliceUInt64(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := make([]uint64, len(buf)/8)
 	for i, _ := range data {
 		data[i] = binary.BigEndian.Uint64(buf[i*8:])
 	}
 	return data, nil
 }
-func BytesToSliceString(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToSliceString(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := []string{}
 	err := json.Unmarshal(buf, &data)
 	return data, err
 }
-func BytesToSliceInterface(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToSliceInterface(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := []*RpcData{}
 	err := json.Unmarshal(buf, &data)
 	if err != nil {
@@ -369,20 +369,20 @@ func BytesToSliceInterface(dataType reflect.Type, buf []byte) (interface{}, erro
 	}
 	return mapdata, err
 }
-func BytesToMapString(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToMapString(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := make(map[string]string)
 	err := json.Unmarshal(buf, &data)
 	return data, err
 }
-func Int32ToMapString(dataType reflect.Type, buf []byte) (interface{}, error) {
+func int32ToMapString(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := make(map[int32]string)
 	err := json.Unmarshal(buf, &data)
 	return data, err
 }
-func BytesToSliceByte(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToSliceByte(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return buf, nil
 }
-func BytesToMapStringRpc(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToMapStringRpc(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := make(map[string]*RpcData)
 	err := json.Unmarshal(buf, &data)
 	if err != nil {
@@ -398,7 +398,7 @@ func BytesToMapStringRpc(dataType reflect.Type, buf []byte) (interface{}, error)
 	}
 	return mapdata, err
 }
-func BytesToMapInt32Rpc(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToMapInt32Rpc(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := make(map[int32]*RpcData)
 	err := json.Unmarshal(buf, &data)
 	if err != nil {
@@ -414,7 +414,7 @@ func BytesToMapInt32Rpc(dataType reflect.Type, buf []byte) (interface{}, error) 
 	}
 	return mapdata, err
 }
-func BytesToMapUInt32Rpc(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToMapUInt32Rpc(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := make(map[uint32]*RpcData)
 	err := json.Unmarshal(buf, &data)
 	if err != nil {
@@ -430,21 +430,21 @@ func BytesToMapUInt32Rpc(dataType reflect.Type, buf []byte) (interface{}, error)
 	}
 	return mapdata, err
 }
-func JsonStructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error) {
+func jsonStructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error) {
 	msg := reflect.New(dataType.Elem()).Interface()
 	err := json.Unmarshal(buf, msg)
 	return msg, err
 }
-func PrototructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error) {
+func prototructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return proto.MessageFactory.MessageDecodeBybytes(buf)
 }
-func BytesToErrorCode(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToErrorCode(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return core.ErrorCode(binary.BigEndian.Uint32(buf)), nil
 }
-func BytesToCustomRoute(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToCustomRoute(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return core.CustomRoute(binary.BigEndian.Uint32(buf)), nil
 }
-func BytesToMapUnit16SliceUInt16Rpc(dataType reflect.Type, buf []byte) (interface{}, error) {
+func bytesToMapUnit16SliceUInt16Rpc(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := make(map[uint16][]uint16)
 	err := json.Unmarshal(buf, &data)
 	if err != nil {

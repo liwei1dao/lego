@@ -5,7 +5,6 @@ import (
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/rpc/core"
-	rcore "github.com/liwei1dao/lego/sys/rpc/rcore"
 	"github.com/nats-io/nats.go"
 )
 
@@ -14,10 +13,10 @@ func newSys(options Options) (sys *Rpc, err error) {
 	if err != nil {
 		return err
 	}
-	service, err = rcore.NewRpcServer(
-		rcore.SId(options.sId),
-		rcore.SNats(natsconn),
-		rcore.SMaxCoroutine(options.MaxCoroutine))
+	service, err = core.NewRpcServer(
+		core.SId(options.sId),
+		core.SNats(natsconn),
+		core.SMaxCoroutine(options.MaxCoroutine))
 	if err != nil {
 		return err
 	}
