@@ -36,14 +36,30 @@ func SetListener(v IListener) Option {
 	}
 }
 
-func newOptions(opts ...Option) Options {
-	opt := Options{
-		RegisterInterval: time.Second * time.Duration(10),
-		RegisterTTL:      time.Second * time.Duration(30),
+
+func newOptions(config map[string]interface{}, opts ...Option) Options {
+	options := Options{
+		RegisterInterval: time.Second * 10,
+		RegisterTTL:      time.Second * 30,
+		Tag:              "lego",
+	}
+	if config != nil {
+		mapstructure.Decode(config, &options)
+	}
+	for _, o := range opts {
+		o(&options)
+	}
+	return options
+}
+
+func newOptionsByOption(opts ...Option) Options {
+	options := Options{
+		RegisterInterval: time.Second * 10,
+		RegisterTTL:      time.Second * 30,
 		Tag:              "lego",
 	}
 	for _, o := range opts {
-		o(&opt)
+		o(&options)
 	}
-	return opt
+	return options
 }

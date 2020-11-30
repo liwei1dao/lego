@@ -17,14 +17,14 @@ var (
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
-	if defsys, err = newCron(newOptions(config, option...)); err == nil {
+	if defsys, err = newSys(newOptions(config, option...)); err == nil {
 		Start()
 	}
 	return
 }
 
 func NewSys(option ...Option) (sys Icron, err error) {
-	if sys, err = newCron(newOptionsByOption(option...)); err == nil {
+	if sys, err = newSys(newOptionsByOption(option...)); err == nil {
 		Start()
 	}
 	return

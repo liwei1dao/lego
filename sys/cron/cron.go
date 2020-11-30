@@ -4,7 +4,7 @@ import (
 	tcron "github.com/robfig/cron/v3"
 )
 
-func newCron(options Options) (*Cron, error) {
+func newSys(options Options) (*Cron, error) {
 	cron := &Cron{options: options}
 	err := cron.init()
 	return cron, err
