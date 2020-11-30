@@ -40,55 +40,39 @@ var (
 	SerializeObjs map[string]*SerializeData
 )
 
-func SerializeInit() {
+func init() {
 	SerializeObjs = make(map[string]*SerializeData)
-	OnRegister(nil, NullToBytes, BytesToNull)
-	OnRegister(byte(0), ByteToBytes, BytesTobyte)
-	OnRegister(false, BoolToBytes, BytesToBool)
-	OnRegister(int8(0), Int8ToBytes, BytesToInt8)
-	OnRegister(int16(0), Int16ToBytes, BytesToInt16)
-	OnRegister(uint16(0), UInt16ToBytes, BytesToUInt16)
-	OnRegister(int(0), IntToBytes, BytesToInt)
-	OnRegister(int32(0), Int32ToBytes, BytesToInt32)
-	OnRegister(uint32(0), UInt32ToBytes, BytesToUInt32)
-	OnRegister(int64(0), Int64ToBytes, BytesToInt64)
-	OnRegister(uint64(0), UInt64ToBytes, BytesToUInt64)
-	OnRegister(float32(0), Float32ToBytes, BytesToFloat32)
-	OnRegister(float64(0), Float64ToBytes, BytesToFloat64)
-	OnRegister(string(""), StringToBytes, BytesToString)
-	OnRegister([]byte{}, SliceByteToBytes, BytesToSliceByte)
-	OnRegister([]int32{}, SliceInt32ToBytes, BytesToSliceInt32)
-	OnRegister([]uint32{}, SliceUInt32ToBytes, BytesToSliceUInt32)
-	OnRegister([]uint64{}, SliceUInt64ToBytes, BytesToSliceUInt64)
-	OnRegister([]string{}, SliceStringToBytes, BytesToSliceString)
-	OnRegister([]interface{}{}, SliceInterfaceToBytes, BytesToSliceInterface)
-	OnRegister(map[string]string{}, JsonStructMarshal, BytesToMapString)
-	OnRegister(map[int32]string{}, JsonStructMarshal, Int32ToMapString)
-	OnRegister(map[string]interface{}{}, MapStringInterfaceToBytes, BytesToMapStringRpc)
-	OnRegister(map[int32]interface{}{}, MapInt32InterfaceToBytes, BytesToMapInt32Rpc)
-	OnRegister(map[uint32]interface{}{}, MapUInt32InterfaceToBytes, BytesToMapUInt32Rpc)
-	OnRegister(map[string]*RpcData{}, JsonStructMarshal, BytesToMapStringRpc)
-	OnRegister(&proto.Message{}, ProtoStructMarshal, PrototructUnmarshal)
-	OnRegister(core.ErrorCode(0), ErrorCodeToBytes, BytesToErrorCode)
-	OnRegister(core.CustomRoute(0), CustomRouteToBytes, BytesToCustomRoute)
-	OnRegister(map[uint16][]uint16{}, JsonStructMarshal, BytesToMapUnit16SliceUInt16Rpc)
-	OnRegister(&core.ServiceMonitor{}, JsonStructMarshal, JsonStructUnmarshal)
-}
-
-func OnRegister(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {
-	dtype := "Null"
-	if d != nil {
-		dtype = reflect.TypeOf(d).String()
-	}
-	if _, ok := SerializeObjs[dtype]; ok {
-		log.Warnf("注册重复序列化数据结构 dtype = %s", dtype)
-		return
-	}
-	SerializeObjs[dtype] = &SerializeData{
-		dataType:        reflect.TypeOf(d),
-		SerializeFunc:   sf,
-		UnSerializeFunc: unsf,
-	}
+	onRegister(nil, NullToBytes, BytesToNull)
+	onRegister(byte(0), ByteToBytes, BytesTobyte)
+	onRegister(false, BoolToBytes, BytesToBool)
+	onRegister(int8(0), Int8ToBytes, BytesToInt8)
+	onRegister(int16(0), Int16ToBytes, BytesToInt16)
+	onRegister(uint16(0), UInt16ToBytes, BytesToUInt16)
+	onRegister(int(0), IntToBytes, BytesToInt)
+	onRegister(int32(0), Int32ToBytes, BytesToInt32)
+	onRegister(uint32(0), UInt32ToBytes, BytesToUInt32)
+	onRegister(int64(0), Int64ToBytes, BytesToInt64)
+	onRegister(uint64(0), UInt64ToBytes, BytesToUInt64)
+	onRegister(float32(0), Float32ToBytes, BytesToFloat32)
+	onRegister(float64(0), Float64ToBytes, BytesToFloat64)
+	onRegister(string(""), StringToBytes, BytesToString)
+	onRegister([]byte{}, SliceByteToBytes, BytesToSliceByte)
+	onRegister([]int32{}, SliceInt32ToBytes, BytesToSliceInt32)
+	onRegister([]uint32{}, SliceUInt32ToBytes, BytesToSliceUInt32)
+	onRegister([]uint64{}, SliceUInt64ToBytes, BytesToSliceUInt64)
+	onRegister([]string{}, SliceStringToBytes, BytesToSliceString)
+	onRegister([]interface{}{}, SliceInterfaceToBytes, BytesToSliceInterface)
+	onRegister(map[string]string{}, JsonStructMarshal, BytesToMapString)
+	onRegister(map[int32]string{}, JsonStructMarshal, Int32ToMapString)
+	onRegister(map[string]interface{}{}, MapStringInterfaceToBytes, BytesToMapStringRpc)
+	onRegister(map[int32]interface{}{}, MapInt32InterfaceToBytes, BytesToMapInt32Rpc)
+	onRegister(map[uint32]interface{}{}, MapUInt32InterfaceToBytes, BytesToMapUInt32Rpc)
+	onRegister(map[string]*RpcData{}, JsonStructMarshal, BytesToMapStringRpc)
+	onRegister(&proto.Message{}, ProtoStructMarshal, PrototructUnmarshal)
+	onRegister(core.ErrorCode(0), ErrorCodeToBytes, BytesToErrorCode)
+	onRegister(core.CustomRoute(0), CustomRouteToBytes, BytesToCustomRoute)
+	onRegister(map[uint16][]uint16{}, JsonStructMarshal, BytesToMapUnit16SliceUInt16Rpc)
+	onRegister(&core.ServiceMonitor{}, JsonStructMarshal, JsonStructUnmarshal)
 }
 
 func Serialize(d interface{}) (dtype string, b []byte, err error) {
@@ -108,6 +92,22 @@ func UnSerialize(dtype string, d []byte) (interface{}, error) {
 		return v.UnSerializeFunc(v.dataType, d)
 	}
 	return nil, fmt.Errorf("没有注册序列化数据结构 dtype = %s", dtype)
+}
+
+func onRegister(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {
+	dtype := "Null"
+	if d != nil {
+		dtype = reflect.TypeOf(d).String()
+	}
+	if _, ok := SerializeObjs[dtype]; ok {
+		log.Warnf("注册重复序列化数据结构 dtype = %s", dtype)
+		return
+	}
+	SerializeObjs[dtype] = &SerializeData{
+		dataType:        reflect.TypeOf(d),
+		SerializeFunc:   sf,
+		UnSerializeFunc: unsf,
+	}
 }
 
 //----------------------------------------------内置序列化--------------------------------------------------------------
@@ -214,11 +214,9 @@ func SliceUInt64ToBytes(v interface{}) ([]byte, error) {
 	}
 	return data, nil
 }
-
 func SliceStringToBytes(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
 }
-
 func SliceInterfaceToBytes(v interface{}) ([]byte, error) {
 	data := []*RpcData{}
 	for _, v := range v.([]interface{}) {
@@ -230,7 +228,6 @@ func SliceInterfaceToBytes(v interface{}) ([]byte, error) {
 	}
 	return json.Marshal(data)
 }
-
 func MapStringInterfaceToBytes(v interface{}) ([]byte, error) {
 	data := make(map[string]*RpcData)
 	for k, v := range v.(map[string]interface{}) {
@@ -242,7 +239,6 @@ func MapStringInterfaceToBytes(v interface{}) ([]byte, error) {
 	}
 	return json.Marshal(data)
 }
-
 func MapInt32InterfaceToBytes(v interface{}) ([]byte, error) {
 	data := make(map[int32]*RpcData)
 	for k, v := range v.(map[int32]interface{}) {
@@ -378,7 +374,6 @@ func BytesToMapString(dataType reflect.Type, buf []byte) (interface{}, error) {
 	err := json.Unmarshal(buf, &data)
 	return data, err
 }
-
 func Int32ToMapString(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := make(map[int32]string)
 	err := json.Unmarshal(buf, &data)
@@ -403,7 +398,6 @@ func BytesToMapStringRpc(dataType reflect.Type, buf []byte) (interface{}, error)
 	}
 	return mapdata, err
 }
-
 func BytesToMapInt32Rpc(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := make(map[int32]*RpcData)
 	err := json.Unmarshal(buf, &data)
@@ -420,7 +414,6 @@ func BytesToMapInt32Rpc(dataType reflect.Type, buf []byte) (interface{}, error) 
 	}
 	return mapdata, err
 }
-
 func BytesToMapUInt32Rpc(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := make(map[uint32]*RpcData)
 	err := json.Unmarshal(buf, &data)
@@ -437,25 +430,20 @@ func BytesToMapUInt32Rpc(dataType reflect.Type, buf []byte) (interface{}, error)
 	}
 	return mapdata, err
 }
-
 func JsonStructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error) {
 	msg := reflect.New(dataType.Elem()).Interface()
 	err := json.Unmarshal(buf, msg)
 	return msg, err
 }
-
 func PrototructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return proto.MessageFactory.MessageDecodeBybytes(buf)
 }
-
 func BytesToErrorCode(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return core.ErrorCode(binary.BigEndian.Uint32(buf)), nil
 }
-
 func BytesToCustomRoute(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return core.CustomRoute(binary.BigEndian.Uint32(buf)), nil
 }
-
 func BytesToMapUnit16SliceUInt16Rpc(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := make(map[uint16][]uint16)
 	err := json.Unmarshal(buf, &data)

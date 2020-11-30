@@ -1,5 +1,5 @@
 syntax = "proto3";
-package rcore;
+package core;
 message RPCInfo {
     string Cid = 1;
     string Fn = 2;

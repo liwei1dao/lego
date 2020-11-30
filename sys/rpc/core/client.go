@@ -1,11 +1,11 @@
-package rcore
+package core
 
 import (
 	"fmt"
 	"time"
 
 	"github.com/liwei1dao/lego/sys/log"
-	rpcserialize "github.com/liwei1dao/lego/sys/rpc/serialize"
+	"github.com/liwei1dao/lego/sys/rpc"
 	"github.com/liwei1dao/lego/utils/id"
 
 	"github.com/golang/protobuf/proto"
@@ -40,7 +40,7 @@ func (this *RpcClient) Call(_func string, params ...interface{}) (interface{}, e
 
 	for k, param := range params {
 		var err error = nil
-		ArgsType[k], args[k], err = rpcserialize.Serialize(param)
+		ArgsType[k], args[k], err = rpc.Serialize(param)
 		if err != nil {
 			log.Errorf("RPC CallNR ServerId = %s f = %s  ERROR = %v ", this.opts.sId, _func, err)
 			return nil, fmt.Errorf("args[%d] error %s", k, err.Error())
@@ -64,7 +64,7 @@ func (this *RpcClient) CallNR(_func string, params ...interface{}) (err error) {
 	var ArgsType []string = make([]string, len(params))
 	var args [][]byte = make([][]byte, len(params))
 	for k, param := range params {
-		ArgsType[k], args[k], err = rpcserialize.Serialize(param)
+		ArgsType[k], args[k], err = rpc.Serialize(param)
 		if err != nil {
 			log.Errorf("RPC CallNR ServerId = %s f = %s  ERROR = %v ", this.opts.sId, _func, err)
 			return fmt.Errorf("args[%d] error %s", k, err.Error())
@@ -106,7 +106,7 @@ func (this *RpcClient) CallArgs(_func string, ArgsType []string, args [][]byte) 
 		if resultInfo.Error != "" {
 			return nil, resultInfo.Error
 		}
-		result, err := rpcserialize.UnSerialize(resultInfo.ResultType, resultInfo.Result)
+		result, err := rpc.UnSerialize(resultInfo.ResultType, resultInfo.Result)
 		if err != nil {
 			return nil, err.Error()
 		}

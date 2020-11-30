@@ -1,4 +1,4 @@
-package rcore
+package core
 
 import "github.com/nats-io/nats.go"
 

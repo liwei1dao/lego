@@ -32,7 +32,7 @@ func SetIsSyncPool(v bool) Option {
 }
 
 
-func newOptionsByConfig(config map[string]interface{}) Options {
+func newOptions(config map[string]interface{},opts ...Option) Options {
 	options := Options{
 		Tick:       1000,
 		BucketsNum: 1,
@@ -40,6 +40,9 @@ func newOptionsByConfig(config map[string]interface{}) Options {
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
+	}
+	for _, o := range opts {
+		o(&options)
 	}
 	if opt.Tick < 100 {
 		log.Errorf("创建时间轮参数异常 Tick 必须大于 100 ms ")

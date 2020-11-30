@@ -1,88 +1,70 @@
 package rpc
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/rpc/core"
 	rcore "github.com/liwei1dao/lego/sys/rpc/rcore"
-	rpcserialize "github.com/liwei1dao/lego/sys/rpc/serialize"
-
 	"github.com/nats-io/nats.go"
 )
 
-var (
-	options *Options
-	rnats   *nats.Conn
-	srpc    IRpcServer
-)
-
-func OnInit(s core.IService, opt ...Option) (err error) {
-	options = newOptions(opt...)
-	nc, err := nats.Connect(options.NatsAddr)
+func newSys(options Options) (sys *Rpc, err error) {
+	natsconn, err := nats.Connect(options.NatsAddr)
 	if err != nil {
 		return err
 	}
-	rnats = nc
-	rpcserialize.SerializeInit()
-	srpc, err = rcore.NewRpcServer(
+	service, err = rcore.NewRpcServer(
 		rcore.SId(options.sId),
-		rcore.SNats(rnats),
+		rcore.SNats(natsconn),
 		rcore.SMaxCoroutine(options.MaxCoroutine))
+	if err != nil {
+		return err
+	}
+	sys = &Rpc{
+		options:  options,
+		natsconn: natsconn,
+		service:  service,
+	}
 	return
 }
 
-func OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {
-	rpcserialize.OnRegister(d, sf, unsf)
+type Rpc struct {
+	options  Options
+	natsconn *nats.Conn
+	service  IRpcServer
 }
 
-func NewRpcClient(sId, rId string) (clent IRpcClient, err error) {
-	if options == nil {
-		return nil, fmt.Errorf("rpc 系统未初始化")
-	}
-	clent, err = rcore.NewRpcClient(
-		rcore.CId(sId),
-		rcore.CrpcId(rId),
-		rcore.CRpcExpired(options.RpcExpired),
-		rcore.CNats(rnats))
-	return
-}
-
-func RpcId() (rpcId string, err error) {
-	if srpc == nil {
-		return "", fmt.Errorf("rpc 系统未初始化")
-	}
-	rpcId = srpc.RpcId()
+func (this *Rpc) RpcId() (rpcId string) {
+	rpcId = this.service.RpcId()
 	return
 }
 
 func GetRpcInfo() (rfs []core.Rpc_Key) {
-	if srpc == nil {
-		return []core.Rpc_Key{}
-	}
-	return srpc.GetRpcInfo()
+	return this.service.GetRpcInfo()
 }
 
-func Register(id string, f interface{}) (err error) {
-	if srpc == nil {
-		return fmt.Errorf("rpc 系统未初始化")
-	}
-	srpc.Register(id, f)
-	return
+func Register(id string, f interface{}) {
+	this.service.Register(id, f)
 }
 
-func RegisterGO(id string, f interface{}) (err error) {
-	if srpc == nil {
-		return fmt.Errorf("rpc 系统未初始化")
-	}
-	srpc.RegisterGO(id, f)
-	return
+func RegisterGO(id string, f interface{}) {
+	this.service.RegisterGO(id, f)
 }
 
-func UnRegister(id string, f interface{}) (err error) {
-	if srpc == nil {
-		return fmt.Errorf("rpc 系统未初始化")
-	}
-	srpc.UnRegister(id, f)
+func UnRegister(id string, f interface{}) {
+	this.service.UnRegister(id, f)
+}
+
+func OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {
+	onRegister(d, sf, unsf)
+}
+
+func NewRpcClient(sId, rId string) (clent IRpcClient, err error) {
+	clent, err = core.NewRpcClient(
+		core.CId(sId),
+		core.CrpcId(rId),
+		core.CRpcExpired(this.options.RpcExpired),
+		core.CNats(this.natsconn))
 	return
 }

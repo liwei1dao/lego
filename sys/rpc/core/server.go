@@ -1,4 +1,4 @@
-package rcore
+package core
 
 import (
 	"encoding/json"
@@ -10,7 +10,6 @@ import (
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
-	rpcserialize "github.com/liwei1dao/lego/sys/rpc/serialize"
 )
 
 func NewRpcServer(opt ...sOption) (srpc *RpcServer, err error) {
@@ -98,7 +97,7 @@ func (this *RpcServer) UnRegister(id string, f interface{}) {
 func (this *RpcServer) runFunc(callInfo CallInfo) {
 	start := time.Now()
 	_errorCallback := func(Cid string, Error string) {
-		resultInfo := NewResultInfo(Cid, Error, rpcserialize.NULL, nil)
+		resultInfo := NewResultInfo(Cid, Error, rpc.NULL, nil)
 		callInfo.Result = *resultInfo
 		this.doCallback(callInfo)
 		if this.listener != nil {
@@ -166,7 +165,7 @@ func (this *RpcServer) runFunc(callInfo CallInfo) {
 			if len(ArgsType) > 0 {
 				in = make([]reflect.Value, len(params))
 				for k, v := range ArgsType {
-					ty, err := rpcserialize.UnSerialize(v, params[k])
+					ty, err := rpc.UnSerialize(v, params[k])
 					if err != nil {
 						_errorCallback(callInfo.RpcInfo.Cid, err.Error())
 						return
@@ -214,7 +213,7 @@ func (this *RpcServer) runFunc(callInfo CallInfo) {
 					rs[i] = v.Interface()
 				}
 			}
-			argsType, args, err := rpcserialize.Serialize(rs[0])
+			argsType, args, err := rpc.Serialize(rs[0])
 			if err != nil {
 				_errorCallback(callInfo.RpcInfo.Cid, err.Error())
 				return

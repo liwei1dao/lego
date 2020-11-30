@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"github.com/liwei1dao/lego/utils/mapstructure"
 	"github.com/nats-io/nats.go"
 )
 
@@ -35,16 +36,35 @@ func RpcExpired(v int) Option {
 	}
 }
 
-func newOptions(opts ...Option) *Options {
-	opt := Options{
+func newOptions(config map[string]interface{}, opts ...Option) Options {
+	options := Options{
+		NatsAddr:     nats.DefaultURL,
 		MaxCoroutine: 10000,
 		RpcExpired:   5,
 	}
+	if config != nil {
+		mapstructure.Decode(config, &options)
+	}
 	for _, o := range opts {
-		o(&opt)
+		o(&options)
 	}
 	if len(opt.NatsAddr) == 0 {
 		opt.NatsAddr = nats.DefaultURL
 	}
-	return &opt
+	return options
+}
+
+func newOptionsByOption(opts ...Option) Options {
+	options := Options{
+		NatsAddr:     nats.DefaultURL,
+		MaxCoroutine: 10000,
+		RpcExpired:   5,
+	}
+	for _, o := range opts {
+		o(&options)
+	}
+	if len(opt.NatsAddr) == 0 {
+		opt.NatsAddr = nats.DefaultURL
+	}
+	return options
 }

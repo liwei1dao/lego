@@ -11,7 +11,7 @@ It has these top-level messages:
 	RPCInfo
 	ResultInfo
 */
-package rcore
+package core
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"

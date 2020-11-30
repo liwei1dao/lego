@@ -13,12 +13,15 @@ func RedisUrl(v string) Option {
 	}
 }
 
-func newOptionsByConfig(config map[string]interface{}) Options {
+func newOptions(config map[string]interface{},opts ...Option) Options {
 	options := Options{
 		RedisUrl: "redis://127.0.0.1:6379/1",
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
+	}
+	for _, o := range opts {
+		o(&options)
 	}
 	return options
 }

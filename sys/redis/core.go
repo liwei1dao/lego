@@ -11,13 +11,13 @@ var (
 	defsys IRedisFactory
 )
 
-func OnInit(config map[string]interface{}) (err error) {
-	defsys, err = newsys(newOptionsByConfig(config))
+func OnInit(config map[string]interface{}, option ...Option) (err error) {
+	defsys, err = newsys(newOptions(config, option))
 	return
 }
 
-func NewRedisSys(opt ...Option) (sys IRedisFactory, err error) {
-	sys, err = newsys(newOptionsByOption(opt...))
+func NewRedisSys(option ...Option) (sys IRedisFactory, err error) {
+	sys, err = newsys(newOptionsByOption(option...))
 	return
 }
 
