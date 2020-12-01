@@ -25,9 +25,7 @@ func (this *SingleService) GetVersion() int32 {
 func (this *SingleService) GetSettings() core.ServiceSttings {
 	return this.opts.Setting
 }
-func (this *SingleService) GetWorkPath() string {
-	return this.opts.WorkPath
-}
+
 func (this *SingleService) Configure(opts ...Option) {
 	this.opts = newOptions(opts...)
 }

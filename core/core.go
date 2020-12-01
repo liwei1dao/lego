@@ -25,9 +25,12 @@ const (
 )
 
 type ServiceSttings struct {
-	Settings map[string]interface{}
-	Sys      map[string]map[string]interface{}
-	Modules  map[string]map[string]interface{}
+	Id       string                            //服务id
+	Type     string                            //服务类型
+	Version  int                               //服务版本
+	Settings map[string]interface{}            //服务配置
+	Sys      map[string]map[string]interface{} //系统配置
+	Modules  map[string]map[string]interface{} //模块配置
 }
 
 type IService interface {

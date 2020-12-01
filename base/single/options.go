@@ -5,17 +5,13 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/utils"
 )
 
 type Option func(*Options)
 
 type Options struct {
-	Id       string
-	Type     string
-	Version  int32
-	WorkPath string
-	Setting  core.ServiceSttings
+	Id      string
+	Setting core.ServiceSttings
 }
 
 func SetId(v string) Option {
@@ -23,37 +19,18 @@ func SetId(v string) Option {
 		o.Id = v
 	}
 }
-func SetType(v string) Option {
-	return func(o *Options) {
-		o.Type = v
-	}
-}
-func SetVersion(v int32) Option {
-	return func(o *Options) {
-		o.Version = v
-	}
-}
 
-func SetWorkPath(v string) Option {
-	return func(o *Options) {
-		o.WorkPath = v
+func newOptions(option ...Option) *Options {
+	options := &Options{
+		Id: "cluster_1",
 	}
-}
-
-func newOptions(opts ...Option) *Options {
-	opt := &Options{
-		Id:       "cluster_1",
-		Type:     "cluster",
-		Version:  1,
-		WorkPath: utils.GetApplicationDir(),
+	for _, o := range option {
+		o(options)
 	}
-	for _, o := range opts {
-		o(opt)
-	}
-	confpath := fmt.Sprintf("conf/%s.toml", opt.Id)
-	_, err := toml.DecodeFile(confpath, &opt.Setting)
+	confpath := fmt.Sprintf("conf/%s.toml", options.Id)
+	_, err := toml.DecodeFile(confpath, &options.Setting)
 	if err != nil {
-		panic(fmt.Sprintf("读取服务配置【%s】文件失败err=%s:", confpath, err.Error()))
+		panic(fmt.Sprintf("读取服务配置【%s】文件失败err:%v:", confpath, err))
 	}
-	return opt
+	return options
 }
