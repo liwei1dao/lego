@@ -1,13 +1,23 @@
 package proto
 
+import (
+	"github.com/liwei1dao/lego/utils/mapstructure"
+)
+
+type ProtoType uint8
+
+const (
+	Proto_Json ProtoType = 1
+	Proto_Buff ProtoType = 2
+)
+
 type Option func(*Options)
 type Options struct {
 	MsgProtoType   ProtoType
 	IsUseBigEndian bool
-	MessageFactory IMessageFactory
 }
 
-func SetProtoType(v ProtoType) Option {
+func SetMsgProtoType(v ProtoType) Option {
 	return func(o *Options) {
 		o.MsgProtoType = v
 	}
@@ -19,20 +29,27 @@ func SetIsUseBigEndian(v bool) Option {
 	}
 }
 
-func SetMessageFactory(v IMessageFactory) Option {
-	return func(o *Options) {
-		o.MessageFactory = v
-	}
-}
-
-func newOptions(opts ...Option) Options {
-	opt := Options{
+func newOptions(config map[string]interface{}, opts ...Option) Options {
+	options := Options{
+		MsgProtoType:   Proto_Buff,
 		IsUseBigEndian: false,
-		MsgProtoType:   Proto_Json,
-		MessageFactory: &DefMessageFactory{},
+	}
+	if config != nil {
+		mapstructure.Decode(config, &options)
 	}
 	for _, o := range opts {
-		o(&opt)
+		o(&options)
 	}
-	return opt
+	return options
+}
+
+func newOptionsByOption(opts ...Option) Options {
+	options := Options{
+		MsgProtoType:   Proto_Buff,
+		IsUseBigEndian: false,
+	}
+	for _, o := range opts {
+		o(&options)
+	}
+	return options
 }
