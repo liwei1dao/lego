@@ -25,19 +25,20 @@ const (
 )
 
 type ServiceSttings struct {
-	Id       string                            //服务id
-	Type     string                            //服务类型
-	Version  int                               //服务版本
-	Settings map[string]interface{}            //服务配置
-	Sys      map[string]map[string]interface{} //系统配置
-	Modules  map[string]map[string]interface{} //模块配置
+	Id       string                            //服务Id
+	Type     string                            //服务类型 (相同的服务可以启动多个)
+	Tag      string                            //服务集群标签 (相同标签的集群服务可以互相发现和发现)
+	Category S_Category                        //服务列表 (用于区分集群服务下相似业务功能的服务器 例如:游戏服务器)
+	Version  int32                             //服务版本
+	Settings map[string]interface{}            //服务扩展配置
+	Sys      map[string]map[string]interface{} //服务系统配置
+	Modules  map[string]map[string]interface{} //服务模块配置
 }
 
 type IService interface {
 	GetId() string                                              //获取服务id
 	GetType() string                                            //获取服务类型
 	GetVersion() int32                                          //获取服务版本
-	GetWorkPath() string                                        //获取服务工作目录
 	GetSettings() ServiceSttings                                //获取服务配置表信息
 	Init(service IService) (err error)                          //初始化接口
 	InitSys()                                                   //初始化系统

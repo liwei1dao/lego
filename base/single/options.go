@@ -32,5 +32,9 @@ func newOptions(option ...Option) *Options {
 	if err != nil {
 		panic(fmt.Sprintf("读取服务配置【%s】文件失败err:%v:", confpath, err))
 	}
+
+	if options.Setting.Id == "" || options.Setting.Type == "" {
+		panic(fmt.Sprintf("服务[%s] 配置缺少必要配置: %+v", options.Id, options))
+	}
 	return options
 }
