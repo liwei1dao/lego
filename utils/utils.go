@@ -56,6 +56,7 @@ func quickSort(arr []interface{}, start, end int, compete func(a interface{}, b 
 		}
 	}
 }
+
 func Sort(a []interface{}, compete func(a interface{}, b interface{}) int8) {
 	if len(a) < 2 {
 		return

@@ -1,13 +1,13 @@
-package email
+package sms
 
 type (
-	IEmail interface {
-		SendCaptcha(email string, captcha string) error
+	ISMS interface {
+		SendCaptcha(mobile string, captcha string) error
 	}
 )
 
 var (
-	defsys IEmail
+	defsys ISMS
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {

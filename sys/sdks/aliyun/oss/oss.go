@@ -2,21 +2,15 @@ package oss
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-func newOSS(opt ...Option) (IOSS, error) {
-	opts := newOptions(opt...)
-	if opts.Endpoint == "" || opts.AccessKeyId == "" || opts.AccessKeySecret == "" || opts.BucketName == "" {
-		return nil, fmt.Errorf("参数异常 %v", opts)
-	} else {
-		oss := &OSS{Endpoint: opts.Endpoint, AccessKeyId: opts.AccessKeyId, AccessKeySecret: opts.AccessKeySecret, BucketName: opts.BucketName}
-		err := oss.Init()
-		return oss, err
-	}
+func newSys(options Options) (sys *OSS, err error) {
+	sys = &OSS{Endpoint: options.Endpoint, AccessKeyId: options.AccessKeyId, AccessKeySecret: options.AccessKeySecret, BucketName: options.BucketName}
+	err = sys.Init()
+	return
 }
 
 type OSS struct {

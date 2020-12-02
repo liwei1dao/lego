@@ -1,4 +1,4 @@
-package smsverification
+package sms
 
 import (
 	"encoding/json"
@@ -8,18 +8,19 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 )
 
-func NewALiYun(key, keysecret, signName string) *sdk_aliyun {
-	return &sdk_aliyun{key, keysecret, signName}
+func newSys(options Options) (sys *SMS, err error) {
+	sys = &SMS{options.key, options.KeySecret, options.SignName}
+	return
 }
 
-type sdk_aliyun struct {
+type SMS struct {
 	key       string
 	keysecret string
 	signName  string
 }
 
 //发送短信验证吗
-func (this *sdk_aliyun) SendCaptcha(mobile string, captcha string) error {
+func (this *SMS) SendCaptcha(mobile string, captcha string) error {
 	client, err := sdk.NewClientWithAccessKey("default", this.key, this.keysecret)
 	if err != nil {
 		return err

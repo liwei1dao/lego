@@ -1,5 +1,10 @@
 package email
 
+import (
+	"github.com/liwei1dao/lego/sys/log"
+	"github.com/liwei1dao/lego/utils/mapstructure"
+)
+
 type Option func(*Options)
 type Options struct {
 	Serverhost string
@@ -32,10 +37,27 @@ func SetServerport(v int) Option {
 	}
 }
 
-func newOptions(opts ...Option) Options {
-	opt := Options{}
-	for _, o := range opts {
-		o(&opt)
+func newOptions(config map[string]interface{}, opts ...Option) Options {
+	options := Options{}
+	if config != nil {
+		mapstructure.Decode(config, &options)
 	}
-	return opt
+	for _, o := range opts {
+		o(&options)
+	}
+	if options.Serverhost == "" || options.Fromemail == "" || options.Fompasswd == "" {
+		log.Panicf("start email Missing necessary configuration : Serverhost:%s Fromemail:%s Fompasswd:%s", options.Serverhost, options.Fromemail, options.Fompasswd)
+	}
+	return options
+}
+
+func newOptionsByOption(opts ...Option) Options {
+	options := Options{}
+	for _, o := range opts {
+		o(&options)
+	}
+	if options.Serverhost == "" || options.Fromemail == "" || options.Fompasswd == "" {
+		log.Panicf("start email Missing necessary configuration : Serverhost:%s Fromemail:%s Fompasswd:%s", options.Serverhost, options.Fromemail, options.Fompasswd)
+	}
+	return options
 }

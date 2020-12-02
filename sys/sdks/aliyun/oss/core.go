@@ -4,12 +4,6 @@ import (
 	"io"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/liwei1dao/lego/core"
-)
-
-var (
-	service core.IService
-	defoss  IOSS
 )
 
 type (
@@ -23,31 +17,39 @@ type (
 	}
 )
 
-func OnInit(s core.IService, opt ...Option) (err error) {
-	defoss, err = newOSS(opt...)
+var (
+	defsys IOSS
+)
+
+func OnInit(config map[string]interface{}, option ...Option) (err error) {
+	defsys, err = newSys(newOptions(config, option...))
 	return
 }
 
+func NewSys(option ...Option) (sys IOSS, err error) {
+	sys, err = newSys(newOptionsByOption(option...))
+	return
+}
 func CreateBucket(bucketName string) (err error) {
-	return defoss.CreateBucket(bucketName)
+	return defsys.CreateBucket(bucketName)
 }
 
 func UploadObject(objectKey string, reader io.Reader, options ...oss.Option) (err error) {
-	return defoss.UploadObject(objectKey, reader, options...)
+	return defsys.UploadObject(objectKey, reader, options...)
 }
 
 func UploadFile(localFileName string, objectName string) (err error) {
-	return defoss.UploadFile(localFileName, objectName)
+	return defsys.UploadFile(localFileName, objectName)
 }
 
 func GetObject(objectName string, options ...oss.Option) ([]byte, error) {
-	return defoss.GetObject(objectName, options...)
+	return defsys.GetObject(objectName, options...)
 }
 
 func DownloadFile(objectName string, downloadedFileName string) (err error) {
-	return defoss.DownloadFile(objectName, downloadedFileName)
+	return defsys.DownloadFile(objectName, downloadedFileName)
 }
 
 func DeleteFile(objectName string) (err error) {
-	return defoss.DeleteFile(objectName)
+	return defsys.DeleteFile(objectName)
 }

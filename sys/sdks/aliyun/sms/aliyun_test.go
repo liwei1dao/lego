@@ -1,4 +1,4 @@
-package smsverification
+package sms
 
 import (
 	"testing"
