@@ -6,7 +6,7 @@ import (
 
 type ModuleCompBase struct{}
 
-func (this *ModuleCompBase) Init(service core.IService, module core.IModule, comp core.IModuleComp, setting map[string]interface{}) (err error) {
+func (this *ModuleCompBase) Init(service core.IService, module core.IModule, comp core.IModuleComp, settings map[string]interface{}) (err error) {
 	return
 }
 

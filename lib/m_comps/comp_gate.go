@@ -39,11 +39,11 @@ type msgRecep struct {
 	F       func(session core.IUserSession, msg interface{})
 }
 
-func (this *MComp_GateComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, setting map[string]interface{}) (err error) {
-	this.ModuleCompBase.Init(service, module, comp, setting)
+func (this *MComp_GateComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, settings map[string]interface{}) (err error) {
+	this.ModuleCompBase.Init(service, module, comp, settings)
 	this.service = service
 	this.comp = comp.(IMComp_GateComp)
-	if v, ok := setting["GateMaxGoroutine"]; ok {
+	if v, ok := settings["GateMaxGoroutine"]; ok {
 		this.MaxGoroutine = v.(int)
 	} else {
 		log.Warnf("Module:%s Lack Config:GateMaxGoroutine", module.GetType())
