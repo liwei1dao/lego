@@ -1,17 +1,33 @@
 package proto
 
-import "bufio"
+import (
+	"bufio"
+	"reflect"
+)
 
 type (
 	IMessage interface {
 		GetComId() uint16
 		GetMsgId() uint16
-		GetMsg() []byte
+		GetMsgLen() uint32
+		GetBuffer() []byte
+		ToStriing() string
+	}
+	IMessageFactory interface {
+		SetMessageConfig(MsgProtoType ProtoType, IsUseBigEndian bool)
+		DecodeMessageBybufio(r *bufio.Reader) (message IMessage, err error)
+		DecodeMessageBybytes(buffer []byte) (message IMessage, err error)
+		EncodeToMesage(comId uint16, msgId uint16, msg interface{}) (message IMessage)
+		EncodeToByte(message IMessage) (buffer []byte)
+		RpcEncodeMessage(d interface{}) ([]byte, error)
+		RpcDecodeMessage(dataType reflect.Type, d []byte) (interface{}, error)
 	}
 	IProto interface {
-		MessageDecodeBybufio(r *bufio.Reader) (message IMessage, err error)
-		MessageDecodeBybytes(buffer []byte) (message IMessage, err error)
-		MessageMarshal(comId uint16, msgId uint16, msg interface{}) (message IMessage)
+		DecodeMessageBybufio(r *bufio.Reader) (message IMessage, err error)
+		DecodeMessageBybytes(buffer []byte) (message IMessage, err error)
+		EncodeToMesage(comId uint16, msgId uint16, msg interface{}) (message IMessage)
+		EncodeToByte(message IMessage) (buffer []byte)
+		ByteDecodeToStruct(t reflect.Type, d []byte) (interface{}, error)
 	}
 )
 
@@ -29,9 +45,19 @@ func NewSys(option ...Option) (sys IProto, err error) {
 	return
 }
 
-func MessageDecodeBybufio(r *bufio.Reader) (IMessage, error) {
-	return defsys.MessageDecodeBybufio(r)
+func DecodeMessageBybufio(r *bufio.Reader) (IMessage, error) {
+	return defsys.DecodeMessageBybufio(r)
 }
-func MessageDecodeBybytes(buffer []byte) (msg IMessage, err error) {
-	return defsys.MessageDecodeBybytes(buffer)
+func DecodeMessageBybytes(buffer []byte) (msg IMessage, err error) {
+	return defsys.DecodeMessageBybytes(buffer)
+}
+func EncodeToMesage(comId uint16, msgId uint16, msg interface{}) (message IMessage) {
+	return defsys.EncodeToMesage(comId, msgId, msg)
+}
+func EncodeToByte(message IMessage) (buffer []byte) {
+	return defsys.EncodeToByte(message)
+}
+
+func ByteDecodeToStruct(t reflect.Type, d []byte) (interface{}, error) {
+	return defsys.ByteDecodeToStruct(t, d)
 }

@@ -15,6 +15,7 @@ type Option func(*Options)
 type Options struct {
 	MsgProtoType   ProtoType
 	IsUseBigEndian bool
+	MessageFactory IMessageFactory
 }
 
 func SetMsgProtoType(v ProtoType) Option {
@@ -29,6 +30,12 @@ func SetIsUseBigEndian(v bool) Option {
 	}
 }
 
+func SetMessageFactory(v IMessageFactory) Option {
+	return func(o *Options) {
+		o.MessageFactory = v
+	}
+}
+
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
 		MsgProtoType:   Proto_Buff,
@@ -40,6 +47,9 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 	for _, o := range opts {
 		o(&options)
 	}
+	if options.MessageFactory == nil {
+		options.MessageFactory = new(DefMessageFactory)
+	}
 	return options
 }
 
@@ -50,6 +60,9 @@ func newOptionsByOption(opts ...Option) Options {
 	}
 	for _, o := range opts {
 		o(&options)
+	}
+	if options.MessageFactory == nil {
+		options.MessageFactory = new(DefMessageFactory)
 	}
 	return options
 }
