@@ -2,17 +2,17 @@ package gate
 
 import (
 	"fmt"
-	"github.com/liwei1dao/lego/core"
-	cbase "github.com/liwei1dao/lego/core/cbase"
-	"github.com/liwei1dao/lego/sys/log"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/liwei1dao/lego/core"
+	cbase "github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 type TcpServerComp struct {
 	cbase.ModuleCompBase
-	tcpAddr     string
 	module      IGateModule
 	listener    net.Listener
 	wgLn        sync.WaitGroup
@@ -20,35 +20,24 @@ type TcpServerComp struct {
 	NewTcpAgent func(gate IGateModule, coon IConn) (IAgent, error)
 }
 
-func (this *TcpServerComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, settings map[string]interface{}) (err error) {
-	if m, ok := module.(IGateModule); !ok {
-		return fmt.Errorf("TcpServerComp Init module is no IGateModule")
-	} else {
-		this.module = m
-	}
-	if TCPAddr, ok := settings["TcpAddr"]; ok {
-		this.tcpAddr = TCPAddr.(string)
-	} else {
-		err = fmt.Errorf("启动Tcp 组件失败 配置错误")
-		return
-	}
-
+func (this *TcpServerComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
+	this.module = module.(IGateModule)
 	if this.NewTcpAgent == nil {
 		err = fmt.Errorf("启动Tcp 组件失败 代理接口没有实现")
 		return
 	}
-	err = this.ModuleCompBase.Init(service, module, comp, settings)
+	err = this.ModuleCompBase.Init(service, module, comp, options)
 	return
 }
 
 func (this *TcpServerComp) Start() (err error) {
 	err = this.ModuleCompBase.Start()
-	ln, err := net.Listen("tcp", this.tcpAddr)
+	ln, err := net.Listen("tcp", this.module.GetOptions().GetTcpAddr())
 	if err != nil {
 		err = fmt.Errorf("TcpServerComp Listen 失败 %s", err.Error())
 		return
 	} else {
-		log.Infof("TcpServerComp Listen %s 成功", this.tcpAddr)
+		log.Infof("TcpServerComp Listen %s 成功", this.module.GetOptions().GetTcpAddr())
 	}
 	this.listener = ln
 	go this.run()

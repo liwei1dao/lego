@@ -27,7 +27,11 @@ func (this *Monitor) GetType() core.M_Modules {
 	return lib.SM_MonitorModule
 }
 
-func (this *Monitor) Init(service core.IService, module core.IModule, setting map[string]interface{}) (err error) {
+func (this *Monitor) NewOptions() (options core.IModuleOptions) {
+	return new(MonitorOptions)
+}
+
+func (this *Monitor) Init(service core.IService, module core.IModule, options core.IModuleOptions) (err error) {
 	this.service = service.(base.IClusterService)
 	this.ServiceMonitor = &core.ServiceMonitor{
 		ServiceId:       this.service.GetId(),
@@ -40,7 +44,7 @@ func (this *Monitor) Init(service core.IService, module core.IModule, setting ma
 	}
 	this.ServiceSetting = make(map[string]func(newvalue string) (err error))
 	this.ModulesSetting = make(map[core.M_Modules]map[string]func(newvalue string) (err error))
-	err = this.ModuleBase.Init(service, module, setting)
+	err = this.ModuleBase.Init(service, module, options)
 	for k, v := range this.service.GetSettings().Settings {
 		this.ServiceMonitor.Setting[k] = &core.SettingItem{
 			ItemName: k,

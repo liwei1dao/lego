@@ -63,7 +63,6 @@ func (this *ServiceBase) Init(service core.IService) (err error) {
 	return nil
 }
 
-
 //配置服务组件
 func (this *ServiceBase) OnInstallComp(cops ...core.IServiceComp) {
 	this.comps = make(map[core.S_Comps]core.IServiceComp)
@@ -104,9 +103,14 @@ func (this *ServiceBase) Run(mod ...core.IModule) {
 		}
 	}
 	for _, v := range this.modules {
-		err := v.mi.Init(this.Service, v.mi, v.seetring)
-		if err != nil {
-			panic(fmt.Sprintf("初始化模块【%s】错误 err:%s", v.mi.GetType(), err.Error()))
+		options := v.mi.NewOptions()
+		if err := options.LoadConfig(v.seetring); err != nil {
+			err := v.mi.Init(this.Service, v.mi, options)
+			if err != nil {
+				panic(fmt.Sprintf("初始化模块【%s】错误 err:%v", v.mi.GetType(), err))
+			}
+		} else {
+			panic(fmt.Sprintf("模块【%s】 Options:%v 配置错误 err:%v", v.mi.GetType(), v.seetring, err))
 		}
 	}
 	for _, v := range this.modules {

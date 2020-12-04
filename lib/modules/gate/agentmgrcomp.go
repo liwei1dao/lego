@@ -14,8 +14,8 @@ type AgentMgrComp struct {
 	Agents *cont.BeeMap
 }
 
-func (this *AgentMgrComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, _Settings map[string]interface{}) (err error) {
-	err = this.ModuleCompBase.Init(service, module, comp, _Settings)
+func (this *AgentMgrComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
+	err = this.ModuleCompBase.Init(service, module, comp, options)
 	this.Agents = cont.NewBeeMap()
 	return
 }

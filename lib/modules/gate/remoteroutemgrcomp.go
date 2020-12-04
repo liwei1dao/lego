@@ -19,7 +19,7 @@ type RemoteRouteMgrComp struct {
 	NewSession func(service base.IClusterService, data map[string]interface{}) (s core.IUserSession, err error)
 }
 
-func (this *RemoteRouteMgrComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, settings map[string]interface{}) (err error) {
+func (this *RemoteRouteMgrComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
 	if s, ok := service.(base.IClusterService); !ok {
 		return fmt.Errorf("RemoteRouteMgrComp Init Service is no core.IClusterService")
 	} else {
@@ -28,7 +28,7 @@ func (this *RemoteRouteMgrComp) Init(service core.IService, module core.IModule,
 	if this.NewSession == nil {
 		return fmt.Errorf("RemoteRouteMgrComp Init is no install NewSession")
 	}
-	this.ModuleCompBase.Init(service, module, comp, settings)
+	this.ModuleCompBase.Init(service, module, comp, options)
 	this.routs = make(map[uint16]map[string]*RemoteRoute)
 	return
 }

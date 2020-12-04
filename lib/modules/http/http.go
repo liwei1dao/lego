@@ -2,7 +2,6 @@ package http
 
 import (
 	"context"
-	"fmt"
 	"html/template"
 	"net/http"
 	"sync"
@@ -20,9 +19,8 @@ type Http struct {
 	RouterGroup
 	service            core.IService
 	http               *http.Server
+	options            IHttpOptions
 	wg                 sync.WaitGroup
-	certPath           string
-	keyPath            string
 	MaxMultipartMemory int64 //上传文件最大尺寸
 	allNoRoute         HandlersChain
 	allNoMethod        HandlersChain
@@ -36,8 +34,13 @@ type Http struct {
 	Ip                 string
 }
 
-func (this *Http) Init(service core.IService, module core.IModule, setting map[string]interface{}) (err error) {
+func (this *Http) NewOptions() (options core.IModuleOptions) {
+	return new(HttpOptions)
+}
+
+func (this *Http) Init(service core.IService, module core.IModule, options core.IModuleOptions) (err error) {
 	this.service = service
+	this.options = options.(IHttpOptions)
 	this.RouterGroup = RouterGroup{
 		Handlers: nil,
 		basePath: "/",
@@ -50,20 +53,11 @@ func (this *Http) Init(service core.IService, module core.IModule, setting map[s
 		return this.allocateContext()
 	}
 
-	var httpAddr string
-	if _, ok := setting["HttpAddr"]; !ok {
-		return fmt.Errorf("Http Module Init HttpAddr 'Config' Is Null")
-	}
-	httpAddr = setting["HttpAddr"].(string)
-	if setting["CertPath"] != nil && setting["KeyPath"] != nil {
-		this.certPath = setting["CertPath"].(string)
-		this.keyPath = setting["KeyPath"].(string)
-	}
 	this.http = &http.Server{
-		Addr:    httpAddr,
+		Addr:    this.options.GetHttpAddr(),
 		Handler: this,
 	}
-	if err = this.ModuleBase.Init(service, module, setting); err != nil {
+	if err = this.ModuleBase.Init(service, module, options); err != nil {
 		return
 	}
 	this.Ip = ip.GetEthernetInfo().IP
@@ -84,8 +78,8 @@ func (this *Http) Destroy() (err error) {
 }
 func (this *Http) starthttp() {
 	var err error
-	if this.certPath != "" && this.keyPath != "" {
-		err = this.http.ListenAndServeTLS(this.service.GetWorkPath()+this.certPath, this.service.GetWorkPath()+this.keyPath)
+	if this.options.GettCertPath() != "" && this.options.GetKeyPath() != "" {
+		err = this.http.ListenAndServeTLS(this.options.GettCertPath(), this.options.GetKeyPath())
 	} else {
 		err = this.http.ListenAndServe()
 	}
