@@ -29,7 +29,6 @@ type MComp_GateComp struct {
 	IsLog        bool   //是否输出消息日志
 	Msghandles   map[uint16]*msgRecep
 	Mrlock       sync.RWMutex
-	MaxGoroutine int //最大并发数据
 	Workerpool   workerpools.IWorkerPool
 }
 
@@ -39,18 +38,12 @@ type msgRecep struct {
 	F       func(session core.IUserSession, msg interface{})
 }
 
-func (this *MComp_GateComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, settings map[string]interface{}) (err error) {
-	this.ModuleCompBase.Init(service, module, comp, settings)
+func (this *MComp_GateComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
+	this.ModuleCompBase.Init(service, module, comp, options)
 	this.service = service
 	this.comp = comp.(IMComp_GateComp)
-	if v, ok := settings["GateMaxGoroutine"]; ok {
-		this.MaxGoroutine = v.(int)
-	} else {
-		log.Warnf("Module:%s Lack Config:GateMaxGoroutine", module.GetType())
-		this.MaxGoroutine = 100
-	}
 	this.Msghandles = make(map[uint16]*msgRecep)
-	this.Workerpool, err = workerpools.NewSys(workerpools.SetMaxWorkers(this.MaxGoroutine), workerpools.SetTaskTimeOut(time.Second*2))
+	this.Workerpool, err = workerpools.NewSys(workerpools.SetMaxWorkers(options.(gate.IGateOptions).GetGateMaxGoroutine()), workerpools.SetTaskTimeOut(time.Second*2))
 	return
 }
 
