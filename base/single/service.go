@@ -5,6 +5,7 @@ import (
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/sys/event"
 	"github.com/liwei1dao/lego/sys/log"
 )
 
@@ -14,20 +15,21 @@ type SingleService struct {
 }
 
 func (this *SingleService) GetId() string {
-	return this.opts.Id
+	return this.opts.Setting.Id
 }
+
 func (this *SingleService) GetType() string {
-	return this.opts.Type
+	return this.opts.Setting.Type
 }
+
 func (this *SingleService) GetVersion() int32 {
-	return this.opts.Version
+	return this.opts.Setting.Version
 }
+
 func (this *SingleService) GetSettings() core.ServiceSttings {
 	return this.opts.Setting
 }
-func (this *SingleService) GetWorkPath() string {
-	return this.opts.WorkPath
-}
+
 func (this *SingleService) Configure(opts ...Option) {
 	this.opts = newOptions(opts...)
 }
@@ -36,5 +38,8 @@ func (this *SingleService) Configure(opts ...Option) {
 func (this *SingleService) InitSys() {
 	if err := log.OnInit(this.opts.Setting.Sys["log"]); err != nil {
 		panic(fmt.Sprintf("初始化log系统失败 %s", err.Error()))
+	}
+	if err := event.OnInit(this.opts.Setting.Sys["event"]); err != nil {
+		panic(fmt.Sprintf("初始化event系统失败 %s", err.Error()))
 	}
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/liwei1dao/lego/core"
 	lgcore "github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 type (
@@ -66,7 +67,11 @@ func Done() (err error) {
 	return defsys.Done()
 }
 func OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {
-	defsys.OnRegisterRpcData(d, sf, unsf)
+	if defsys != nil {
+		defsys.OnRegisterRpcData(d, sf, unsf)
+	} else {
+		log.Warnf("rpc sys no init,OnRegisterRpcData Fail !")
+	}
 }
 func NewRpcClient(sId, rId string) (clent IRpcClient, err error) {
 	return defsys.NewRpcClient(sId, rId)

@@ -4,20 +4,14 @@ import (
 	tcron "github.com/robfig/cron/v3"
 )
 
-func newSys(options Options) (*Cron, error) {
-	cron := &Cron{options: options}
-	err := cron.init()
-	return cron, err
+func newSys(options Options) (sys *Cron, err error) {
+	sys = &Cron{options: options, cron: tcron.New()}
+	return
 }
 
 type Cron struct {
 	cron    *tcron.Cron
 	options Options
-}
-
-func (this *Cron) init() (err error) {
-	this.cron = tcron.New()
-	return
 }
 
 func (this *Cron) Start() {

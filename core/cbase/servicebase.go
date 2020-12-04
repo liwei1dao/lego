@@ -59,7 +59,7 @@ func (this *ServiceBase) Init(service core.IService) (err error) {
 			return
 		}
 	}
-	log.Infof("服务Init完成 %s", this.Service.GetId())
+	log.Infof("服务[%s] 初始化完成!", this.Service.GetId())
 	return nil
 }
 
@@ -81,7 +81,7 @@ func (this *ServiceBase) Start() (err error) {
 			return
 		}
 	}
-	log.Infof("服务Start完成 %s", this.Service.GetId())
+	log.Infof("服务[%s] 启动完成!", this.Service.GetId())
 	return
 }
 
@@ -136,9 +136,9 @@ func (this *ServiceBase) Run(mod ...core.IModule) {
 		syscall.SIGQUIT) //用户发送QUIT字符(Ctrl+/)触发
 	select {
 	case sig := <-c:
-		log.Errorf("服务器关闭 signal = %v\n", sig)
+		log.Errorf("服务[%s] 关闭 signal = %v\n", this.Service.GetId(), sig)
 	case <-this.closesig:
-		log.Errorf("服务器关闭\n")
+		log.Errorf("服务[%s] 关闭\n", this.Service.GetId())
 	}
 }
 

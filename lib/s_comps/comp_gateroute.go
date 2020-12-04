@@ -61,14 +61,14 @@ func (this *SComp_GateRouteComp) registergateroute() {
 func (this *SComp_GateRouteComp) findnewservice(node registry.ServiceNode) {
 	if len(this.Routes) > 0 && node.Category == core.S_Category_GateService {
 		for k, _ := range this.Routes {
-			log.Infof("向网关【%s】服务器注册服务comId:%d", node.Id, k)
+			log.Debugf("向网关【%s】服务器注册服务comId:%d", node.Id, k)
 			this.Service.RpcInvokeById(node.Id, gate.Rpc_GateRouteRegister, false, k, this.Service.GetId(), this.Service.GetType()) //向所有网关服务注册
 		}
 	}
 }
 
 func (this *SComp_GateRouteComp) ReceiveMsg(s core.IUserSession, msg proto.IMessage) (result string, err string) {
-	log.Infof("收到网关消息comd:%d msg:%d", msg.GetComId(), msg.GetMsgId())
+	log.Debugf("收到网关消息comd:%d msg:%d", msg.GetComId(), msg.GetMsgId())
 	if v, ok := this.Routes[msg.GetComId()]; ok {
 		v(s, msg)
 	}
@@ -80,6 +80,6 @@ func (this *SComp_GateRouteComp) RegisterRoute(comId uint16, f func(s core.IUser
 		this.Routes[comId] = f
 		return
 	} else {
-		return fmt.Errorf("SC_GateRouteComp 重复注册路由")
+		return fmt.Errorf("SC_GateRouteComp Repeat registration route:%d", comId)
 	}
 }

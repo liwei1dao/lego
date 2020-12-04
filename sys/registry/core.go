@@ -37,8 +37,8 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (err error) {
-	defsys, err = newSys(newOptionsByOption(option...))
+func NewSys(option ...Option) (sys IRegistry, err error) {
+	sys, err = newSys(newOptionsByOption(option...))
 	return
 }
 

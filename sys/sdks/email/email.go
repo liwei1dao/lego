@@ -6,13 +6,12 @@ import (
 	"github.com/go-gomail/gomail"
 )
 
-func newEmail(opt ...Option) (IEmail, error) {
-	opts := newOptions(opt...)
-	eml := &sdk_email{opts.Serverhost, opts.Serverport, opts.Fromemail, opts.Fompasswd}
-	return eml, nil
+func newSys(options Options) (sys *Email, err error) {
+	sys = &Email{options.Serverhost, options.Serverport, options.Fromemail, options.Fompasswd}
+	return
 }
 
-type sdk_email struct {
+type Email struct {
 	serverhost string
 	serverport int
 	fromemail  string
@@ -20,7 +19,7 @@ type sdk_email struct {
 }
 
 // SendEmail body支持html格式字符串
-func (this *sdk_email) SendCaptcha(email string, captcha string) error {
+func (this *Email) SendCaptcha(email string, captcha string) error {
 	m := gomail.NewMessage()
 	m.SetAddressHeader("From", this.fromemail, "")
 	m.SetHeader("To", email)

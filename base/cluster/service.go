@@ -27,27 +27,24 @@ type ClusterService struct {
 }
 
 func (this *ClusterService) GetTag() string {
-	return this.opts.Tag
+	return this.opts.Setting.Tag
 }
 func (this *ClusterService) GetId() string {
-	return this.opts.Id
+	return this.opts.Setting.Id
 }
 func (this *ClusterService) GetType() string {
-	return this.opts.Type
+	return this.opts.Setting.Type
 }
 
 func (this *ClusterService) GetCategory() core.S_Category {
-	return this.opts.Category
+	return this.opts.Setting.Category
 }
 
 func (this *ClusterService) GetVersion() int32 {
-	return this.opts.Version
+	return this.opts.Setting.Version
 }
 func (this *ClusterService) GetSettings() core.ServiceSttings {
 	return this.opts.Setting
-}
-func (this *ClusterService) GetWorkPath() string {
-	return this.opts.WorkPath
 }
 func (this *ClusterService) GetRpcId() string {
 	return rpc.RpcId()
@@ -83,18 +80,28 @@ func (this *ClusterService) Init(service core.IService) (err error) {
 func (this *ClusterService) InitSys() {
 	if err := log.OnInit(this.opts.Setting.Sys["log"]); err != nil {
 		panic(fmt.Sprintf("初始化log系统失败 err:%v", err))
+	} else {
+		log.Infof("Sys log Init success !")
 	}
 	if err := event.OnInit(this.opts.Setting.Sys["event"]); err != nil {
 		panic(fmt.Sprintf("初始化event系统失败 err:%v", err))
+	} else {
+		log.Infof("Sys event Init success !")
 	}
 	if err := cron.OnInit(this.opts.Setting.Sys["cron"]); err != nil {
 		panic(fmt.Sprintf("初始化cron系统 err:%v", err))
+	} else {
+		log.Infof("Sys cron Init success !")
 	}
 	if err := registry.OnInit(this.opts.Setting.Sys["registry"], registry.SetService(this.ClusterService)); err != nil {
 		panic(fmt.Sprintf("初始化registry系统失败 err:%v", err))
+	} else {
+		log.Infof("Sys registry Init success !")
 	}
 	if err := rpc.OnInit(this.opts.Setting.Sys["rpc"]); err != nil {
 		panic(fmt.Sprintf("初始化rpc系统 err:%v", err))
+	} else {
+		log.Infof("Sys rpc Init success !")
 	}
 	event.Register(core.Event_ServiceStartEnd, func() { //阻塞 先注册服务集群 保证其他服务能及时发现
 		if err := registry.Start(); err != nil {

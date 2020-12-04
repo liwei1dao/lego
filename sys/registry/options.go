@@ -47,6 +47,11 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 	for _, o := range opts {
 		o(&options)
 	}
+
+	if len(options.ConsulAddr) == 0 {
+		log.Panicf("start registry Missing necessary configuration : ConsulAddr is nul")
+	}
+
 	if options.Service == nil {
 		log.Panicf("start registry Missing necessary configuration : Service is nul")
 	} else {

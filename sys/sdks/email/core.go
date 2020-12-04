@@ -1,9 +1,5 @@
 package email
 
-import (
-	"github.com/liwei1dao/lego/core"
-)
-
 type (
 	IEmail interface {
 		SendCaptcha(email string, captcha string) error
@@ -11,16 +7,19 @@ type (
 )
 
 var (
-	service core.IService
-	email   IEmail
+	defsys IEmail
 )
 
-func OnInit(s core.IService, opt ...Option) (err error) {
-	service = s
-	email, err = newEmail(opt...)
+func OnInit(config map[string]interface{}, option ...Option) (err error) {
+	defsys, err = newSys(newOptions(config, option...))
+	return
+}
+
+func NewSys(option ...Option) (sys IEmail, err error) {
+	sys, err = newSys(newOptionsByOption(option...))
 	return
 }
 
 func SendCaptcha(_email string, _captcha string) error {
-	return email.SendCaptcha(_email, _captcha)
+	return defsys.SendCaptcha(_email, _captcha)
 }

@@ -11,7 +11,7 @@ type Options struct {
 	RedisUrl string
 }
 
-func RedisUrl(v string) Option {
+func SetRedisUrl(v string) Option {
 	return func(o *Options) {
 		o.RedisUrl = v
 	}

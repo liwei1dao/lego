@@ -66,7 +66,7 @@ func (this *RemoteSession) GetGateId() string {
 }
 
 func (this *RemoteSession) SendMsg(comdId uint16, msgId uint16, msg interface{}) (err error) {
-	m := proto.MessageFactory.MessageMarshal(comdId, msgId, msg)
+	m := proto.EncodeToMesage(comdId, msgId, msg)
 	_, err = this.service.RpcInvokeById(this.data.GateServerId, RPC_GateAgentSendMsg, false, this.GetSessionId(), m)
 	return err
 }
@@ -126,7 +126,7 @@ func (this *LocalSession) GetGateId() string {
 	return this.data.GateServerId
 }
 func (this *LocalSession) SendMsg(comdId uint16, msgId uint16, msg interface{}) (err error) {
-	m := proto.MessageFactory.MessageMarshal(comdId, msgId, msg)
+	m := proto.EncodeToMesage(comdId, msgId, msg)
 	if _, e := this.module.SendMsg(this.GetSessionId(), m); e != "" {
 		err = fmt.Errorf(e)
 	}

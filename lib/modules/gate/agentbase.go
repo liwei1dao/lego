@@ -65,7 +65,7 @@ func (this *AgentBase) OnRun() {
 	go this.listenwrite()
 loop:
 	for {
-		msg, err := proto.MessageFactory.MessageDecodeBybufio(this.r)
+		msg, err := proto.DecodeMessageBybufio(this.r)
 		if err != nil {
 			log.Errorf("[%s]接收消息异常 err:%s", this.id, err.Error())
 			this.OnClose()
@@ -81,7 +81,7 @@ loop:
 		select {
 		case msg, ok := <-this.writeChan:
 			if ok {
-				b, _ := msg.Serializable()
+				b := proto.EncodeToByte(msg)
 				_, err := this.w.Write(b)
 				if err != nil {
 					this.OnClose()

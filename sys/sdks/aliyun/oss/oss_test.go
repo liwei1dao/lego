@@ -6,12 +6,13 @@ import (
 )
 
 func Test_OSSUploadFile(t *testing.T) {
-	if err := OnInit(nil,
+	sys, err := NewSys(
 		SetEndpoint("http://gohitool.oss-accelerate.aliyuncs.com"),
 		SetAccessKeyId("xxxxxxx"),
 		SetAccessKeySecret("xxxxxxxxxxxxxxxxxxxxxxxxxx"),
 		SetBucketName("xxxxxxxxxxx"),
-	); err != nil {
+	)
+	if err != nil {
 		fmt.Printf("初始化OSS 系统失败 err:%v", err)
 		t.Logf("初始化OSS 系统失败 err:%s", err.Error())
 		return
@@ -23,7 +24,7 @@ func Test_OSSUploadFile(t *testing.T) {
 	// } else {
 	// 	t.Logf("创建 CreateBucket 成功")
 	// }
-	if err := UploadFile("test/liwei2dao.jpg", "F:/liwei1dao.jpg"); err != nil {
+	if err := sys.UploadFile("test/liwei2dao.jpg", "F:/liwei1dao.jpg"); err != nil {
 		t.Logf("上传OSS 系统失败 err:%s", err.Error())
 	} else {
 		t.Logf("上传OSS 成功")

@@ -2,104 +2,47 @@ package proto
 
 import (
 	"bufio"
-	"encoding/binary"
 	"encoding/json"
-	"fmt"
-	"io"
 	"reflect"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 )
 
-func JsonStructUnmarshal(d []byte, v interface{}) error {
-	return json.Unmarshal(d, v)
-}
-func ProtoStructUnmarshal(d []byte, v interface{}) error {
-	if pb, ok := v.(proto.Message); !ok {
-		return fmt.Errorf("ProtoStructUnmarshal 对象不是 proto.Message")
-	} else {
-		return proto.Unmarshal(d, pb)
+func newSys(options Options) (sys *Proto, err error) {
+	sys = &Proto{
+		options: options,
 	}
-}
-func JsonStructMarshal(v interface{}) ([]byte, error) {
-	return json.Marshal(v)
-}
-func ProtoStructMarshal(v interface{}) ([]byte, error) {
-	if pb, ok := v.(proto.Message); !ok {
-		return nil, fmt.Errorf("ProtoStructUnmarshal 对象不是 proto.Message")
-	} else {
-		return proto.Marshal(pb)
-	}
-}
-func msgToString(v interface{}) string {
-	if msg, ok := v.(IMsgMarshalString); ok {
-		msgstr, err := msg.ToString()
-		if err == nil {
-			return msgstr
-		} else {
-			return fmt.Sprintf("解析异常:%s", err.Error())
-		}
-	} else {
-		msgstr, err := json.Marshal(v)
-		if err == nil {
-			return string(msgstr)
-		} else {
-			return fmt.Sprintf("解析异常:%s", err.Error())
-		}
-	}
+	options.MessageFactory.SetMessageConfig(options.MsgProtoType, options.IsUseBigEndian)
+	return
 }
 
-// Json 解码  方法
-func jsonStructUnmarshal(msgType reflect.Type, d []byte) (interface{}, error) {
-	msg := reflect.New(msgType.Elem()).Interface()
-	err := json.Unmarshal(d, msg)
-	// if err := json.Unmarshal(d, msg); err != nil {
-	// 	log.Errorf("json [%s]序列化 结构错误 err:%s", string(d), err.Error())
-	// }
-	return msg, err
+type Proto struct {
+	options Options
 }
 
-// Proto 解码  方法
-func protoStructUnmarshal(msgType reflect.Type, d []byte) (interface{}, error) {
-	msg := reflect.New(msgType.Elem()).Interface()
-	err := proto.UnmarshalMerge(d, msg.(proto.Message))
-	// if err := proto.UnmarshalMerge(d, msg.(proto.Message)); err != nil {
-	// 	log.Errorf("proto 序列化 结构错误 err:%s", err.Error())
-	// }
-	return msg, err
+func (this *Proto) DecodeMessageBybufio(r *bufio.Reader) (message IMessage, err error) {
+	return this.options.MessageFactory.DecodeMessageBybufio(r)
 }
 
-func ReadByte(r *bufio.Reader) (byte, error) {
-	buf := make([]byte, 1)
-	_, err := io.ReadFull(r, buf[:1])
-	if err != nil {
-		return 0, err
-	}
-	return buf[0], nil
+func (this *Proto) DecodeMessageBybytes(buffer []byte) (message IMessage, err error) {
+	return this.options.MessageFactory.DecodeMessageBybytes(buffer)
 }
 
-func ReadUInt16(r *bufio.Reader) (uint16, error) {
-	buf := make([]byte, 2)
-	_, err := io.ReadFull(r, buf[:2])
-	if err != nil {
-		return 0, err
-	}
-	if option.IsUseBigEndian {
-		return binary.BigEndian.Uint16(buf[:2]), nil
+func (this *Proto) EncodeToMesage(comId uint16, msgId uint16, msg interface{}) (message IMessage) {
+	return this.options.MessageFactory.EncodeToMesage(comId, msgId, msg)
+}
+
+func (this *Proto) EncodeToByte(message IMessage) (buffer []byte) {
+	return this.options.MessageFactory.EncodeToByte(message)
+}
+
+func (this *Proto) ByteDecodeToStruct(t reflect.Type, d []byte) (data interface{}, err error) {
+	if this.options.MsgProtoType == Proto_Buff {
+		data = reflect.New(t.Elem()).Interface()
+		err = json.Unmarshal(d, data)
 	} else {
-		return binary.LittleEndian.Uint16(buf[:2]), nil
+		data = reflect.New(t.Elem()).Interface()
+		err = proto.UnmarshalMerge(d, data.(proto.Message))
 	}
-}
-
-func ReadUInt32(r *bufio.Reader) (uint32, error) {
-	buf := make([]byte, 4)
-	_, err := io.ReadFull(r, buf[:4])
-	if err != nil {
-		return 0, err
-	}
-	if option.IsUseBigEndian {
-		return binary.BigEndian.Uint32(buf[:4]), nil
-	} else {
-		return binary.LittleEndian.Uint32(buf[:4]), nil
-	}
+	return
 }

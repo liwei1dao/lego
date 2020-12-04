@@ -16,7 +16,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewRedisSys(option ...Option) (sys IRedisFactory, err error) {
+func NewSys(option ...Option) (sys IRedisFactory, err error) {
 	sys, err = newsys(newOptionsByOption(option...))
 	return
 }
