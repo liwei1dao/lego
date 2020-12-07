@@ -15,7 +15,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys IEmail, err error) {
+func NewSys(option ...Option) (sys ISMS, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
 }
