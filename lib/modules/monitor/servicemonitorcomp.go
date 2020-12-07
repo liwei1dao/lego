@@ -21,8 +21,8 @@ type ServiceMonitorComp struct {
 	MonitorTotal uint32
 }
 
-func (this *ServiceMonitorComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, setting map[string]interface{}) (err error) {
-	err = this.ModuleCompBase.Init(service, module, comp, setting)
+func (this *ServiceMonitorComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
+	err = this.ModuleCompBase.Init(service, module, comp, options)
 	this.module = module.(*Monitor)
 	this.service = service.(base.IClusterService)
 	this.MonitorNum = 0

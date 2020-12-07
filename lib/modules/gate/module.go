@@ -9,12 +9,20 @@ import (
 
 type Gate struct {
 	cbase.ModuleBase
+	options            IGateOptions
 	CustomRouteComp    ICustomRouteComp
 	LocalRouteMgrComp  ILocalRouteMgrComp
 	RemoteRouteMgrComp IRemoteRouteMgrComp
 	AgentMgrComp       IAgentMgrComp
-	//WsServerComp       *WsServerComp
-	//TcpServerComp      *TcpServerComp
+}
+
+func (this *Gate) GetOptions() (options IGateOptions) {
+	return this.options
+}
+
+func (this *Gate) Init(service core.IService, module core.IModule, options core.IModuleOptions) (err error) {
+	this.options = options.(IGateOptions)
+	return this.ModuleBase.Init(service, module, options)
 }
 
 func (this *Gate) GetLocalRouteMgrComp() ILocalRouteMgrComp {

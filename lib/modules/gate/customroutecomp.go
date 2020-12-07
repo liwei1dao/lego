@@ -17,8 +17,8 @@ type CustomRouteComp struct {
 	routeFunc map[core.CustomRoute]func(a IAgent, msg proto.IMessage) (code core.ErrorCode, err error)
 }
 
-func (this *CustomRouteComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, settings map[string]interface{}) (err error) {
-	err = this.ModuleCompBase.Init(service, module, comp, settings)
+func (this *CustomRouteComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
+	err = this.ModuleCompBase.Init(service, module, comp, options)
 	this.service = service.(base.IClusterService)
 	this.comp = comp.(ICustomRouteComp)
 	this.route = make(map[core.CustomRoute]map[uint16][]uint16)

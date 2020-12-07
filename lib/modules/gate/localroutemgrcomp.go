@@ -18,7 +18,7 @@ type LocalRouteMgrComp struct {
 	NewSession func(module IGateModule, data map[string]interface{}) (s core.IUserSession, err error)
 }
 
-func (this *LocalRouteMgrComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, settings map[string]interface{}) (err error) {
+func (this *LocalRouteMgrComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
 	if m, ok := module.(IGateModule); !ok {
 		return fmt.Errorf("LocalRouteMgrComp Init module is no IGateModule")
 	} else {
@@ -27,7 +27,7 @@ func (this *LocalRouteMgrComp) Init(service core.IService, module core.IModule, 
 	if this.NewSession == nil {
 		return fmt.Errorf("LocalRouteMgrComp Init is no install NewLocalSession")
 	}
-	this.ModuleCompBase.Init(service, module, comp, settings)
+	this.ModuleCompBase.Init(service, module, comp, options)
 	this.routs = make(map[uint16]map[*func(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string)]*LocalRoute)
 	return
 }

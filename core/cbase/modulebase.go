@@ -8,10 +8,14 @@ type ModuleBase struct {
 	comps []core.IModuleComp
 }
 
-func (this *ModuleBase) Init(service core.IService, module core.IModule, settings map[string]interface{}) (err error) {
+func (this *ModuleBase) NewOptions() {
+
+}
+
+func (this *ModuleBase) Init(service core.IService, module core.IModule, options core.IModuleOptions) (err error) {
 	module.OnInstallComp()
 	for _, v := range this.comps {
-		err = v.Init(service, module, v, settings)
+		err = v.Init(service, module, v, options)
 		if err != nil {
 			return
 		}

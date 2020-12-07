@@ -12,6 +12,4 @@
 *.out
 *.log
 
-bin/
 .vscode/
-vendor/

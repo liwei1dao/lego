@@ -58,14 +58,20 @@ type IServiceComp interface {
 }
 type IModule interface {
 	GetType() M_Modules
-	Init(service IService, module IModule, settings map[string]interface{}) (err error)
+	NewOptions() (options IModuleOptions)
+	Init(service IService, module IModule, options IModuleOptions) (err error)
 	OnInstallComp()
 	Start() (err error)
 	Run(closeSig chan bool) (err error)
 	Destroy() (err error)
 }
+
+type IModuleOptions interface {
+	LoadConfig(settings map[string]interface{}) (err error)
+}
+
 type IModuleComp interface {
-	Init(service IService, module IModule, comp IModuleComp, settings map[string]interface{}) (err error)
+	Init(service IService, module IModule, comp IModuleComp, options IModuleOptions) (err error)
 	Start() (err error)
 	Destroy() (err error)
 }
