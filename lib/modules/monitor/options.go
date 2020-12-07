@@ -5,13 +5,13 @@ import (
 )
 
 type (
-	IMonitorOptions interface {
+	IOptions interface {
 	}
-	MonitorOptions struct {
+	Options struct {
 	}
 )
 
-func (this *MonitorOptions) LoadConfig(settings map[string]interface{}) (err error) {
+func (this *Options) LoadConfig(settings map[string]interface{}) (err error) {
 	if settings != nil {
 		mapstructure.Decode(settings, &this)
 	}

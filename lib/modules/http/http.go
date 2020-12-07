@@ -19,7 +19,7 @@ type Http struct {
 	RouterGroup
 	service            core.IService
 	http               *http.Server
-	options            IHttpOptions
+	options            IOptions
 	wg                 sync.WaitGroup
 	MaxMultipartMemory int64 //上传文件最大尺寸
 	allNoRoute         HandlersChain
@@ -35,7 +35,7 @@ type Http struct {
 }
 
 func (this *Http) NewOptions() (options core.IModuleOptions) {
-	return new(HttpOptions)
+	return new(Options)
 }
 
 func (this *Http) Init(service core.IService, module core.IModule, options core.IModuleOptions) (err error) {

@@ -28,7 +28,7 @@ func (this *Monitor) GetType() core.M_Modules {
 }
 
 func (this *Monitor) NewOptions() (options core.IModuleOptions) {
-	return new(MonitorOptions)
+	return new(Options)
 }
 
 func (this *Monitor) Init(service core.IService, module core.IModule, options core.IModuleOptions) (err error) {

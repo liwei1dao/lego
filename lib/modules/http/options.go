@@ -7,19 +7,19 @@ import (
 )
 
 type (
-	IHttpOptions interface {
+	IOptions interface {
 		GetHttpAddr() string
 		GettCertPath() string
 		GetKeyPath() string
 	}
-	HttpOptions struct {
+	Options struct {
 		HttpAddr string
 		CertPath string
 		KeyPath  string
 	}
 )
 
-func (this *HttpOptions) LoadConfig(settings map[string]interface{}) (err error) {
+func (this *Options) LoadConfig(settings map[string]interface{}) (err error) {
 	if settings != nil {
 		mapstructure.Decode(settings, &this)
 	}
@@ -29,12 +29,12 @@ func (this *HttpOptions) LoadConfig(settings map[string]interface{}) (err error)
 	return
 }
 
-func (this *HttpOptions) GetHttpAddr() string {
+func (this *Options) GetHttpAddr() string {
 	return this.HttpAddr
 }
-func (this *HttpOptions) GettCertPath() string {
+func (this *Options) GettCertPath() string {
 	return this.CertPath
 }
-func (this *HttpOptions) GetKeyPath() string {
+func (this *Options) GetKeyPath() string {
 	return this.KeyPath
 }

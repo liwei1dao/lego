@@ -22,7 +22,7 @@ const ( //Rpc
 
 type IGateModule interface {
 	core.IModule
-	GetOptions() (options IGateOptions)
+	GetOptions() (options IOptions)
 	GetLocalRouteMgrComp() ILocalRouteMgrComp
 	RegisterRemoteRoute(comId uint16, sId, sType string) (result string, err string)
 	UnRegisterRemoteRoute(comId uint16, sType, sId string)

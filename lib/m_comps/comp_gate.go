@@ -23,13 +23,13 @@ import (
 */
 type MComp_GateComp struct {
 	cbase.ModuleCompBase
-	service      core.IService
-	comp         IMComp_GateComp
-	ComId        uint16 //协议分类Id
-	IsLog        bool   //是否输出消息日志
-	Msghandles   map[uint16]*msgRecep
-	Mrlock       sync.RWMutex
-	Workerpool   workerpools.IWorkerPool
+	service    core.IService
+	comp       IMComp_GateComp
+	ComId      uint16 //协议分类Id
+	IsLog      bool   //是否输出消息日志
+	Msghandles map[uint16]*msgRecep
+	Mrlock     sync.RWMutex
+	Workerpool workerpools.IWorkerPool
 }
 
 type msgRecep struct {
