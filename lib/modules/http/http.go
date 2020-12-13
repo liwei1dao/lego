@@ -40,7 +40,7 @@ func (this *Http) NewOptions() (options core.IModuleOptions) {
 
 func (this *Http) Init(service core.IService, module core.IModule, options core.IModuleOptions) (err error) {
 	this.service = service
-	this.options = options.(IHttpOptions)
+	this.options = options.(IOptions)
 	this.RouterGroup = RouterGroup{
 		Handlers: nil,
 		basePath: "/",
