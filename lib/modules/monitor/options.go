@@ -13,8 +13,7 @@ type (
 
 func (this *Options) LoadConfig(settings map[string]interface{}) (err error) {
 	if settings != nil {
-		mapstructure.Decode(settings, &this)
+		err = mapstructure.Decode(settings, this)
 	}
-
 	return
 }

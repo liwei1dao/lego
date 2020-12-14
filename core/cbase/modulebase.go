@@ -8,8 +8,8 @@ type ModuleBase struct {
 	comps []core.IModuleComp
 }
 
-func (this *ModuleBase) NewOptions() {
-
+func (this *ModuleBase) NewOptions() (options core.IModuleOptions) {
+	return new(ModuleOptions)
 }
 
 func (this *ModuleBase) Init(service core.IService, module core.IModule, options core.IModuleOptions) (err error) {

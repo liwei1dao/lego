@@ -15,7 +15,24 @@ import (
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/proto"
 	"github.com/liwei1dao/lego/sys/workerpools"
+	"github.com/liwei1dao/lego/utils/mapstructure"
 )
+
+type MComp_GateCompOptions struct {
+	MaxGoroutine int
+}
+
+func (this *MComp_GateCompOptions) LoadConfig(settings map[string]interface{}) (err error) {
+	this.MaxGoroutine = 100
+	if settings != nil {
+		err = mapstructure.Decode(settings, this)
+	}
+	return
+}
+
+func (this *MComp_GateCompOptions) GetGateMaxGoroutine() int {
+	return this.MaxGoroutine
+}
 
 /*
 模块 网关组件
@@ -43,7 +60,7 @@ func (this *MComp_GateComp) Init(service core.IService, module core.IModule, com
 	this.service = service
 	this.comp = comp.(IMComp_GateComp)
 	this.Msghandles = make(map[uint16]*msgRecep)
-	this.Workerpool, err = workerpools.NewSys(workerpools.SetMaxWorkers(options.(gate.IOptions).GetGateMaxGoroutine()), workerpools.SetTaskTimeOut(time.Second*2))
+	this.Workerpool, err = workerpools.NewSys(workerpools.SetMaxWorkers(options.(IMComp_GateCompOptions).GetGateMaxGoroutine()), workerpools.SetTaskTimeOut(time.Second*2))
 	return
 }
 
