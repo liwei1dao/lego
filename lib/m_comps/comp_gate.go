@@ -43,7 +43,7 @@ func (this *MComp_GateComp) Init(service core.IService, module core.IModule, com
 	this.service = service
 	this.comp = comp.(IMComp_GateComp)
 	this.Msghandles = make(map[uint16]*msgRecep)
-	this.Workerpool, err = workerpools.NewSys(workerpools.SetMaxWorkers(options.(gate.IGateOptions).GetGateMaxGoroutine()), workerpools.SetTaskTimeOut(time.Second*2))
+	this.Workerpool, err = workerpools.NewSys(workerpools.SetMaxWorkers(options.(gate.IOptions).GetGateMaxGoroutine()), workerpools.SetTaskTimeOut(time.Second*2))
 	return
 }
 
