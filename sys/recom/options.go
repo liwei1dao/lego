@@ -6,7 +6,6 @@ import (
 
 type Option func(*Options)
 type Options struct {
-	
 }
 
 func newOptions(config map[string]interface{}, opts ...Option) Options {

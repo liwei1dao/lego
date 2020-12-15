@@ -5,7 +5,7 @@ package recom
 */
 type (
 	IRecom interface {
-		
+		RecommendItems(uId uint32, howmany int) (itemIds []uint32)
 	}
 )
 
@@ -21,4 +21,8 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 func NewSys(option ...Option) (sys IRecom, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
+}
+
+func RecommendItems(uId uint32, howmany int) (itemIds []uint32) {
+	return defsys.RecommendItems(uId, howmany)
 }
