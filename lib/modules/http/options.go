@@ -21,7 +21,9 @@ type (
 
 func (this *Options) LoadConfig(settings map[string]interface{}) (err error) {
 	if settings != nil {
-		mapstructure.Decode(settings, &this)
+		if err = mapstructure.Decode(settings, this); err != nil {
+			return
+		}
 	}
 	if this.HttpAddr == "" {
 		err = fmt.Errorf("module http missing necessary configuration:%v", settings)

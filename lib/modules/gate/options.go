@@ -8,7 +8,6 @@ import (
 
 type (
 	IOptions interface {
-		GetGateMaxGoroutine() int
 		GetTcpAddr() string
 		GetWSAddr() string
 		GetWSOuttime() time.Duration
@@ -17,19 +16,15 @@ type (
 		GetWSKeyFile() string
 	}
 	Options struct {
-		MaxGoroutine int
-		TcpAddr      string
-		WSAddr       string
-		WSOuttime    int
-		WSHeartbeat  int
-		WSCertFile   string
-		WSKeyFile    string
+		TcpAddr     string
+		WSAddr      string
+		WSOuttime   int
+		WSHeartbeat int
+		WSCertFile  string
+		WSKeyFile   string
 	}
 )
 
-func (this *Options) GetGateMaxGoroutine() int {
-	return this.MaxGoroutine
-}
 func (this *Options) GetTcpAddr() string {
 	return this.TcpAddr
 }
@@ -50,9 +45,8 @@ func (this *Options) GetWSKeyFile() string {
 }
 
 func (this *Options) LoadConfig(settings map[string]interface{}) (err error) {
-	this.MaxGoroutine = 5
 	if settings != nil {
-		mapstructure.Decode(settings, &this)
+		err = mapstructure.Decode(settings, this)
 	}
 	return
 }

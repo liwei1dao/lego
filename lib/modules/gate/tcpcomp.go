@@ -34,10 +34,10 @@ func (this *TcpServerComp) Start() (err error) {
 	err = this.ModuleCompBase.Start()
 	ln, err := net.Listen("tcp", this.module.GetOptions().GetTcpAddr())
 	if err != nil {
-		err = fmt.Errorf("TcpServerComp Listen 失败 %s", err.Error())
+		err = fmt.Errorf("TcpServerComp Listen:%s 失败 %s", this.module.GetOptions().GetTcpAddr(), err.Error())
 		return
 	} else {
-		log.Infof("TcpServerComp Listen %s 成功", this.module.GetOptions().GetTcpAddr())
+		log.Infof("TcpServerComp Listen:%s 成功", this.module.GetOptions().GetTcpAddr())
 	}
 	this.listener = ln
 	go this.run()

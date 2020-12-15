@@ -10,4 +10,8 @@ type (
 		core.IModuleComp
 		ReceiveMsg(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string)
 	}
+	IMComp_GateCompOptions interface {
+		core.IModuleOptions
+		GetGateMaxGoroutine() int
+	}
 )
