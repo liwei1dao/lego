@@ -3,9 +3,9 @@ package recom
 /*
 推荐系统 协同过滤算法
 */
-
 type (
 	IRecom interface {
+		
 	}
 )
 

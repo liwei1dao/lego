@@ -20,6 +20,9 @@ func (model *Base) SetParams(params base.Params) {
 	model.Params = params
 	model.randState = model.Params.GetInt64(base.RandomState, 0)
 }
+func (model *Base) GetParams() base.Params {
+	return model.Params
+}
 
 func (model *Base) Init(trainSet core.DataSetInterface) {
 	// Check Base.SetParams() called
@@ -51,4 +54,14 @@ func (pop *ItemPop) Fit(set core.DataSetInterface, options *base.RuntimeOptions)
 	for i := 0; i < set.ItemCount(); i++ {
 		pop.Pop[i] = float64(set.ItemByIndex(i).Len())
 	}
+}
+
+// Predict by the ItemPop model.
+func (pop *ItemPop) Predict(userId, itemId string) float64 {
+	// Return items' popularity
+	denseItemId := pop.ItemIndexer.ToIndex(itemId)
+	if denseItemId == base.NotId {
+		return 0
+	}
+	return pop.Pop[denseItemId]
 }
