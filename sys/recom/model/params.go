@@ -1,8 +1,9 @@
-package base
+package model
 
 import (
-	"log"
 	"reflect"
+
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 type ParamName string
@@ -48,7 +49,7 @@ func (parameters Params) GetInt(name ParamName, _default int) int {
 		case int:
 			return val.(int)
 		default:
-			log.Printf("Expect %v to be int, but get %v", name, reflect.TypeOf(name))
+			log.Infof("Expect %v to be int, but get %v", name, reflect.TypeOf(name))
 		}
 	}
 	return _default
@@ -64,7 +65,7 @@ func (parameters Params) GetInt64(name ParamName, _default int64) int64 {
 		case int:
 			return int64(val.(int))
 		default:
-			log.Printf("Expect %v to be int, but get %v", name, reflect.TypeOf(name))
+			log.Infof("Expect %v to be int, but get %v", name, reflect.TypeOf(name))
 		}
 	}
 	return _default
@@ -77,7 +78,7 @@ func (parameters Params) GetBool(name ParamName, _default bool) bool {
 		case bool:
 			return val.(bool)
 		default:
-			log.Printf("Expect %v to be int, but get %v", name, reflect.TypeOf(name))
+			log.Infof("Expect %v to be int, but get %v", name, reflect.TypeOf(name))
 		}
 	}
 	return _default
@@ -93,7 +94,7 @@ func (parameters Params) GetFloat64(name ParamName, _default float64) float64 {
 		case int:
 			return float64(val.(int))
 		default:
-			log.Printf("Expect %v to be int, but get %v", name, reflect.TypeOf(name))
+			log.Infof("Expect %v to be int, but get %v", name, reflect.TypeOf(name))
 		}
 	}
 	return _default
@@ -106,7 +107,7 @@ func (parameters Params) GetString(name ParamName, _default string) string {
 		case string:
 			return val.(string)
 		default:
-			log.Printf("Expect %v to be string, but get %v", name, reflect.TypeOf(name))
+			log.Infof("Expect %v to be string, but get %v", name, reflect.TypeOf(name))
 		}
 	}
 	return _default

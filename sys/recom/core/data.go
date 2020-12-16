@@ -41,6 +41,10 @@ type (
 		Count() int
 		UserCount() int
 		ItemCount() int
+		UserIndexer() *Indexer
+		ItemIndexer() *Indexer
+		User(userId uint32) *MarginalSubSet
+		Item(itemId uint32) *MarginalSubSet
 		UserByIndex(userIndex int) *MarginalSubSet
 		ItemByIndex(itemIndex int) *MarginalSubSet
 	}
@@ -68,6 +72,25 @@ func (set *DataSet) ItemIndexer() *Indexer {
 func (set *DataSet) UserCount() int {
 	return set.UserIndexer().Len()
 }
+
 func (set *DataSet) ItemCount() int {
 	return set.ItemIndexer().Len()
+}
+
+func (set *DataSet) UserByIndex(userIndex int) *MarginalSubSet {
+	return set.users[userIndex]
+}
+
+func (set *DataSet) ItemByIndex(itemIndex int) *MarginalSubSet {
+	return set.items[itemIndex]
+}
+
+func (set *DataSet) User(userId uint32) *MarginalSubSet {
+	userIndex := set.userIndexer.ToIndex(userId)
+	return set.UserByIndex(userIndex)
+}
+
+func (set *DataSet) Item(itemId uint32) *MarginalSubSet {
+	itemIndex := set.itemIndexer.ToIndex(itemId)
+	return set.ItemByIndex(itemIndex)
 }

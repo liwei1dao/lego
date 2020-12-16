@@ -2,10 +2,13 @@ package model
 
 import (
 	"github.com/liwei1dao/lego/sys/recom/core"
+	"github.com/liwei1dao/lego/sys/recom/test/base"
 )
 
 type ModelBase struct {
 	Params            Params
+	UserIndexer       *core.Indexer        // Users' ID set
+	ItemIndexer       *core.Indexer        // Items' ID set
 	rng               core.RandomGenerator // Random generator
 	randState         int64                // Random seed
 	isSetParamsCalled bool
@@ -25,6 +28,8 @@ func (model *ModelBase) Init(trainSet core.DataSetInterface) {
 	if model.isSetParamsCalled == false {
 		panic("Base.SetParams() not called")
 	}
+	model.UserIndexer = trainSet.UserIndexer()
+	model.ItemIndexer = trainSet.ItemIndexer()
 	// Setup random state
 	model.rng = core.NewRandomGenerator(model.randState)
 }
@@ -38,6 +43,15 @@ func NewItemPop(params Params) *ItemPop {
 type ItemPop struct {
 	ModelBase
 	Pop []float64
+}
+
+func (pop *ItemPop) Predict(userId, itemId uint32) float64 {
+	// Return items' popularity
+	denseItemId := pop.ItemIndexer.ToIndex(itemId)
+	if denseItemId == base.NotId {
+		return 0
+	}
+	return pop.Pop[denseItemId]
 }
 
 func (pop *ItemPop) Fit(set core.DataSetInterface) {

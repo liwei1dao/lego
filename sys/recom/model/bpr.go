@@ -10,28 +10,31 @@ import (
 //贝叶斯个性化推荐 模型
 type BPR struct {
 	ModelBase
-	UserFactor [][]float64 // p_u
-	ItemFactor [][]float64 // q_i
-	nFactors   int
-	nEpochs    int
-	initMean   float64
-	initStdDev float64
-	ItemPop    *ItemPop
+	UserFactor  [][]float64 // p_u
+	ItemFactor  [][]float64 // q_i
+	nFactors    int
+	nEpochs     int
+	lr          float64
+	reg         float64
+	initMean    float64
+	initStdDev  float64
+	UserRatings []*core.MarginalSubSet
+	ItemPop     *ItemPop
 }
 
 func (bpr *BPR) SetParams(params Params) {
 	bpr.ModelBase.SetParams(params)
 }
 
-func (bpr *BPR) predict(userIndex int, itemIndex int) float64 {
-	ret := 0.0
-	// + q_i^Tp_u
-	if itemIndex != core.NotId && userIndex != core.NotId {
-		userFactor := bpr.UserFactor[userIndex]
-		itemFactor := bpr.ItemFactor[itemIndex]
-		ret += floats.Dot(userFactor, itemFactor)
+func (bpr *BPR) Predict(userId, itemId uint32) float64 {
+	// Convert sparse IDs to dense IDs
+	userIndex := bpr.UserIndexer.ToIndex(userId)
+	itemIndex := bpr.ItemIndexer.ToIndex(itemId)
+	if userIndex == core.NotId || bpr.UserRatings[userIndex].Len() == 0 {
+		// If users not exist in dataset, use ItemPop model.
+		return bpr.ItemPop.Predict(userId, itemId)
 	}
-	return ret
+	return bpr.predict(userIndex, itemIndex)
 }
 
 func (bpr *BPR) Fit(trainSet core.DataSetInterface) {
@@ -40,6 +43,7 @@ func (bpr *BPR) Fit(trainSet core.DataSetInterface) {
 	bpr.ItemFactor = bpr.rng.NewNormalMatrix(trainSet.ItemCount(), bpr.nFactors, bpr.initMean, bpr.initStdDev)
 	bpr.ItemPop = NewItemPop(nil)
 	bpr.ItemPop.Fit(trainSet)
+	temp := make([]float64, bpr.nFactors)
 	userFactor := make([]float64, bpr.nFactors)
 	positiveItemFactor := make([]float64, bpr.nFactors)
 	negativeItemFactor := make([]float64, bpr.nFactors)
@@ -84,4 +88,15 @@ func (bpr *BPR) Fit(trainSet core.DataSetInterface) {
 			floats.MulConstAddTo(temp, bpr.lr, bpr.UserFactor[userIndex])
 		}
 	}
+}
+
+func (bpr *BPR) predict(userIndex int, itemIndex int) float64 {
+	ret := 0.0
+	// + q_i^Tp_u
+	if itemIndex != core.NotId && userIndex != core.NotId {
+		userFactor := bpr.UserFactor[userIndex]
+		itemFactor := bpr.ItemFactor[itemIndex]
+		ret += floats.Dot(userFactor, itemFactor)
+	}
+	return ret
 }

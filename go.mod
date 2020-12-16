@@ -3,6 +3,7 @@ module github.com/liwei1dao/lego
 go 1.14
 
 require (
+	github.com/Azure/azure-sdk-for-go v40.3.0+incompatible
 	github.com/BurntSushi/toml v0.3.1
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.187
 	github.com/aliyun/aliyun-oss-go-sdk v2.1.0+incompatible
