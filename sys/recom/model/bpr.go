@@ -7,6 +7,12 @@ import (
 	"github.com/liwei1dao/lego/sys/recom/floats"
 )
 
+func NewBPR(params Params) *BPR {
+	bpr := new(BPR)
+	bpr.SetParams(params)
+	return bpr
+}
+
 //贝叶斯个性化推荐 模型
 type BPR struct {
 	ModelBase
@@ -24,6 +30,12 @@ type BPR struct {
 
 func (bpr *BPR) SetParams(params Params) {
 	bpr.ModelBase.SetParams(params)
+	bpr.nFactors = bpr.Params.GetInt(NFactors, 10)
+	bpr.nEpochs = bpr.Params.GetInt(NEpochs, 100)
+	bpr.lr = bpr.Params.GetFloat64(Lr, 0.05)
+	bpr.reg = bpr.Params.GetFloat64(Reg, 0.01)
+	bpr.initMean = bpr.Params.GetFloat64(InitMean, 0)
+	bpr.initStdDev = bpr.Params.GetFloat64(InitStdDev, 0.001)
 }
 
 func (bpr *BPR) Predict(userId, itemId uint32) float64 {
@@ -41,6 +53,7 @@ func (bpr *BPR) Fit(trainSet core.DataSetInterface) {
 	bpr.Init(trainSet)
 	bpr.UserFactor = bpr.rng.NewNormalMatrix(trainSet.UserCount(), bpr.nFactors, bpr.initMean, bpr.initStdDev)
 	bpr.ItemFactor = bpr.rng.NewNormalMatrix(trainSet.ItemCount(), bpr.nFactors, bpr.initMean, bpr.initStdDev)
+	bpr.UserRatings = trainSet.Users()
 	bpr.ItemPop = NewItemPop(nil)
 	bpr.ItemPop.Fit(trainSet)
 	temp := make([]float64, bpr.nFactors)

@@ -10,7 +10,7 @@ import (
 func newSys(options Options) (sys *Recom, err error) {
 	sys = new(Recom)
 	sys.dataset = core.NewDataSet(options.UserIds, options.ItemIds, options.Ratings)
-	sys.model = model.NewBPR(model.Params{
+	sys.model = model.NewSVD(model.Params{
 		model.NFactors:   10,
 		model.Reg:        0.01,
 		model.Lr:         0.05,
@@ -39,8 +39,7 @@ func (this *Recom) Wait() {
 }
 
 func (this *Recom) RecommendItems(uId uint32, howmany int) (itemIds []uint32) {
-	this.wg.Wait()
 	excludeItems := this.dataset.User(uId)
-	recommendItems, _ := model.Top(model.Items(this.dataset), uId, howmany, excludeItems, this.model)
+	itemIds, _ = model.Top(model.Items(this.dataset), uId, howmany, excludeItems, this.model)
 	return
 }

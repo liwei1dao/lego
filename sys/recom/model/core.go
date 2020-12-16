@@ -13,7 +13,7 @@ type (
 	}
 )
 
-func Top(items map[uint32]bool, userId uint32, n int, exclude *core.MarginalSubSet, model IModel) ([]string, []float64) {
+func Top(items map[uint32]bool, userId uint32, n int, exclude *core.MarginalSubSet, model IModel) ([]uint32, []float64) {
 	// Get top-n list
 	itemsHeap := core.NewMaxHeap(n)
 	for itemId := range items {
@@ -24,7 +24,7 @@ func Top(items map[uint32]bool, userId uint32, n int, exclude *core.MarginalSubS
 	elem, scores := itemsHeap.ToSorted()
 	recommends := make([]uint32, len(elem))
 	for i := range recommends {
-		recommends[i] = elem[i].(string)
+		recommends[i] = elem[i].(uint32)
 	}
 	return recommends, scores
 }

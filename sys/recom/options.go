@@ -8,7 +8,7 @@ type Option func(*Options)
 type Options struct {
 	UserIds []uint32
 	ItemIds []uint32
-	Ratings []uint8
+	Ratings []float64
 }
 
 func SetUserIds(v []uint32) Option {
@@ -21,7 +21,7 @@ func SetItemIds(v []uint32) Option {
 		o.ItemIds = v
 	}
 }
-func SetRatings(v []uint8) Option {
+func SetRatings(v []float64) Option {
 	return func(o *Options) {
 		o.Ratings = v
 	}
@@ -42,7 +42,7 @@ func newOptionsByOption(opts ...Option) Options {
 	options := Options{
 		UserIds: make([]uint32, 0),
 		ItemIds: make([]uint32, 0),
-		Ratings: make([]uint8, 0),
+		Ratings: make([]float64, 0),
 	}
 	for _, o := range opts {
 		o(&options)

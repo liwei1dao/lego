@@ -1,8 +1,10 @@
 package core
 
-func NewDataSet(userIds, itemIds []uint32, ratings []uint8) (set *DataSet) {
+import "gonum.org/v1/gonum/stat"
+
+func NewDataSet(userIds, itemIds []uint32, ratings []float64) (set *DataSet) {
 	set = new(DataSet)
-	set.count = len(ratings)
+	set.ratings = ratings
 	set.userIndexer = NewIndexer()
 	set.itemIndexer = NewIndexer()
 	set.userIndices = make([]int, len(userIds))
@@ -38,18 +40,22 @@ func NewDataSet(userIds, itemIds []uint32, ratings []uint8) (set *DataSet) {
 
 type (
 	DataSetInterface interface {
+		GlobalMean() float64
 		Count() int
 		UserCount() int
 		ItemCount() int
+		Users() []*MarginalSubSet
+		Items() []*MarginalSubSet
 		UserIndexer() *Indexer
 		ItemIndexer() *Indexer
 		User(userId uint32) *MarginalSubSet
 		Item(itemId uint32) *MarginalSubSet
 		UserByIndex(userIndex int) *MarginalSubSet
 		ItemByIndex(itemIndex int) *MarginalSubSet
+		GetWithIndex(i int) (int, int, float64)
 	}
 	DataSet struct {
-		count       int
+		ratings     []float64
 		userIndices []int
 		itemIndices []int
 		userIndexer *Indexer
@@ -60,8 +66,16 @@ type (
 )
 
 func (set *DataSet) Count() int {
-	return set.count
+	if set == nil {
+		return 0
+	}
+	return len(set.ratings)
 }
+
+func (set *DataSet) GlobalMean() float64 {
+	return stat.Mean(set.ratings, nil)
+}
+
 func (set *DataSet) UserIndexer() *Indexer {
 	return set.userIndexer
 }
@@ -93,4 +107,16 @@ func (set *DataSet) User(userId uint32) *MarginalSubSet {
 func (set *DataSet) Item(itemId uint32) *MarginalSubSet {
 	itemIndex := set.itemIndexer.ToIndex(itemId)
 	return set.ItemByIndex(itemIndex)
+}
+
+func (set *DataSet) Users() []*MarginalSubSet {
+	return set.users
+}
+
+func (set *DataSet) Items() []*MarginalSubSet {
+	return set.items
+}
+
+func (set *DataSet) GetWithIndex(i int) (int, int, float64) {
+	return set.userIndices[i], set.itemIndices[i], set.ratings[i]
 }

@@ -2,7 +2,6 @@ package model
 
 import (
 	"github.com/liwei1dao/lego/sys/recom/core"
-	"github.com/liwei1dao/lego/sys/recom/test/base"
 )
 
 type ModelBase struct {
@@ -48,7 +47,7 @@ type ItemPop struct {
 func (pop *ItemPop) Predict(userId, itemId uint32) float64 {
 	// Return items' popularity
 	denseItemId := pop.ItemIndexer.ToIndex(itemId)
-	if denseItemId == base.NotId {
+	if denseItemId == core.NotId {
 		return 0
 	}
 	return pop.Pop[denseItemId]

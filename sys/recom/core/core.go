@@ -40,7 +40,7 @@ func (set *Indexer) ToID(index int) uint32 {
 	return set.Ids[index]
 }
 
-func NewMarginalSubSet(indexer *Indexer, indices []int, values []uint8, subset []int) *MarginalSubSet {
+func NewMarginalSubSet(indexer *Indexer, indices []int, values []float64, subset []int) *MarginalSubSet {
 	set := new(MarginalSubSet)
 	set.Indexer = indexer
 	set.Indices = indices
@@ -53,7 +53,7 @@ func NewMarginalSubSet(indexer *Indexer, indices []int, values []uint8, subset [
 type MarginalSubSet struct {
 	Indexer *Indexer
 	Indices []int
-	Values  []uint8
+	Values  []float64
 	SubSet  []int
 }
 
