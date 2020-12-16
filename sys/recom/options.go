@@ -6,9 +6,16 @@ import (
 
 type Option func(*Options)
 type Options struct {
-	UserIds []uint32
-	ItemIds []uint32
-	Ratings []float64
+	RecomModel RecomModel //推荐模型
+	UserIds    []uint32
+	ItemIds    []uint32
+	Ratings    []float64
+}
+
+func SetRecomModel(v RecomModel) Option {
+	return func(o *Options) {
+		o.RecomModel = v
+	}
 }
 
 func SetUserIds(v []uint32) Option {

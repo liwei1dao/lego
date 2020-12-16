@@ -4,11 +4,17 @@ package recom
 推荐系统 协同过滤算法
 */
 type (
-	IRecom interface {
+	RecomModel uint8
+	IRecom     interface {
 		Fit()
 		Wait()
 		RecommendItems(uId uint32, howmany int) (itemIds []uint32)
 	}
+)
+
+const (
+	BPRModel RecomModel = iota
+	SVD
 )
 
 var (
