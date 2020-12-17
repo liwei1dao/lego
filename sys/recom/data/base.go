@@ -1,4 +1,4 @@
-package core
+package data
 
 import (
 	"container/heap"
@@ -8,6 +8,21 @@ import (
 )
 
 const NotId = -1
+
+func NewMatrixInt(row, col int) [][]int {
+	ret := make([][]int, row)
+	for i := range ret {
+		ret[i] = make([]int, col)
+	}
+	return ret
+}
+func NewMatrixfloat64(row, col int) [][]float64 {
+	ret := make([][]float64, row)
+	for i := range ret {
+		ret[i] = make([]float64, col)
+	}
+	return ret
+}
 
 func NewIndexer() *Indexer {
 	set := new(Indexer)
@@ -43,11 +58,9 @@ func (set *Indexer) ToID(index int) uint32 {
 	return set.Ids[index]
 }
 
-func NewMarginalSubSet(indexer *Indexer, indices []int, values []float64, subset []int) *MarginalSubSet {
+func NewMarginalSubSet(indexer *Indexer, subset []int) *MarginalSubSet {
 	set := new(MarginalSubSet)
 	set.Indexer = indexer
-	set.Indices = indices
-	set.Values = values
 	set.SubSet = subset
 	sort.Sort(set)
 	return set
@@ -55,8 +68,6 @@ func NewMarginalSubSet(indexer *Indexer, indices []int, values []float64, subset
 
 type MarginalSubSet struct {
 	Indexer *Indexer
-	Indices []int
-	Values  []float64
 	SubSet  []int
 }
 
@@ -73,7 +84,7 @@ func (set *MarginalSubSet) Less(i, j int) bool {
 }
 
 func (set *MarginalSubSet) GetIndex(i int) int {
-	return set.Indices[set.SubSet[i]]
+	return set.SubSet[i]
 }
 
 func (set *MarginalSubSet) GetID(i int) uint32 {

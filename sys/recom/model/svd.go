@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/liwei1dao/lego/sys/recom/core"
+	"github.com/liwei1dao/lego/sys/recom/data"
 	"github.com/liwei1dao/lego/sys/recom/floats"
 )
 
@@ -28,7 +28,7 @@ type SVD struct {
 	initStdDev float64
 	optimizer  string
 	// Fallback model
-	UserRatings []*core.MarginalSubSet
+	UserRatings []*data.MarginalSubSet
 	ItemPop     *ItemPop
 }
 
@@ -55,15 +55,15 @@ func (svd *SVD) Predict(userId, itemId uint32) float64 {
 func (svd *SVD) predict(userIndex int, itemIndex int) float64 {
 	ret := svd.GlobalMean
 	// + b_u
-	if userIndex != core.NotId {
+	if userIndex != data.NotId {
 		ret += svd.UserBias[userIndex]
 	}
 	// + b_i
-	if itemIndex != core.NotId {
+	if itemIndex != data.NotId {
 		ret += svd.ItemBias[itemIndex]
 	}
 	// + q_i^Tp_u
-	if itemIndex != core.NotId && userIndex != core.NotId {
+	if itemIndex != data.NotId && userIndex != data.NotId {
 		userFactor := svd.UserFactor[userIndex]
 		itemFactor := svd.ItemFactor[itemIndex]
 		ret += floats.Dot(userFactor, itemFactor)
@@ -71,7 +71,7 @@ func (svd *SVD) predict(userIndex int, itemIndex int) float64 {
 	return ret
 }
 
-func (svd *SVD) Fit(trainSet core.DataSetInterface) {
+func (svd *SVD) Fit(trainSet data.DataSetInterface) {
 	svd.Init(trainSet)
 	// Initialize parameters
 	svd.GlobalMean = 0
