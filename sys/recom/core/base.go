@@ -1,4 +1,4 @@
-package data
+package core
 
 import (
 	"container/heap"

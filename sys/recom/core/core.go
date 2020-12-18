@@ -1,185 +1,132 @@
 package core
 
-import (
-	"container/heap"
-	"sort"
+func NewDataSet(data map[uint32]map[uint32]float64) (set *DataSet) {
+	set = new(DataSet)
+	var (
+		totalsorce           float64
+		itemindex, userindex int
+	)
+	totalsorce = 0
+	set.ratings = make([]int, 0)
+	set.userIndexer = NewIndexer()
+	set.itemIndexer = NewIndexer()
 
-	"gonum.org/v1/gonum/floats"
+	for itemid, v := range data {
+		set.itemIndexer.Add(itemid)
+		for userid, _ := range v {
+			set.userIndexer.Add(userid)
+		}
+	}
+
+	userSubsetIndices := NewMatrixInt(set.UserCount(), 0)
+	itemSubsetIndices := NewMatrixInt(set.ItemCount(), 0)
+	set.scores = NewMatrixfloat64(set.ItemCount(), set.UserCount())
+	for itemid, v := range data {
+		for userid, sorce := range v {
+			userindex = set.userIndexer.ToIndex(userid)
+			itemindex = set.itemIndexer.ToIndex(itemid)
+			set.scores[itemindex][userindex] = sorce
+			userSubsetIndices[userindex] = append(userSubsetIndices[userindex], itemindex)
+			itemSubsetIndices[itemindex] = append(itemSubsetIndices[itemindex], userindex)
+			totalsorce += sorce
+			set.ratings = append(set.ratings, userindex*set.ItemCount()+itemindex)
+		}
+	}
+
+	set.globalmean = totalsorce / float64(len(set.ratings))
+	set.users = make([]*MarginalSubSet, set.UserCount())
+	set.items = make([]*MarginalSubSet, set.ItemCount())
+	for u := range set.users {
+		set.users[u] = NewMarginalSubSet(set.itemIndexer, userSubsetIndices[u])
+	}
+	for i := range set.items {
+		set.items[i] = NewMarginalSubSet(set.userIndexer, itemSubsetIndices[i])
+	}
+	return
+}
+
+type (
+	DataSetInterface interface {
+		Count() int
+		GlobalMean() float64
+		UserCount() int
+		ItemCount() int
+		Users() []*MarginalSubSet
+		Items() []*MarginalSubSet
+		UserIndexer() *Indexer
+		ItemIndexer() *Indexer
+		User(userId uint32) *MarginalSubSet
+		Item(itemId uint32) *MarginalSubSet
+		UserByIndex(userIndex int) *MarginalSubSet
+		ItemByIndex(itemIndex int) *MarginalSubSet
+		GetWithIndex(i int) (int, int, float64)
+	}
+	DataSet struct {
+		globalmean  float64
+		ratings     []int
+		scores      [][]float64
+		userIndexer *Indexer
+		itemIndexer *Indexer
+		users       []*MarginalSubSet
+		items       []*MarginalSubSet
+	}
 )
 
-const NotId = -1
-
-func NewIndexer() *Indexer {
-	set := new(Indexer)
-	set.Indices = make(map[uint32]int)
-	set.Ids = make([]uint32, 0)
-	return set
-}
-
-type Indexer struct {
-	Indices map[uint32]int
-	Ids     []uint32
-}
-
-func (set *Indexer) Len() int {
-	return len(set.Ids)
-}
-func (set *Indexer) Add(id uint32) int {
-	if i, exist := set.Indices[id]; !exist {
-		set.Indices[id] = len(set.Ids)
-		set.Ids = append(set.Ids, id)
-		return set.Indices[id]
-	} else {
-		return i
+func (set *DataSet) Count() int {
+	if set == nil {
+		return 0
 	}
-}
-func (set *Indexer) ToIndex(id uint32) int {
-	if denseId, exist := set.Indices[id]; exist {
-		return denseId
-	}
-	return NotId
-}
-func (set *Indexer) ToID(index int) uint32 {
-	return set.Ids[index]
+	return len(set.ratings)
 }
 
-func NewMarginalSubSet(indexer *Indexer, indices []int, values []float64, subset []int) *MarginalSubSet {
-	set := new(MarginalSubSet)
-	set.Indexer = indexer
-	set.Indices = indices
-	set.Values = values
-	set.SubSet = subset
-	sort.Sort(set)
-	return set
+func (set *DataSet) GlobalMean() float64 {
+	return set.globalmean
 }
 
-type MarginalSubSet struct {
-	Indexer *Indexer
-	Indices []int
-	Values  []float64
-	SubSet  []int
+func (set *DataSet) UserIndexer() *Indexer {
+	return set.userIndexer
+}
+func (set *DataSet) ItemIndexer() *Indexer {
+	return set.itemIndexer
 }
 
-func (set *MarginalSubSet) Len() int {
-	return len(set.SubSet)
+func (set *DataSet) UserCount() int {
+	return set.UserIndexer().Len()
 }
 
-func (set *MarginalSubSet) Swap(i, j int) {
-	set.SubSet[i], set.SubSet[j] = set.SubSet[j], set.SubSet[i]
+func (set *DataSet) ItemCount() int {
+	return set.ItemIndexer().Len()
 }
 
-func (set *MarginalSubSet) Less(i, j int) bool {
-	return set.GetID(i) < set.GetID(j)
+func (set *DataSet) UserByIndex(userIndex int) *MarginalSubSet {
+	return set.users[userIndex]
 }
 
-func (set *MarginalSubSet) GetIndex(i int) int {
-	return set.Indices[set.SubSet[i]]
+func (set *DataSet) ItemByIndex(itemIndex int) *MarginalSubSet {
+	return set.items[itemIndex]
 }
 
-func (set *MarginalSubSet) GetID(i int) uint32 {
-	index := set.GetIndex(i)
-	return set.Indexer.ToID(index)
+func (set *DataSet) User(userId uint32) *MarginalSubSet {
+	userIndex := set.userIndexer.ToIndex(userId)
+	return set.UserByIndex(userIndex)
 }
 
-func (set *MarginalSubSet) Contain(id uint32) bool {
-	// if id is out of range
-	if set.Len() == 0 || id < set.GetID(0) || id > set.GetID(set.Len()-1) {
-		return false
-	}
-	// binary search
-	low, high := 0, set.Len()-1
-	for low <= high {
-		// in bound
-		if set.GetID(low) == id || set.GetID(high) == id {
-			return true
-		}
-		mid := (low + high) / 2
-		// in mid
-		if id == set.GetID(mid) {
-			return true
-		} else if id < set.GetID(mid) {
-			low = low + 1
-			high = mid - 1
-		} else if id > set.GetID(mid) {
-			low = mid + 1
-			high = high - 1
-		}
-	}
-	return false
+func (set *DataSet) Item(itemId uint32) *MarginalSubSet {
+	itemIndex := set.itemIndexer.ToIndex(itemId)
+	return set.ItemByIndex(itemIndex)
 }
 
-func NewMaxHeap(k int) *MaxHeap {
-	knnHeap := new(MaxHeap)
-	knnHeap.Elem = make([]interface{}, 0)
-	knnHeap.Score = make([]float64, 0)
-	knnHeap.K = k
-	return knnHeap
+func (set *DataSet) Users() []*MarginalSubSet {
+	return set.users
 }
 
-type MaxHeap struct {
-	Elem  []interface{} // store elements
-	Score []float64     // store scores
-	K     int           // the size of heap
+func (set *DataSet) Items() []*MarginalSubSet {
+	return set.items
 }
 
-type _HeapItem struct {
-	Elem  interface{}
-	Score float64
-}
-
-func (maxHeap *MaxHeap) Less(i, j int) bool {
-	return maxHeap.Score[i] < maxHeap.Score[j]
-}
-
-func (maxHeap *MaxHeap) Swap(i, j int) {
-	maxHeap.Elem[i], maxHeap.Elem[j] = maxHeap.Elem[j], maxHeap.Elem[i]
-	maxHeap.Score[i], maxHeap.Score[j] = maxHeap.Score[j], maxHeap.Score[i]
-}
-
-func (maxHeap *MaxHeap) Len() int {
-	return len(maxHeap.Elem)
-}
-
-func (maxHeap *MaxHeap) Push(x interface{}) {
-	item := x.(_HeapItem)
-	maxHeap.Elem = append(maxHeap.Elem, item.Elem)
-	maxHeap.Score = append(maxHeap.Score, item.Score)
-}
-
-func (maxHeap *MaxHeap) Pop() interface{} {
-	// Extract the minimum
-	n := maxHeap.Len()
-	item := _HeapItem{
-		Elem:  maxHeap.Elem[n-1],
-		Score: maxHeap.Score[n-1],
-	}
-	// Remove last element
-	maxHeap.Elem = maxHeap.Elem[0 : n-1]
-	maxHeap.Score = maxHeap.Score[0 : n-1]
-	// We never use returned item
-	return item
-}
-
-func (maxHeap *MaxHeap) Add(elem interface{}, score float64) {
-	// Insert item
-	heap.Push(maxHeap, _HeapItem{elem, score})
-	// Remove minimum
-	if maxHeap.Len() > maxHeap.K {
-		heap.Pop(maxHeap)
-	}
-}
-
-func (maxHeap *MaxHeap) ToSorted() ([]interface{}, []float64) {
-	// sort indices
-	scores := make([]float64, maxHeap.Len())
-	indices := make([]int, maxHeap.Len())
-	copy(scores, maxHeap.Score)
-	floats.Argsort(scores, indices)
-	// make output
-	sorted := make([]interface{}, maxHeap.Len())
-	for i := range indices {
-		sorted[i] = maxHeap.Elem[indices[maxHeap.Len()-1-i]]
-		scores[i] = maxHeap.Score[indices[maxHeap.Len()-1-i]]
-	}
-	return sorted, scores
+func (set *DataSet) GetWithIndex(i int) (userindex int, itemindex int, score float64) {
+	itemindex = set.ratings[i] % set.ItemCount()
+	userindex = set.ratings[i] / set.ItemCount()
+	score = set.scores[itemindex][userindex]
+	return
 }

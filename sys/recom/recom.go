@@ -3,13 +3,13 @@ package recom
 import (
 	"sync"
 
-	"github.com/liwei1dao/lego/sys/recom/data"
+	"github.com/liwei1dao/lego/sys/recom/core"
 	"github.com/liwei1dao/lego/sys/recom/model"
 )
 
 func newSys(options Options) (sys *Recom, err error) {
 	sys = new(Recom)
-	sys.dataset = data.NewDataSet(options.ItemIdsScore)
+	sys.dataset = core.NewDataSet(options.ItemIdsScore)
 	sys.model = model.NewSVD(model.Params{
 		model.NFactors:   10,
 		model.Reg:        0.01,
@@ -24,7 +24,7 @@ func newSys(options Options) (sys *Recom, err error) {
 }
 
 type Recom struct {
-	dataset data.DataSetInterface
+	dataset core.DataSetInterface
 	model   model.IModel
 	wg      sync.WaitGroup
 }

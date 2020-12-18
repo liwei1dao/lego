@@ -3,7 +3,7 @@ package model
 import (
 	"math"
 
-	"github.com/liwei1dao/lego/sys/recom/data"
+	"github.com/liwei1dao/lego/sys/recom/core"
 	"github.com/liwei1dao/lego/sys/recom/floats"
 )
 
@@ -24,7 +24,7 @@ type BPR struct {
 	reg         float64
 	initMean    float64
 	initStdDev  float64
-	UserRatings []*data.MarginalSubSet
+	UserRatings []*core.MarginalSubSet
 	ItemPop     *ItemPop
 }
 
@@ -42,14 +42,14 @@ func (bpr *BPR) Predict(userId, itemId uint32) float64 {
 	// Convert sparse IDs to dense IDs
 	userIndex := bpr.UserIndexer.ToIndex(userId)
 	itemIndex := bpr.ItemIndexer.ToIndex(itemId)
-	if userIndex == data.NotId || bpr.UserRatings[userIndex].Len() == 0 {
+	if userIndex == core.NotId || bpr.UserRatings[userIndex].Len() == 0 {
 		// If users not exist in dataset, use ItemPop model.
 		return bpr.ItemPop.Predict(userId, itemId)
 	}
 	return bpr.predict(userIndex, itemIndex)
 }
 
-func (bpr *BPR) Fit(trainSet data.DataSetInterface) {
+func (bpr *BPR) Fit(trainSet core.DataSetInterface) {
 	bpr.Init(trainSet)
 	bpr.UserFactor = bpr.rng.NewNormalMatrix(trainSet.UserCount(), bpr.nFactors, bpr.initMean, bpr.initStdDev)
 	bpr.ItemFactor = bpr.rng.NewNormalMatrix(trainSet.ItemCount(), bpr.nFactors, bpr.initMean, bpr.initStdDev)
@@ -106,7 +106,7 @@ func (bpr *BPR) Fit(trainSet data.DataSetInterface) {
 func (bpr *BPR) predict(userIndex int, itemIndex int) float64 {
 	ret := 0.0
 	// + q_i^Tp_u
-	if itemIndex != data.NotId && userIndex != data.NotId {
+	if itemIndex != core.NotId && userIndex != core.NotId {
 		userFactor := bpr.UserFactor[userIndex]
 		itemFactor := bpr.ItemFactor[itemIndex]
 		ret += floats.Dot(userFactor, itemFactor)
