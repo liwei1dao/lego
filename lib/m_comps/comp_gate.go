@@ -104,7 +104,7 @@ func (this *MComp_GateComp) ReceiveMsg(session core.IUserSession, msg proto.IMes
 		}
 		msgdata, e := proto.ByteDecodeToStruct(msghandles.MsgType, msg.GetBuffer())
 		if e != nil {
-			log.Errorf("收到异常消息【%d:%d】来自【%s】的消息err:%v", this.ComId, msg.GetMsgId(), session.GetSessionId(), e)
+			log.Errorf("收到异常消息【%d:%d】来自【%s】的消息:%v err:%v", this.ComId, msg.GetMsgId(), session.GetSessionId(), msg.GetBuffer(), e)
 			session.Close()
 			return
 		}
