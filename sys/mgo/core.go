@@ -10,6 +10,7 @@ import (
 
 type (
 	IMongodb interface {
+		UseSession(fn func(sessionContext mongo.SessionContext) error) error
 		CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options.CountOptions) (int64, error)
 		Find(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error)
 		FindOne(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOneOptions) *mongo.SingleResult
@@ -39,6 +40,10 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 func NewSys(option ...Option) (sys IMongodb, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
+}
+
+func UseSession(fn func(sessionContext mongo.SessionContext) error) error {
+	return defsys.UseSession(fn)
 }
 
 func CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options.CountOptions) (int64, error) {

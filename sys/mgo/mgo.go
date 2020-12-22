@@ -62,6 +62,10 @@ func (this *Mongodb) getContext() (ctx context.Context) {
 	return
 }
 
+func (this *Mongodb) UseSession(fn func(sessionContext mongo.SessionContext) error) error {
+	return this.Client.UseSession(this.getContext(), fn)
+}
+
 func (this *Mongodb) CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options.CountOptions) (int64, error) {
 	return this.Collection(sqltable).CountDocuments(this.getContext(), filter, opts...)
 }
