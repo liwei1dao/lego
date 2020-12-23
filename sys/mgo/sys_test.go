@@ -6,6 +6,7 @@ import (
 
 	"github.com/liwei1dao/lego/core"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -20,10 +21,12 @@ type TestData struct {
 	HeadUrl  string //头像Id
 }
 
+//测试 系统
 func Test_sys(t *testing.T) {
 	if err := OnInit(map[string]interface{}{
-		"MongodbUrl":      "mongodb://127.0.0.1:27017",
+		"MongodbUrl":      "mongodb://127.0.0.1:10001",
 		"MongodbDatabase": "testdb",
+		"Replset":         "replset0",
 	}); err == nil {
 		if _, err := UpdateOne(Sql_UserDataTable,
 			bson.M{"_id": 10001},
@@ -37,10 +40,49 @@ func Test_sys(t *testing.T) {
 		}
 
 		data := &TestData{}
-		if err := FindOne(Sql_UserDataTable, bson.M{"_id": uId}).Decode(data); err != nil {
+		if err := FindOne(Sql_UserDataTable, bson.M{"_id": 10002}).Decode(data); err != nil {
 			fmt.Printf("FindOne errr:%v", err)
 		} else {
 			fmt.Printf("FindOne data:%+v", data)
 		}
+	} else {
+		fmt.Printf("FindOne errr:%v", err)
+	}
+}
+
+//测试 事务
+func Test_Affair(t *testing.T) {
+	if err := OnInit(map[string]interface{}{
+		"MongodbUrl":      "mongodb://127.0.0.1:10001",
+		"MongodbDatabase": "testdb",
+		"Replset":         "replset0",
+	}); err == nil {
+		err = UseSession(func(sessionContext mongo.SessionContext) error {
+			err := sessionContext.StartTransaction()
+			if err != nil {
+				fmt.Println(err)
+				return err
+			}
+			col := Collection(Sql_UserDataTable)
+
+			//在事务内写一条id为“222”的记录
+			_, err = col.InsertOne(sessionContext, bson.M{"_id": 10002, "nicename": "liwei2dao", "headurl": "http://test1.web.com", "sex": 2})
+			if err != nil {
+				fmt.Println(err)
+				return err
+			}
+			//在事务内写一条id为“333”的记录
+			_, err = col.InsertOne(sessionContext, bson.M{"_id": 10003, "nicename": "liwei3dao", "headurl": "http://test1.web.com", "sex": 2})
+			if err != nil {
+				sessionContext.AbortTransaction(sessionContext)
+				return err
+			} else {
+				sessionContext.CommitTransaction(sessionContext)
+			}
+			return nil
+		})
+		fmt.Printf("FindOne errr:%v", err)
+	} else {
+		fmt.Printf("FindOne errr:%v", err)
 	}
 }

@@ -10,29 +10,36 @@ type Option func(*Options)
 type Options struct {
 	MongodbUrl      string
 	MongodbDatabase string
+	Replset         string
 	MaxPoolSize     uint64
 	TimeOut         time.Duration
 }
 
-func MongodbUrl(v string) Option {
+func SetMongodbUrl(v string) Option {
 	return func(o *Options) {
 		o.MongodbUrl = v
 	}
 }
 
-func MongodbDatabase(v string) Option {
+func SetMongodbDatabase(v string) Option {
 	return func(o *Options) {
 		o.MongodbDatabase = v
 	}
 }
 
-func MaxPoolSize(v uint64) Option {
+func SetReplset(v string) Option {
+	return func(o *Options) {
+		o.Replset = v
+	}
+}
+
+func SetMaxPoolSize(v uint64) Option {
 	return func(o *Options) {
 		o.MaxPoolSize = v
 	}
 }
 
-func TimeOut(v time.Duration) Option {
+func SetTimeOut(v time.Duration) Option {
 	return func(o *Options) {
 		o.TimeOut = v
 	}
