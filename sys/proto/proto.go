@@ -37,7 +37,7 @@ func (this *Proto) EncodeToByte(message IMessage) (buffer []byte) {
 }
 
 func (this *Proto) ByteDecodeToStruct(t reflect.Type, d []byte) (data interface{}, err error) {
-	if this.options.MsgProtoType == Proto_Buff {
+	if this.options.MsgProtoType == Proto_Json {
 		data = reflect.New(t.Elem()).Interface()
 		err = json.Unmarshal(d, data)
 	} else {
