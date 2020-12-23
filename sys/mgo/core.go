@@ -16,6 +16,7 @@ type (
 	IMongodb interface {
 		CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options.CountOptions) (int64, error)
 		Find(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error)
+		FindByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error)
 		FindOne(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOneOptions) *mongo.SingleResult
 		FindOneAndUpdate(sqltable core.SqlTable, filter interface{}, update interface{}, opts ...*options.FindOneAndUpdateOptions) *mongo.SingleResult
 		InsertOne(sqltable core.SqlTable, data interface{}, opts ...*options.InsertOneOptions) (*mongo.InsertOneResult, error)
@@ -47,6 +48,10 @@ func CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options
 
 func Find(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error) {
 	return defmgodb.Find(sqltable, filter, opts...)
+}
+
+func FindByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error) {
+	return defmgodb.FindByCtx(sqltable, ctx, filter, opts...)
 }
 
 func FindOne(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOneOptions) *mongo.SingleResult {

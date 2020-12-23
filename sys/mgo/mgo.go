@@ -71,6 +71,10 @@ func (this *Mongodb) Find(sqltable core.SqlTable, filter interface{}, opts ...*o
 	return this.Collection(sqltable).Find(this.getContext(), filter, opts...)
 }
 
+func (this *Mongodb) FindByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error) {
+	return this.Collection(sqltable).Find(ctx, filter, opts...)
+}
+
 func (this *Mongodb) FindOne(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOneOptions) *mongo.SingleResult {
 	return this.Collection(sqltable).FindOne(this.getContext(), filter, opts...)
 }
