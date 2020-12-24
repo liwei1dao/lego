@@ -36,6 +36,10 @@ func OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), un
 	rpcserialize.OnRegister(d, sf, unsf)
 }
 
+func OnRegisterProtoOrJsonRpcData(d interface{}) {
+	rpcserialize.OnRegisterProtoOrJsonRpcData(d)
+}
+
 func NewRpcClient(sId, rId string) (clent IRpcClient, err error) {
 	if options == nil {
 		return nil, fmt.Errorf("rpc 系统未初始化")

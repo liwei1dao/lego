@@ -7,6 +7,7 @@ import (
 	"math"
 	"reflect"
 
+	gproto "github.com/golang/protobuf/proto"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/proto"
@@ -68,7 +69,7 @@ func SerializeInit() {
 	OnRegister(map[int32]interface{}{}, MapInt32InterfaceToBytes, BytesToMapInt32Rpc)
 	OnRegister(map[uint32]interface{}{}, MapUInt32InterfaceToBytes, BytesToMapUInt32Rpc)
 	OnRegister(map[string]*RpcData{}, JsonStructMarshal, BytesToMapStringRpc)
-	OnRegister(&proto.Message{}, ProtoStructMarshal, PrototructUnmarshal)
+	OnRegister(&proto.Message{}, ProtoMessageMarshal, ProtoMessageUnmarshal)
 	OnRegister(core.ErrorCode(0), ErrorCodeToBytes, BytesToErrorCode)
 	OnRegister(core.CustomRoute(0), CustomRouteToBytes, BytesToCustomRoute)
 	OnRegister(map[uint16][]uint16{}, JsonStructMarshal, BytesToMapUnit16SliceUInt16Rpc)
@@ -88,6 +89,19 @@ func OnRegister(d interface{}, sf func(d interface{}) ([]byte, error), unsf func
 		dataType:        reflect.TypeOf(d),
 		SerializeFunc:   sf,
 		UnSerializeFunc: unsf,
+	}
+}
+
+//注册Proto Or Json 数据结构到RPC
+func OnRegisterProtoOrJsonRpcData(d interface{}) {
+	switch d.(type) {
+	case gproto.Message:
+		OnRegister(d, ProtoStructMarshal, ProtoStructUnmarshal)
+		break
+	default:
+		log.Warnf("Please try to reduce the %s Json message transmission method using Proto message transmission method", reflect.TypeOf(d).String())
+		OnRegister(d, JsonStructMarshal, JsonStructUnmarshal)
+		break
 	}
 }
 
@@ -268,7 +282,12 @@ func MapUInt32InterfaceToBytes(v interface{}) ([]byte, error) {
 func JsonStructMarshal(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
 }
+
 func ProtoStructMarshal(v interface{}) ([]byte, error) {
+	return gproto.Marshal(v.(gproto.Message))
+}
+
+func ProtoMessageMarshal(v interface{}) ([]byte, error) {
 	return v.(proto.IMessage).Serializable()
 }
 func ErrorCodeToBytes(v interface{}) ([]byte, error) {
@@ -444,7 +463,13 @@ func JsonStructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error)
 	return msg, err
 }
 
-func PrototructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error) {
+func ProtoStructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error) {
+	msg := reflect.New(dataType.Elem()).Interface()
+	err := gproto.UnmarshalMerge(buf, msg.(gproto.Message))
+	return msg, err
+}
+
+func ProtoMessageUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return proto.MessageFactory.MessageDecodeBybytes(buf)
 }
 
