@@ -116,6 +116,7 @@ func OnRegisterProtoOrJsonRpcData(d interface{}) (err error) {
 		OnRegisterRpcData(d, protoStructMarshal, protoStructUnmarshal)
 		break
 	default:
+		log.Warnf("Please try to reduce the %s Json message transmission method using Proto message transmission method", reflect.TypeOf(d).String())
 		OnRegisterRpcData(d, jsonStructMarshal, jsonStructUnmarshal)
 		break
 	}
