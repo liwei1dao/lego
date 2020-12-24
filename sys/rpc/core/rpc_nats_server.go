@@ -2,9 +2,10 @@ package core
 
 import (
 	"fmt"
-	"github.com/liwei1dao/lego/sys/log"
 	"runtime"
 	"time"
+
+	"github.com/liwei1dao/lego/sys/log"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/nats-io/nats.go"
@@ -98,7 +99,6 @@ func (this *NatsServer) on_request_handle() error {
 			fmt.Println("error ", err)
 		}
 	}
-	return nil
 }
 
 func (s *NatsServer) Unmarshal(data []byte) (*RPCInfo, error) {
@@ -109,7 +109,6 @@ func (s *NatsServer) Unmarshal(data []byte) (*RPCInfo, error) {
 	} else {
 		return &rpcInfo, err
 	}
-	panic("bug")
 }
 
 // goroutine safe

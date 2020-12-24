@@ -7,6 +7,7 @@ import (
 	"math"
 	"reflect"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
 )
@@ -106,6 +107,19 @@ func OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), un
 		SerializeFunc:   sf,
 		UnSerializeFunc: unsf,
 	}
+}
+
+//注册Proto Or Json 数据结构到RPC
+func OnRegisterProtoOrJsonRpcData(d interface{}) (err error) {
+	switch d.(type) {
+	case proto.Message:
+		OnRegisterRpcData(d, protoStructMarshal, protoStructUnmarshal)
+		break
+	default:
+		OnRegisterRpcData(d, jsonStructMarshal, jsonStructUnmarshal)
+		break
+	}
+	return
 }
 
 //----------------------------------------------内置序列化--------------------------------------------------------------
@@ -262,6 +276,11 @@ func mapUInt32InterfaceToBytes(v interface{}) ([]byte, error) {
 func jsonStructMarshal(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
 }
+
+func protoStructMarshal(v interface{}) ([]byte, error) {
+	return proto.Marshal(v.(proto.Message))
+}
+
 func errorCodeToBytes(v interface{}) ([]byte, error) {
 	var buf = make([]byte, 4)
 	binary.BigEndian.PutUint32(buf, uint32(v.(core.ErrorCode)))
@@ -430,6 +449,13 @@ func jsonStructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error)
 	err := json.Unmarshal(buf, msg)
 	return msg, err
 }
+
+func protoStructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error) {
+	msg := reflect.New(dataType.Elem()).Interface()
+	err := proto.UnmarshalMerge(buf, msg.(proto.Message))
+	return msg, err
+}
+
 func bytesToErrorCode(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return core.ErrorCode(binary.BigEndian.Uint32(buf)), nil
 }

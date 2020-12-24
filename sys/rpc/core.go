@@ -4,17 +4,16 @@ import (
 	"reflect"
 
 	"github.com/liwei1dao/lego/core"
-	lgcore "github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
 )
 
 type (
 	IRpc interface {
 		RpcId() string
-		GetRpcInfo() (rfs []lgcore.Rpc_Key)
-		Register(id lgcore.Rpc_Key, f interface{})
-		RegisterGO(id lgcore.Rpc_Key, f interface{})
-		UnRegister(id lgcore.Rpc_Key, f interface{})
+		GetRpcInfo() (rfs []core.Rpc_Key)
+		Register(id core.Rpc_Key, f interface{})
+		RegisterGO(id core.Rpc_Key, f interface{})
+		UnRegister(id core.Rpc_Key, f interface{})
 		Done() (err error)
 		OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error))
 		NewRpcClient(sId, rId string) (clent IRpcClient, err error)
@@ -51,16 +50,16 @@ func NewSys(option ...Option) (sys IRpc, err error) {
 func RpcId() string {
 	return defsys.RpcId()
 }
-func GetRpcInfo() (rfs []lgcore.Rpc_Key) {
+func GetRpcInfo() (rfs []core.Rpc_Key) {
 	return defsys.GetRpcInfo()
 }
-func Register(id lgcore.Rpc_Key, f interface{}) {
+func Register(id core.Rpc_Key, f interface{}) {
 	defsys.Register(id, f)
 }
-func RegisterGO(id lgcore.Rpc_Key, f interface{}) {
+func RegisterGO(id core.Rpc_Key, f interface{}) {
 	defsys.RegisterGO(id, f)
 }
-func UnRegister(id lgcore.Rpc_Key, f interface{}) {
+func UnRegister(id core.Rpc_Key, f interface{}) {
 	defsys.UnRegister(id, f)
 }
 func Done() (err error) {

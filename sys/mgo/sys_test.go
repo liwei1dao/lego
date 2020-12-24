@@ -53,9 +53,8 @@ func Test_sys(t *testing.T) {
 //测试 事务
 func Test_Affair(t *testing.T) {
 	if err := OnInit(map[string]interface{}{
-		"MongodbUrl":      "mongodb://127.0.0.1:10001",
+		"MongodbUrl":      "mongodb://127.0.0.1:27017",
 		"MongodbDatabase": "testdb",
-		"Replset":         "replset0",
 	}); err == nil {
 		err = UseSession(func(sessionContext mongo.SessionContext) error {
 			err := sessionContext.StartTransaction()
