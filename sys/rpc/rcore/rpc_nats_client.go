@@ -2,10 +2,11 @@ package rcore
 
 import (
 	"fmt"
-	"github.com/liwei1dao/lego/sys/log"
-	cont "github.com/liwei1dao/lego/utils/concurrent"
 	"runtime"
 	"time"
+
+	"github.com/liwei1dao/lego/sys/log"
+	cont "github.com/liwei1dao/lego/utils/concurrent"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/nats-io/nats.go"
@@ -141,7 +142,6 @@ func (this *NatsClient) on_request_handle() error {
 			}
 		}
 	}
-	return nil
 }
 func (this *NatsClient) UnmarshalResult(data []byte) (*ResultInfo, error) {
 	//fmt.Println(msg)
@@ -164,7 +164,6 @@ func (this *NatsClient) Unmarshal(data []byte) (*RPCInfo, error) {
 	} else {
 		return &rpcInfo, err
 	}
-	panic("bug")
 }
 func (this *NatsClient) Marshal(rpcInfo *RPCInfo) ([]byte, error) {
 	b, err := proto.Marshal(rpcInfo)
