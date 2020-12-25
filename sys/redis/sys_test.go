@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"fmt"
 	"reflect"
 	"sync"
 	"testing"
@@ -9,7 +10,7 @@ import (
 
 func TestRedisMutex_Lock(t *testing.T) {
 	if err := OnInit(map[string]interface{}{
-		"RedisUrl":"redis://127.0.0.1:6379/1"
+		"RedisUrl": "redis://127.0.0.1:6379/1",
 	}); err != nil {
 		t.Errorf("初始化 redis 失败 err:%s", err.Error())
 		return
@@ -36,7 +37,7 @@ func TestRedisMutex_Lock(t *testing.T) {
 
 func TestRedisList_Lock(t *testing.T) {
 	if err := OnInit(map[string]interface{}{
-		"RedisUrl":"redis://127.0.0.1:6379/1"
+		"RedisUrl": "redis://127.0.0.1:6379/1",
 	}); err != nil {
 		t.Errorf("初始化 redis 失败 err:%s", err.Error())
 		return
@@ -50,4 +51,16 @@ func TestRedisList_Lock(t *testing.T) {
 	data := GetPool().GetListByLrange("TestList", 0, 100, reflect.TypeOf(&item))
 	// GetPool().GetListByLPop("TestList", &item)
 	t.Logf("结束测试 data:%v", data)
+}
+
+func Test_GetExKeyForValue(t *testing.T) {
+	sys, err := NewSys(SetRedisUrl("redis://127.0.0.1:6379/1"))
+	if err != nil {
+		fmt.Printf("初始化 sys err:%v", err)
+	}
+	data := "liwei1dao"
+	pool := sys.GetPool()
+	pool.SetExKeyForValue("test001", &data, 1)
+	err = pool.GetExKeyForValue("test001", &data, 30)
+	fmt.Printf("GetExKeyForValue err:%v", err)
 }
