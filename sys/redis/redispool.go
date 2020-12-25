@@ -91,7 +91,7 @@ func (this *RedisPool) SetExKeyForValue(key string, value interface{}, expire in
 func (this *RedisPool) GetExKeyForValue(key string, value interface{}, expire int) (err error) {
 	pool := this.Pool.Get()
 	defer pool.Close()
-	v, err := redis.String(pool.Do("GET", key, "ex", expire))
+	v, err := redis.String(pool.Do("GET", key))
 	if err != nil {
 		return fmt.Errorf("GetKey_String 获取缓存数据失败 key:%s err:%v", key, err)
 	}
@@ -99,6 +99,7 @@ func (this *RedisPool) GetExKeyForValue(key string, value interface{}, expire in
 	if err != nil {
 		return fmt.Errorf("GetKey_String 解析缓存数据失败 key:%s Value:%s err:%v", key, v, err)
 	}
+	pool.Do("EXPIRE", key, expire)
 	return nil
 }
 
