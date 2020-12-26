@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func newSys(options Options) (log *Logger, err error) {
+func newSys(options Options) (sys *Logger, err error) {
 	createlogfile(options.FileName)
 	var allCore []zapcore.Core
 	hook := lumberjack.Logger{
@@ -59,7 +59,7 @@ func newSys(options Options) (log *Logger, err error) {
 	allCore = append(allCore, zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig), fileWriter, level))
 	core := zapcore.NewTee(allCore...)
 	tlog := zap.New(core).WithOptions(zap.AddCaller(), zap.AddCallerSkip(options.Loglayer))
-	log = &Logger{
+	sys = &Logger{
 		tlog: tlog,
 		log:  tlog.Sugar(),
 	}

@@ -71,6 +71,7 @@ func (this *RemoteRoute) UnRegisterRoute(sId string) {
 		}
 	}
 }
+
 func (this *RemoteRoute) OnRoute(a IAgent, msg proto.IMessage) (code core.ErrorCode, err string) {
 	if s, e := this.sessionFun(this.Service, a.GetSessionData()); e != nil {
 		return 0, e.Error()
