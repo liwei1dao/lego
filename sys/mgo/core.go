@@ -15,6 +15,7 @@ var (
 type (
 	IMongodb interface {
 		CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options.CountOptions) (int64, error)
+		CreateIndex(sqltable core.SqlTable, keys interface{}, options *options.IndexOptions) (string, error)
 		Find(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error)
 		FindByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error)
 		FindOne(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOneOptions) *mongo.SingleResult
@@ -100,4 +101,8 @@ func DeleteMany(sqltable core.SqlTable, filter interface{}, opts ...*options.Del
 
 func DeleteManyByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
 	return defmgodb.DeleteManyByCtx(sqltable, ctx, filter, opts...)
+}
+
+func CreateIndex(sqltable core.SqlTable, keys interface{}, options *options.IndexOptions) (string, error) {
+	return defmgodb.CreateIndex(sqltable, keys, options)
 }
