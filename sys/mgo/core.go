@@ -11,6 +11,7 @@ import (
 type (
 	IMongodb interface {
 		Collection(sqltable core.SqlTable) *mongo.Collection
+		CreateIndex(sqltable core.SqlTable, keys interface{}, options *options.IndexOptions) (string, error)
 		UseSession(fn func(sessionContext mongo.SessionContext) error) error
 		CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options.CountOptions) (int64, error)
 		Find(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error)
@@ -110,4 +111,8 @@ func DeleteMany(sqltable core.SqlTable, filter interface{}, opts ...*options.Del
 
 func DeleteManyByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
 	return defsys.DeleteManyByCtx(sqltable, ctx, filter, opts...)
+}
+
+func CreateIndex(sqltable core.SqlTable, keys interface{}, options *options.IndexOptions) (string, error) {
+	return defsys.CreateIndex(sqltable, keys, options)
 }
