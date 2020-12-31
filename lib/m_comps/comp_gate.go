@@ -93,14 +93,14 @@ func (this *MComp_GateComp) ReceiveMsg(session core.IUserSession, msg proto.IMes
 			log.Errorf("模块网关路由【%d】没有注册消息【%d】接口", _gatecomp.ComId, _msg.GetMsgId())
 			return
 		}
-		msgdata, e := proto.ByteDecodeToStruct(msghandles.MsgType, _msg.GetBuffer())
+		msgdata, e := proto.MsgUnMarshal(msghandles.MsgType, _msg.GetMsg())
 		if e != nil {
-			log.Errorf("收到异常消息【%d:%d】来自【%s】的消息:%v err:%v", this.ComId, _msg.GetMsgId(), _session.GetSessionId(), _msg.GetBuffer(), e)
-			session.Close()
+			log.Errorf("收到异常消息【%d:%d】来自【%s】的消息:%v err:%v", _gatecomp.ComId, _msg.GetMsgId(), _session.GetSessionId(), _msg.GetMsg(), e)
+			_session.Close()
 			return
 		}
-		if this.IsLog {
-			log.Infof("收到【%d:%d】来自【%s】的消息:%v", this.ComId, _msg.GetMsgId(), _session.GetSessionId(), msgdata)
+		if _gatecomp.IsLog {
+			log.Infof("收到【%d:%d】来自【%s】的消息:%v", _gatecomp.ComId, _msg.GetMsgId(), _session.GetSessionId(), msgdata)
 		}
 		msghandles.F(_session, msgdata)
 	}, this, session, msg)
