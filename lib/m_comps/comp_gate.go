@@ -47,7 +47,7 @@ func (this *MComp_GateComp) Init(service core.IService, module core.IModule, com
 		this.MaxGoroutine = v.(int)
 	} else {
 		log.Warnf("Module:%s Lack Config:GateMaxGoroutine", module.GetType())
-		this.MaxGoroutine = 100
+		this.MaxGoroutine = 1000
 	}
 	this.Msghandles = make(map[uint16]*msgRecep)
 	this.Workerpool, err = workerpools.NewTaskPools(workerpools.SetMaxWorkers(this.MaxGoroutine), workerpools.SetTaskTimeOut(time.Second*2))
@@ -84,25 +84,26 @@ func (this *MComp_GateComp) ReceiveMsg(session core.IUserSession, msg proto.IMes
 	this.Workerpool.Submit(func(ctx context.Context, cancel context.CancelFunc, agrs ...interface{}) {
 		defer cancel()        //任务结束通知上层
 		defer cbase.Recover() //打印消息处理异常信息
+		_gatecomp, _session, _msg := agrs[0].(*MComp_GateComp), agrs[1].(core.IUserSession), agrs[2].(proto.IMessage)
 
-		this.Mrlock.RLock()
-		msghandles, ok := this.Msghandles[msg.GetMsgId()]
-		this.Mrlock.RUnlock()
+		_gatecomp.Mrlock.RLock()
+		msghandles, ok := _gatecomp.Msghandles[msg.GetMsgId()]
+		_gatecomp.Mrlock.RUnlock()
 		if !ok {
-			log.Errorf("模块网关路由【%d】没有注册消息【%d】接口", this.ComId, msg.GetMsgId())
+			log.Errorf("模块网关路由【%d】没有注册消息【%d】接口", _gatecomp.ComId, _msg.GetMsgId())
 			return
 		}
-		msgdata, e := proto.MsgUnMarshal(msghandles.MsgType, msg.GetMsg())
+		msgdata, e := proto.ByteDecodeToStruct(msghandles.MsgType, _msg.GetBuffer())
 		if e != nil {
-			log.Errorf("收到异常消息【%d:%d】来自【%s】的消息err:%s", this.ComId, msg.GetMsgId(), session.GetSessionId(), e.Error())
+			log.Errorf("收到异常消息【%d:%d】来自【%s】的消息:%v err:%v", this.ComId, _msg.GetMsgId(), _session.GetSessionId(), _msg.GetBuffer(), e)
 			session.Close()
 			return
 		}
 		if this.IsLog {
-			log.Infof("收到【%d:%d】来自【%s】的消息:%s", this.ComId, msg.GetMsgId(), session.GetSessionId(), proto.MsgToString(msgdata))
+			log.Infof("收到【%d:%d】来自【%s】的消息:%v", this.ComId, _msg.GetMsgId(), _session.GetSessionId(), msgdata)
 		}
-		msghandles.F(session, msgdata)
-	})
+		msghandles.F(_session, msgdata)
+	}, this, session, msg)
 	return core.ErrorCode_Success, ""
 }
 
