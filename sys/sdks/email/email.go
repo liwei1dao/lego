@@ -1,9 +1,7 @@
 package email
 
 import (
-	"fmt"
-
-	"github.com/go-gomail/gomail"
+	"gopkg.in/gomail.v2"
 )
 
 func newSys(options Options) (sys *Email, err error) {
@@ -18,18 +16,14 @@ type Email struct {
 	fompasswd  string
 }
 
-// SendEmail body支持html格式字符串
-func (this *Email) SendCaptcha(email string, captcha string) error {
+//发送邮件
+func (this *Email) SendEmail(temail string, title string, content string) (err error) {
 	m := gomail.NewMessage()
-	m.SetAddressHeader("From", this.fromemail, "")
-	m.SetHeader("To", email)
-	// 主题
-	m.SetHeader("Subject", "一刀工作室")
-	// 正文
-	m.SetBody("text/html", fmt.Sprintf(`验证码<br>
-	<h3>您的验证码是:%s</h3><br>`, captcha))
+	m.SetAddressHeader("From", this.fromemail, "liwei1dao")
+	m.SetHeader("To", temail)
+	m.SetHeader("Subject", title)
+	m.SetBody("text/html", content)
 	d := gomail.NewPlainDialer(this.serverhost, this.serverport, this.fromemail, this.fompasswd)
-	// 发送
-	err := d.DialAndSend(m)
-	return err
+	err = d.DialAndSend(m)
+	return
 }
