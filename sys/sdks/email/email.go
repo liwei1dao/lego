@@ -17,7 +17,7 @@ type Email struct {
 }
 
 //发送邮件
-func (this *Email) SendEmail(temail string, title string, content string) (err error) {
+func (this *Email) SendMail(temail string, title string, content string) (err error) {
 	m := gomail.NewMessage()
 	m.SetAddressHeader("From", this.fromemail, "liwei1dao")
 	m.SetHeader("To", temail)

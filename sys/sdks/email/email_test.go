@@ -5,6 +5,6 @@ import (
 )
 
 func Test_email(t *testing.T) {
-	sdk, _ := newEmail(SetServerhost("smtp.qq.com"), SetFromemail("liwei1dao@foxmail.com"), SetFompasswd("tucfnwfgmnqleaaf"), SetServerport(587))
-	sdk.SendCaptcha("2323654976@qq.com", "52678")
+	sys, _ := NewSys(SetServerhost("smtp.qq.com"), SetFromemail("liwei1dao@foxmail.com"), SetFompasswd("tucfnwfgmnqleaaf"), SetServerport(587))
+	sys.SendMail("2323654976@qq.com", "验证码", "52678")
 }

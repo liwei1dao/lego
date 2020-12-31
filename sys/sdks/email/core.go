@@ -2,7 +2,7 @@ package email
 
 type (
 	IEmail interface {
-		SendEmail(temail string, title, content string) error
+		SendMail(temail string, title, content string) error
 	}
 )
 
@@ -20,6 +20,6 @@ func NewSys(option ...Option) (sys IEmail, err error) {
 	return
 }
 
-func SendEmail(temail string, title, content string) error {
-	return defsys.SendEmail(temail, title, content)
+func SendMail(temail string, title, content string) error {
+	return defsys.SendMail(temail, title, content)
 }
