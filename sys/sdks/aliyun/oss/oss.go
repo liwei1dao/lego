@@ -82,6 +82,7 @@ func (this *OSS) GetObject(objectName string, options ...oss.Option) ([]byte, er
 	if file, err := this.bucket.GetObject(objectName, options...); err != nil {
 		return nil, err
 	} else {
+		defer file.Close()
 		buf := new(bytes.Buffer)
 		if _, err := buf.ReadFrom(file); err != nil {
 			return nil, err
