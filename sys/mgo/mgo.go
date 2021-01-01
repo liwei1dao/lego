@@ -63,6 +63,10 @@ func (this *Mongodb) getContext() (ctx context.Context) {
 	return
 }
 
+func (this *Mongodb) CreateIndex(sqltable core.SqlTable, keys interface{}, options *options.IndexOptions) (string, error) {
+	return this.Collection(sqltable).Indexes().CreateOne(this.getContext(), mongo.IndexModel{Keys: keys, Options: options})
+}
+
 func (this *Mongodb) UseSession(fn func(sessionContext mongo.SessionContext) error) error {
 	return this.Client.UseSession(this.getContext(), fn)
 }

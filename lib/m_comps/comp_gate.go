@@ -23,7 +23,7 @@ type MComp_GateCompOptions struct {
 }
 
 func (this *MComp_GateCompOptions) LoadConfig(settings map[string]interface{}) (err error) {
-	this.MaxGoroutine = 100
+	this.MaxGoroutine = 1000
 	if settings != nil {
 		err = mapstructure.Decode(settings, this)
 	}
@@ -94,25 +94,26 @@ func (this *MComp_GateComp) ReceiveMsg(session core.IUserSession, msg proto.IMes
 	this.Workerpool.Submit(func(ctx context.Context, cancel context.CancelFunc, agrs ...interface{}) {
 		defer cancel()        //任务结束通知上层
 		defer cbase.Recover() //打印消息处理异常信息
+		_gatecomp, _session, _msg := agrs[0].(*MComp_GateComp), agrs[1].(core.IUserSession), agrs[2].(proto.IMessage)
 
-		this.Mrlock.RLock()
-		msghandles, ok := this.Msghandles[msg.GetMsgId()]
-		this.Mrlock.RUnlock()
+		_gatecomp.Mrlock.RLock()
+		msghandles, ok := _gatecomp.Msghandles[msg.GetMsgId()]
+		_gatecomp.Mrlock.RUnlock()
 		if !ok {
-			log.Errorf("模块网关路由【%d】没有注册消息【%d】接口", this.ComId, msg.GetMsgId())
+			log.Errorf("模块网关路由【%d】没有注册消息【%d】接口", _gatecomp.ComId, _msg.GetMsgId())
 			return
 		}
-		msgdata, e := proto.ByteDecodeToStruct(msghandles.MsgType, msg.GetBuffer())
+		msgdata, e := proto.ByteDecodeToStruct(msghandles.MsgType, _msg.GetBuffer())
 		if e != nil {
-			log.Errorf("收到异常消息【%d:%d】来自【%s】的消息:%v err:%v", this.ComId, msg.GetMsgId(), session.GetSessionId(), msg.GetBuffer(), e)
+			log.Errorf("收到异常消息【%d:%d】来自【%s】的消息:%v err:%v", _gatecomp.ComId, _msg.GetMsgId(), _session.GetSessionId(), _msg.GetBuffer(), e)
 			session.Close()
 			return
 		}
-		if this.IsLog {
-			log.Infof("收到【%d:%d】来自【%s】的消息:%v", this.ComId, msg.GetMsgId(), session.GetSessionId(), msgdata)
+		if _gatecomp.IsLog {
+			log.Infof("收到【%d:%d】来自【%s】的消息:%v", _gatecomp.ComId, _msg.GetMsgId(), _session.GetSessionId(), msgdata)
 		}
-		msghandles.F(session, msgdata)
-	})
+		msghandles.F(_session, msgdata)
+	}, this, session, msg)
 	return core.ErrorCode_Success, ""
 }
 

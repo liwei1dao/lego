@@ -2,7 +2,7 @@ package email
 
 type (
 	IEmail interface {
-		SendCaptcha(email string, captcha string) error
+		SendMail(temail string, title, content string) error
 	}
 )
 
@@ -20,6 +20,6 @@ func NewSys(option ...Option) (sys IEmail, err error) {
 	return
 }
 
-func SendCaptcha(_email string, _captcha string) error {
-	return defsys.SendCaptcha(_email, _captcha)
+func SendMail(temail string, title, content string) error {
+	return defsys.SendMail(temail, title, content)
 }

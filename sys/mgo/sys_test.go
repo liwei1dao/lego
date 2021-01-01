@@ -85,3 +85,17 @@ func Test_Affair(t *testing.T) {
 		fmt.Printf("FindOne errr:%v", err)
 	}
 }
+
+//测试创建索引
+func Test_CreateIndex(t *testing.T) {
+	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("square"))
+	if err != nil {
+		fmt.Printf("start sys Fail err:%v", err)
+	}
+	str, err := sys.CreateIndex(core.SqlTable("dynamics"), bson.M{"location": "2d"}, nil)
+	if err != nil {
+		fmt.Printf("CreateIndex  err:%v", err)
+	} else {
+		fmt.Printf("CreateIndex  str:%v", str)
+	}
+}
