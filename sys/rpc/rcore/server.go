@@ -3,12 +3,14 @@ package rcore
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/liwei1dao/lego/sys/log"
-	rpcserialize "github.com/liwei1dao/lego/sys/rpc/serialize"
 	"reflect"
 	"runtime"
 	"sync"
 	"time"
+
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/log"
+	rpcserialize "github.com/liwei1dao/lego/sys/rpc/serialize"
 )
 
 func NewRpcServer(opt ...sOption) (srpc *RpcServer, err error) {
@@ -52,6 +54,15 @@ func (this *RpcServer) Call(callInfo CallInfo) error {
 	this.runFunc(callInfo)
 	return nil
 }
+
+func (this *RpcServer) GetRpcInfo() (rfs []core.Rpc_Key) {
+	rfs = make([]core.Rpc_Key, 0)
+	for k, _ := range this.functions {
+		rfs = append(rfs, core.Rpc_Key(k))
+	}
+	return
+}
+
 func (this *RpcServer) Register(id string, f interface{}) {
 	if _, ok := this.functions[id]; !ok {
 		this.functions[id] = []*FunctionInfo{}
@@ -216,9 +227,7 @@ func (this *RpcServer) runFunc(callInfo CallInfo) {
 			)
 			callInfo.Result = *resultInfo
 			this.doCallback(callInfo)
-			if this.opts.Log {
-				log.Infof("RPC Exec ModuleType = %v f = %v Elapsed = %v", this.opts.sId, callInfo.RpcInfo.Fn, time.Since(start))
-			}
+			// log.Debugf("RPC Exec ModuleType = %v f = %v Elapsed = %v", this.opts.sId, callInfo.RpcInfo.Fn, time.Since(start))
 			if this.listener != nil {
 				this.listener.OnComplete(callInfo.RpcInfo.Fn, &callInfo, resultInfo, time.Since(start).Nanoseconds())
 			}

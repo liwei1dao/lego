@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"fmt"
+
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils"
@@ -21,7 +22,6 @@ type Options struct {
 	Setting   core.ServiceSttings
 	Debugmode bool
 	LogLvel   log.Loglevel
-	RpcLog    bool
 }
 
 func SetTag(v string) Option {
@@ -37,6 +37,12 @@ func SetId(v string) Option {
 func SetType(v string) Option {
 	return func(o *Options) {
 		o.Type = v
+	}
+}
+
+func SetSetting(v core.ServiceSttings) Option {
+	return func(o *Options) {
+		o.Setting = v
 	}
 }
 
@@ -57,12 +63,6 @@ func SetWorkPath(v string) Option {
 	}
 }
 
-func SetRpcLog(v bool) Option {
-	return func(o *Options) {
-		o.RpcLog = v
-	}
-}
-
 func SetDebugMode(v bool) Option {
 	return func(o *Options) {
 		o.Debugmode = v
@@ -80,11 +80,15 @@ func newOptions(opts ...Option) *Options {
 		Tag:       "liwie1dao",
 		Id:        "cluster_1",
 		Type:      "cluster",
+		Category:  core.S_Category_BusinessService,
 		Version:   1,
 		WorkPath:  utils.GetApplicationDir(),
 		LogLvel:   log.InfoLevel,
-		RpcLog:    false,
 		Debugmode: false,
+		Setting: core.ServiceSttings{Settings: map[string]interface{}{
+			"ConsulAddr": "127.0.0.1:8500",
+			"NatsAddr":   "127.0.0.1:4222",
+		}},
 	}
 	for _, o := range opts {
 		o(opt)
@@ -92,7 +96,7 @@ func newOptions(opts ...Option) *Options {
 	confpath := fmt.Sprintf("conf/%s.toml", opt.Id)
 	_, err := toml.DecodeFile(confpath, &opt.Setting)
 	if err != nil {
-		panic(fmt.Sprintf("读取服务配置【%s】文件失败err=%s:", confpath, err.Error()))
+		fmt.Printf("警告 读取服务配置【%s】文件失败err=%s:\n", confpath, err.Error())
 	}
 	return opt
 }

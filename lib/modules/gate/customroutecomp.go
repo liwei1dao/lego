@@ -1,8 +1,6 @@
 ﻿package gate
 
 import (
-	"time"
-
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	cbase "github.com/liwei1dao/lego/core/cbase"
@@ -16,7 +14,7 @@ type CustomRouteComp struct {
 	service   base.IClusterService
 	comp      ICustomRouteComp
 	route     map[core.CustomRoute]map[uint16][]uint16
-	routeFunc map[core.CustomRoute]func(a IAgent, msg proto.IMessage)
+	routeFunc map[core.CustomRoute]func(a IAgent, msg proto.IMessage) (code core.ErrorCode, err error)
 }
 
 func (this *CustomRouteComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, settings map[string]interface{}) (err error) {
@@ -24,20 +22,13 @@ func (this *CustomRouteComp) Init(service core.IService, module core.IModule, co
 	this.service = service.(base.IClusterService)
 	this.comp = comp.(ICustomRouteComp)
 	this.route = make(map[core.CustomRoute]map[uint16][]uint16)
-	this.routeFunc = make(map[core.CustomRoute]func(a IAgent, msg proto.IMessage))
+	this.routeFunc = make(map[core.CustomRoute]func(a IAgent, msg proto.IMessage) (code core.ErrorCode, err error))
 	return
 }
 
 func (this *CustomRouteComp) Start() (err error) {
 	this.ModuleCompBase.Start()
-locp:
-	for { //保证rpc事件能成功写入
-		err = this.service.Subscribe(Rpc_GateCustomRouteRegister, this.comp.RegisterRoute) //订阅网关注册接口
-		if err == nil {
-			break locp
-		}
-		time.Sleep(time.Second)
-	}
+	this.service.Subscribe(Rpc_GateCustomRouteRegister, this.comp.RegisterRoute)
 	return
 }
 
@@ -71,7 +62,7 @@ func (this *CustomRouteComp) RegisterRoute(route core.CustomRoute, msgs map[uint
 }
 
 //添加自定义网关组注册接口
-func (this *CustomRouteComp) RegisterRouteFunc(route core.CustomRoute, f func(a IAgent, msg proto.IMessage)) {
+func (this *CustomRouteComp) RegisterRouteFunc(route core.CustomRoute, f func(a IAgent, msg proto.IMessage) (code core.ErrorCode, err error)) {
 	if _, ok := this.routeFunc[route]; !ok {
 		this.routeFunc[route] = f
 	} else {
@@ -80,7 +71,7 @@ func (this *CustomRouteComp) RegisterRouteFunc(route core.CustomRoute, f func(a 
 	return
 }
 
-func (this *CustomRouteComp) OnRoute(agent IAgent, msg proto.IMessage) (iscontinue bool) {
+func (this *CustomRouteComp) OnRoute(agent IAgent, msg proto.IMessage) (code core.ErrorCode, err error) {
 	var ishave bool
 	var route core.CustomRoute
 	for k, v1 := range this.route {
@@ -96,11 +87,11 @@ func (this *CustomRouteComp) OnRoute(agent IAgent, msg proto.IMessage) (iscontin
 	}
 	if ishave {
 		if f, ok := this.routeFunc[route]; ok {
-			f(agent, msg)
-			return false
+			code, err = f(agent, msg)
 		} else {
 			log.Errorf("自定义网关消息注册但是处理函数没有注册 route：%d", route)
 		}
+		return
 	}
-	return true
+	return core.ErrorCode_NoRoute, nil
 }

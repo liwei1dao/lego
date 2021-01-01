@@ -7,6 +7,7 @@ import (
 	"math"
 	"reflect"
 
+	gproto "github.com/golang/protobuf/proto"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/proto"
@@ -59,17 +60,20 @@ func SerializeInit() {
 	OnRegister([]byte{}, SliceByteToBytes, BytesToSliceByte)
 	OnRegister([]int32{}, SliceInt32ToBytes, BytesToSliceInt32)
 	OnRegister([]uint32{}, SliceUInt32ToBytes, BytesToSliceUInt32)
+	OnRegister([]uint64{}, SliceUInt64ToBytes, BytesToSliceUInt64)
 	OnRegister([]string{}, SliceStringToBytes, BytesToSliceString)
 	OnRegister([]interface{}{}, SliceInterfaceToBytes, BytesToSliceInterface)
 	OnRegister(map[string]string{}, JsonStructMarshal, BytesToMapString)
+	OnRegister(map[int32]string{}, JsonStructMarshal, Int32ToMapString)
 	OnRegister(map[string]interface{}{}, MapStringInterfaceToBytes, BytesToMapStringRpc)
 	OnRegister(map[int32]interface{}{}, MapInt32InterfaceToBytes, BytesToMapInt32Rpc)
 	OnRegister(map[uint32]interface{}{}, MapUInt32InterfaceToBytes, BytesToMapUInt32Rpc)
 	OnRegister(map[string]*RpcData{}, JsonStructMarshal, BytesToMapStringRpc)
-	OnRegister(&proto.Message{}, ProtoStructMarshal, PrototructUnmarshal)
+	OnRegister(&proto.Message{}, ProtoMessageMarshal, ProtoMessageUnmarshal)
 	OnRegister(core.ErrorCode(0), ErrorCodeToBytes, BytesToErrorCode)
 	OnRegister(core.CustomRoute(0), CustomRouteToBytes, BytesToCustomRoute)
 	OnRegister(map[uint16][]uint16{}, JsonStructMarshal, BytesToMapUnit16SliceUInt16Rpc)
+	OnRegister(&core.ServiceMonitor{}, JsonStructMarshal, JsonStructUnmarshal)
 }
 
 func OnRegister(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {
@@ -88,6 +92,19 @@ func OnRegister(d interface{}, sf func(d interface{}) ([]byte, error), unsf func
 	}
 }
 
+//注册Proto Or Json 数据结构到RPC
+func OnRegisterProtoOrJsonRpcData(d interface{}) {
+	switch d.(type) {
+	case gproto.Message:
+		OnRegister(d, ProtoStructMarshal, ProtoStructUnmarshal)
+		break
+	default:
+		log.Warnf("Please try to reduce the %s Json message transmission method using Proto message transmission method", reflect.TypeOf(d).String())
+		OnRegister(d, JsonStructMarshal, JsonStructUnmarshal)
+		break
+	}
+}
+
 func Serialize(d interface{}) (dtype string, b []byte, err error) {
 	dtype = "Null"
 	if d != nil {
@@ -96,8 +113,6 @@ func Serialize(d interface{}) (dtype string, b []byte, err error) {
 	if v, ok := SerializeObjs[dtype]; ok {
 		b, err = v.SerializeFunc(d)
 		return
-	} else {
-		log.Panicf("没有注册序列化数据结构 dtype = %s", dtype)
 	}
 	return dtype, nil, fmt.Errorf("没有注册序列化数据结构 dtype = %s", dtype)
 }
@@ -105,8 +120,6 @@ func Serialize(d interface{}) (dtype string, b []byte, err error) {
 func UnSerialize(dtype string, d []byte) (interface{}, error) {
 	if v, ok := SerializeObjs[dtype]; ok {
 		return v.UnSerializeFunc(v.dataType, d)
-	} else {
-		log.Panicf("没有注册序列化数据结构 dtype = %s", dtype)
 	}
 	return nil, fmt.Errorf("没有注册序列化数据结构 dtype = %s", dtype)
 }
@@ -205,6 +218,17 @@ func SliceUInt32ToBytes(v interface{}) ([]byte, error) {
 	}
 	return data, nil
 }
+func SliceUInt64ToBytes(v interface{}) ([]byte, error) {
+	d := v.([]uint64)
+	data := []byte{}
+	for _, v := range d {
+		var buf = make([]byte, 8)
+		binary.BigEndian.PutUint64(buf, v)
+		data = append(data, buf[0:]...)
+	}
+	return data, nil
+}
+
 func SliceStringToBytes(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
 }
@@ -258,7 +282,12 @@ func MapUInt32InterfaceToBytes(v interface{}) ([]byte, error) {
 func JsonStructMarshal(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
 }
+
 func ProtoStructMarshal(v interface{}) ([]byte, error) {
+	return gproto.Marshal(v.(gproto.Message))
+}
+
+func ProtoMessageMarshal(v interface{}) ([]byte, error) {
 	return v.(proto.IMessage).Serializable()
 }
 func ErrorCodeToBytes(v interface{}) ([]byte, error) {
@@ -335,6 +364,13 @@ func BytesToSliceUInt32(dataType reflect.Type, buf []byte) (interface{}, error) 
 	}
 	return data, nil
 }
+func BytesToSliceUInt64(dataType reflect.Type, buf []byte) (interface{}, error) {
+	data := make([]uint64, len(buf)/8)
+	for i, _ := range data {
+		data[i] = binary.BigEndian.Uint64(buf[i*8:])
+	}
+	return data, nil
+}
 func BytesToSliceString(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := []string{}
 	err := json.Unmarshal(buf, &data)
@@ -358,6 +394,12 @@ func BytesToSliceInterface(dataType reflect.Type, buf []byte) (interface{}, erro
 }
 func BytesToMapString(dataType reflect.Type, buf []byte) (interface{}, error) {
 	data := make(map[string]string)
+	err := json.Unmarshal(buf, &data)
+	return data, err
+}
+
+func Int32ToMapString(dataType reflect.Type, buf []byte) (interface{}, error) {
+	data := make(map[int32]string)
 	err := json.Unmarshal(buf, &data)
 	return data, err
 }
@@ -421,7 +463,13 @@ func JsonStructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error)
 	return msg, err
 }
 
-func PrototructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error) {
+func ProtoStructUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error) {
+	msg := reflect.New(dataType.Elem()).Interface()
+	err := gproto.UnmarshalMerge(buf, msg.(gproto.Message))
+	return msg, err
+}
+
+func ProtoMessageUnmarshal(dataType reflect.Type, buf []byte) (interface{}, error) {
 	return proto.MessageFactory.MessageDecodeBybytes(buf)
 }
 

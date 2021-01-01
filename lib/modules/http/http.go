@@ -12,6 +12,7 @@ import (
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib/modules/http/render"
 	"github.com/liwei1dao/lego/sys/log"
+	"github.com/liwei1dao/lego/utils/ip"
 )
 
 type Http struct {
@@ -24,12 +25,15 @@ type Http struct {
 	keyPath            string
 	MaxMultipartMemory int64 //上传文件最大尺寸
 	allNoRoute         HandlersChain
+	allNoMethod        HandlersChain
+	noMethod           HandlersChain
 	noRoute            HandlersChain
 	delims             render.Delims
 	FuncMap            template.FuncMap
 	HTMLRender         render.HTMLRender
 	pool               sync.Pool
 	trees              methodTrees
+	Ip                 string
 }
 
 func (this *Http) Init(service core.IService, module core.IModule, setting map[string]interface{}) (err error) {
@@ -62,6 +66,7 @@ func (this *Http) Init(service core.IService, module core.IModule, setting map[s
 	if err = this.ModuleBase.Init(service, module, setting); err != nil {
 		return
 	}
+	this.Ip = ip.GetEthernetInfo().IP
 	return
 }
 func (this *Http) Start() (err error) {
@@ -101,6 +106,13 @@ func (this *Http) closehttp() {
 	this.wg.Done()
 }
 
+func (this *Http) Use(middleware ...HandlerFunc) IRoutes {
+	this.RouterGroup.Use(middleware...)
+	this.rebuild404Handlers()
+	this.rebuild405Handlers()
+	return this
+}
+
 //添加到路由树中
 func (this *Http) addRoute(method, path string, handlers HandlersChain) (err error) {
 	if err = outErr(path[0] == '/', "path must begin with '/'"); err != nil {
@@ -132,6 +144,7 @@ func (this *Http) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	this.handleHTTPRequest(c)
 	this.pool.Put(c)
 }
+
 func (this *Http) handleHTTPRequest(c *Context) {
 	httpMethod := c.Request.Method
 	rPath := c.Request.URL.Path
@@ -158,20 +171,26 @@ func (this *Http) handleHTTPRequest(c *Context) {
 }
 
 // NoRoute adds handlers for NoRoute. It return a 404 code by default.
-func (engine *Http) NoRoute(handlers ...HandlerFunc) {
-	engine.noRoute = handlers
-	engine.rebuild404Handlers()
+func (this *Http) NoRoute(handlers ...HandlerFunc) {
+	this.noRoute = handlers
+	this.rebuild404Handlers()
 }
-func (engine *Http) rebuild404Handlers() {
-	engine.allNoRoute = engine.combineHandlers(engine.noRoute)
+
+// NoMethod sets the handlers called when... TODO.
+func (this *Http) NoMethod(handlers ...HandlerFunc) {
+	this.noMethod = handlers
+	this.rebuild405Handlers()
+}
+
+func (this *Http) rebuild404Handlers() {
+	this.allNoRoute = this.combineHandlers(this.noRoute)
+}
+
+func (this *Http) rebuild405Handlers() {
+	this.allNoMethod = this.combineHandlers(this.noMethod)
 }
 
 func (this *Http) LoadHTMLFiles(files ...string) {
-	//if IsDebugging() {
-	//	engine.HTMLRender = render.HTMLDebug{Files: files, FuncMap: engine.FuncMap, Delims: engine.delims}
-	//	return
-	//}
-
 	templ := template.Must(template.New("").Delims(this.delims.Left, this.delims.Right).Funcs(this.FuncMap).ParseFiles(files...))
 	this.SetHTMLTemplate(templ)
 }
@@ -179,18 +198,11 @@ func (this *Http) LoadHTMLGlob(pattern string) {
 	left := this.delims.Left
 	right := this.delims.Right
 	templ := template.Must(template.New("").Delims(left, right).Funcs(this.FuncMap).ParseGlob(pattern))
-
-	//if IsDebugging() {
-	//	debugPrintLoadTemplate(templ)
-	//	engine.HTMLRender = render.HTMLDebug{Glob: pattern, FuncMap: engine.FuncMap, Delims: engine.delims}
-	//	return
-	//}
-
 	this.SetHTMLTemplate(templ)
 }
 func (this *Http) SetHTMLTemplate(templ *template.Template) {
-	if len(this.trees) > 0 {
-		//debugPrintWARNINGSetHTMLTemplate()
-	}
 	this.HTMLRender = render.HTMLProduction{Template: templ.Funcs(this.FuncMap)}
+}
+func (this *Http) GetIp() string {
+	return this.Ip
 }

@@ -2,28 +2,33 @@ package redis
 
 import (
 	"github.com/liwei1dao/lego/core"
-	cont "github.com/liwei1dao/lego/utils/concurrent"
 )
 
 var (
-	opts    *Options
-	service core.IService
-	factory *RedisFactory
+	deffactory IRedisFactory
+)
+
+type (
+	IRedisFactory interface {
+		GetPool() *RedisPool
+		CloseAllPool()
+	}
 )
 
 func OnInit(s core.IService, opt ...Option) (err error) {
-	service = s
-	opts = newOptions(opt...)
-	factory = &RedisFactory{
-		pools: cont.NewBeeMap(),
-	}
+	deffactory = newRedisFactory(opt...)
 	return
 }
 
-func GetService() core.IService {
-	return service
+func NewRedisSys(opt ...Option) (factory IRedisFactory, err error) {
+	factory = newRedisFactory(opt...)
+	return
 }
 
 func GetPool() *RedisPool {
-	return factory.GetPool(opts.RedisUrl)
+	return deffactory.GetPool()
+}
+
+func CloseAllPool() {
+	deffactory.CloseAllPool()
 }

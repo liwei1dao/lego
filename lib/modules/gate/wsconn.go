@@ -2,26 +2,30 @@ package gate
 
 import (
 	"bytes"
-	"github.com/gorilla/websocket"
 	"net"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
-func NewWsConn(conn *websocket.Conn) IConn {
+func NewWsConn(conn *websocket.Conn, heartbeat time.Duration) IConn {
 	c := &WsConn{}
-	c.Init(conn)
+	c.Init(conn, heartbeat)
 	return c
 }
 
 type WsConn struct {
 	conn      *websocket.Conn
+	heartbeat time.Duration
 	closeFlag bool
 	buffer    bytes.Buffer
 }
 
-func (this *WsConn) Init(conn *websocket.Conn) {
+func (this *WsConn) Init(conn *websocket.Conn, heartbeat time.Duration) {
 	this.conn = conn
+	this.heartbeat = heartbeat
 	this.closeFlag = false
+	this.conn.SetReadDeadline(time.Now().Add(this.heartbeat))
 }
 func (this *WsConn) Write(b []byte) (n int, err error) {
 	err = this.conn.WriteMessage(websocket.BinaryMessage, b)
@@ -37,6 +41,7 @@ func (this *WsConn) Read(p []byte) (int, error) {
 	} else {
 		this.buffer.Write(b)
 	}
+	this.conn.SetReadDeadline(time.Now().Add(this.heartbeat))
 	return this.buffer.Read(p)
 }
 func (this *WsConn) Close() {

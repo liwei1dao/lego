@@ -1,4 +1,4 @@
-package sdk_aliyun
+package smsverification
 
 import (
 	"testing"

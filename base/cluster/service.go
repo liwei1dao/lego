@@ -2,12 +2,14 @@ package cluster
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
-	"time"
 
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/lib/modules/monitor"
+	"github.com/liwei1dao/lego/sys/cron"
 	"github.com/liwei1dao/lego/sys/event"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/registry"
@@ -20,7 +22,8 @@ type ClusterService struct {
 	opts           *Options
 	serverList     sync.Map
 	ClusterService base.IClusterService
-	preweight      int32
+	ServiceMonitor core.IServiceMonitor
+	IsInClustered  bool
 }
 
 func (this *ClusterService) GetTag() string {
@@ -54,11 +57,15 @@ func (this *ClusterService) GetRpcId() string {
 	}
 }
 func (this *ClusterService) GetPreWeight() int32 {
-	return this.preweight
+	return int32(runtime.NumGoroutine())
 }
 
 func (this *ClusterService) SetPreWeight(weight int32) {
-	this.preweight = weight
+
+}
+
+func (this *ClusterService) GetServiceMonitor() core.IServiceMonitor {
+	return this.ServiceMonitor
 }
 
 func (this *ClusterService) Options() *Options {
@@ -76,6 +83,7 @@ func (this *ClusterService) Init(service core.IService) (err error) {
 	}
 	return this.ServiceBase.Init(service)
 }
+
 func (this *ClusterService) InitSys() {
 	// this.ServiceBase.InitSys()
 	if err := log.OnInit(this.Service, log.SetLoglevel(this.opts.LogLvel), log.SetDebugMode(this.opts.Debugmode)); err != nil {
@@ -85,25 +93,28 @@ func (this *ClusterService) InitSys() {
 		panic(fmt.Sprintf("初始化event系统失败 %s", err.Error()))
 	}
 	if err := registry.OnInit(this.ClusterService,
-		registry.Address(this.Service.GetSettings().Settings["ConsulAddr"].(string)),
+		registry.SetAddress(this.Service.GetSettings().Settings["ConsulAddr"].(string)),
 		registry.SetTag(this.opts.Tag),
-		registry.FindHandle(this.registerServiceSession),
-		registry.UpDataHandle(this.updataServiceSession),
-		registry.LoseHandle(this.WatcherServiceSession)); err != nil {
+		registry.SetListener(this)); err != nil {
 		panic(fmt.Sprintf("初始化registry系统失败 %s", err.Error()))
 	} else {
 		log.Debugf("初始化registry系统完成!")
 	}
-	if err := rpc.OnInit(this.Service, rpc.NatsAddr(this.Service.GetSettings().Settings["NatsAddr"].(string)), rpc.Log(this.opts.RpcLog)); err != nil {
+	if err := rpc.OnInit(this.Service, rpc.NatsAddr(this.Service.GetSettings().Settings["NatsAddr"].(string))); err != nil {
 		panic(fmt.Sprintf("初始化rpc系统【%s】失败%s", this.Service.GetSettings().Settings["NatsAddr"].(string), err.Error()))
 	} else {
 		log.Debugf("初始化rpc系统完成!")
 	}
 	event.Register(core.Event_ServiceStartEnd, func() { //阻塞 先注册服务集群 保证其他服务能及时发现
-		registry.Registry()
-		time.Sleep(time.Second)
+		if err := registry.Start(); err != nil {
+			panic(fmt.Sprintf("加入集群服务失败 err:%s", err.Error()))
+		}
 	})
+	if err := cron.OnInit(this.Service); err != nil {
+		panic(fmt.Sprintf("初始化cron系统【%s】失败%s", err.Error()))
+	}
 }
+
 func (this *ClusterService) Start() (err error) {
 	if err = this.ServiceBase.Start(); err != nil {
 		return
@@ -111,8 +122,16 @@ func (this *ClusterService) Start() (err error) {
 	return
 }
 
+func (this *ClusterService) Run(mod ...core.IModule) {
+	this.ServiceMonitor = monitor.NewModule()
+	modules := make([]core.IModule, 0)
+	modules = append(modules, this.ServiceMonitor)
+	modules = append(modules, mod...)
+	this.ServiceBase.Run(modules...)
+}
+
 func (this *ClusterService) Destroy() (err error) {
-	if err = registry.Deregister(); err != nil {
+	if err = registry.Stop(); err != nil {
 		return
 	}
 	err = this.ServiceBase.Destroy()
@@ -120,8 +139,7 @@ func (this *ClusterService) Destroy() (err error) {
 }
 
 //注册服务会话 当有新的服务加入时
-func (this *ClusterService) registerServiceSession(node registry.ServiceNode) {
-	log.Debugf("发现新的服务 %s", node.Id)
+func (this *ClusterService) FindServiceHandlefunc(node registry.ServiceNode) {
 	if _, ok := this.serverList.Load(node.Id); ok { //已经在缓存中 需要更新节点信息
 		if s, err := cbase.NewServiceSession(&node); err != nil {
 			log.Error("创建服务会话失败【%s】 err = %s")
@@ -129,12 +147,18 @@ func (this *ClusterService) registerServiceSession(node registry.ServiceNode) {
 			this.serverList.Store(node.Id, s)
 		}
 	}
-	event.TriggerEvent(core.Event_FindNewService, node) //触发发现新的服务事件
+	if this.IsInClustered {
+		event.TriggerEvent(core.Event_FindNewService, node) //触发发现新的服务事件
+	} else {
+		if node.Id == this.opts.Id { //发现自己 加入集群成功
+			this.IsInClustered = true
+			event.TriggerEvent(core.Event_RegistryStart)
+		}
+	}
 }
 
 //更新服务会话 当有新的服务加入时
-func (this *ClusterService) updataServiceSession(node registry.ServiceNode) {
-	log.Debugf("更新服务 %s", node.Id)
+func (this *ClusterService) UpDataServiceHandlefunc(node registry.ServiceNode) {
 	if ss, ok := this.serverList.Load(node.Id); ok { //已经在缓存中 需要更新节点信息
 		session := ss.(core.IServiceSession)
 		if session.GetRpcId() != node.RpcId {
@@ -158,8 +182,7 @@ func (this *ClusterService) updataServiceSession(node registry.ServiceNode) {
 }
 
 //注销服务会话
-func (this *ClusterService) WatcherServiceSession(sId string) {
-	log.Debugf("丢失服务 %s", sId)
+func (this *ClusterService) LoseServiceHandlefunc(sId string) {
 	session, ok := this.serverList.Load(sId)
 	if ok && session != nil {
 		session.(core.IServiceSession).Done()
@@ -169,8 +192,8 @@ func (this *ClusterService) WatcherServiceSession(sId string) {
 }
 func (this *ClusterService) getServiceSessionByType(sType string) (ss []core.IServiceSession, err error) {
 	ss = make([]core.IServiceSession, 0)
-	if nodes, err := registry.GetServiceByType(sType); err != nil {
-		log.Errorf("获取目标类型【%s】服务集失败err = %s", sType, err.Error())
+	if nodes := registry.GetServiceByType(sType); nodes == nil {
+		log.Errorf("获取目标类型【%s】服务集失败", sType)
 		return nil, err
 	} else {
 		for _, v := range nodes {
@@ -193,15 +216,15 @@ func (this *ClusterService) getServiceSessionByType(sType string) (ss []core.ISe
 
 func (this *ClusterService) GetSessionsByCategory(category core.S_Category) (ss []core.IServiceSession) {
 	ss = make([]core.IServiceSession, 0)
-	if nodes, err := registry.GetServiceByCategory(category); err != nil {
-		log.Errorf("获取目标类型【%s】服务集失败err = %s", category, err.Error())
+	if nodes := registry.GetServiceByCategory(category); nodes == nil {
+		log.Errorf("获取目标类型【%s】服务集失败", category)
 		return ss
 	} else {
 		for _, v := range nodes {
 			if s, ok := this.serverList.Load(v.Id); ok {
 				ss = append(ss, s.(core.IServiceSession))
 			} else {
-				s, err = cbase.NewServiceSession(v)
+				s, err := cbase.NewServiceSession(v)
 				if err != nil {
 					log.Errorf("创建服务会话失败【%s】 err = %s", v.Id, err.Error())
 					continue
@@ -274,6 +297,7 @@ func (this *ClusterService) RpcInvokeById(sId string, rkey core.Rpc_Key, iscall 
 func (this *ClusterService) RpcInvokeByType(sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error) {
 	ss, err := this.ClusterService.DefauleRpcRouteRules(sType)
 	if err != nil {
+		log.Errorf("未找到目标服务【%s】节点 err:%s", sType, err.Error())
 		return nil, err
 	}
 	if iscall {
@@ -284,12 +308,8 @@ func (this *ClusterService) RpcInvokeByType(sType string, rkey core.Rpc_Key, isc
 	return
 }
 func (this *ClusterService) ReleaseRpc(rkey core.Rpc_Key, arg ...interface{}) {
-	rpcf, err := registry.GetRpcFunc(rkey)
-	if err != nil {
-		log.Errorf("发布rpc消息【%s】失败err:%s ", rkey, err.Error())
-		return
-	}
-	for _, v := range rpcf.SubServiceIds {
+	rpcf := registry.GetRpcSubById(rkey)
+	for _, v := range rpcf {
 		this.RpcInvokeById(v.Id, rkey, false, arg...)
 	}
 	return
@@ -301,24 +321,20 @@ func (this *ClusterService) RegisterGO(id core.Rpc_Key, f interface{}) (err erro
 	return rpc.RegisterGO(string(id), f)
 }
 func (this *ClusterService) Subscribe(id core.Rpc_Key, f interface{}) (err error) {
-	if err = registry.RegisterRpcFunc(id, this.GetId()); err != nil {
-		log.Errorf("订阅rpc消息【%s】失败err:%s ", id, err.Error())
-		return
-	}
 	if err = rpc.RegisterGO(string(id), f); err != nil {
 		log.Errorf("注册rpc消息【%s】失败err:%s ", id, err.Error())
 		return
+	} else {
+		err = registry.PushServiceInfo()
 	}
 	return
 }
 func (this *ClusterService) UnSubscribe(id core.Rpc_Key, f interface{}) (err error) {
-	if err = registry.UnRegisterRpcFunc(id, this.GetId()); err != nil {
+	if err = rpc.UnRegister(string(id), this.GetId()); err != nil {
 		log.Errorf("取消订阅rpc消息【%s】失败err:%s ", id, err.Error())
 		return
-	}
-	if err = rpc.UnRegister(string(id), f); err != nil {
-		log.Errorf("取消注册rpc消息【%s】失败err:%s ", id, err.Error())
-		return
+	} else {
+		err = registry.PushServiceInfo()
 	}
 	return
 }

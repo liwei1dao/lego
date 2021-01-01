@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -37,11 +38,12 @@ func TestRedisList_Lock(t *testing.T) {
 		return
 	}
 	var item string
-	GetPool().SetKey_List("TestList", []interface{}{"liwei1dao"})
-	GetPool().SetKey_List("TestList", []interface{}{"liwei2dao"})
-	GetPool().SetKey_List("TestList", []interface{}{"liwei3dao"})
-	GetPool().SetKey_List("TestList", []interface{}{"liwei4dao"})
-	GetPool().SetKey_List("TestList", []interface{}{"liwei5dao"})
-	GetPool().GetKey_ListByPop("TestList", &item)
-	t.Log("结束测试")
+	GetPool().SetListByLPush("TestList", []interface{}{"liwei1dao"})
+	GetPool().SetListByLPush("TestList", []interface{}{"liwei2dao"})
+	GetPool().SetListByLPush("TestList", []interface{}{"liwei3dao"})
+	GetPool().SetListByLPush("TestList", []interface{}{"liwei4dao"})
+	GetPool().SetListByLPush("TestList", []interface{}{"liwei5dao"})
+	data := GetPool().GetListByLrange("TestList", 0, 100, reflect.TypeOf(&item))
+	// GetPool().GetListByLPop("TestList", &item)
+	t.Logf("结束测试 data:%v", data)
 }

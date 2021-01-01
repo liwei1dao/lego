@@ -2,6 +2,7 @@ package s_comps
 
 import (
 	"fmt"
+
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
@@ -16,7 +17,7 @@ import (
 type SComp_GateRouteComp struct {
 	cbase.ServiceCompBase
 	Service base.IClusterService
-	Routes  map[uint16]func(s core.IUserSession, msg proto.IMessage) (code int, err string)
+	Routes  map[uint16]func(s core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string)
 }
 
 func (this *SComp_GateRouteComp) GetName() core.S_Comps {
@@ -30,24 +31,24 @@ func (this *SComp_GateRouteComp) Init(service core.IService, comp core.IServiceC
 		this.Service = s
 	}
 	err = this.ServiceCompBase.Init(service, comp)
-	this.Routes = make(map[uint16]func(s core.IUserSession, msg proto.IMessage) (code int, err string))
+	this.Routes = make(map[uint16]func(s core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string))
 	return err
 }
 
 func (this *SComp_GateRouteComp) Start() (err error) {
 	err = this.ServiceCompBase.Start()
-	this.Service.RegisterGO(gate.Rpc_GateRoute, this.ReceiveMsg) //注册网关路由接收接口
-	event.RegisterGO(core.Event_ServiceStartEnd, this.registergateroute)
+	this.Service.RegisterGO(gate.Rpc_GateRoute, this.ReceiveMsg)       //注册网关路由接收接口
+	event.RegisterGO(core.Event_RegistryStart, this.registergateroute) //注册表启动成功
 	event.RegisterGO(core.Event_FindNewService, this.findnewservice)
 	return
 }
 
 func (this *SComp_GateRouteComp) registergateroute() {
-	if ss := this.Service.GetSessionsByCategory(lib.S_Category_GateService); ss != nil {
+	if ss := this.Service.GetSessionsByCategory(core.S_Category_GateService); ss != nil {
 		for _, s := range ss {
 			for k, _ := range this.Routes {
 				log.Infof("向网关【%s】服务器注册服务comId:%d", s.GetId(), k)
-				this.Service.RpcInvokeById(s.GetId(), gate.Rpc_GateRouteRegister, false, k, this.Service.GetId()) //向所有网关服务注册
+				this.Service.RpcInvokeById(s.GetId(), gate.Rpc_GateRouteRegister, false, k, this.Service.GetId(), this.Service.GetType()) //向所有网关服务注册
 			}
 		}
 	}
@@ -58,10 +59,10 @@ func (this *SComp_GateRouteComp) registergateroute() {
 ”GateService“ 这里是判断发现的服务是否是提供网关注册服务的服务
 */
 func (this *SComp_GateRouteComp) findnewservice(node registry.ServiceNode) {
-	if len(this.Routes) > 0 && node.Category == lib.S_Category_GateService {
+	if len(this.Routes) > 0 && node.Category == core.S_Category_GateService {
 		for k, _ := range this.Routes {
 			log.Infof("向网关【%s】服务器注册服务comId:%d", node.Id, k)
-			this.Service.RpcInvokeById(node.Id, gate.Rpc_GateRouteRegister, false, k, this.Service.GetId()) //向所有网关服务注册
+			this.Service.RpcInvokeById(node.Id, gate.Rpc_GateRouteRegister, false, k, this.Service.GetId(), this.Service.GetType()) //向所有网关服务注册
 		}
 	}
 }
@@ -74,7 +75,7 @@ func (this *SComp_GateRouteComp) ReceiveMsg(s core.IUserSession, msg proto.IMess
 	return
 }
 
-func (this *SComp_GateRouteComp) RegisterRoute(comId uint16, f func(s core.IUserSession, msg proto.IMessage) (code int, err string)) (err error) {
+func (this *SComp_GateRouteComp) RegisterRoute(comId uint16, f func(s core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string)) (err error) {
 	if _, ok := this.Routes[comId]; !ok {
 		this.Routes[comId] = f
 		return

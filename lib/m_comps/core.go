@@ -8,6 +8,6 @@ import (
 type (
 	IMComp_GateComp interface {
 		core.IModuleComp
-		ReceiveMsg(session core.IUserSession, msg proto.IMessage) (code int, err string)
+		ReceiveMsg(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string)
 	}
 )

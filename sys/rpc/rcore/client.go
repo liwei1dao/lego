@@ -42,15 +42,15 @@ func (this *RpcClient) Call(_func string, params ...interface{}) (interface{}, e
 		var err error = nil
 		ArgsType[k], args[k], err = rpcserialize.Serialize(param)
 		if err != nil {
+			log.Errorf("RPC CallNR ServerId = %s f = %s  ERROR = %v ", this.opts.sId, _func, err)
 			return nil, fmt.Errorf("args[%d] error %s", k, err.Error())
 		}
 	}
 	start := time.Now()
 	r, errstr := this.CallArgs(_func, ArgsType, args)
-	if this.opts.Log {
-		log.Infof("RPC Call ServerId = %s f = %s Elapsed = %v Result = %v ERROR = %v", this.opts.sId, _func, time.Since(start), r, errstr)
-	}
+	// log.Debugf("RPC Call ServerId = %s f = %s Elapsed = %v Result = %v ERROR = %v", this.opts.sId, _func, time.Since(start), r, errstr)
 	if errstr != "" {
+		log.Errorf("RPC Call ServerId = %s f = %s Elapsed = %v Result = %v ERROR = %v", this.opts.sId, _func, time.Since(start), r, errstr)
 		return r, fmt.Errorf(errstr)
 	} else {
 		return r, nil
@@ -66,13 +66,14 @@ func (this *RpcClient) CallNR(_func string, params ...interface{}) (err error) {
 	for k, param := range params {
 		ArgsType[k], args[k], err = rpcserialize.Serialize(param)
 		if err != nil {
+			log.Errorf("RPC CallNR ServerId = %s f = %s  ERROR = %v ", this.opts.sId, _func, err)
 			return fmt.Errorf("args[%d] error %s", k, err.Error())
 		}
 	}
 	start := time.Now()
 	err = this.CallNRArgs(_func, ArgsType, args)
-	if this.opts.Log {
-		log.Infof("RPC CallNR ServerId = %s f = %s Elapsed = %v ERROR = %v", this.opts.sId, _func, time.Since(start), err)
+	if err != nil {
+		log.Errorf("RPC CallNR ServerId = %s f = %s Elapsed = %v ERROR = %v", this.opts.sId, _func, time.Since(start), err)
 	}
 	return err
 }
@@ -101,6 +102,9 @@ func (this *RpcClient) CallArgs(_func string, ArgsType []string, args [][]byte) 
 	case resultInfo, ok := <-callback:
 		if !ok {
 			return nil, "client closed"
+		}
+		if resultInfo.Error != "" {
+			return nil, resultInfo.Error
 		}
 		result, err := rpcserialize.UnSerialize(resultInfo.ResultType, resultInfo.Result)
 		if err != nil {

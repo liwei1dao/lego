@@ -3,12 +3,10 @@ package gate
 import (
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
-	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/proto"
 	"github.com/liwei1dao/lego/sys/registry"
 )
@@ -37,15 +35,7 @@ func (this *RemoteRouteMgrComp) Init(service core.IService, module core.IModule,
 
 func (this *RemoteRouteMgrComp) Start() (err error) {
 	this.ModuleCompBase.Start()
-
-locp:
-	for { //保证rpc事件能成功写入
-		err = this.service.Subscribe(Rpc_GateRouteRegister, this.RegisterRoute) //订阅网关注册接口
-		if err == nil {
-			break locp
-		}
-		time.Sleep(time.Second)
-	}
+	this.service.Subscribe(Rpc_GateRouteRegister, this.RegisterRoute)
 	return
 }
 
@@ -53,11 +43,15 @@ func (this *RemoteRouteMgrComp) SetNewSession(f func(service base.IClusterServic
 	this.NewSession = f
 }
 
-func (this *RemoteRouteMgrComp) RegisterRoute(comId uint16, sId string) (result string, err string) {
-	log.Infof("注册远程服务 comId：%d sId:%s", comId, sId)
-	snode, e := registry.GetServiceById(sId)
-	if e != nil {
-		return "", fmt.Sprintf("未发现目标服务【%s】", sId)
+func (this *RemoteRouteMgrComp) RegisterRoute(comId uint16, sId, sType string) (result string, err string) {
+	// log.Infof("注册远程服务 comId：%d sId:%s", comId, sId)
+	// snode, e := registry.GetServiceById(sId)
+	// if e != nil {
+	// 	return "", fmt.Sprintf("未发现目标服务【%s】", sId)
+	// }
+	snode := &registry.ServiceNode{
+		Id:   sId,
+		Type: sType,
 	}
 	this.routslock.Lock()
 	defer this.routslock.Unlock()
@@ -96,16 +90,18 @@ func (this *RemoteRouteMgrComp) UnRegisterRoute(comId uint16, sType, sId string)
 	return
 }
 
-func (this *RemoteRouteMgrComp) OnRoute(agent IAgent, msg proto.IMessage) (iscontinue bool) {
+func (this *RemoteRouteMgrComp) OnRoute(agent IAgent, msg proto.IMessage) (code core.ErrorCode, err error) {
 	this.routslock.RLock()
 	routes, ok := this.routs[msg.GetComId()]
 	this.routslock.RUnlock()
 	if ok {
 		for _, v := range routes {
-			v.OnRoute(agent, msg)
+			if cd, e := v.OnRoute(agent, msg); cd != core.ErrorCode_Success || e != "" {
+				return cd, fmt.Errorf("LocalRoute err:%s", e)
+			}
 		}
+		return core.ErrorCode_Success, nil
 	} else {
-		return true
+		return core.ErrorCode_NoRoute, fmt.Errorf("NoRoute ComId:%d", msg.GetComId())
 	}
-	return true
 }

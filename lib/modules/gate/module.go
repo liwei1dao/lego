@@ -22,17 +22,17 @@ func (this *Gate) GetLocalRouteMgrComp() ILocalRouteMgrComp {
 }
 
 //需重构处理  内部函数为重构代码d
-func (this *Gate) RegisterRemoteRoute(comId uint16, sId string) (result string, err string) {
-	result, err = this.RemoteRouteMgrComp.RegisterRoute(comId, sId)
+func (this *Gate) RegisterRemoteRoute(comId uint16, sId, sType string) (result string, err string) {
+	result, err = this.RemoteRouteMgrComp.RegisterRoute(comId, sId, sType)
 	return
 }
-func (this *Gate) RegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string)) {
+func (this *Gate) RegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string)) {
 	this.LocalRouteMgrComp.RegisterRoute(comId, f)
 }
 func (this *Gate) UnRegisterRemoteRoute(comId uint16, sType, sId string) {
 	this.RemoteRouteMgrComp.UnRegisterRoute(comId, sType, sId)
 }
-func (this *Gate) UnRegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code int, err string)) {
+func (this *Gate) UnRegisterLocalRoute(comId uint16, f func(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string)) {
 	this.LocalRouteMgrComp.UnRegisterRoute(comId, f)
 }
 
@@ -50,18 +50,18 @@ func (this *Gate) DisConnect(a IAgent) {
 }
 
 //接收代理消息
-func (this *Gate) OnRoute(a IAgent, msg proto.IMessage) {
-	if this.CustomRouteComp != nil && !this.CustomRouteComp.OnRoute(a, msg) { //优先自定义网关
+func (this *Gate) OnRoute(a IAgent, msg proto.IMessage) (code core.ErrorCode, err error) {
+	if this.CustomRouteComp != nil { //优先自定义网关
+		if code, err = this.CustomRouteComp.OnRoute(a, msg); code == core.ErrorCode_Success || err != nil { //优先自定义网关
+			return
+		}
+	}
+
+	if code, err = this.LocalRouteMgrComp.OnRoute(a, msg); code == core.ErrorCode_Success || err != nil { //其次本地网关
 		return
 	}
 
-	if !this.LocalRouteMgrComp.OnRoute(a, msg) { //其次本地网关
-		return
-	}
-
-	if !this.RemoteRouteMgrComp.OnRoute(a, msg) { //最后远程网关
-		return
-	}
+	code, err = this.RemoteRouteMgrComp.OnRoute(a, msg)
 	return
 }
 

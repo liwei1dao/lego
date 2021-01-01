@@ -15,9 +15,9 @@ const (
 func newWorkerPool(opt ...Option) IWorkerPool {
 	opts := newOptions(opt...)
 	pool := &WorkerPool{
-		taskQueue:    make(chan func(ctx context.Context, cancel context.CancelFunc), 1),
+		taskQueue:    make(chan *Task, 1),
 		maxWorkers:   opts.maxWorkers,
-		readyWorkers: make(chan chan func(ctx context.Context, cancel context.CancelFunc), opts.defWrokers),
+		readyWorkers: make(chan chan *Task, opts.defWrokers),
 		timeout:      time.Second * idleTimeoutSec,
 		tasktimeout:  opts.tasktimeout,
 		stoppedChan:  make(chan struct{}),
@@ -26,12 +26,17 @@ func newWorkerPool(opt ...Option) IWorkerPool {
 	return pool
 }
 
+type Task struct {
+	f    func(ctx context.Context, cancel context.CancelFunc, agrs ...interface{})
+	agrs []interface{}
+}
+
 type WorkerPool struct {
 	maxWorkers   int
 	timeout      time.Duration //超时释放空闲工作人员
 	tasktimeout  time.Duration //任务执行操超时间
-	taskQueue    chan func(ctx context.Context, cancel context.CancelFunc)
-	readyWorkers chan chan func(ctx context.Context, cancel context.CancelFunc)
+	taskQueue    chan *Task
+	readyWorkers chan chan *Task
 	stoppedChan  chan struct{}
 	waitingQueue cont.Deque
 	stopMutex    sync.Mutex
@@ -49,20 +54,20 @@ func (p *WorkerPool) IsStop() bool {
 	defer p.stopMutex.Unlock()
 	return p.stopped
 }
-func (p *WorkerPool) Submit(task func(ctx context.Context, cancel context.CancelFunc)) {
+func (p *WorkerPool) Submit(task func(ctx context.Context, cancel context.CancelFunc, agrs ...interface{}), agrs ...interface{}) {
 	if task != nil {
-		p.taskQueue <- task
+		p.taskQueue <- &Task{f: task, agrs: agrs}
 	}
 }
-func (p *WorkerPool) SubmitWait(task func(ctx context.Context, cancel context.CancelFunc)) {
+func (p *WorkerPool) SubmitWait(task func(ctx context.Context, cancel context.CancelFunc, agrs ...interface{}), agrs ...interface{}) {
 	if task == nil {
 		return
 	}
 	doneChan := make(chan struct{})
-	p.taskQueue <- func(ctx context.Context, cancel context.CancelFunc) {
-		task(ctx, cancel)
+	p.taskQueue <- &Task{f: func(ctx context.Context, cancel context.CancelFunc, agrs ...interface{}) {
+		task(ctx, cancel, agrs...)
 		close(doneChan)
-	}
+	}, agrs: agrs}
 	<-doneChan
 }
 func (p *WorkerPool) WaitingQueueSize() int {
@@ -73,11 +78,11 @@ func (p *WorkerPool) dispatch() {
 	timeout := time.NewTimer(p.timeout)
 	var (
 		workerCount    int
-		task           func(ctx context.Context, cancel context.CancelFunc)
+		task           *Task
 		ok, wait       bool
-		workerTaskChan chan func(ctx context.Context, cancel context.CancelFunc)
+		workerTaskChan chan *Task
 	)
-	startReady := make(chan chan func(ctx context.Context, cancel context.CancelFunc))
+	startReady := make(chan chan *Task)
 Loop:
 	for {
 		if p.waitingQueue.Len() != 0 {
@@ -93,7 +98,7 @@ Loop:
 				p.waitingQueue.PushBack(task)
 			case workerTaskChan = <-p.readyWorkers:
 				// A worker is ready, so give task to worker.
-				workerTaskChan <- p.waitingQueue.PopFront().(func(ctx context.Context, cancel context.CancelFunc))
+				workerTaskChan <- p.waitingQueue.PopFront().(*Task)
 			}
 			continue
 		}
@@ -113,7 +118,7 @@ Loop:
 				// Create a new worker, if not at max.
 				if workerCount < p.maxWorkers {
 					workerCount++
-					go func(t func(ctx context.Context, cancel context.CancelFunc)) {
+					go func(t *Task) {
 						startWorker(startReady, p.readyWorkers, p.tasktimeout)
 						// Submit the task when the new worker.
 						taskChan := <-startReady
@@ -145,7 +150,7 @@ Loop:
 		for p.waitingQueue.Len() != 0 {
 			workerTaskChan = <-p.readyWorkers
 			// A worker is ready, so give task to worker.
-			workerTaskChan <- p.waitingQueue.PopFront().(func(ctx context.Context, cancel context.CancelFunc))
+			workerTaskChan <- p.waitingQueue.PopFront().(*Task)
 		}
 	}
 
@@ -156,10 +161,10 @@ Loop:
 		workerCount--
 	}
 }
-func startWorker(startReady, readyWorkers chan chan func(ctx context.Context, cancel context.CancelFunc), taskouttime time.Duration) {
+func startWorker(startReady, readyWorkers chan chan *Task, taskouttime time.Duration) {
 	go func() {
-		taskChan := make(chan func(ctx context.Context, cancel context.CancelFunc))
-		var task func(ctx context.Context, cancel context.CancelFunc)
+		taskChan := make(chan *Task)
+		var task *Task
 		var ok bool
 		// Register availability on starReady channel.
 		startReady <- taskChan
@@ -170,7 +175,7 @@ func startWorker(startReady, readyWorkers chan chan func(ctx context.Context, ca
 				break
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), taskouttime)
-			go task(ctx, cancel)
+			go task.f(ctx, cancel, task.agrs...)
 			select {
 			case <-ctx.Done():
 				cancel()

@@ -7,7 +7,6 @@ type sOptions struct {
 	sId          string
 	Nats         *nats.Conn
 	MaxCoroutine int
-	Log          bool
 }
 
 func SId(v string) sOption {
@@ -25,11 +24,7 @@ func SMaxCoroutine(v int) sOption {
 		o.MaxCoroutine = v
 	}
 }
-func SLog(v bool) sOption {
-	return func(o *sOptions) {
-		o.Log = v
-	}
-}
+
 func newSOptions(opts ...sOption) sOptions {
 	opt := sOptions{}
 	for _, o := range opts {
@@ -69,11 +64,6 @@ func CRpcExpired(v int) cOption {
 	}
 }
 
-func CLog(v bool) cOption {
-	return func(o *cOptions) {
-		o.Log = v
-	}
-}
 func newCOptions(opts ...cOption) cOptions {
 	opt := cOptions{}
 	for _, o := range opts {

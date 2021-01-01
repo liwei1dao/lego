@@ -15,6 +15,13 @@ const ( //默认事件
 	Event_FindNewService   Event_Key = "FindNewService"   //发现新的服务
 	Event_UpDataOldService Event_Key = "UpDataOldService" //发现新的服务
 	Event_LoseService      Event_Key = "LoseService"      //丢失服务
+	Event_RegistryStart    Event_Key = "RegistryStart"    //注册表系统启动成功
+)
+
+const (
+	S_Category_SystemService   S_Category = "SystemService"   //系统服务类型
+	S_Category_GateService     S_Category = "GateService"     //网关服务类型
+	S_Category_BusinessService S_Category = "BusinessService" //业务服务器
 )
 
 type ServiceSttings struct {
@@ -38,7 +45,6 @@ type IService interface {
 	GetComp(CompName S_Comps) (comp IServiceComp, err error)    //获取组件
 	GetModule(ModuleName M_Modules) (module IModule, err error) //获取模块
 }
-
 type IServiceComp interface {
 	GetName() S_Comps
 	Init(service IService, comp IServiceComp) (err error)
@@ -70,7 +76,6 @@ type IServiceSession interface {
 	CallNR(_func Rpc_Key, params ...interface{}) (err error)
 	Call(_func Rpc_Key, params ...interface{}) (interface{}, error)
 }
-
 type IUserSession interface {
 	GetSessionId() string
 	GetIP() string
@@ -78,3 +83,36 @@ type IUserSession interface {
 	SendMsg(comdId uint16, msgId uint16, msg interface{}) (err error)
 	Close() (err error)
 }
+type IServiceMonitor interface {
+	IModule
+	RegisterServiceSettingItem(name string, iswrite bool, value interface{}, f func(newvalue string) (err error))                  //注册服务级别的Setting
+	RegisterModuleSettingItem(module M_Modules, name string, iswrite bool, value interface{}, f func(newvalue string) (err error)) //注册模块级别的Setting
+}
+
+//Monitor 数据
+type (
+	SettingItem struct {
+		ItemName string
+		IsWrite  bool
+		Data     interface{}
+	}
+	ServiceMonitor struct { //服务监听
+		ServiceId        string                       //服务Id
+		ServiceType      string                       //服务类型
+		ServiceCategory  S_Category                   //服务列表
+		ServiceVersion   int32                        //服务版本
+		ServiceTag       string                       //服务集群
+		Pid              int32                        //进程Id
+		Pname            string                       //进程名称
+		MemoryInfo       []float32                    //内存使用量
+		CpuInfo          []float64                    //Cpu使用量
+		TotalGoroutine   []int                        //总的协程数
+		ServicePreWeight []int32                      //服务权重
+		Setting          map[string]*SettingItem      //服务器配置信息
+		ModuleMonitor    map[M_Modules]*ModuleMonitor //模块监听信息
+	}
+	ModuleMonitor struct { //模块监听
+		ModuleName M_Modules               //模块名称
+		Setting    map[string]*SettingItem //模块配置信息
+	}
+)

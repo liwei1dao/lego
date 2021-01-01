@@ -75,6 +75,21 @@ func (c *Context) Next() {
 	}
 }
 
+// IsAborted returns true if the current context was aborted.
+func (c *Context) IsAborted() bool {
+	return c.index >= abortIndex
+}
+
+func (c *Context) Abort() {
+	c.index = abortIndex
+}
+
+func (c *Context) AbortWithStatus(code int) {
+	c.Status(code)
+	c.Writer.WriteHeaderNow()
+	c.Abort()
+}
+
 // Set is used to store a new key/value pair exclusively for this context.
 // It also lazy initializes  c.Keys if it was not used previously.
 func (c *Context) Set(key string, value interface{}) {
@@ -260,9 +275,27 @@ func (c *Context) SaveUploadedFile(file *multipart.FileHeader, dst string) error
 	return err
 }
 
+func (c *Context) requestHeader(key string) string {
+	return c.Request.Header.Get(key)
+}
+
 func (c *Context) Status(code int) {
 	c.writermem.WriteHeader(code)
 }
+
+func (c *Context) Header(key, value string) {
+	if value == "" {
+		c.Writer.Header().Del(key)
+		return
+	}
+	c.Writer.Header().Set(key, value)
+}
+
+// GetHeader returns value from request headers.
+func (c *Context) GetHeader(key string) string {
+	return c.requestHeader(key)
+}
+
 func bodyAllowedForStatus(status int) bool {
 	switch {
 	case status >= 100 && status <= 199:

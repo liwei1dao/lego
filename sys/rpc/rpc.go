@@ -2,10 +2,11 @@ package rpc
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/liwei1dao/lego/core"
 	rcore "github.com/liwei1dao/lego/sys/rpc/rcore"
 	rpcserialize "github.com/liwei1dao/lego/sys/rpc/serialize"
-	"reflect"
 
 	"github.com/nats-io/nats.go"
 )
@@ -27,13 +28,16 @@ func OnInit(s core.IService, opt ...Option) (err error) {
 	srpc, err = rcore.NewRpcServer(
 		rcore.SId(options.sId),
 		rcore.SNats(rnats),
-		rcore.SMaxCoroutine(options.MaxCoroutine),
-		rcore.SLog(options.Log))
+		rcore.SMaxCoroutine(options.MaxCoroutine))
 	return
 }
 
 func OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {
 	rpcserialize.OnRegister(d, sf, unsf)
+}
+
+func OnRegisterProtoOrJsonRpcData(d interface{}) {
+	rpcserialize.OnRegisterProtoOrJsonRpcData(d)
 }
 
 func NewRpcClient(sId, rId string) (clent IRpcClient, err error) {
@@ -44,7 +48,6 @@ func NewRpcClient(sId, rId string) (clent IRpcClient, err error) {
 		rcore.CId(sId),
 		rcore.CrpcId(rId),
 		rcore.CRpcExpired(options.RpcExpired),
-		rcore.CLog(options.Log),
 		rcore.CNats(rnats))
 	return
 }
@@ -55,6 +58,13 @@ func RpcId() (rpcId string, err error) {
 	}
 	rpcId = srpc.RpcId()
 	return
+}
+
+func GetRpcInfo() (rfs []core.Rpc_Key) {
+	if srpc == nil {
+		return []core.Rpc_Key{}
+	}
+	return srpc.GetRpcInfo()
 }
 
 func Register(id string, f interface{}) (err error) {

@@ -3,14 +3,15 @@ package gate
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/gorilla/websocket"
-	"github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/core/cbase"
-	"github.com/liwei1dao/lego/sys/log"
 	"net"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/gorilla/websocket"
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 type WsServerComp struct {
@@ -20,6 +21,7 @@ type WsServerComp struct {
 	CertFile   string
 	KeyFile    string
 	outTime    time.Duration
+	heartbeat  time.Duration
 	ln         net.Listener
 	handler    *WSHandler
 	NewWsAgent func(gate IGateModule, coon IConn) (IAgent, error)
@@ -52,6 +54,11 @@ func (this *WsServerComp) Init(service core.IService, module core.IModule, comp 
 	} else {
 		err = fmt.Errorf("启动WsServiceComp 组件失败 HttpTimeout 配置错误")
 		return
+	}
+	if Heartbeat, ok := settings["Heartbeat"]; ok {
+		this.heartbeat = time.Second * time.Duration(Heartbeat.(int64))
+	} else {
+		this.heartbeat = time.Second * 60
 	}
 	if this.NewWsAgent == nil {
 		err = fmt.Errorf("启动WsServiceComp 组件失败 代理接口没有实现")
@@ -112,7 +119,7 @@ func (handler *WSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	handler.wg.Add(1)
 	defer handler.wg.Done()
-	wc := NewWsConn(conn)
+	wc := NewWsConn(conn, handler.myComp.heartbeat)
 	agent, err := handler.myComp.NewWsAgent(handler.myComp.module, wc)
 	if err == nil {
 		agent.OnRun()

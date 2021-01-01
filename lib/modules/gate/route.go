@@ -2,12 +2,13 @@ package gate
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/proto"
 	"github.com/liwei1dao/lego/sys/registry"
-	"sync"
 )
 
 func NewRemoteRoute(service base.IClusterService, comId uint16, f func(service base.IClusterService, data map[string]interface{}) (s core.IUserSession, err error), sNode registry.ServiceNode) *RemoteRoute {
@@ -20,7 +21,7 @@ func NewRemoteRoute(service base.IClusterService, comId uint16, f func(service b
 	}
 	return r
 }
-func NewLocalRoute(module IGateModule, comId uint16, sf func(module IGateModule, data map[string]interface{}) (s core.IUserSession, err error), f func(session core.IUserSession, msg proto.IMessage) (code int, err string)) *LocalRoute {
+func NewLocalRoute(module IGateModule, comId uint16, sf func(module IGateModule, data map[string]interface{}) (s core.IUserSession, err error), f func(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string)) *LocalRoute {
 	r := &LocalRoute{
 		Module:     module,
 		ComId:      comId,
@@ -70,7 +71,7 @@ func (this *RemoteRoute) UnRegisterRoute(sId string) {
 		}
 	}
 }
-func (this *RemoteRoute) OnRoute(a IAgent, msg proto.IMessage) (code int, err string) {
+func (this *RemoteRoute) OnRoute(a IAgent, msg proto.IMessage) (code core.ErrorCode, err string) {
 	if s, e := this.sessionFun(this.Service, a.GetSessionData()); e != nil {
 		return 0, e.Error()
 	} else {
@@ -86,13 +87,13 @@ func (this *RemoteRoute) OnRoute(a IAgent, msg proto.IMessage) (code int, err st
 type LocalRoute struct {
 	Module     IGateModule
 	ComId      uint16
-	f          func(session core.IUserSession, msg proto.IMessage) (code int, err string)
+	f          func(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string)
 	sessionFun func(module IGateModule, data map[string]interface{}) (s core.IUserSession, err error)
 }
 
-func (this *LocalRoute) OnRoute(a IAgent, msg proto.IMessage) (code int, err string) {
+func (this *LocalRoute) OnRoute(a IAgent, msg proto.IMessage) (code core.ErrorCode, err string) {
 	if s, err := this.sessionFun(this.Module, a.GetSessionData()); err != nil {
-		return 0, err.Error()
+		return core.ErrorCode_RpcFuncExecutionError, err.Error()
 	} else {
 		return this.f(s, msg)
 	}

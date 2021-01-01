@@ -15,6 +15,7 @@ type IClusterService interface {
 	GetRpcId() string                                                                                                 //获取rpc通信id
 	GetPreWeight() int32                                                                                              //集群服务负载值 暂时可以不用理会
 	SetPreWeight(weight int32)                                                                                        //设置服务器权重
+	GetServiceMonitor() core.IServiceMonitor                                                                          //获取监控模块
 	GetSessionsByCategory(category core.S_Category) (ss []core.IServiceSession)                                       //按服务类别获取服务列表
 	DefauleRpcRouteRules(stype string) (ss core.IServiceSession, err error)                                           //默认rpc路由规则
 	RpcInvokeById(sId string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error)     //执行远程服务Rpc方法
