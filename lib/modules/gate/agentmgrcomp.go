@@ -28,6 +28,7 @@ func (this *AgentMgrComp) Destroy() (err error) {
 		agent := v.(IAgent)
 		agent.OnClose()
 	}
+	this.Agents.DeleteAll()
 	return
 }
 
@@ -56,6 +57,7 @@ func (this *AgentMgrComp) SendMsg(aId string, msg proto.IMessage) (result int, e
 }
 func (this *AgentMgrComp) Close(aId string) (result string, err string) {
 	agent := this.Agents.Get(aId)
+	defer this.Agents.Delete(aId)
 	if agent == nil {
 		err = fmt.Sprintf("No agent found " + aId)
 		return
