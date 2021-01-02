@@ -28,6 +28,7 @@ func (this *AgentMgrComp) Destroy() (err error) {
 		agent := v.(IAgent)
 		agent.OnClose()
 	}
+	this.Agents.DeleteAll()
 	return
 }
 
