@@ -18,7 +18,6 @@ type AgentBase struct {
 	id                string
 	ip                string
 	closeSignal       chan bool
-	waitdestorySignal chan bool
 	writeChan         chan proto.IMessage
 	Isclose           bool
 	wg                sync.WaitGroup
@@ -50,7 +49,6 @@ func (this *AgentBase) OnInit(module IGateModule, coon IConn, agent IAgent) (err
 	this.id = id.GenerateID().String()
 	this.ip = coon.RemoteAddr().String()
 	this.closeSignal = make(chan bool)
-	this.waitdestorySignal = make(chan bool)
 	this.writeChan = make(chan proto.IMessage, 10)
 	this.Isclose = false
 	this.r = bufio.NewReaderSize(coon, 1<<17) // 128 kb
@@ -110,24 +108,12 @@ func (this *AgentBase) OnClose() {
 	this.Conn.Close()
 }
 
-func (this *AgentBase) OnCloseWait() {
-	if this.Isclose {
-		return
-	}
-	this.Isclose = true
-	this.closeSignal <- true
-	this.Conn.Close()
-	<-this.waitdestorySignal
-	close(this.waitdestorySignal)
-}
-
 func (this *AgentBase) Destory() {
 	this.wg.Wait()
 	this.Isclose = true
 	close(this.writeChan)
 	close(this.closeSignal)
 	this.Module.DisConnect(this.Agent) //发送连接断开的事件
-	this.waitdestorySignal <- true
 }
 func (this *AgentBase) WriteMsg(msg proto.IMessage) error {
 	if !this.Isclose {
