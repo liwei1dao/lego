@@ -1,0 +1,49 @@
+syntax = "proto3";
+option go_package = ".;console";
+
+message CpuInfo  {                  //当前主机cpu信息
+    int32 CPU  = 1;                 //cpu编号
+	string VendorID = 2;            //供应商ID
+	string Family = 3;              //家庭   
+	string Model = 4;               //模型
+	int32 Stepping = 5;             //步进 表示生产工艺较小的改进
+	string PhysicalID = 6;          //物理ID
+	string CoreID  = 7 ;            //核心ID
+	int32 Cores  = 8;               //核心数
+	string ModelName  = 9;          //模块名
+	double Mhz  = 10;               //兆赫
+	int32 CacheSize  = 11;          //缓存大小
+	repeated string Flags      = 12;//标志
+	string Microcode =    13;       //微码
+}
+
+message MemoryInfo  { //内存信息
+	uint64 Total = 1;
+	uint64 Available = 2;
+	uint64 Used = 3;
+	double UsedPercent = 4;
+	uint64 Free = 5;
+	uint64 Active = 6;
+	uint64 Inactive = 7;
+	uint64 Wired = 8;
+	uint64 Laundry = 9;
+}
+
+message NetWorkInfo {
+    
+}
+
+message HostInfo {
+    string  HostID = 1;                         //主机id
+    string	Hostname  = 2;                      //主机名称
+    uint64  Uptime = 3;                         //正常运行时间
+    uint64	BootTime  = 4;                      //开机时间
+    uint64  Procs = 5;                          //进程数
+    string  OS = 6;                             //内核系统 例如:freebsd, linux
+	string	Platform   = 7;                     //操作系统 例如:ubuntu, centos
+	string	PlatformFamily = 8;                 //主机系统系列 ex: debian, rhel
+	string	PlatformVersion =9;                 //主机系统版本
+    string  KernelArch = 10;                    //Cpu架构
+    string  VirtualizationSystem = 11;          //虚拟系统 
+    string  VirtualizationRole = 12;            //虚拟身份  guest or host            
+}
