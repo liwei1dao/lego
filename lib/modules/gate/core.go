@@ -85,7 +85,6 @@ type IAgent interface {
 	SendNum() int64
 	IsClosed() bool
 	OnRun()
-	OnClose()     //主动关闭接口
-	OnCloseWait() //主动关闭接口 等待链接销毁
-	Destory()     //关闭销毁
+	OnClose() //主动关闭接口
+	Destory() //关闭销毁
 }
