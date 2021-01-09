@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/core"
-	cbase "github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/sys/log"
 )
 

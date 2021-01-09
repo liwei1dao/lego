@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/sys/log"
-	cont "github.com/liwei1dao/lego/utils/concurrent"
+	"github.com/liwei1dao/lego/utils/container"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/nats-io/nats.go"
@@ -14,7 +14,7 @@ import (
 
 func NewNatsClient(rId string, nts *nats.Conn) (natsClient *NatsClient, err error) {
 	natsClient = new(NatsClient)
-	natsClient.callinfos = cont.NewBeeMap()
+	natsClient.callinfos = container.NewBeeMap()
 	natsClient.rpcId = rId
 	natsClient.nats = nts
 	natsClient.callbackqueueName = nats.NewInbox()
@@ -28,7 +28,7 @@ func NewNatsClient(rId string, nts *nats.Conn) (natsClient *NatsClient, err erro
 }
 
 type NatsClient struct {
-	callinfos         *cont.BeeMap
+	callinfos         *container.BeeMap
 	callbackqueueName string
 	rpcId             string
 	nats              *nats.Conn

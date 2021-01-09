@@ -4,19 +4,19 @@ import (
 	"fmt"
 
 	"github.com/liwei1dao/lego/core"
-	cbase "github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/sys/proto"
-	cont "github.com/liwei1dao/lego/utils/concurrent"
+	"github.com/liwei1dao/lego/utils/container"
 )
 
 type AgentMgrComp struct {
 	cbase.ModuleCompBase
-	Agents *cont.BeeMap
+	Agents *container.BeeMap
 }
 
 func (this *AgentMgrComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
 	err = this.ModuleCompBase.Init(service, module, comp, options)
-	this.Agents = cont.NewBeeMap()
+	this.Agents = container.NewBeeMap()
 	return
 }
 

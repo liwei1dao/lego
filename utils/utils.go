@@ -16,19 +16,6 @@ func GetApplicationDir() (ApplicationDir string) {
 	return ApplicationDir
 }
 
-//MD5加密 大写
-func MD5EncToUpper(str string) string {
-	h := md5.New()
-	h.Write([]byte(str))
-	return strings.ToUpper(hex.EncodeToString(h.Sum(nil)))
-}
-
-//MD5加密 小写
-func MD5EncToLower(str string) string {
-	h := md5.New()
-	h.Write([]byte(str))
-	return strings.ToLower(hex.EncodeToString(h.Sum(nil)))
-}
 
 //排序工具
 func quickSort(arr []interface{}, start, end int, compete func(a interface{}, b interface{}) int8) {

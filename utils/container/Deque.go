@@ -1,4 +1,4 @@
-package cont
+package container
 
 // minCapacity is the smallest capacity that deque may have.
 // Must be power of 2 for bitwise modulus: x % n == x & (n - 1).

@@ -4,20 +4,20 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
-	cont "github.com/liwei1dao/lego/utils/concurrent"
+	"github.com/liwei1dao/lego/utils/container"
 )
 
 func newsys(options Options) (sys *RedisFactory, err error) {
 	sys = &RedisFactory{
 		url:   options.RedisUrl,
-		pools: cont.NewBeeMap(),
+		pools: container.NewBeeMap(),
 	}
 	return
 }
 
 type RedisFactory struct {
 	url   string
-	pools *cont.BeeMap
+	pools *container.BeeMap
 }
 
 func (this RedisFactory) GetPool() *RedisPool {

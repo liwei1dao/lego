@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	cont "github.com/liwei1dao/lego/utils/concurrent"
+	"github.com/liwei1dao/lego/utils/container"
 )
 
 func newSys(options Options) (sys *WorkerPool, err error) {
@@ -33,7 +33,7 @@ type WorkerPool struct {
 	taskQueue    chan *Task
 	readyWorkers chan chan *Task
 	stoppedChan  chan struct{}
-	waitingQueue cont.Deque
+	waitingQueue container.Deque
 	stopMutex    sync.Mutex
 	stopped      bool
 }

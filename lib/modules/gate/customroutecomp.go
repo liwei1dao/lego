@@ -3,7 +3,7 @@
 import (
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
-	cbase "github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/proto"
 )

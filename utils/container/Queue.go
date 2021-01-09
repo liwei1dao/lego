@@ -1,4 +1,4 @@
-package cont
+package container
 
 import (
 	"container/list"
