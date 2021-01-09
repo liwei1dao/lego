@@ -11,10 +11,10 @@ CBC对称加密
 */
 
 // =================== CBC ======================
-func AesEncryptCBC(origData []byte, key []byte) (encrypted []byte) {
+func AesEncryptCBC(origData []byte, key string) (encrypted []byte) {
 	// 分组秘钥
 	// NewCipher该函数限制了输入k的长度必须为16, 24或者32
-	block, _ := aes.NewCipher(key)
+	block, _ := aes.NewCipher([]byte(key))
 	blockSize := block.BlockSize()               // 获取秘钥块的长度
 	origData = pkcs5Padding(origData, blockSize) // 补全码
 	iv := []byte("0000000000000000")
@@ -23,8 +23,8 @@ func AesEncryptCBC(origData []byte, key []byte) (encrypted []byte) {
 	blockMode.CryptBlocks(encrypted, origData)     // 加密
 	return encrypted
 }
-func AesDecryptCBC(encrypted []byte, key []byte) (decrypted []byte) {
-	block, _ := aes.NewCipher(key) // 分组秘钥
+func AesDecryptCBC(encrypted []byte, key string) (decrypted []byte) {
+	block, _ := aes.NewCipher([]byte(key)) // 分组秘钥
 	// blockSize := block.BlockSize() // 获取秘钥块的长度
 	iv := []byte("0000000000000000")
 	blockMode := cipher.NewCBCDecrypter(block, iv) // 加密模式
