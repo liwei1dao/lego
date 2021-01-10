@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"os"
 	"reflect"
 	"strings"
@@ -15,7 +13,6 @@ func GetApplicationDir() (ApplicationDir string) {
 	ApplicationDir += "/"
 	return ApplicationDir
 }
-
 
 //排序工具
 func quickSort(arr []interface{}, start, end int, compete func(a interface{}, b interface{}) int8) {
