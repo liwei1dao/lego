@@ -6,6 +6,9 @@ import (
 )
 
 func Test_CBC(t *testing.T) {
-	encrypted := AesEncryptCBC([]byte("asdjoiqwjeio"), "123456781234567812345678")
-	fmt.Printf("encrypted:%s", string(encrypted))
+	token := AesEncryptCBC("asdjoiqwjeio", "123456781234567812345678")
+	fmt.Printf("encrypted:%s", token)
+
+	origData := AesDecryptCBC(token, "123456781234567812345678")
+	fmt.Printf("encrypted:%s", string(origData))
 }
