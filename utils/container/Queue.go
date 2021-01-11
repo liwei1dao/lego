@@ -17,6 +17,10 @@ func NewQueue() *Queue {
 	return q
 }
 
+func (q *Queue) Len() int {
+	return q.data.Len()
+}
+
 func (q *Queue) Push(v interface{}) {
 	defer q.Unlock()
 	q.Lock()
