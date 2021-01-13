@@ -18,4 +18,5 @@ type Agoraio struct {
 func (this *Agoraio) CreateToken(uid uint32, channelName string) (token string, err error) {
 	expireTimestamp := uint32(time.Now().UTC().Unix()) + this.options.ExpireTimeInSeconds
 	token, err = rtctokenbuilder.BuildTokenWithUID(this.options.AppID, this.options.AppCertificate, channelName, uid, rtctokenbuilder.RoleAttendee, expireTimestamp)
+	return
 }
