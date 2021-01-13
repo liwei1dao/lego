@@ -26,6 +26,6 @@ func NewSys(option ...Option) (sys IAgoraio, err error) {
 	return
 }
 
-func CreateToken(uid uint32, channelName string) (token string, err error) string {
-	return defsys.CreateToken(uid,channelName)
+func CreateToken(uid uint32, channelName string) (token string, err error) {
+	return defsys.CreateToken(uid, channelName)
 }
