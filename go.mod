@@ -3,6 +3,7 @@ module github.com/liwei1dao/lego
 go 1.14
 
 require (
+	github.com/AgoraIO/Tools/DynamicKey/AgoraDynamicKey/go/src v0.0.0-20201218040255-53b7d2461db6
 	github.com/Azure/azure-sdk-for-go v40.3.0+incompatible
 	github.com/BurntSushi/toml v0.3.1
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.187
