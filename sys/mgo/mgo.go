@@ -67,7 +67,6 @@ func (this *Mongodb) CreateIndex(sqltable core.SqlTable, keys interface{}, optio
 	return this.Collection(sqltable).Indexes().CreateOne(this.getContext(), mongo.IndexModel{Keys: keys, Options: options})
 }
 
-
 func (this *Mongodb) CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options.CountOptions) (int64, error) {
 	return this.Collection(sqltable).CountDocuments(this.getContext(), filter, opts...)
 }
@@ -102,6 +101,10 @@ func (this *Mongodb) InsertManyByCtx(sqltable core.SqlTable, ctx context.Context
 
 func (this *Mongodb) UpdateOne(sqltable core.SqlTable, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
 	return this.Collection(sqltable).UpdateOne(this.getContext(), filter, update, opts...)
+}
+
+func (this *Mongodb) UpdateOneByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
+	return this.Collection(sqltable).UpdateOne(ctx, filter, update, opts...)
 }
 
 func (this *Mongodb) UpdateMany(sqltable core.SqlTable, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
