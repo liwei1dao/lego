@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/liwei1dao/lego/core"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -12,6 +13,7 @@ type (
 	IMongodb interface {
 		Collection(sqltable core.SqlTable) *mongo.Collection
 		CreateIndex(sqltable core.SqlTable, keys interface{}, options *options.IndexOptions) (string, error)
+		DeleteIndex(sqltable core.SqlTable, name string, options *options.DropIndexesOptions) (bson.Raw, error)
 		UseSession(fn func(sessionContext mongo.SessionContext) error) error
 		CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options.CountOptions) (int64, error)
 		Find(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error)
@@ -47,6 +49,13 @@ func NewSys(option ...Option) (sys IMongodb, err error) {
 
 func Collection(sqltable core.SqlTable) *mongo.Collection {
 	return defsys.Collection(sqltable)
+}
+
+func CreateIndex(sqltable core.SqlTable, keys interface{}, options *options.IndexOptions) (string, error) {
+	return defsys.CreateIndex(sqltable, keys, options)
+}
+func DeleteIndex(sqltable core.SqlTable, name string, options *options.DropIndexesOptions) (bson.Raw, error) {
+	return defsys.DeleteIndex(sqltable, name, options)
 }
 
 func UseSession(fn func(sessionContext mongo.SessionContext) error) error {
@@ -111,8 +120,4 @@ func DeleteMany(sqltable core.SqlTable, filter interface{}, opts ...*options.Del
 
 func DeleteManyByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
 	return defsys.DeleteManyByCtx(sqltable, ctx, filter, opts...)
-}
-
-func CreateIndex(sqltable core.SqlTable, keys interface{}, options *options.IndexOptions) (string, error) {
-	return defsys.CreateIndex(sqltable, keys, options)
 }

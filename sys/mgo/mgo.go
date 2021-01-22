@@ -7,6 +7,7 @@ import (
 
 	"github.com/liwei1dao/lego/core"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readconcern"
@@ -65,6 +66,10 @@ func (this *Mongodb) getContext() (ctx context.Context) {
 
 func (this *Mongodb) CreateIndex(sqltable core.SqlTable, keys interface{}, options *options.IndexOptions) (string, error) {
 	return this.Collection(sqltable).Indexes().CreateOne(this.getContext(), mongo.IndexModel{Keys: keys, Options: options})
+}
+
+func (this *Mongodb) DeleteIndex(sqltable core.SqlTable, name string, options *options.DropIndexesOptions) (bson.Raw, error) {
+	return this.Collection(sqltable).Indexes().DropOne(this.getContext(), name, options)
 }
 
 func (this *Mongodb) UseSession(fn func(sessionContext mongo.SessionContext) error) error {

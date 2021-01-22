@@ -86,16 +86,66 @@ func Test_Affair(t *testing.T) {
 	}
 }
 
-//测试创建索引
+//测试创建索引 地图索引
 func Test_CreateIndex(t *testing.T) {
 	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("square"))
 	if err != nil {
 		fmt.Printf("start sys Fail err:%v", err)
+		return
 	}
-	str, err := sys.CreateIndex(core.SqlTable("dynamics"), bson.M{"location": "2d"}, nil)
+	str, err := sys.CreateIndex(core.SqlTable("dynamics"), bson.M{"location": "2dsphere"}, new(options.IndexOptions).SetBits(11111))
 	if err != nil {
 		fmt.Printf("CreateIndex  err:%v", err)
 	} else {
 		fmt.Printf("CreateIndex  str:%v", str)
 	}
+}
+
+//测试删除索引 地图索引
+func Test_DeleteIndex(t *testing.T) {
+	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("square"))
+	if err != nil {
+		fmt.Printf("start sys Fail err:%v", err)
+		return
+	}
+	_, err = sys.DeleteIndex(core.SqlTable("dynamics"), "location_2dsphere", nil)
+	if err != nil {
+		fmt.Printf("CreateIndex err:%v", err)
+	} else {
+		fmt.Printf("CreateIndex succ")
+	}
+}
+
+//测试附近查找
+/*
+db.<collection>.find( { <location field> :
+						{ $near :
+							{ $geometry :
+								{ type : "Point" ,coordinates : [ <longitude> , <latitude> ] } ,
+								$maxDistance : <distance in meters>
+								}
+							}
+						})
+*/
+func Test_QueryRound(t *testing.T) {
+	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("square"))
+	if err != nil {
+		fmt.Printf("start sys Fail err:%v", err)
+		return
+	}
+	filter := bson.M{
+		"location": bson.D{
+			{"$near", bson.D{
+				{"$geometry", bson.M{"type": "Point", "coordinates": []float64{113.867584, 22.56532}}},
+				{"$maxDistance", 10000},
+			}},
+		},
+	}
+	_, err = sys.Find(core.SqlTable("dynamics"), filter)
+	if err != nil {
+		fmt.Printf("CreateIndex err:%v", err)
+	} else {
+		fmt.Printf("CreateIndex succ")
+	}
+	return
 }
