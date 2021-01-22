@@ -110,9 +110,9 @@ func Test_DeleteIndex(t *testing.T) {
 	}
 	_, err = sys.DeleteIndex(core.SqlTable("dynamics"), "location_2dsphere", nil)
 	if err != nil {
-		fmt.Printf("CreateIndex err:%v", err)
+		fmt.Printf("DeleteIndex err:%v", err)
 	} else {
-		fmt.Printf("CreateIndex succ")
+		fmt.Printf("DeleteIndex succ")
 	}
 }
 
