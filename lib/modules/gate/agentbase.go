@@ -20,6 +20,7 @@ type AgentBase struct {
 	closeSignal chan bool
 	writeChan   chan proto.IMessage
 	Isclose     bool
+	lock        sync.RWMutex
 	wg          sync.WaitGroup
 	r           *bufio.Reader
 	w           *bufio.Writer
@@ -100,6 +101,8 @@ loop:
 	}
 }
 func (this *AgentBase) OnClose() {
+	this.lock.Lock()
+	defer this.lock.Unlock()
 	if this.Isclose {
 		return
 	}
@@ -116,6 +119,8 @@ func (this *AgentBase) Destory() {
 	this.Module.DisConnect(this.Agent) //发送连接断开的事件
 }
 func (this *AgentBase) WriteMsg(msg proto.IMessage) error {
+	this.lock.RLock()
+	defer this.lock.RUnlock()
 	if !this.Isclose {
 		if msg != nil {
 			this.send_num++
