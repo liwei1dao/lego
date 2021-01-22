@@ -13,9 +13,9 @@ type (
 		GetKeyPath() string
 	}
 	Options struct {
-		HttpAddr string
-		CertPath string
-		KeyPath  string
+		HttpAddr string `json:"-"`
+		CertPath string `json:"-"`
+		KeyPath  string `json:"-"`
 	}
 )
 
