@@ -5,7 +5,8 @@ import (
 )
 
 func newSys(options Options) (sys *Cron, err error) {
-	sys = &Cron{options: options, cron: tcron.New()}
+	parser := tcron.NewParser(tcron.Second | tcron.Minute | tcron.Hour | tcron.Dom | tcron.Month | tcron.Dow | tcron.Descriptor)
+	sys = &Cron{options: options, cron: tcron.New(tcron.WithParser(parser))}
 	return
 }
 
