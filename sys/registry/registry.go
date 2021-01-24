@@ -116,9 +116,9 @@ func (this *Consulregistry) registerSNode(snode *ServiceNode) (err error) {
 		Meta: map[string]string{
 			"tag":          snode.Tag,
 			"category":     string(snode.Category),
-			"version":      fmt.Sprintf("%d", snode.Version),
+			"version":      fmt.Sprintf("%e", snode.Version),
 			"rpcid":        snode.RpcId,
-			"preweight":    fmt.Sprintf("%d", snode.PreWeight),
+			"preweight":    fmt.Sprintf("%e", snode.PreWeight),
 			"rpcsubscribe": string(rpcsubscribe),
 		},
 	}
@@ -327,15 +327,15 @@ func (this *Consulregistry) getServices() (err error) {
 func (this *Consulregistry) addandupdataServiceNode(as *api.AgentService) (sn *ServiceNode, err error) {
 	tag := as.Meta["tag"]
 	category := as.Meta["category"]
-	version, err := strconv.Atoi(as.Meta["version"])
+	version, err := strconv.ParseFloat(as.Meta["version"], 32)
 	if err != nil {
-		log.Errorf("registry 读取服务节点异常:%v", as.Meta["version"])
+		log.Errorf("registry 读取服务节点异常:%s", as.Meta["version"])
 		return
 	}
 	rpcid := as.Meta["rpcid"]
-	preweight, err := strconv.Atoi(as.Meta["preweight"])
+	preweight, err := strconv.ParseFloat(as.Meta["preweight"], 64)
 	if err != nil {
-		log.Errorf("registry 读取服务节点异常:%v", as.Meta["preweight"])
+		log.Errorf("registry 读取服务节点异常:%s err:%v", as.Meta["preweight"], err)
 		return
 	}
 
@@ -344,9 +344,9 @@ func (this *Consulregistry) addandupdataServiceNode(as *api.AgentService) (sn *S
 		Type:         as.Service,
 		Category:     core.S_Category(category),
 		Id:           as.ID,
-		Version:      int32(version),
+		Version:      float32(version),
 		RpcId:        rpcid,
-		PreWeight:    int32(preweight),
+		PreWeight:    preweight,
 		RpcSubscribe: make([]core.Rpc_Key, 0),
 	}
 	json.Unmarshal([]byte(as.Meta["rpcsubscribe"]), &snode.RpcSubscribe)

@@ -40,7 +40,7 @@ func (this *ClusterService) GetCategory() core.S_Category {
 	return this.opts.Setting.Category
 }
 
-func (this *ClusterService) GetVersion() int32 {
+func (this *ClusterService) GetVersion() float32 {
 	return this.opts.Setting.Version
 }
 func (this *ClusterService) GetSettings() core.ServiceSttings {
@@ -49,8 +49,8 @@ func (this *ClusterService) GetSettings() core.ServiceSttings {
 func (this *ClusterService) GetRpcId() string {
 	return rpc.RpcId()
 }
-func (this *ClusterService) GetPreWeight() int32 {
-	return int32(runtime.NumGoroutine())
+func (this *ClusterService) GetPreWeight() float64 {
+	return float64(1) / float64(runtime.NumGoroutine())
 }
 
 func (this *ClusterService) SetPreWeight(weight int32) {
@@ -69,11 +69,7 @@ func (this *ClusterService) Configure(opts ...Option) {
 }
 
 func (this *ClusterService) Init(service core.IService) (err error) {
-	if s, ok := service.(base.IClusterService); !ok {
-		panic("service No Is  ClusterService !")
-	} else {
-		this.ClusterService = s
-	}
+	this.ClusterService = service.(base.IClusterService)
 	return this.ServiceBase.Init(service)
 }
 
@@ -251,9 +247,9 @@ func (this *ClusterService) DefauleRpcRouteRules(stype string) (ss core.IService
 				if as.GetVersion() > bs.GetVersion() {
 					return 1
 				} else if as.GetVersion() == bs.GetVersion() {
-					if as.GetPreWeight() < bs.GetPreWeight() {
+					if as.GetPreWeight() > bs.GetPreWeight() {
 						return 1
-					} else if as.GetPreWeight() > bs.GetPreWeight() {
+					} else if as.GetPreWeight() < bs.GetPreWeight() {
 						return -1
 					} else {
 						return 0

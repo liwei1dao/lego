@@ -29,7 +29,7 @@ type ServiceSttings struct {
 	Type     string                            //服务类型 (相同的服务可以启动多个)
 	Tag      string                            //服务集群标签 (相同标签的集群服务可以互相发现和发现)
 	Category S_Category                        //服务列表 (用于区分集群服务下相似业务功能的服务器 例如:游戏服务器)
-	Version  int32                             //服务版本
+	Version  float32                           //服务版本
 	Settings map[string]interface{}            //服务扩展配置
 	Sys      map[string]map[string]interface{} //服务系统配置
 	Modules  map[string]map[string]interface{} //服务模块配置
@@ -38,7 +38,7 @@ type ServiceSttings struct {
 type IService interface {
 	GetId() string                                              //获取服务id
 	GetType() string                                            //获取服务类型
-	GetVersion() int32                                          //获取服务版本
+	GetVersion() float32                                        //获取服务版本
 	GetSettings() ServiceSttings                                //获取服务配置表信息
 	Init(service IService) (err error)                          //初始化接口
 	InitSys()                                                   //初始化系统
@@ -79,10 +79,10 @@ type IServiceSession interface {
 	GetId() string
 	GetRpcId() string
 	GetType() string
-	GetVersion() int32
-	SetVersion(v int32)
-	GetPreWeight() int32
-	SetPreWeight(p int32)
+	GetVersion() float32
+	SetVersion(v float32)
+	GetPreWeight() float64
+	SetPreWeight(p float64)
 	Done()
 	CallNR(_func Rpc_Key, params ...interface{}) (err error)
 	Call(_func Rpc_Key, params ...interface{}) (interface{}, error)
@@ -108,19 +108,19 @@ type (
 		Data     interface{}
 	}
 	ServiceMonitor struct { //服务监听
-		ServiceId        string                       //服务Id
-		ServiceType      string                       //服务类型
-		ServiceCategory  S_Category                   //服务列表
-		ServiceVersion   int32                        //服务版本
-		ServiceTag       string                       //服务集群
-		Pid              int32                        //进程Id
-		Pname            string                       //进程名称
-		MemoryInfo       []float32                    //内存使用量
-		CpuInfo          []float64                    //Cpu使用量
-		TotalGoroutine   []int                        //总的协程数
-		ServicePreWeight []int32                      //服务权重
-		Setting          map[string]*SettingItem      //服务器配置信息
-		ModuleMonitor    map[M_Modules]*ModuleMonitor //模块监听信息
+		ServiceId       string                       //服务Id
+		ServiceType     string                       //服务类型
+		ServiceCategory S_Category                   //服务列表
+		ServiceVersion  float32                      //服务版本
+		ServiceTag      string                       //服务集群
+		Pid             int32                        //进程Id
+		Pname           string                       //进程名称
+		MemoryUsed      float64                      //内存使用量
+		CpuUsed         float64                      //Cpu使用量
+		TotalGoroutine  int                          //总的协程数
+		CurrPreWeight   float64                      //服务权重
+		Setting         map[string]*SettingItem      //服务器配置信息
+		ModuleMonitor   map[M_Modules]*ModuleMonitor //模块监听信息
 	}
 	ModuleMonitor struct { //模块监听
 		ModuleName M_Modules               //模块名称

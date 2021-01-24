@@ -2,11 +2,14 @@ package monitor
 
 import (
 	"fmt"
+	"os"
+	"runtime"
 
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib"
+	"github.com/shirou/gopsutil/process"
 )
 
 func NewModule() core.IServiceMonitor {
@@ -16,11 +19,11 @@ func NewModule() core.IServiceMonitor {
 
 type Monitor struct {
 	cbase.ModuleBase
-	service            base.IClusterService
-	ServiceMonitor     *core.ServiceMonitor
-	ServiceSetting     map[string]func(newvalue string) (err error)
-	ModulesSetting     map[core.M_Modules]map[string]func(newvalue string) (err error)
-	ServiceMonitorComp *ServiceMonitorComp
+	service        base.IClusterService
+	ServiceMonitor *core.ServiceMonitor
+	ServiceSetting map[string]func(newvalue string) (err error)
+	ModulesSetting map[core.M_Modules]map[string]func(newvalue string) (err error)
+	Process        *process.Process
 }
 
 func (this *Monitor) GetType() core.M_Modules {
@@ -33,6 +36,7 @@ func (this *Monitor) NewOptions() (options core.IModuleOptions) {
 
 func (this *Monitor) Init(service core.IService, module core.IModule, options core.IModuleOptions) (err error) {
 	this.service = service.(base.IClusterService)
+	this.Process, err = process.NewProcess(int32(os.Getpid()))
 	this.ServiceMonitor = &core.ServiceMonitor{
 		ServiceId:       this.service.GetId(),
 		ServiceType:     this.service.GetType(),
@@ -78,11 +82,6 @@ func (this *Monitor) Start() (err error) {
 	return
 }
 
-func (this *Monitor) OnInstallComp() {
-	this.ModuleBase.OnInstallComp()
-	this.ServiceMonitorComp = this.RegisterComp(new(ServiceMonitorComp)).(*ServiceMonitorComp)
-}
-
 //注册服务配置信息
 func (this *Monitor) RegisterServiceSettingItem(name string, iswrite bool, value interface{}, f func(newvalue string) (err error)) {
 	this.ServiceMonitor.Setting[name] = &core.SettingItem{
@@ -106,6 +105,12 @@ func (this *Monitor) RegisterModuleSettingItem(module core.M_Modules, name strin
 //RPC------------------------------------------------------------------------------------------------------------------------------------------
 //读取服务监控信息
 func (this *Monitor) Rpc_GetServiceMonitorInfo() (result *core.ServiceMonitor, err string) {
+	memory, _ := this.Process.MemoryPercent()
+	cpu, _ := this.Process.CPUPercent()
+	this.ServiceMonitor.CpuUsed = cpu
+	this.ServiceMonitor.MemoryUsed = float64(memory)
+	this.ServiceMonitor.TotalGoroutine = runtime.NumGoroutine()
+	this.ServiceMonitor.CurrPreWeight = this.service.GetPreWeight()
 	return this.ServiceMonitor, ""
 }
 

@@ -10,9 +10,9 @@ type (
 		Type         string          `json:"Type"`         //服务类型
 		Category     core.S_Category `json:"Category"`     //服务列别
 		Id           string          `json:"Id"`           //服务Id
-		Version      int32           `json:"Version"`      //服务版本
+		Version      float32         `json:"Version"`      //服务版本
 		RpcId        string          `json:"RpcId"`        //服务通信Id
-		PreWeight    int32           `json:"PreWeight"`    //服务负载权重
+		PreWeight    float64         `json:"PreWeight"`    //服务负载权重
 		RpcSubscribe []core.Rpc_Key  `json:"RpcSubscribe"` //服务开放接口
 	}
 
