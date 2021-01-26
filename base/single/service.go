@@ -22,7 +22,7 @@ func (this *SingleService) GetType() string {
 	return this.opts.Setting.Type
 }
 
-func (this *SingleService) GetVersion() int32 {
+func (this *SingleService) GetVersion() float32 {
 	return this.opts.Setting.Version
 }
 
