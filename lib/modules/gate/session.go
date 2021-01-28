@@ -67,7 +67,7 @@ func (this *RemoteSession) GetGateId() string {
 
 func (this *RemoteSession) SendMsg(comdId uint16, msgId uint16, msg interface{}) (err error) {
 	m := proto.EncodeToMesage(comdId, msgId, msg)
-	_, err = this.service.RpcInvokeById(this.data.GateServerId, RPC_GateAgentSendMsg, false, this.GetSessionId(), m)
+	_, err = this.service.RpcInvokeById(this.data.GateServerId, RPC_GateSendMsg, false, this.GetSessionId(), m)
 	return err
 }
 func (this *RemoteSession) Close() (err error) {

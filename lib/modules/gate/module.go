@@ -83,12 +83,14 @@ func (this *Gate) SendMsg(sId string, msg proto.IMessage) (result int, err strin
 	return this.AgentMgrComp.SendMsg(sId, msg)
 }
 
+//群发代理消息
+func (this *Gate) SendMsgByGroup(aIds []string, msg proto.IMessage) (result []string, err string) {
+	return this.AgentMgrComp.SendMsgByGroup(aIds, msg)
+}
+
 //广播代理消息
-func (this *Gate) RadioMsg(sIds []string, msg proto.IMessage) (result int, err string) {
-	for _, v := range sIds {
-		this.AgentMgrComp.SendMsg(v, msg)
-	}
-	return
+func (this *Gate) SendMsgByBroadcast(msg proto.IMessage) (result int, err string) {
+	return this.AgentMgrComp.SendMsgByBroadcast(msg)
 }
 
 func (this *Gate) OnInstallComp() {

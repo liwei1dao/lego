@@ -9,15 +9,16 @@ import (
 )
 
 const ( //Rpc
-	Rpc_GateRouteRegister       core.Rpc_Key = "GateRouteRegister"       //网关路由注册
-	Rpc_GateCustomRouteRegister core.Rpc_Key = "GateCustomRouteRegister" //自定义网关路由注册
-	Rpc_GateRoute               core.Rpc_Key = "GateRoute"               //网关路由
-	Rpc_GateAgentsIsKeep        core.Rpc_Key = "GateAgentsIsKeep"        //校验代理是否还在
-	RPC_GateAgentBuild          core.Rpc_Key = "GateAgentBuild"          //代理绑定
-	RPC_GateAgentUnBuild        core.Rpc_Key = "GateAgentUnBuild"        //代理解绑
-	RPC_GateAgentSendMsg        core.Rpc_Key = "GateAgentSendMsg"        //代理发送消息
-	RPC_GateAgentRadioMsg       core.Rpc_Key = "GateAgentRadioMsg"       //代理广播消息
-	RPC_GateAgentClose          core.Rpc_Key = "GateAgentClose"          //代理关闭
+	Rpc_GateRouteRegister       core.Rpc_Key = "Rpc_GateRouteRegister"       //网关路由注册
+	Rpc_GateCustomRouteRegister core.Rpc_Key = "Rpc_GateCustomRouteRegister" //自定义网关路由注册
+	Rpc_GateRoute               core.Rpc_Key = "Rpc_GateRoute"               //网关路由
+	Rpc_GateAgentsIsKeep        core.Rpc_Key = "Rpc_GateAgentsIsKeep"        //校验代理是否还在
+	RPC_GateAgentBuild          core.Rpc_Key = "RPC_GateAgentBuild"          //代理绑定
+	RPC_GateAgentUnBuild        core.Rpc_Key = "RPC_GateAgentUnBuild"        //代理解绑
+	RPC_GateSendMsg             core.Rpc_Key = "RPC_GateSendMsg"             //代理发送消息
+	RPC_GateSendMsgByGroup      core.Rpc_Key = "RPC_GateSendMsgByGroup"      //代理群发消息
+	RPC_GateSendMsgByBroadcast  core.Rpc_Key = "RPC_GateSendMsgByBroadcast"  //代理广播消息
+	RPC_GateAgentClose          core.Rpc_Key = "RPC_GateAgentClose"          //代理关闭
 )
 
 type IGateModule interface {
@@ -32,15 +33,18 @@ type IGateModule interface {
 	Connect(a IAgent)
 	DisConnect(a IAgent)
 	CloseAgent(sId string) (result string, err string)
-	SendMsg(sId string, msg proto.IMessage) (result int, err string)     //发送消息
-	RadioMsg(sIds []string, msg proto.IMessage) (result int, err string) //广播消息
+	SendMsg(sId string, msg proto.IMessage) (result int, err string)                //发送消息到用户
+	SendMsgByGroup(aIds []string, msg proto.IMessage) (result []string, err string) //发送消息到用户组
+	SendMsgByBroadcast(msg proto.IMessage) (result int, err string)                 //发送消息到全服
 }
 
 type IAgentMgrComp interface {
 	core.IModuleComp
 	Connect(a IAgent)
 	DisConnect(a IAgent)
-	SendMsg(aId string, msg proto.IMessage) (result int, err string)
+	SendMsg(aId string, msg proto.IMessage) (result int, err string)                //发送消息到用户
+	SendMsgByGroup(aIds []string, msg proto.IMessage) (result []string, err string) //发送消息到用户组
+	SendMsgByBroadcast(msg proto.IMessage) (result int, err string)                 //发送消息到全服
 	Close(aId string) (result string, err string)
 }
 
