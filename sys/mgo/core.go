@@ -30,6 +30,7 @@ type (
 		DeleteOne(sqltable core.SqlTable, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error)
 		DeleteMany(sqltable core.SqlTable, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error)
 		DeleteManyByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error)
+		Aggregate(sqltable core.SqlTable, pipeline interface{}, opts ...*options.AggregateOptions) (*mongo.Cursor, error)
 	}
 )
 
@@ -120,4 +121,8 @@ func DeleteMany(sqltable core.SqlTable, filter interface{}, opts ...*options.Del
 
 func DeleteManyByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
 	return defsys.DeleteManyByCtx(sqltable, ctx, filter, opts...)
+}
+
+func Aggregate(sqltable core.SqlTable, pipeline interface{}, opts ...*options.AggregateOptions) (*mongo.Cursor, error) {
+	return defsys.Aggregate(sqltable, pipeline, opts...)
 }
