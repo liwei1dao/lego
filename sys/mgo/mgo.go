@@ -130,3 +130,7 @@ func (this *Mongodb) DeleteMany(sqltable core.SqlTable, filter interface{}, opts
 func (this *Mongodb) DeleteManyByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
 	return this.Collection(sqltable).DeleteMany(ctx, filter, opts...)
 }
+
+func (this *Mongodb) Aggregate(sqltable core.SqlTable, pipeline interface{}, opts ...*options.AggregateOptions) (*mongo.Cursor, error) {
+	return this.Collection(sqltable).Aggregate(this.getContext(), pipeline, opts...)
+}

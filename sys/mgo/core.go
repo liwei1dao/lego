@@ -31,6 +31,7 @@ type (
 		DeleteOne(sqltable core.SqlTable, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error)
 		DeleteMany(sqltable core.SqlTable, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error)
 		DeleteManyByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error)
+		Aggregate(sqltable core.SqlTable, pipeline interface{}, opts ...*options.AggregateOptions) (*mongo.Cursor, error)
 	}
 )
 
@@ -110,4 +111,8 @@ func DeleteManyByCtx(sqltable core.SqlTable, ctx context.Context, filter interfa
 
 func CreateIndex(sqltable core.SqlTable, keys interface{}, options *options.IndexOptions) (string, error) {
 	return defmgodb.CreateIndex(sqltable, keys, options)
+}
+
+func Aggregate(sqltable core.SqlTable, pipeline interface{}, opts ...*options.AggregateOptions) (*mongo.Cursor, error) {
+	return defmgodb.Aggregate(sqltable, pipeline, opts...)
 }
