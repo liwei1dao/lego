@@ -1,6 +1,7 @@
 package mgo
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -146,6 +147,26 @@ func Test_QueryRound(t *testing.T) {
 		fmt.Printf("CreateIndex err:%v", err)
 	} else {
 		fmt.Printf("CreateIndex succ")
+	}
+	return
+}
+
+//聚合查询演示
+func Test_Aggregate(t *testing.T) {
+	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("square"))
+	if err != nil {
+		fmt.Printf("start sys Fail err:%v", err)
+		return
+	}
+	result := make([]bson.M, 0)
+	var cursor *mongo.Cursor
+	matchStage := bson.D{{"$match", bson.M{"_id": 979332}}}
+	unwindStage := bson.D{{"$unwind", "$chatmsg"}}
+	match2Stage := bson.D{{"$match", bson.M{"chatmsg.sendtime": bson.M{"$gt": 1611890940100, "$lt": 1611893135929}}}}
+	groupStage := bson.D{{"$group", bson.M{"_id": 979332, "chatmsg": bson.M{"$push": "$chatmsg"}}}}
+	projectStage := bson.D{{"$project", bson.M{"_id": 1, "chatmsg": 1}}}
+	if cursor, err = sys.Aggregate(core.SqlTable("grouprecorddata"), mongo.Pipeline{matchStage, unwindStage, match2Stage, groupStage, projectStage}); err == nil {
+		err = cursor.All(context.Background(), &result)
 	}
 	return
 }
