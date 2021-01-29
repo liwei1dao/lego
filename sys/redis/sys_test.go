@@ -48,9 +48,9 @@ func TestRedisList_Lock(t *testing.T) {
 	GetPool().SetListByLPush("TestList", []interface{}{"liwei3dao"})
 	GetPool().SetListByLPush("TestList", []interface{}{"liwei4dao"})
 	GetPool().SetListByLPush("TestList", []interface{}{"liwei5dao"})
-	data := GetPool().GetListByLrange("TestList", 0, 100, reflect.TypeOf(&item))
+	data, err := GetPool().GetListByLrange("TestList", 0, 100, reflect.TypeOf(&item))
 	// GetPool().GetListByLPop("TestList", &item)
-	t.Logf("结束测试 data:%v", data)
+	fmt.Printf("结束测试 data:%v err:%v", data, err)
 }
 
 func Test_GetExKeyForValue(t *testing.T) {
