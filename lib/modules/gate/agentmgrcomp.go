@@ -31,11 +31,9 @@ func (this *AgentMgrComp) Destroy() (err error) {
 	return
 }
 func (this *AgentMgrComp) Connect(a IAgent) {
-	//Log.Infof("有连接进入 %s", a.Id())
 	this.Agents.Set(a.Id(), a)
 }
 func (this *AgentMgrComp) DisConnect(a IAgent) {
-	//Log.Infof("有连接关闭 %s", a.Id())
 	this.Agents.Delete(a.Id())
 }
 func (this *AgentMgrComp) SendMsg(aId string, msg proto.IMessage) (result int, err string) {
@@ -64,6 +62,12 @@ func (this *AgentMgrComp) SendMsgByGroup(aIds []string, msg proto.IMessage) (res
 		if e != nil {
 			result = append(result, a)
 		}
+	}
+	return
+}
+func (this *AgentMgrComp) SendMsgByBroadcast(msg proto.IMessage) (result int, err string) {
+	for _, v := range this.Agents.Items() {
+		v.(IAgent).WriteMsg(msg)
 	}
 	return
 }
