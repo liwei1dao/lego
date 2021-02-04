@@ -10,15 +10,19 @@ import (
 
 type DBComp struct {
 	cbase.ModuleCompBase
-	module *Console
+	module IConsole
 	mgo    mgo.IMongodb
 }
 
 func (this *DBComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
 	err = this.ModuleCompBase.Init(service, module, comp, options)
-	this.module = module.(*Console)
-	this.mgo, err = mgo.NewSys(mgo.SetMongodbUrl(this.module.options.MongodbUrl), mgo.SetMongodbDatabase(this.module.options.MongodbDatabase))
+	this.module = module.(IConsole)
+	this.mgo, err = mgo.NewSys(mgo.SetMongodbUrl(this.module.Options().GetMongodbUrl()), mgo.SetMongodbDatabase(this.module.Options().GetMongodbDatabase()))
 	return
+}
+
+func (this *DBComp) GetMgo() mgo.IMongodb {
+	return this.mgo
 }
 
 /*				 User相关接口

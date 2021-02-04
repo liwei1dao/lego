@@ -20,7 +20,7 @@ import (
 type ClusterMonitorComp struct {
 	cbase.ModuleCompBase
 	service        base.IClusterService
-	module         *Console
+	module         IConsole
 	lock           sync.RWMutex
 	servicemonitor map[string]*core.ServiceMonitor
 	clusterMonitor map[string]*ClusterMonitor
@@ -29,7 +29,7 @@ type ClusterMonitorComp struct {
 func (this *ClusterMonitorComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
 	err = this.ModuleCompBase.Init(service, module, comp, options)
 	this.service = service.(base.IClusterService)
-	this.module = module.(*Console)
+	this.module = module.(IConsole)
 	this.servicemonitor = make(map[string]*core.ServiceMonitor)
 	this.clusterMonitor = make(map[string]*ClusterMonitor)
 	cron.AddFunc("0 */1 * * * *", this.Monitor)
@@ -65,7 +65,7 @@ func (this *ClusterMonitorComp) Monitor() {
 func (this *ClusterMonitorComp) SaveMonitorData() {
 	this.lock.Lock()
 	defer this.lock.Unlock()
-	this.module.cache.AddNewClusterMonitor(this.clusterMonitor)
+	this.module.Cache().AddNewClusterMonitor(this.clusterMonitor)
 	for k, _ := range this.clusterMonitor {
 		this.clusterMonitor[k] = &ClusterMonitor{
 			CpuUsageRate:    make([]float64, 60),
@@ -126,19 +126,19 @@ func (this *ClusterMonitorComp) getClusterMonitorData(service *core.ServiceMonit
 	if queryTime == QueryMonitorTime_OneHour {
 		step = 60 / chartleng
 		totalMinute = 60
-		clusterMonitor, _ = this.module.cache.GetClusterMonitor(service.ServiceId, 1)
+		clusterMonitor, _ = this.module.Cache().GetClusterMonitor(service.ServiceId, 1)
 	} else if queryTime == QueryMonitorTime_SixHour {
 		step = 60 / chartleng * 6
 		totalMinute = 60 * 6
-		clusterMonitor, _ = this.module.cache.GetClusterMonitor(service.ServiceId, 6)
+		clusterMonitor, _ = this.module.Cache().GetClusterMonitor(service.ServiceId, 6)
 	} else if queryTime == QueryMonitorTime_OneDay {
 		step = 60 / chartleng * 24
 		totalMinute = 60 * 24
-		clusterMonitor, _ = this.module.cache.GetClusterMonitor(service.ServiceId, 24)
+		clusterMonitor, _ = this.module.Cache().GetClusterMonitor(service.ServiceId, 24)
 	} else {
 		step = 60 / chartleng * 24 * 7
 		totalMinute = 60 * 24 * 7
-		clusterMonitor, _ = this.module.cache.GetClusterMonitor(service.ServiceId, 24*7)
+		clusterMonitor, _ = this.module.Cache().GetClusterMonitor(service.ServiceId, 24*7)
 	}
 	cpudata = make([]float64, totalMinute)
 	memorydata = make([]float64, totalMinute)

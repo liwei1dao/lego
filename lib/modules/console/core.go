@@ -4,6 +4,9 @@ import (
 	"fmt"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/lib/modules/http"
+	"github.com/liwei1dao/lego/sys/mgo"
+	"github.com/liwei1dao/lego/sys/redis"
 )
 
 const (
@@ -24,8 +27,58 @@ const ( //Cache
 )
 
 type (
-	IConsole struct {
-		core.IModule
+	IConsole interface {
+		http.IHttp
+		Options() IOptions
+		Cache() ICache
+		DB() IDB
+		Captcha() ICaptcha
+		Hostmonitorcomp() IHostmonitorcomp
+		Clustermonitorcomp() IClustermonitorcomp
+		ParamSign(param map[string]interface{}) (sign string)
+		CheckToken(c *http.Context)
+		HttpStatusOK(c *http.Context, code core.ErrorCode, data interface{})
+		CreateToken(uId uint32) (token string)
+		checkToken(token string, uId uint32) (check bool)
+	}
+	ICache interface {
+		core.IModuleComp
+		GetPool() *redis.RedisPool
+		QueryToken(token string) (uId uint32, err error)
+		WriteToken(token string, uId uint32) (err error)
+		CleanToken(token string) (err error)
+		QueryUserData(uId uint32) (result *Cache_UserData, err error)
+		WriteUserData(data *Cache_UserData) (err error)
+		CleanUserData(uid uint32) (err error)
+		AddNewClusterMonitor(data map[string]*ClusterMonitor)
+		GetClusterMonitor(sIs string, timeleng int32) (result []*ClusterMonitor, err error)
+		AddNewHostMonitor(data *HostMonitor)
+		GetHostMonitor(timeleng int32) (result []*HostMonitor, err error)
+	}
+	IDB interface {
+		core.IModuleComp
+		GetMgo() mgo.IMongodb
+		QueryUserDataById(uid uint32) (result *DB_UserData, err error)
+		QueryUserDataByPhonOrEmail(phonoremail string) (result *DB_UserData, err error)
+		LoginUserDataByPhonOrEmail(data *DB_UserData) (result *DB_UserData, err error)
+		UpDataUserData(data *DB_UserData) (err error)
+	}
+	ICaptcha interface {
+		core.IModuleComp
+		SendEmailCaptcha(email, captcha string) (err error)
+		QueryCaptcha(cId string, ctype CaptchaType) (captcha string, err error)
+		WriteCaptcha(cId, captcha string, ctype CaptchaType)
+	}
+	IHostmonitorcomp interface {
+		core.IModuleComp
+		HostInfo() *HostInfo
+		CpuInfo() []*CpuInfo
+		MemoryInfo() *MemoryInfo
+		GetHostMonitorData(queryTime QueryMonitorTime) (result *QueryHostMonitorDataResp)
+	}
+	IClustermonitorcomp interface {
+		core.IModuleComp
+		GetClusterMonitorDataResp(queryTime QueryMonitorTime) (result map[string]map[string]interface{})
 	}
 	ConsoleUserId struct {
 		Id uint32 `bson:"_id"`

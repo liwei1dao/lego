@@ -18,7 +18,7 @@ import (
 //主机信息监控
 type HostMonitorComp struct {
 	cbase.ModuleCompBase
-	module      *Console
+	module      IConsole
 	lock        sync.RWMutex
 	hostInfo    *HostInfo
 	cpuInfo     []*CpuInfo
@@ -28,7 +28,7 @@ type HostMonitorComp struct {
 
 func (this *HostMonitorComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
 	err = this.ModuleCompBase.Init(service, module, comp, options)
-	this.module = module.(*Console)
+	this.module = module.(IConsole)
 	this.getHostInfo()
 	this.getCpuInfo()
 	this.getMemoryInfo()
@@ -130,13 +130,25 @@ func (this *HostMonitorComp) Monitor() {
 func (this *HostMonitorComp) SaveMonitorData() {
 	this.lock.Lock()
 	defer this.lock.Unlock()
-	this.module.cache.AddNewHostMonitor(this.hostMonitor)
+	this.module.Cache().AddNewHostMonitor(this.hostMonitor)
 	this.hostMonitor = &HostMonitor{
 		CpuUsageRate:    make([]float64, 60),
 		MemoryUsageRate: make([]float64, 60),
 	}
 	Hour := time.Now().Hour()
 	log.Debugf("SaveMonitorData Hour:%d", Hour)
+}
+
+func (this *HostMonitorComp) HostInfo() *HostInfo {
+	return this.hostInfo
+}
+
+func (this *HostMonitorComp) CpuInfo() []*CpuInfo {
+	return this.cpuInfo
+}
+
+func (this *HostMonitorComp) MemoryInfo() *MemoryInfo {
+	return this.memoryInfo
 }
 
 //读取主机监控数据
@@ -169,19 +181,19 @@ func (this *HostMonitorComp) GetHostMonitorData(queryTime QueryMonitorTime) (res
 	if queryTime == QueryMonitorTime_OneHour {
 		step = 60 / chartleng
 		totalMinute = 60
-		hostMonitor, _ = this.module.cache.GetHostMonitor(1)
+		hostMonitor, _ = this.module.Cache().GetHostMonitor(1)
 	} else if queryTime == QueryMonitorTime_SixHour {
 		step = 60 / chartleng * 6
 		totalMinute = 60 * 6
-		hostMonitor, _ = this.module.cache.GetHostMonitor(6)
+		hostMonitor, _ = this.module.Cache().GetHostMonitor(6)
 	} else if queryTime == QueryMonitorTime_OneDay {
 		step = 60 / chartleng * 24
 		totalMinute = 60 * 24
-		hostMonitor, _ = this.module.cache.GetHostMonitor(24)
+		hostMonitor, _ = this.module.Cache().GetHostMonitor(24)
 	} else {
 		step = 60 / chartleng * 24 * 7
 		totalMinute = 60 * 24 * 7
-		hostMonitor, _ = this.module.cache.GetHostMonitor(24 * 7)
+		hostMonitor, _ = this.module.Cache().GetHostMonitor(24 * 7)
 	}
 	cpudata = make([]float64, totalMinute)
 	memorydata = make([]float64, totalMinute)

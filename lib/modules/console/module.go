@@ -48,6 +48,29 @@ func (this *Console) OnInstallComp() {
 	this.clustermonitorcomp = this.RegisterComp(new(ClusterMonitorComp)).(*ClusterMonitorComp)
 }
 
+func (this *Console) Options() IOptions {
+	return this.options
+}
+
+func (this *Console) Cache() ICache {
+	return this.cache
+}
+
+func (this *Console) DB() IDB {
+	return this.db
+}
+func (this *Console) Captcha() ICaptcha {
+	return this.captcha
+}
+
+func (this *Console) Hostmonitorcomp() IHostmonitorcomp {
+	return this.hostmonitorcomp
+}
+
+func (this *Console) Clustermonitorcomp() IClustermonitorcomp {
+	return this.clustermonitorcomp
+}
+
 //签名接口
 func (this *Console) ParamSign(param map[string]interface{}) (sign string) {
 	var keys []string
@@ -100,7 +123,7 @@ func (this *Console) HttpStatusOK(c *http.Context, code core.ErrorCode, data int
 }
 
 //创建token
-func (this *Console) createToken(uId uint32) (token string) {
+func (this *Console) CreateToken(uId uint32) (token string) {
 	orsign := fmt.Sprintf("%d|%d", uId, time.Now().Unix())
 	token = crypto.AesEncryptCBC(orsign, this.options.SignKey)
 	return

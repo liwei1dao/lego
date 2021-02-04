@@ -11,14 +11,14 @@ import (
 
 type CacheComp struct {
 	cbase.ModuleCompBase
-	module *Console
+	module IConsole
 	redis  redis.IRedisFactory
 }
 
 func (this *CacheComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
 	err = this.ModuleCompBase.Init(service, module, comp, options)
-	this.module = module.(*Console)
-	this.redis, err = redis.NewSys(redis.SetRedisUrl(this.module.options.RedisUrl))
+	this.module = module.(IConsole)
+	this.redis, err = redis.NewSys(redis.SetRedisUrl(this.module.Options().GetRedisUrl()))
 	return
 }
 
@@ -64,7 +64,7 @@ func (this *CacheComp) QueryToken(token string) (uId uint32, err error) {
 func (this *CacheComp) WriteToken(token string, uId uint32) (err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleToken), token)
 	pool := this.redis.GetPool()
-	err = pool.SetExKeyForValue(Id, uId, this.module.options.TokenCacheExpirationDate)
+	err = pool.SetExKeyForValue(Id, uId, this.module.Options().GetTokenCacheExpirationDate())
 	return
 }
 
@@ -114,7 +114,7 @@ func (this *CacheComp) QueryUserData(uId uint32) (result *Cache_UserData, err er
 //同步用户数据到缓存
 func (this *CacheComp) synchronizeUserToCache(uId uint32) (result *Cache_UserData, err error) {
 	var user *DB_UserData
-	if user, err = this.module.db.QueryUserDataById(uId); err == nil {
+	if user, err = this.module.DB().QueryUserDataById(uId); err == nil {
 		result = &Cache_UserData{
 			Db_UserData: user,
 			IsOnLine:    false,
@@ -128,7 +128,7 @@ func (this *CacheComp) synchronizeUserToCache(uId uint32) (result *Cache_UserDat
 func (this *CacheComp) writeUserDataByEx(result *Cache_UserData) (err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleUsers), result.Db_UserData.Id)
 	pool := this.redis.GetPool()
-	err = pool.SetExKeyForValue(Id, result, this.module.options.UserCacheExpirationDate)
+	err = pool.SetExKeyForValue(Id, result, this.module.Options().GetUserCacheExpirationDate())
 	return
 }
 
@@ -180,7 +180,7 @@ func (this *CacheComp) AddNewClusterMonitor(data map[string]*ClusterMonitor) {
 	for k, v := range data {
 		id := fmt.Sprintf(string(Cache_ConsoleClusterMonitor), k)
 		pool.SetListByRPush(id, []interface{}{v})
-		if len, err := pool.GetListCount(id); err == nil && len > this.module.options.MonitorTotalTime {
+		if len, err := pool.GetListCount(id); err == nil && len > this.module.Options().GetMonitorTotalTime() {
 			pool.GetListByLPop(string(Cache_ConsoleClusterMonitor), v)
 		}
 	}
@@ -232,7 +232,7 @@ func (this *CacheComp) GetClusterMonitor(sIs string, timeleng int32) (result []*
 func (this *CacheComp) AddNewHostMonitor(data *HostMonitor) {
 	pool := this.redis.GetPool()
 	pool.SetListByRPush(string(Cache_ConsoleHostMonitor), []interface{}{data})
-	if len, err := pool.GetListCount(string(Cache_ConsoleHostMonitor)); err == nil && len > this.module.options.MonitorTotalTime {
+	if len, err := pool.GetListCount(string(Cache_ConsoleHostMonitor)); err == nil && len > this.module.Options().GetMonitorTotalTime() {
 		pool.GetListByLPop(string(Cache_ConsoleHostMonitor), data)
 	}
 }

@@ -13,12 +13,12 @@ import (
 
 type ApiComp struct {
 	cbase.ModuleCompBase
-	module *Console
+	module IConsole
 }
 
 func (this *ApiComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
 	err = this.ModuleCompBase.Init(service, module, comp, options)
-	this.module = module.(*Console)
+	this.module = module.(IConsole)
 	api := this.module.Group("/lego/api")
 	api.POST("/sendemailcaptcha", this.SendEmailCaptchaReq)
 
@@ -81,8 +81,8 @@ func (this *ApiComp) SendEmailCaptchaReq(c *http.Context) {
 	}
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	captchacode := fmt.Sprintf("%06v", rnd.Int31n(1000000))
-	if err := this.module.captcha.SendEmailCaptcha(req.Mailbox, captchacode); err == nil {
-		this.module.captcha.WriteCaptcha(req.Mailbox, captchacode, req.CaptchaType)
+	if err := this.module.Captcha().SendEmailCaptcha(req.Mailbox, captchacode); err == nil {
+		this.module.Captcha().WriteCaptcha(req.Mailbox, captchacode, req.CaptchaType)
 		this.module.HttpStatusOK(c, ErrorCode_Success, nil)
 	} else {
 		this.module.HttpStatusOK(c, ErrorCode_ReqParameterError, nil)
@@ -123,8 +123,8 @@ func (this *ApiComp) GetProjectInfo(c *http.Context) {
 		err   error
 		udata *Cache_UserData
 	)
-	if udata, err = this.module.cache.QueryUserData(uId); err == nil && udata.Db_UserData.UserRole >= UserRole_Developer {
-		this.module.HttpStatusOK(c, ErrorCode_Success, this.module.options)
+	if udata, err = this.module.Cache().QueryUserData(uId); err == nil && udata.Db_UserData.UserRole >= UserRole_Developer {
+		this.module.HttpStatusOK(c, ErrorCode_Success, this.module.Options)
 		return
 	} else {
 		this.module.HttpStatusOK(c, ErrorCode_AuthorityLow, nil)
@@ -140,8 +140,8 @@ func (this *ApiComp) GetHostInfo(c *http.Context) {
 		err   error
 		udata *Cache_UserData
 	)
-	if udata, err = this.module.cache.QueryUserData(uId); err == nil && udata.Db_UserData.UserRole >= UserRole_Developer {
-		hostInfo := this.module.hostmonitorcomp.hostInfo
+	if udata, err = this.module.Cache().QueryUserData(uId); err == nil && udata.Db_UserData.UserRole >= UserRole_Developer {
+		hostInfo := this.module.Hostmonitorcomp().HostInfo()
 		this.module.HttpStatusOK(c, ErrorCode_Success, hostInfo)
 		return
 	} else {
@@ -158,8 +158,8 @@ func (this *ApiComp) GetCpuInfo(c *http.Context) {
 		err   error
 		udata *Cache_UserData
 	)
-	if udata, err = this.module.cache.QueryUserData(uId); err == nil && udata.Db_UserData.UserRole >= UserRole_Developer {
-		cpuinfo := this.module.hostmonitorcomp.cpuInfo
+	if udata, err = this.module.Cache().QueryUserData(uId); err == nil && udata.Db_UserData.UserRole >= UserRole_Developer {
+		cpuinfo := this.module.Hostmonitorcomp().CpuInfo()
 		this.module.HttpStatusOK(c, ErrorCode_Success, cpuinfo)
 		return
 	} else {
@@ -176,8 +176,8 @@ func (this *ApiComp) GetMemoryInfo(c *http.Context) {
 		err   error
 		udata *Cache_UserData
 	)
-	if udata, err = this.module.cache.QueryUserData(uId); err == nil && udata.Db_UserData.UserRole >= UserRole_Developer {
-		memoryInfo := this.module.hostmonitorcomp.memoryInfo
+	if udata, err = this.module.Cache().QueryUserData(uId); err == nil && udata.Db_UserData.UserRole >= UserRole_Developer {
+		memoryInfo := this.module.Hostmonitorcomp().MemoryInfo()
 		this.module.HttpStatusOK(c, ErrorCode_Success, memoryInfo)
 		return
 	} else {
@@ -196,8 +196,8 @@ func (this *ApiComp) GetHostMonitorData(c *http.Context) {
 		err   error
 		udata *Cache_UserData
 	)
-	if udata, err = this.module.cache.QueryUserData(uId); err == nil && udata.Db_UserData.UserRole >= UserRole_Developer {
-		resp := this.module.hostmonitorcomp.GetHostMonitorData(req.QueryTime)
+	if udata, err = this.module.Cache().QueryUserData(uId); err == nil && udata.Db_UserData.UserRole >= UserRole_Developer {
+		resp := this.module.Hostmonitorcomp().GetHostMonitorData(req.QueryTime)
 		this.module.HttpStatusOK(c, ErrorCode_Success, resp)
 		return
 	} else {
@@ -216,8 +216,8 @@ func (this *ApiComp) GetClusterMonitorData(c *http.Context) {
 		err   error
 		udata *Cache_UserData
 	)
-	if udata, err = this.module.cache.QueryUserData(uId); err == nil && udata.Db_UserData.UserRole >= UserRole_Developer {
-		resp := this.module.clustermonitorcomp.GetClusterMonitorDataResp(req.QueryTime)
+	if udata, err = this.module.Cache().QueryUserData(uId); err == nil && udata.Db_UserData.UserRole >= UserRole_Developer {
+		resp := this.module.Clustermonitorcomp().GetClusterMonitorDataResp(req.QueryTime)
 		this.module.HttpStatusOK(c, ErrorCode_Success, resp)
 		return
 	} else {
@@ -268,19 +268,19 @@ func (this *ApiComp) LoginByCaptchaReq(c *http.Context) {
 		err         error
 		udata       *DB_UserData
 	)
-	if captchecode, err = this.module.captcha.QueryCaptcha(req.PhonOrEmail, CaptchaType_LoginCaptcha); err == nil && captchecode == req.Captcha {
-		if udata, err = this.module.db.LoginUserDataByPhonOrEmail(&DB_UserData{
+	if captchecode, err = this.module.Captcha().QueryCaptcha(req.PhonOrEmail, CaptchaType_LoginCaptcha); err == nil && captchecode == req.Captcha {
+		if udata, err = this.module.DB().LoginUserDataByPhonOrEmail(&DB_UserData{
 			PhonOrEmail: req.PhonOrEmail,
-			Password:    this.module.options.UserInitialPassword,
+			Password:    this.module.Options().GetUserInitialPassword(),
 			NickName:    req.PhonOrEmail,
 			UserRole:    UserRole_Guester,
 		}); err == nil {
-			this.module.cache.CleanToken(udata.Token)
-			token = this.module.createToken(udata.Id)
+			this.module.Cache().CleanToken(udata.Token)
+			token = this.module.CreateToken(udata.Id)
 			udata.Token = token
-			this.module.db.UpDataUserData(udata)
-			this.module.cache.WriteToken(token, udata.Id)
-			this.module.cache.WriteUserData(&Cache_UserData{
+			this.module.DB().UpDataUserData(udata)
+			this.module.Cache().WriteToken(token, udata.Id)
+			this.module.Cache().WriteUserData(&Cache_UserData{
 				Db_UserData: udata,
 				IsOnLine:    true,
 			})
@@ -307,14 +307,14 @@ func (this *ApiComp) LoginByPasswordReq(c *http.Context) {
 		token string
 		udata *DB_UserData
 	)
-	if udata, err = this.module.db.QueryUserDataByPhonOrEmail(req.PhonOrEmail); err == nil {
+	if udata, err = this.module.DB().QueryUserDataByPhonOrEmail(req.PhonOrEmail); err == nil {
 		if udata.Password == req.Password {
-			this.module.cache.CleanToken(udata.Token)
-			token = this.module.createToken(udata.Id)
+			this.module.Cache().CleanToken(udata.Token)
+			token = this.module.CreateToken(udata.Id)
 			udata.Token = token
-			this.module.db.UpDataUserData(udata)
-			this.module.cache.WriteToken(token, udata.Id)
-			this.module.cache.WriteUserData(&Cache_UserData{
+			this.module.DB().UpDataUserData(udata)
+			this.module.Cache().WriteToken(token, udata.Id)
+			this.module.Cache().WriteUserData(&Cache_UserData{
 				Db_UserData: udata,
 				IsOnLine:    true,
 			})
@@ -334,8 +334,8 @@ func (this *ApiComp) GetUserinfoReq(c *http.Context) {
 		err   error
 		udata *DB_UserData
 	)
-	if udata, err = this.module.db.QueryUserDataById(uId); err == nil {
-		this.module.cache.WriteUserData(&Cache_UserData{
+	if udata, err = this.module.DB().QueryUserDataById(uId); err == nil {
+		this.module.Cache().WriteUserData(&Cache_UserData{
 			Db_UserData: udata,
 			IsOnLine:    true,
 		})
@@ -356,9 +356,9 @@ func (this *ApiComp) LoginOutReq(c *http.Context) {
 		result *DB_UserData
 		err    error
 	)
-	if result, err = this.module.db.QueryUserDataById(uId); err == nil {
-		this.module.cache.CleanUserData(uId)
-		this.module.cache.CleanToken(result.Token)
+	if result, err = this.module.DB().QueryUserDataById(uId); err == nil {
+		this.module.Cache().CleanUserData(uId)
+		this.module.Cache().CleanToken(result.Token)
 		this.module.HttpStatusOK(c, ErrorCode_Success, nil)
 		return
 	}
