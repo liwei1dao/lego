@@ -1,0 +1,82 @@
+syntax = "proto3";
+option go_package = ".;console";
+import "db.proto";
+
+//发送验证码请求
+message SendEmailCaptchaReq {
+    string Mailbox = 1;              //邮箱
+    CaptchaType CaptchaType = 2;     //验证码类型
+    string Sign = 3;                 //签名
+ }
+
+ //登录请求 验证码
+message LoginByCaptchaReq {
+    string PhonOrEmail = 1; 
+    string Captcha =2;
+    string Sign = 3;                 //签名
+ }
+ 
+ //登录请求 密码
+ message LoginByPasswordReq {
+    string PhonOrEmail = 1; 
+    string Password =2;
+    string Sign = 3;                 //签名
+ }
+ 
+ //登录请求 token
+ message LoginByTokenReq {
+    string Token = 1;
+    string Sign = 2;                 //签名
+ }
+ 
+ 
+ //登录请求 token
+ message LoginResp {
+    string Token = 1;
+    DB_UserData UserData  = 2;
+ }
+ 
+ //登出请求
+ message LoginOutReq {
+ }
+ 
+
+ //查询监控时长
+enum QueryMonitorTime{
+    OneHour = 0;                    //一小时
+    SixHour = 1;                    //六小时
+    OneDay  = 2;                    //一天
+    SevenDay = 3;                   //七天
+}
+
+//查询主机监控数据
+message QueryHostMonitorDataReq {
+    QueryMonitorTime QueryTime = 1;
+}
+
+//查询主机监控数据
+message QueryHostMonitorDataResp {
+    double CurrCpuPer = 1;
+    double CurrMemoryPer = 2;
+    repeated string Keys = 3;
+    repeated double Cpu = 4;
+    repeated double Memory = 5;
+}
+
+//查询主机监控数据
+message QueryClusterMonitorDataReq {
+    QueryMonitorTime QueryTime = 1;
+}
+
+//查询主机监控数据
+message ClusterMonitorData {
+    double CurrCpuPer = 1;
+    double CurrMemoryPer = 2;
+    double CurrGoroutine = 3;
+    double CurrPreWeight = 4;
+    repeated string Keys = 5;
+    repeated double Cpu = 6;
+    repeated double Memory = 7;
+    repeated double Goroutine = 8;
+	repeated double PreWeight = 9;
+}
