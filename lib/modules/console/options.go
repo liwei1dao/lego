@@ -29,6 +29,9 @@ type Options struct {
 }
 
 func (this *Options) LoadConfig(settings map[string]interface{}) (err error) {
+	this.UserCacheExpirationDate = 60
+	this.TokenCacheExpirationDate = 3600
+	this.CaptchaExpirationdate = 60
 	if err = this.Options.LoadConfig(settings); err == nil {
 		if settings != nil {
 			err = mapstructure.Decode(settings, this)
