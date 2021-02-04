@@ -34,8 +34,8 @@ func (this *Console) NewOptions() (options core.IModuleOptions) {
 }
 
 func (this *Console) Init(service core.IService, module core.IModule, options core.IModuleOptions) (err error) {
-	err = this.Http.Init(service, module, options)
 	this.options = options.(*Options)
+	err = this.Http.Init(service, module, options)
 	return
 }
 
