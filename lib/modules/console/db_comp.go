@@ -1,6 +1,11 @@
 package console
 
 import (
+	"context"
+	"fmt"
+	"math/rand"
+	"time"
+
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/sys/mgo"
@@ -17,7 +22,37 @@ type DBComp struct {
 func (this *DBComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
 	err = this.ModuleCompBase.Init(service, module, comp, options)
 	this.module = module.(IConsole)
-	this.mgo, err = mgo.NewSys(mgo.SetMongodbUrl(this.module.Options().GetMongodbUrl()), mgo.SetMongodbDatabase(this.module.Options().GetMongodbDatabase()))
+	if this.mgo, err = mgo.NewSys(mgo.SetMongodbUrl(this.module.Options().GetMongodbUrl()), mgo.SetMongodbDatabase(this.module.Options().GetMongodbDatabase())); err == nil {
+		err = this.checkDbInit()
+	}
+	return
+}
+
+//校验数据库初始化工作是否完成
+func (this DBComp) checkDbInit() (err error) {
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*60)
+	count, err := this.mgo.CountDocuments(Sql_ConsoleUserDataIdTable, bson.M{})
+	if err != nil || count == 0 {
+		//批量插入数据
+		leng := 1000000
+		cIds := make([]interface{}, leng)
+		for i, _ := range cIds {
+			cIds[i] = 1000000 + i
+		}
+		data := make([]interface{}, leng)
+		r := rand.New(rand.NewSource(time.Now().Unix()))
+		n := 0
+		for _, i := range r.Perm(leng) {
+			data[n] = bson.M{"_id": i}
+			n++
+		}
+		var (
+			err error
+		)
+		if _, err = this.mgo.InsertManyByCtx(Sql_ConsoleUserDataIdTable, ctx, data); err != nil {
+			return fmt.Errorf("CheckDbInit  err=%s", err.Error())
+		}
+	}
 	return
 }
 
