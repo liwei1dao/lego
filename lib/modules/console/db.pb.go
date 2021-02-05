@@ -130,7 +130,7 @@ type DB_UserData struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id          uint32   `protobuf:"varint,1,opt,name=Id,proto3" json:"Id,omitempty"`
+	Id          uint32   `protobuf:"varint,1,opt,name=Id,proto3" json:"Id,omitempty" bson:"_id"`
 	PhonOrEmail string   `protobuf:"bytes,2,opt,name=PhonOrEmail,proto3" json:"PhonOrEmail,omitempty"`
 	Password    string   `protobuf:"bytes,3,opt,name=Password,proto3" json:"Password,omitempty"`
 	NickName    string   `protobuf:"bytes,4,opt,name=NickName,proto3" json:"NickName,omitempty"`
