@@ -23,6 +23,7 @@ type Console struct {
 	captcha            *CaptchaComp
 	hostmonitorcomp    *HostMonitorComp
 	clustermonitorcomp *ClusterMonitorComp
+	apiComp            *ApiComp
 }
 
 func (this *Console) GetType() core.M_Modules {
@@ -46,6 +47,7 @@ func (this *Console) OnInstallComp() {
 	this.captcha = this.RegisterComp(new(CaptchaComp)).(*CaptchaComp)
 	this.hostmonitorcomp = this.RegisterComp(new(HostMonitorComp)).(*HostMonitorComp)
 	this.clustermonitorcomp = this.RegisterComp(new(ClusterMonitorComp)).(*ClusterMonitorComp)
+	this.apiComp = this.RegisterComp(new(ApiComp)).(*ApiComp)
 }
 
 func (this *Console) Options() IOptions {
