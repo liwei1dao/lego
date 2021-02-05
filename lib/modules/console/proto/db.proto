@@ -16,7 +16,7 @@ enum UserRole {
 }
 
 message DB_UserData{
-    uint32 Id = 1;
+    uint32 Id = 1;					//tags:{bson:"_id"}
     string PhonOrEmail = 2;
     string Password = 3;
     string NickName = 4;
