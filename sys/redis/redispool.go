@@ -347,7 +347,7 @@ func (this *RedisPool) SetKey_Map(key string, value map[string]interface{}) (err
 			Values = append(Values, k, string(_value))
 		}
 	}
-	if _, err = pool.Do("HSET", Values...); err != nil {
+	if _, err = pool.Do("HMSET", Values...); err != nil {
 		err = fmt.Errorf("SetKey_Map key:%s err:%v", key, err)
 	}
 	return

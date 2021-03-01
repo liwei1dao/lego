@@ -102,6 +102,21 @@ func Test_CreateIndex(t *testing.T) {
 	}
 }
 
+//创建复合索引
+func Test_CreateCompoundIndex(t *testing.T) {
+	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("lego_yl"))
+	if err != nil {
+		fmt.Printf("start sys Fail err:%v", err)
+		return
+	}
+	str, err := mgo.CreateIndex(core.SqlTable("unreadmsg"), bson.M{"channeltype": 1, "targetid": 1, "uid": 1, "unreadmsg.sendtime": 1}, nil)
+	if err != nil {
+		fmt.Printf("CreateIndex  err:%v", err)
+	} else {
+		fmt.Printf("CreateIndex  str:%v", str)
+	}
+}
+
 //测试删除索引 地图索引
 func Test_DeleteIndex(t *testing.T) {
 	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("square"))
