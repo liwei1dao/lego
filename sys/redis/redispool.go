@@ -40,7 +40,7 @@ func (this *RedisPool) ContainsKey(key string) bool {
 	defer pool.Close()
 	iskeep, err := redis.Bool(pool.Do("EXISTS", key))
 	if err != nil {
-		log.Errorf("检测缓存键失败 key:%s err:%v", key, err)
+		log.Errorf("ContainsKey key:%s err:%v", key, err)
 	}
 	return iskeep
 }
@@ -59,7 +59,7 @@ func (this *RedisPool) Delete(key string) {
 	defer pool.Close()
 	_, err := pool.Do("DEL", key)
 	if err != nil {
-		log.Errorf("删除缓存数据失败 key:%s err:%v", key, err)
+		log.Errorf("Delete key:%s err:%v", key, err)
 	}
 }
 
@@ -337,7 +337,7 @@ func (this *RedisPool) ContainsByMap(key string, _FieldKey string) bool {
 	defer pool.Close()
 	iskeep, err := redis.Bool(pool.Do("Hexists", key, _FieldKey))
 	if err != nil {
-		log.Errorf("检测缓存键失败 key:%s field:%s err:%v", key, _FieldKey, err)
+		log.Errorf("ContainsByMap key:%s field:%s err:%v", key, _FieldKey, err)
 	}
 	return iskeep
 }
@@ -353,9 +353,9 @@ func (this *RedisPool) SetKey_Map(key string, value map[string]interface{}) {
 			Values = append(Values, k, string(b))
 		}
 	}
-	_, err := pool.Do("HSET", Values...)
+	_, err := pool.Do("HMSET", Values...)
 	if err != nil {
-		log.Errorf("设置缓存SetKey_Map失败 key:%s err:%v", key, err)
+		log.Errorf("SetKey_Map key:%s err:%v", key, err)
 	}
 }
 
@@ -443,7 +443,7 @@ func (this *RedisPool) DelKey_MapKey(key string, _FieldKey string) {
 	defer pool.Close()
 	_, err := pool.Do("HDEL", key, _FieldKey)
 	if err != nil {
-		log.Errorf("删除键值哈希表字段失败 key:%s FieldKey:%s err:%v", key, _FieldKey, err)
+		log.Errorf("DelKey_MapKey key:%s FieldKey:%s err:%v", key, _FieldKey, err)
 	}
 }
 
