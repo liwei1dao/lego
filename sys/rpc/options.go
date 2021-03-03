@@ -1,8 +1,7 @@
 package rpc
 
 import (
-	"log"
-
+	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 	"github.com/nats-io/nats.go"
 )

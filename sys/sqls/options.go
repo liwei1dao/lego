@@ -2,6 +2,9 @@ package sqls
 
 import (
 	"time"
+
+	"github.com/liwei1dao/lego/sys/log"
+	"github.com/liwei1dao/lego/utils/mapstructure"
 )
 
 type Option func(*Options)
@@ -22,12 +25,31 @@ func SetTimeOut(v time.Duration) Option {
 	}
 }
 
-func newOptions(opts ...Option) Options {
-	opt := Options{
-		TimeOut: time.Second * 3,
+func newOptions(config map[string]interface{}, opts ...Option) Options {
+	options := Options{
+		TimeOut: 3 * time.Second,
+	}
+	if config != nil {
+		mapstructure.Decode(config, &options)
 	}
 	for _, o := range opts {
-		o(&opt)
+		o(&options)
 	}
-	return opt
+	if len(options.SqlUrl) == 0 {
+		log.Panicf("start sqls Missing necessary configuration : SqlUrl is nul")
+	}
+	return options
+}
+
+func newOptionsByOption(opts ...Option) Options {
+	options := Options{
+		TimeOut: 3 * time.Second,
+	}
+	for _, o := range opts {
+		o(&options)
+	}
+	if len(options.SqlUrl) == 0 {
+		log.Panicf("start sqls Missing necessary configuration : SqlUrl is nul")
+	}
+	return options
 }

@@ -3,7 +3,8 @@ module github.com/liwei1dao/lego
 go 1.14
 
 require (
-	github.com/AgoraIO/Tools/DynamicKey/AgoraDynamicKey/go/src v0.0.0-20201218040255-53b7d2461db6
+	cloud.google.com/go v0.78.0
+	github.com/AgoraIO/Tools/DynamicKey/AgoraDynamicKey/go/src v0.0.0-20210224092639-29e04b7547d3
 	github.com/BurntSushi/toml v0.3.1
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.885
 	github.com/aliyun/aliyun-oss-go-sdk v2.1.6+incompatible
@@ -17,7 +18,6 @@ require (
 	github.com/garyburd/redigo v1.6.2
 	github.com/go-logfmt/logfmt v0.5.0 // indirect
 	github.com/golang/protobuf v1.4.3
-	github.com/google/btree v1.0.0 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/consul/api v1.8.1
 	github.com/hashicorp/go-immutable-radix v1.3.0 // indirect
@@ -39,12 +39,14 @@ require (
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/shirou/gopsutil v3.20.12+incompatible
 	github.com/wolfogre/go-pprof-practice v0.0.0-20190402114113-8ce266a210ee
-	go.mongodb.org/mongo-driver v1.4.5
+	go.mongodb.org/mongo-driver v1.4.6
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
+	golang.org/x/text v0.3.5
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324 // indirect
 	gonum.org/v1/gonum v0.8.2
-	google.golang.org/protobuf v1.23.0
+	google.golang.org/genproto v0.0.0-20210222152913-aa3ee6e6a81c
+	google.golang.org/protobuf v1.25.0
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2

@@ -4,45 +4,59 @@ import (
 	"database/sql"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/liwei1dao/lego/core"
+)
+
+type (
+	ISys interface {
+		Close() error
+		ExecContext(query string, args ...interface{}) (data sql.Result, err error)
+		QueryContext(query string, args ...interface{}) (data *sql.Rows, err error)
+		QueryxContext(query string, args ...interface{}) (data *sqlx.Rows, err error)
+		QueryRowxContext(query string, args ...interface{}) (data *sqlx.Row)
+		GetContext(dest interface{}, query string, args ...interface{}) error
+		SelectContext(dest interface{}, query string, args ...interface{}) error
+	}
 )
 
 var (
-	service   core.IService
-	sqlserver *SqlServer
+	defsys ISys
 )
 
-func OnInit(s core.IService, opt ...Option) (err error) {
-	service = s
-	sqlserver, err = newSqlServer(opt...)
+func OnInit(config map[string]interface{}, option ...Option) (err error) {
+	defsys, err = newSys(newOptions(config, option...))
 	return
 }
 
-func Close() {
-	sqlserver.Close()
+func NewSys(option ...Option) (sys ISys, err error) {
+	sys, err = newSys(newOptionsByOption(option...))
+	return
+}
+
+func Close() error {
+	return defsys.Close()
 }
 
 func ExecContext(query string, args ...interface{}) (data sql.Result, err error) {
-	return sqlserver.ExecContext(query, args...)
+	return defsys.ExecContext(query, args...)
 }
 
 func QueryContext(query string, args ...interface{}) (data *sql.Rows, err error) {
-	return sqlserver.QueryContext(query, args...)
+	return defsys.QueryContext(query, args...)
 }
 
 func QueryxContext(query string, args ...interface{}) (data *sqlx.Rows, err error) {
-	data, err = sqlserver.QueryxContext(query, args...)
+	data, err = defsys.QueryxContext(query, args...)
 	return
 }
 
 func QueryRowxContext(query string, args ...interface{}) (data *sqlx.Row) {
-	return sqlserver.QueryRowxContext(query, args...)
+	return defsys.QueryRowxContext(query, args...)
 }
 
 func GetContext(dest interface{}, query string, args ...interface{}) error {
-	return sqlserver.GetContext(dest, query, args...)
+	return defsys.GetContext(dest, query, args...)
 }
 
 func SelectContext(dest interface{}, query string, args ...interface{}) error {
-	return sqlserver.SelectContext(dest, query, args...)
+	return defsys.SelectContext(dest, query, args...)
 }
