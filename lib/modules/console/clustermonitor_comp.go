@@ -59,7 +59,7 @@ func (this *ClusterMonitorComp) Monitor() {
 			this.clusterMonitor[s.Id].PreWeight[Minute] = this.servicemonitor[s.Id].CurrPreWeight
 		}
 	}
-	log.Debugf("Monitor Minute:%d clusterMonitor:%v", Minute, this.clusterMonitor)
+	// log.Debugf("Monitor Minute:%d clusterMonitor:%v", Minute, this.clusterMonitor)
 }
 
 func (this *ClusterMonitorComp) SaveMonitorData() {

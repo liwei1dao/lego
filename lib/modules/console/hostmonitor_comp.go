@@ -124,7 +124,7 @@ func (this *HostMonitorComp) Monitor() {
 	if memoryinfo != nil {
 		this.hostMonitor.MemoryUsageRate[Minute] = memoryinfo.UsedPercent
 	}
-	log.Debugf("Monitor Minute:%d cpuinfo:%v memoryinfo:%v", Minute, this.hostMonitor.CpuUsageRate, this.hostMonitor.MemoryUsageRate)
+	// log.Debugf("Monitor Minute:%d cpuinfo:%v memoryinfo:%v", Minute, this.hostMonitor.CpuUsageRate, this.hostMonitor.MemoryUsageRate)
 }
 
 func (this *HostMonitorComp) SaveMonitorData() {
