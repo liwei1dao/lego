@@ -11,7 +11,6 @@ import (
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib/modules/monitor"
 	"github.com/liwei1dao/lego/sys/cron"
-	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/registry"
 	"gonum.org/v1/gonum/floats"
 )
