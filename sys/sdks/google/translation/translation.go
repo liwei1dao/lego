@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/translate"
-	translatev3 "cloud.google.com/go/translate/apiv3"
+	translate "cloud.google.com/go/translate/apiv3"
 	"golang.org/x/text/language"
 	translatepbv3 "google.golang.org/genproto/googleapis/cloud/translate/v3"
 
