@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/translate"
-	translate "cloud.google.com/go/translate/apiv3"
+	translatev3 "cloud.google.com/go/translate/apiv3"
 	"golang.org/x/text/language"
 	translatepbv3 "google.golang.org/genproto/googleapis/cloud/translate/v3"
 
@@ -51,7 +51,7 @@ func (this *Translation) Translation_Text_GoogleV3(ctx context.Context, original
 	}
 	defer client.Close()
 	req := &translatepbv3.TranslateTextRequest{
-		Parent:             fmt.Sprintf("projects/%s/locations/global", this.AppId),
+		Parent:             fmt.Sprintf("projects/%s/locations/global", this.options.AppId),
 		SourceLanguageCode: from,
 		TargetLanguageCode: to,
 		MimeType:           "text/plain", //Mime types: "text/plain", "text/html"
