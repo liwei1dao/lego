@@ -6,7 +6,8 @@ import (
 	"reflect"
 
 	"github.com/liwei1dao/lego/lib/modules/live/av"
-	"github.com/liwei1dao/lego/lib/modules/live/protocol/core"
+	"github.com/liwei1dao/lego/lib/modules/live/configure"
+	"github.com/liwei1dao/lego/lib/modules/live/protocol/rtmp/core"
 	"github.com/liwei1dao/lego/sys/log"
 )
 
@@ -25,7 +26,7 @@ type Server struct {
 func (s *Server) Serve(listener net.Listener) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Error("rtmp serve panic: ", r)
+			log.Errorf("rtmp serve panic: ", r)
 		}
 	}()
 
@@ -36,7 +37,7 @@ func (s *Server) Serve(listener net.Listener) (err error) {
 			return
 		}
 		conn := core.NewConn(netconn, 4*1024)
-		log.Debug("new client, connect remote: ", conn.RemoteAddr().String(),
+		log.Debugf("new client, connect remote: ", conn.RemoteAddr().String(),
 			"local:", conn.LocalAddr().String())
 		go s.handleConn(conn)
 	}
@@ -45,14 +46,14 @@ func (s *Server) Serve(listener net.Listener) (err error) {
 func (s *Server) handleConn(conn *core.Conn) error {
 	if err := conn.HandshakeServer(); err != nil {
 		conn.Close()
-		log.Error("handleConn HandshakeServer err: ", err)
+		log.Errorf("handleConn HandshakeServer err: ", err)
 		return err
 	}
 	connServer := core.NewConnServer(conn)
 
 	if err := connServer.ReadMsg(); err != nil {
 		conn.Close()
-		log.Error("handleConn read msg err: ", err)
+		log.Errorf("handleConn read msg err: ", err)
 		return err
 	}
 
@@ -61,7 +62,7 @@ func (s *Server) handleConn(conn *core.Conn) error {
 	if ret := configure.CheckAppName(appname); !ret {
 		err := fmt.Errorf("application name=%s is not configured", appname)
 		conn.Close()
-		log.Error("CheckAppName err: ", err)
+		log.Errorf("CheckAppName err: ", err)
 		return err
 	}
 
@@ -81,7 +82,7 @@ func (s *Server) handleConn(conn *core.Conn) error {
 		if err != nil {
 			err := fmt.Errorf("invalid key err=%s", err.Error())
 			conn.Close()
-			log.Error("CheckKey err: ", err)
+			log.Errorf("CheckKey err: ", err)
 			return err
 		}
 		connServer.PublishInfo.Name = channel

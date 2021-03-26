@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/liwei1dao/lego/lib/modules/live/av"
+	"github.com/liwei1dao/lego/lib/modules/live/configure"
 	"github.com/liwei1dao/lego/lib/modules/live/protocol/rtmp/core"
 	"github.com/liwei1dao/lego/sys/log"
 )
@@ -16,8 +17,7 @@ var G_StaticPushMap = make(map[string](*StaticPush))
 func GetStaticPushList(appname string) ([]string, error) {
 	if G_PushUrlList == nil {
 		// Do not unmarshel the config every time, lots of reflect works -gs
-		// pushurlList, ok := configure.GetStaticPushUrlList(appname)
-		pushurlList, ok := []string{}, false
+		pushurlList, ok := configure.GetStaticPushUrlList(appname)
 		if !ok {
 			G_PushUrlList = []string{}
 		} else {
