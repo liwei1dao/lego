@@ -73,7 +73,7 @@ func (s *Server) handleConn(conn *core.Conn) error {
 			if err != nil {
 				err := fmt.Errorf("Cannot create key err=%s", err.Error())
 				conn.Close()
-				log.Error("GetKey err: ", err)
+				log.Errorf("GetKey err: ", err)
 				return err
 			}
 			name = key

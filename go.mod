@@ -17,6 +17,7 @@ require (
 	github.com/ethereum/go-ethereum v1.9.25
 	github.com/garyburd/redigo v1.6.2
 	github.com/go-logfmt/logfmt v0.5.0 // indirect
+	github.com/go-redis/redis/v7 v7.4.0
 	github.com/golang/protobuf v1.4.3
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/consul/api v1.8.1
@@ -33,6 +34,7 @@ require (
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/nats-io/nats-server/v2 v2.1.9 // indirect
 	github.com/nats-io/nats.go v1.10.0
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/tsdb v0.10.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1
