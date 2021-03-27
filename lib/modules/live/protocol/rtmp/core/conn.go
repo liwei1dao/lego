@@ -114,6 +114,16 @@ func (conn *Conn) Flush() error {
 	return conn.rw.Flush()
 }
 
+func (conn *Conn) NewSetPeerBandwidth(size uint32) ChunkStream {
+	ret := initControlMsg(idSetPeerBandwidth, 5, size)
+	ret.Data[4] = 2
+	return ret
+}
+
+func (conn *Conn) NewSetChunkSize(size uint32) ChunkStream {
+	return initControlMsg(idSetChunkSize, 4, size)
+}
+
 const (
 	streamBegin      uint32 = 0
 	streamEOF        uint32 = 1
