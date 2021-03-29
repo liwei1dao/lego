@@ -1,6 +1,7 @@
 package live
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/liwei1dao/lego/core"
@@ -60,6 +61,27 @@ func (this *Live) handleConn(conn *liveconn.Conn) (err error) {
 		conn.Close()
 		log.Errorf("handleConn read msg err: ", err)
 		return err
+	}
+
+	appname, name, _ := connServer.GetInfo()
+	if ret := this.options.CheckAppName(appname); !ret {
+		err := fmt.Errorf("application name=%s is not configured", appname)
+		conn.Close()
+		log.Errorf("CheckAppName err: ", err)
+		return err
+	}
+	log.Debugf("handleConn: IsPublisher=%v", connServer.IsPublisher())
+	if connServer.IsPublisher() {
+		if this.options.GetRtmpNoAuth() {
+			key, err := configure.RoomKeys.GetKey(name)
+			if err != nil {
+				err := fmt.Errorf("Cannot create key err=%s", err.Error())
+				conn.Close()
+				log.Errorf("GetKey err: ", err)
+				return err
+			}
+			name = key
+		}
 	}
 	return
 }

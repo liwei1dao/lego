@@ -1,6 +1,8 @@
 package live
 
-import "github.com/liwei1dao/lego/core"
+import (
+	"github.com/liwei1dao/lego/core"
+)
 
 type (
 	ILive interface {
@@ -8,5 +10,3 @@ type (
 		GetOptions() IOptions
 	}
 )
-
-var module ILive

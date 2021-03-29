@@ -298,3 +298,18 @@ func (connServer *ConnServer) ReadMsg() error {
 	}
 	return nil
 }
+
+func (connServer *ConnServer) IsPublisher() bool {
+	return connServer.isPublisher
+}
+
+func (connServer *ConnServer) GetInfo() (app string, name string, url string) {
+	app = connServer.ConnInfo.App
+	name = connServer.PublishInfo.Name
+	url = connServer.ConnInfo.TcUrl + "/" + connServer.PublishInfo.Name
+	return
+}
+
+func (connServer *ConnServer) Close(err error) {
+	connServer.conn.Close()
+}
