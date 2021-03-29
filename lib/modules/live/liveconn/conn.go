@@ -1,4 +1,4 @@
-package core
+package liveconn
 
 import (
 	"encoding/binary"
@@ -18,12 +18,21 @@ const (
 	idSetPeerBandwidth
 )
 
+const (
+	streamBegin      uint32 = 0
+	streamEOF        uint32 = 1
+	streamDry        uint32 = 2
+	setBufferLen     uint32 = 3
+	streamIsRecorded uint32 = 4
+	pingRequest      uint32 = 6
+	pingResponse     uint32 = 7
+)
+
 func NewConn(c net.Conn, bufferSize int) *Conn {
 	return &Conn{
 		Conn:                c,
 		chunkSize:           128,
 		remoteChunkSize:     128,
-		windowAckSize:       2500000,
 		remoteWindowAckSize: 2500000,
 		pool:                pool.NewPool(),
 		rw:                  NewReadWriter(c, bufferSize),
@@ -48,32 +57,12 @@ type Conn struct {
 	net.Conn
 	chunkSize           uint32
 	remoteChunkSize     uint32
-	windowAckSize       uint32
 	remoteWindowAckSize uint32
 	received            uint32
 	ackReceived         uint32
-	rw                  *ReadWriter
 	pool                *pool.Pool
+	rw                  *ReadWriter
 	chunks              map[uint32]ChunkStream
-}
-
-func (conn *Conn) RemoteAddr() net.Addr {
-	return conn.Conn.RemoteAddr()
-}
-
-func (conn *Conn) LocalAddr() net.Addr {
-	return conn.Conn.LocalAddr()
-}
-
-func (conn *Conn) NewWindowAckSize(size uint32) ChunkStream {
-	return initControlMsg(idWindowAckSize, 4, size)
-}
-
-func (conn *Conn) Write(c *ChunkStream) error {
-	if c.TypeID == idSetChunkSize {
-		conn.chunkSize = binary.BigEndian.Uint32(c.Data)
-	}
-	return c.writeChunk(conn.rw, int(conn.chunkSize))
 }
 
 func (conn *Conn) Read(c *ChunkStream) error {
@@ -109,37 +98,51 @@ func (conn *Conn) Read(c *ChunkStream) error {
 
 	return nil
 }
-
+func (conn *Conn) Write(c *ChunkStream) error {
+	if c.TypeID == idSetChunkSize {
+		conn.chunkSize = binary.BigEndian.Uint32(c.Data)
+	}
+	return c.writeChunk(conn.rw, int(conn.chunkSize))
+}
 func (conn *Conn) Flush() error {
 	return conn.rw.Flush()
 }
-
+func (conn *Conn) NewWindowAckSize(size uint32) ChunkStream {
+	return initControlMsg(idWindowAckSize, 4, size)
+}
 func (conn *Conn) NewSetPeerBandwidth(size uint32) ChunkStream {
 	ret := initControlMsg(idSetPeerBandwidth, 5, size)
 	ret.Data[4] = 2
 	return ret
 }
-
+func (conn *Conn) NewAck(size uint32) ChunkStream {
+	return initControlMsg(idAck, 4, size)
+}
 func (conn *Conn) NewSetChunkSize(size uint32) ChunkStream {
 	return initControlMsg(idSetChunkSize, 4, size)
 }
 
-const (
-	streamBegin      uint32 = 0
-	streamEOF        uint32 = 1
-	streamDry        uint32 = 2
-	setBufferLen     uint32 = 3
-	streamIsRecorded uint32 = 4
-	pingRequest      uint32 = 6
-	pingResponse     uint32 = 7
-)
+func (conn *Conn) handleControlMsg(c *ChunkStream) {
+	if c.TypeID == idSetChunkSize {
+		conn.remoteChunkSize = binary.BigEndian.Uint32(c.Data)
+	} else if c.TypeID == idWindowAckSize {
+		conn.remoteWindowAckSize = binary.BigEndian.Uint32(c.Data)
+	}
+}
 
-/*
-   +------------------------------+-------------------------
-   |     Event Type ( 2- bytes )  | Event Data
-   +------------------------------+-------------------------
-   Pay load for the ‘User Control Message’.
-*/
+func (conn *Conn) ack(size uint32) {
+	conn.received += uint32(size)
+	conn.ackReceived += uint32(size)
+	if conn.received >= 0xf0000000 {
+		conn.received = 0
+	}
+	if conn.ackReceived >= conn.remoteWindowAckSize {
+		cs := conn.NewAck(conn.ackReceived)
+		cs.writeChunk(conn.rw, int(conn.chunkSize))
+		conn.ackReceived = 0
+	}
+}
+
 func (conn *Conn) userControlMsg(eventType, buflen uint32) ChunkStream {
 	var ret ChunkStream
 	buflen += 2

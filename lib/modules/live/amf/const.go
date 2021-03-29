@@ -51,23 +51,21 @@ const (
 	AMF3_BYTEARRAY_MARKER = 0x0c
 )
 
-type Version uint8
-type Array []interface{}
-type Object map[string]interface{}
-type TypedObject struct {
-	Type   string
-	Object Object
-}
-type Encoder struct {
-}
-
 type ExternalHandler func(*Decoder, io.Reader) (interface{}, error)
+
 type Decoder struct {
 	refCache         []interface{}
 	stringRefs       []string
 	objectRefs       []interface{}
 	traitRefs        []Trait
 	externalHandlers map[string]ExternalHandler
+}
+type Version uint8
+type Array []interface{}
+type Object map[string]interface{}
+type TypedObject struct {
+	Type   string
+	Object Object
 }
 
 func NewTrait() *Trait {
@@ -79,4 +77,7 @@ type Trait struct {
 	Externalizable bool
 	Dynamic        bool
 	Properties     []string
+}
+
+type Encoder struct {
 }

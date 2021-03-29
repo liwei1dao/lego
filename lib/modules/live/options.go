@@ -6,10 +6,10 @@ import (
 
 type (
 	IOptions interface {
-		Get_GopNum() int
+		GetRtmpAddr() string
 	}
 	Options struct {
-		GopNum int
+		RtmpAddr string
 	}
 )
 
@@ -20,8 +20,4 @@ func (this *Options) LoadConfig(settings map[string]interface{}) (err error) {
 		}
 	}
 	return
-}
-
-func (this *Options) Get_GopNum() int {
-	return this.GopNum
 }

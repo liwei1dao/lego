@@ -1,16 +1,12 @@
-package core
+package liveconn
 
 import (
 	"bytes"
 	"fmt"
 	"io"
 
-	"github.com/liwei1dao/lego/lib/modules/live/protocol/amf"
+	"github.com/liwei1dao/lego/lib/modules/live/amf"
 	"github.com/liwei1dao/lego/sys/log"
-)
-
-var (
-	ErrReq = fmt.Errorf("req error")
 )
 
 var (
@@ -24,15 +20,9 @@ var (
 	cmdPlay          = "play"
 )
 
-func NewConnServer(conn *Conn) *ConnServer {
-	return &ConnServer{
-		conn:     conn,
-		streamID: 1,
-		bytesw:   bytes.NewBuffer(nil),
-		decoder:  &amf.Decoder{},
-		encoder:  &amf.Encoder{},
-	}
-}
+var (
+	ErrReq = fmt.Errorf("req error")
+)
 
 type ConnectInfo struct {
 	App            string `amf:"app" json:"app"`
@@ -46,111 +36,30 @@ type ConnectInfo struct {
 	PageUrl        string `amf:"pageUrl" json:"pageUrl"`
 	ObjectEncoding int    `amf:"objectEncoding" json:"objectEncoding"`
 }
-
 type PublishInfo struct {
 	Name string
 	Type string
 }
 
+func NewConnServer(conn *Conn) *ConnServer {
+	return &ConnServer{
+		conn:     conn,
+		streamID: 1,
+		bytesw:   bytes.NewBuffer(nil),
+	}
+}
+
 type ConnServer struct {
-	done          bool
-	streamID      int
-	isPublisher   bool
 	conn          *Conn
+	done          bool
+	isPublisher   bool
+	streamID      int
 	transactionID int
 	ConnInfo      ConnectInfo
 	PublishInfo   PublishInfo
 	decoder       *amf.Decoder
 	encoder       *amf.Encoder
 	bytesw        *bytes.Buffer
-}
-
-func (connServer *ConnServer) handleCmdMsg(c *ChunkStream) error {
-	amfType := amf.AMF0
-	if c.TypeID == 17 {
-		c.Data = c.Data[1:]
-	}
-	r := bytes.NewReader(c.Data)
-	vs, err := connServer.decoder.DecodeBatch(r, amf.Version(amfType))
-	if err != nil && err != io.EOF {
-		return err
-	}
-	// log.Debugf("rtmp req: %#v", vs)
-	switch vs[0].(type) {
-	case string:
-		switch vs[0].(string) {
-		case cmdConnect:
-			if err = connServer.connect(vs[1:]); err != nil {
-				return err
-			}
-			if err = connServer.connectResp(c); err != nil {
-				return err
-			}
-		case cmdCreateStream:
-			if err = connServer.createStream(vs[1:]); err != nil {
-				return err
-			}
-			if err = connServer.createStreamResp(c); err != nil {
-				return err
-			}
-		case cmdPublish:
-			if err = connServer.publishOrPlay(vs[1:]); err != nil {
-				return err
-			}
-			if err = connServer.publishResp(c); err != nil {
-				return err
-			}
-			connServer.done = true
-			connServer.isPublisher = true
-			log.Debug("handle publish req done")
-		case cmdPlay:
-			if err = connServer.publishOrPlay(vs[1:]); err != nil {
-				return err
-			}
-			if err = connServer.playResp(c); err != nil {
-				return err
-			}
-			connServer.done = true
-			connServer.isPublisher = false
-			log.Debug("handle play req done")
-		case cmdFcpublish:
-			connServer.fcPublish(vs)
-		case cmdReleaseStream:
-			connServer.releaseStream(vs)
-		case cmdFCUnpublish:
-		case cmdDeleteStream:
-		default:
-			log.Debugf("no support command=", vs[0].(string))
-		}
-	}
-
-	return nil
-}
-
-func (connServer *ConnServer) ReadMsg() error {
-	var c ChunkStream
-	for {
-		if err := connServer.conn.Read(&c); err != nil {
-			return err
-		}
-		switch c.TypeID {
-		case 20, 17:
-			if err := connServer.handleCmdMsg(&c); err != nil {
-				return err
-			}
-		}
-		if connServer.done {
-			break
-		}
-	}
-	return nil
-}
-
-func (connServer *ConnServer) GetInfo() (app string, name string, url string) {
-	app = connServer.ConnInfo.App
-	name = connServer.PublishInfo.Name
-	url = connServer.ConnInfo.TcUrl + "/" + connServer.PublishInfo.Name
-	return
 }
 
 func (connServer *ConnServer) writeMsg(csid, streamID uint32, args ...interface{}) error {
@@ -200,13 +109,6 @@ func (connServer *ConnServer) connect(vs []interface{}) error {
 			}
 		}
 	}
-	return nil
-}
-
-func (connServer *ConnServer) releaseStream(vs []interface{}) error {
-	return nil
-}
-func (connServer *ConnServer) fcPublish(vs []interface{}) error {
 	return nil
 }
 
@@ -308,6 +210,91 @@ func (connServer *ConnServer) playResp(cur *ChunkStream) error {
 	return connServer.conn.Flush()
 }
 
-func (connServer *ConnServer) IsPublisher() bool {
-	return connServer.isPublisher
+func (connServer *ConnServer) fcPublish(vs []interface{}) error {
+	return nil
+}
+
+func (connServer *ConnServer) releaseStream(vs []interface{}) error {
+	return nil
+}
+
+func (connServer *ConnServer) handleCmdMsg(c *ChunkStream) error {
+	amfType := amf.AMF0
+	if c.TypeID == 17 {
+		c.Data = c.Data[1:]
+	}
+	r := bytes.NewReader(c.Data)
+	vs, err := connServer.decoder.DecodeBatch(r, amf.Version(amfType))
+	if err != nil && err != io.EOF {
+		return err
+	}
+	// log.Debugf("rtmp req: %#v", vs)
+	switch vs[0].(type) {
+	case string:
+		switch vs[0].(string) {
+		case cmdConnect:
+			if err = connServer.connect(vs[1:]); err != nil {
+				return err
+			}
+			if err = connServer.connectResp(c); err != nil {
+				return err
+			}
+		case cmdCreateStream:
+			if err = connServer.createStream(vs[1:]); err != nil {
+				return err
+			}
+			if err = connServer.createStreamResp(c); err != nil {
+				return err
+			}
+		case cmdPublish:
+			if err = connServer.publishOrPlay(vs[1:]); err != nil {
+				return err
+			}
+			if err = connServer.publishResp(c); err != nil {
+				return err
+			}
+			connServer.done = true
+			connServer.isPublisher = true
+			log.Debugf("handle publish req done")
+		case cmdPlay:
+			if err = connServer.publishOrPlay(vs[1:]); err != nil {
+				return err
+			}
+			if err = connServer.playResp(c); err != nil {
+				return err
+			}
+			connServer.done = true
+			connServer.isPublisher = false
+			log.Debugf("handle play req done")
+		case cmdFcpublish:
+			connServer.fcPublish(vs)
+		case cmdReleaseStream:
+			connServer.releaseStream(vs)
+		case cmdFCUnpublish:
+		case cmdDeleteStream:
+		default:
+			log.Debugf("no support command=", vs[0].(string))
+		}
+	}
+
+	return nil
+}
+
+func (connServer *ConnServer) ReadMsg() error {
+	var c ChunkStream
+	for {
+		if err := connServer.conn.Read(&c); err != nil {
+			return err
+		}
+		switch c.TypeID {
+		case 20, 17:
+			if err := connServer.handleCmdMsg(&c); err != nil {
+				return err
+			}
+		}
+		if connServer.done {
+			break
+		}
+	}
+	return nil
 }

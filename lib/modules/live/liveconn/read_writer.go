@@ -1,4 +1,4 @@
-package core
+package liveconn
 
 import (
 	"bufio"
@@ -33,6 +33,22 @@ func (rw *ReadWriter) ReadUintBE(n int) (uint32, error) {
 	return ret, nil
 }
 
+func (rw *ReadWriter) ReadUintLE(n int) (uint32, error) {
+	if rw.readError != nil {
+		return 0, rw.readError
+	}
+	ret := uint32(0)
+	for i := 0; i < n; i++ {
+		b, err := rw.ReadByte()
+		if err != nil {
+			rw.readError = err
+			return 0, err
+		}
+		ret += uint32(b) << uint32(i*8)
+	}
+	return ret, nil
+}
+
 func (rw *ReadWriter) WriteError() error {
 	return rw.writeError
 }
@@ -50,7 +66,6 @@ func (rw *ReadWriter) WriteUintBE(v uint32, n int) error {
 	}
 	return nil
 }
-
 func (rw *ReadWriter) WriteUintLE(v uint32, n int) error {
 	if rw.writeError != nil {
 		return rw.writeError

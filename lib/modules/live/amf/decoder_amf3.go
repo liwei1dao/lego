@@ -145,6 +145,56 @@ func (d *Decoder) DecodeAmf3String(r io.Reader, decodeMarker bool) (result strin
 	return
 }
 
+// marker: 1 byte 0x07 or 0x0b
+// format:
+// - u29 reference int. if reference, no more data. if not reference,
+//   length value of bytes to read to complete string.
+func (d *Decoder) DecodeAmf3Xml(r io.Reader, decodeMarker bool) (result string, err error) {
+	if decodeMarker {
+		var marker byte
+		marker, err = ReadMarker(r)
+		if err != nil {
+			return "", err
+		}
+
+		if (marker != AMF3_XMLDOC_MARKER) && (marker != AMF3_XMLSTRING_MARKER) {
+			return "", fmt.Errorf("decode assert marker failed: expected %v or %v, got %v", AMF3_XMLDOC_MARKER, AMF3_XMLSTRING_MARKER, marker)
+		}
+	}
+
+	var isRef bool
+	var refVal uint32
+	isRef, refVal, err = d.decodeReferenceInt(r)
+	if err != nil {
+		return "", fmt.Errorf("amf3 decode: unable to decode xml reference and length: %s", err)
+	}
+
+	if isRef {
+		var ok bool
+		buf := d.objectRefs[refVal]
+		result, ok = buf.(string)
+		if ok != true {
+			return "", fmt.Errorf("amf3 decode: cannot coerce object reference into xml string")
+		}
+
+		return
+	}
+
+	buf := make([]byte, refVal)
+	_, err = r.Read(buf)
+	if err != nil {
+		return "", fmt.Errorf("amf3 decode: unable to read xml string: %s", err)
+	}
+
+	result = string(buf)
+
+	if result != "" {
+		d.objectRefs = append(d.objectRefs, result)
+	}
+
+	return
+}
+
 // marker: 1 byte 0x08
 // format:
 // - u29 reference int, if reference, no more data
@@ -369,56 +419,6 @@ func (d *Decoder) DecodeAmf3Object(r io.Reader, decodeMarker bool) (result inter
 	}
 
 	result = obj
-
-	return
-}
-
-// marker: 1 byte 0x07 or 0x0b
-// format:
-// - u29 reference int. if reference, no more data. if not reference,
-//   length value of bytes to read to complete string.
-func (d *Decoder) DecodeAmf3Xml(r io.Reader, decodeMarker bool) (result string, err error) {
-	if decodeMarker {
-		var marker byte
-		marker, err = ReadMarker(r)
-		if err != nil {
-			return "", err
-		}
-
-		if (marker != AMF3_XMLDOC_MARKER) && (marker != AMF3_XMLSTRING_MARKER) {
-			return "", fmt.Errorf("decode assert marker failed: expected %v or %v, got %v", AMF3_XMLDOC_MARKER, AMF3_XMLSTRING_MARKER, marker)
-		}
-	}
-
-	var isRef bool
-	var refVal uint32
-	isRef, refVal, err = d.decodeReferenceInt(r)
-	if err != nil {
-		return "", fmt.Errorf("amf3 decode: unable to decode xml reference and length: %s", err)
-	}
-
-	if isRef {
-		var ok bool
-		buf := d.objectRefs[refVal]
-		result, ok = buf.(string)
-		if ok != true {
-			return "", fmt.Errorf("amf3 decode: cannot coerce object reference into xml string")
-		}
-
-		return
-	}
-
-	buf := make([]byte, refVal)
-	_, err = r.Read(buf)
-	if err != nil {
-		return "", fmt.Errorf("amf3 decode: unable to read xml string: %s", err)
-	}
-
-	result = string(buf)
-
-	if result != "" {
-		d.objectRefs = append(d.objectRefs, result)
-	}
 
 	return
 }

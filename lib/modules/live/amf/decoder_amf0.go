@@ -59,10 +59,12 @@ func (d *Decoder) DecodeAmf0Number(r io.Reader, decodeMarker bool) (result float
 	if err = AssertMarker(r, decodeMarker, AMF0_NUMBER_MARKER); err != nil {
 		return
 	}
+
 	err = binary.Read(r, binary.BigEndian, &result)
 	if err != nil {
 		return float64(0), fmt.Errorf("amf0 decode: unable to read number: %s", err)
 	}
+
 	return
 }
 
@@ -127,6 +129,7 @@ func (d *Decoder) DecodeAmf0Object(r io.Reader, decodeMarker bool) (Object, erro
 		if err != nil {
 			return nil, err
 		}
+
 		if key == "" {
 			if err = AssertMarker(r, true, AMF0_OBJECT_END_MARKER); err != nil {
 				return nil, fmt.Errorf("decode amf0: expected object end marker: %s", err)
@@ -134,13 +137,17 @@ func (d *Decoder) DecodeAmf0Object(r io.Reader, decodeMarker bool) (Object, erro
 
 			break
 		}
+
 		value, err := d.DecodeAmf0(r)
 		if err != nil {
 			return nil, fmt.Errorf("decode amf0: unable to decode object value: %s", err)
 		}
+
 		result[key] = value
 	}
+
 	return result, nil
+
 }
 
 // marker: 1 byte 0x05
