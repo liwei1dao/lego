@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/liwei1dao/lego/lib/modules/live/amf"
+	"github.com/liwei1dao/lego/lib/modules/live/av"
 	"github.com/liwei1dao/lego/sys/log"
 )
 
@@ -308,6 +309,22 @@ func (connServer *ConnServer) GetInfo() (app string, name string, url string) {
 	name = connServer.PublishInfo.Name
 	url = connServer.ConnInfo.TcUrl + "/" + connServer.PublishInfo.Name
 	return
+}
+
+func (connServer *ConnServer) Write(c ChunkStream) error {
+	if c.TypeID == av.TAG_SCRIPTDATAAMF0 ||
+		c.TypeID == av.TAG_SCRIPTDATAAMF3 {
+		var err error
+		if c.Data, err = amf.MetaDataReform(c.Data, amf.DEL); err != nil {
+			return err
+		}
+		c.Length = uint32(len(c.Data))
+	}
+	return connServer.conn.Write(&c)
+}
+
+func (connServer *ConnServer) Read(c *ChunkStream) (err error) {
+	return connServer.conn.Read(c)
 }
 
 func (connServer *ConnServer) Close(err error) {

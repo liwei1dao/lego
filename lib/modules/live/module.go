@@ -3,10 +3,13 @@ package live
 import (
 	"fmt"
 	"net"
+	"reflect"
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib"
+	"github.com/liwei1dao/lego/lib/modules/live/av"
+	"github.com/liwei1dao/lego/lib/modules/live/container/flv"
 	"github.com/liwei1dao/lego/lib/modules/live/liveconn"
 	"github.com/liwei1dao/lego/sys/log"
 )
@@ -14,7 +17,10 @@ import (
 type Live struct {
 	cbase.ModuleBase
 	options    IOptions
+	handler    av.Handler
+	getter     av.GetWriter
 	rtmpListen net.Listener
+	cachecomp  *CacheComp
 }
 
 func (this *Live) GetType() core.M_Modules {
@@ -28,6 +34,11 @@ func (this *Live) NewOptions() (options core.IModuleOptions) {
 func (this *Live) Init(service core.IService, module core.IModule, options core.IModuleOptions) (err error) {
 	this.options = options.(IOptions)
 	return this.ModuleBase.Init(service, module, options)
+}
+
+func (this *Live) OnInstallComp() {
+	this.ModuleBase.OnInstallComp()
+	this.cachecomp = this.RegisterComp(new(CacheComp)).(*CacheComp)
 }
 
 func (this *Live) Start() (err error) {
@@ -73,7 +84,7 @@ func (this *Live) handleConn(conn *liveconn.Conn) (err error) {
 	log.Debugf("handleConn: IsPublisher=%v", connServer.IsPublisher())
 	if connServer.IsPublisher() {
 		if this.options.GetRtmpNoAuth() {
-			key, err := configure.RoomKeys.GetKey(name)
+			key, err := this.cachecomp.GetChannelKey(name)
 			if err != nil {
 				err := fmt.Errorf("Cannot create key err=%s", err.Error())
 				conn.Close()
@@ -82,6 +93,36 @@ func (this *Live) handleConn(conn *liveconn.Conn) (err error) {
 			}
 			name = key
 		}
+		channel, err := this.cachecomp.GetChannel(name)
+		if err != nil {
+			err := fmt.Errorf("invalid key err=%s", err.Error())
+			conn.Close()
+			log.Errorf("CheckKey err: ", err)
+			return err
+		}
+		connServer.PublishInfo.Name = channel
+		if pushlist, ret := this.options.GetStaticPushUrlList(appname); ret && (pushlist != nil) {
+			log.Debugf("GetStaticPushUrlList: %v", pushlist)
+		}
+		reader := NewVirReader(connServer)
+		this.handler.HandleReader(reader)
+		log.Debugf("new publisher: %+v", reader.Info())
+
+		if this.getter != nil {
+			writeType := reflect.TypeOf(this.getter)
+			log.Debugf("handleConn:writeType=%v", writeType)
+			writer := this.getter.GetWriter(reader.Info())
+			this.handler.HandleWriter(writer)
+		}
+		if this.options.GetFLVArchive() {
+			flvWriter := new(flv.FlvDvr)
+			this.handler.HandleWriter(flvWriter.GetWriter(this.options.GetFLVDir(), reader.Info()))
+		}
+	} else {
+		writer := NewVirWriter(this.options.GetWriteTimeout(), connServer)
+		log.Debugf("new player: %+v", writer.Info())
+		this.handler.HandleWriter(writer)
 	}
+
 	return
 }
