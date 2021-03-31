@@ -20,7 +20,7 @@ func (this *CacheComp) Init(service core.IService, module core.IModule, comp cor
 	return
 }
 
-func (r *CacheComp) GetChannel(key string) (channel string, err error) {
+func (this *CacheComp) GetChannel(key string) (channel string, err error) {
 	// if !saveInLocal {
 	// 	return r.redisCli.Get(key).Result()
 	// }
@@ -35,7 +35,7 @@ func (r *CacheComp) GetChannel(key string) (channel string, err error) {
 }
 
 // set/reset a random key for channel
-func (r *CacheComp) SetChannelKey(channel string) (key string, err error) {
+func (this *CacheComp) SetChannelKey(channel string) (key string, err error) {
 	// key = uid.RandStringRunes(48)
 	// if _, err = r.redisCli.Get(key).Result(); err == redis.Nil {
 	// 	err = r.redisCli.Set(channel, key, 0).Err()
