@@ -33,6 +33,8 @@ func (this *Live) NewOptions() (options core.IModuleOptions) {
 
 func (this *Live) Init(service core.IService, module core.IModule, options core.IModuleOptions) (err error) {
 	this.options = options.(IOptions)
+	stream := NewRtmpStream(this.options)
+	this.handler = stream
 	return this.ModuleBase.Init(service, module, options)
 }
 
@@ -51,13 +53,15 @@ func (this *Live) Run(closeSig chan bool) (err error) {
 		var netconn net.Conn
 		netconn, err = this.rtmpListen.Accept()
 		if err != nil {
-			return
+			break
 		}
 		conn := liveconn.NewConn(netconn, 4*1024)
 		log.Debugf("new client, connect remote: ", conn.RemoteAddr().String(),
 			"local:", conn.LocalAddr().String())
 		go this.handleConn(conn)
 	}
+	closeSig <- true
+	return
 }
 
 func (this *Live) handleConn(conn *liveconn.Conn) (err error) {
@@ -123,6 +127,5 @@ func (this *Live) handleConn(conn *liveconn.Conn) (err error) {
 		log.Debugf("new player: %+v", writer.Info())
 		this.handler.HandleWriter(writer)
 	}
-
 	return
 }

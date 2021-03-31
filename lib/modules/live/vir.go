@@ -3,6 +3,7 @@ package live
 import (
 	"fmt"
 	"net/url"
+	"reflect"
 	"strings"
 	"time"
 
@@ -42,6 +43,29 @@ type (
 	}
 )
 
+//-------------------------------------------------------------------------------------------------------------------------------------------------------------
+//
+//                            _ooOoo_
+//                           o8888888o
+//                           88" . "88
+//                           (| -_- |)
+//                           O\  =  /O
+//                        ____/`---'\____
+//                      .'  \\|     |//  `.
+//                     /  \\|||  :  |||//  \
+//                    /  _||||| -:- |||||-  \
+//                    |   | \\\  -  /// |   |
+//                    | \_|  ''\---/''  |   |
+//                    \  .-\__  `-`  ___/-. /
+//                  ___`. .'  /--.--\  `. . __
+//               ."" '<  `.___\_<|>_/___.'  >'"".
+//              | | :  `- \`.;`\ _ /`;.`/ - ` : | |
+//              \  \ `-.   \_ __\ /__ _/   .-` /  /
+//         ======`-.____`-.___\_____/___.-`____.-'======
+//                            `=---='
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//                      Buddha Bless, No Bug !
+//VirReader----------------------------------------------------------------------------------------------------------------------------------------------------------
 func NewVirReader(conn StreamReadWriteCloser) *VirReader {
 	return &VirReader{
 		Uid:  uid.NewId(),
@@ -133,6 +157,29 @@ func (v *VirReader) Close(err error) {
 	v.conn.Close(err)
 }
 
+//-------------------------------------------------------------------------------------------------------------------------------------------------------------
+//
+//                            _ooOoo_
+//                           o8888888o
+//                           88" . "88
+//                           (| -_- |)
+//                           O\  =  /O
+//                        ____/`---'\____
+//                      .'  \\|     |//  `.
+//                     /  \\|||  :  |||//  \
+//                    /  _||||| -:- |||||-  \
+//                    |   | \\\  -  /// |   |
+//                    | \_|  ''\---/''  |   |
+//                    \  .-\__  `-`  ___/-. /
+//                  ___`. .'  /--.--\  `. . __
+//               ."" '<  `.___\_<|>_/___.'  >'"".
+//              | | :  `- \`.;`\ _ /`;.`/ - ` : | |
+//              \  \ `-.   \_ __\ /__ _/   .-` /  /
+//         ======`-.____`-.___\_____/___.-`____.-'======
+//                            `=---='
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//                      Buddha Bless, No Bug !
+//VirWriter----------------------------------------------------------------------------------------------------------------------------------------------------------
 func NewVirWriter(writeTimeout int, conn StreamReadWriteCloser) *VirWriter {
 	ret := &VirWriter{
 		Uid:         uid.NewId(),
@@ -214,6 +261,44 @@ func (v *VirWriter) DropPacket(pktQue chan *av.Packet, info av.Info) {
 
 	}
 	log.Debugf("packet queue len: ", len(pktQue))
+}
+
+func (v *VirWriter) SendPacket() error {
+	Flush := reflect.ValueOf(v.conn).MethodByName("Flush")
+	var cs liveconn.ChunkStream
+	for {
+		p, ok := <-v.packetQueue
+		if ok {
+			cs.Data = p.Data
+			cs.Length = uint32(len(p.Data))
+			cs.StreamID = p.StreamID
+			cs.Timestamp = p.TimeStamp
+			cs.Timestamp += v.BaseTimeStamp()
+
+			if p.IsVideo {
+				cs.TypeID = av.TAG_VIDEO
+			} else {
+				if p.IsMetadata {
+					cs.TypeID = av.TAG_SCRIPTDATAAMF0
+				} else {
+					cs.TypeID = av.TAG_AUDIO
+				}
+			}
+
+			v.SaveStatics(p.StreamID, uint64(cs.Length), p.IsVideo)
+			v.SetPreTime()
+			v.RecTimeStamp(cs.Timestamp, cs.TypeID)
+			err := v.conn.Write(cs)
+			if err != nil {
+				v.closed = true
+				return err
+			}
+			Flush.Call(nil)
+		} else {
+			return fmt.Errorf("closed")
+		}
+
+	}
 }
 
 func (v *VirWriter) Write(p *av.Packet) (err error) {

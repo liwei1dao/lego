@@ -111,6 +111,13 @@ func (chunkStream *ChunkStream) writeChunk(w *ReadWriter, chunkSize int) error {
 	return nil
 }
 
+func (chunkStream *ChunkStream) new(pool *pool.Pool) {
+	chunkStream.got = false
+	chunkStream.index = 0
+	chunkStream.remain = chunkStream.Length
+	chunkStream.Data = pool.Get(int(chunkStream.Length))
+}
+
 func (chunkStream *ChunkStream) readChunk(r *ReadWriter, chunkSize uint32, pool *pool.Pool) error {
 	if chunkStream.remain != 0 && chunkStream.tmpFromat != 3 {
 		return fmt.Errorf("invalid remain = %d", chunkStream.remain)

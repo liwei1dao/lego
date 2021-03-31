@@ -56,6 +56,12 @@ type Packet struct {
 type PacketHeader interface {
 }
 
+type AudioPacketHeader interface {
+	PacketHeader
+	SoundFormat() uint8
+	AACPacketType() uint8
+}
+
 type VideoPacketHeader interface {
 	PacketHeader
 	IsKeyFrame() bool
@@ -88,6 +94,10 @@ type Info struct {
 	URL   string
 	UID   string
 	Inter bool
+}
+
+func (info Info) IsInterval() bool {
+	return info.Inter
 }
 
 type ReadCloser interface {

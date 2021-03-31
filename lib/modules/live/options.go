@@ -13,6 +13,10 @@ type (
 		GetFLVDir() string
 		GetReadTimeout() int
 		GetWriteTimeout() int
+		GetGopNum() int
+		GetHls() bool
+		GetFlv() bool
+		GetApi() bool
 		CheckAppName(appname string) bool
 		GetStaticPushUrlList(appname string) ([]string, bool)
 	}
@@ -24,6 +28,7 @@ type (
 		FLVDir       string
 		ReadTimeout  int
 		WriteTimeout int
+		GopNum       int
 		Appname      string
 		Live         bool
 		Hls          bool
