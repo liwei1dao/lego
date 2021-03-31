@@ -7,7 +7,6 @@ import (
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
-	"github.com/liwei1dao/lego/lib"
 	"github.com/liwei1dao/lego/lib/modules/live/av"
 	"github.com/liwei1dao/lego/lib/modules/live/container/flv"
 	"github.com/liwei1dao/lego/lib/modules/live/liveconn"
@@ -21,10 +20,6 @@ type Live struct {
 	getter     av.GetWriter
 	rtmpListen net.Listener
 	cachecomp  *CacheComp
-}
-
-func (this *Live) GetType() core.M_Modules {
-	return lib.SM_MonitorModule
 }
 
 func (this *Live) NewOptions() (options core.IModuleOptions) {

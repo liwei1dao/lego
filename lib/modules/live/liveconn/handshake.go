@@ -161,3 +161,46 @@ func (conn *Conn) HandshakeServer() (err error) {
 	conn.Conn.SetDeadline(time.Time{})
 	return
 }
+
+func (conn *Conn) HandshakeClient() (err error) {
+	var random [(1 + 1536*2) * 2]byte
+
+	C0C1C2 := random[:1536*2+1]
+	C0 := C0C1C2[:1]
+	C0C1 := C0C1C2[:1536+1]
+	C2 := C0C1C2[1536+1:]
+
+	S0S1S2 := random[1536*2+1:]
+
+	C0[0] = 3
+	// > C0C1
+	conn.Conn.SetDeadline(time.Now().Add(timeout))
+	if _, err = conn.rw.Write(C0C1); err != nil {
+		return
+	}
+	conn.Conn.SetDeadline(time.Now().Add(timeout))
+	if err = conn.rw.Flush(); err != nil {
+		return
+	}
+
+	// < S0S1S2
+	conn.Conn.SetDeadline(time.Now().Add(timeout))
+	if _, err = io.ReadFull(conn.rw, S0S1S2); err != nil {
+		return
+	}
+
+	S1 := S0S1S2[1 : 1536+1]
+	if ver := pio.U32BE(S1[4:8]); ver != 0 {
+		C2 = S1
+	} else {
+		C2 = S1
+	}
+
+	// > C2
+	conn.Conn.SetDeadline(time.Now().Add(timeout))
+	if _, err = conn.rw.Write(C2); err != nil {
+		return
+	}
+	conn.Conn.SetDeadline(time.Time{})
+	return
+}

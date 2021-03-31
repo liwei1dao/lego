@@ -43,6 +43,11 @@ const (
 	VIDEO_H264 = 7
 )
 
+var (
+	PUBLISH = "publish"
+	PLAY    = "play"
+)
+
 type Packet struct {
 	IsAudio    bool
 	IsVideo    bool
