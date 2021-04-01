@@ -59,3 +59,18 @@ func (this *CacheComp) GetChannelKey(channel string) (newKey string, err error) 
 	// }
 	return
 }
+
+func (this *CacheComp) DeleteChannel(channel string) bool {
+	// if !saveInLocal {
+	// 	return r.redisCli.Del(channel).Err() != nil
+	// }
+
+	// key, ok := r.localCache.Get(channel)
+	// if ok {
+	// 	r.localCache.Delete(channel)
+	// 	r.localCache.Delete(key.(string))
+	// 	return true
+	// }
+	// return false
+	return false
+}

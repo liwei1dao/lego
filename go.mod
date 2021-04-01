@@ -9,9 +9,11 @@ require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.885
 	github.com/aliyun/aliyun-oss-go-sdk v2.1.6+incompatible
 	github.com/armon/go-metrics v0.3.6 // indirect
+	github.com/auth0/go-jwt-middleware v1.0.0
 	github.com/axgle/mahonia v0.0.0-20180208002826-3358181d7394
 	github.com/baiyubin/aliyun-sts-go-sdk v0.0.0-20180326062324-cfa1a18b161f // indirect
 	github.com/denisenkom/go-mssqldb v0.9.0
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/disintegration/imaging v1.6.2
 	github.com/eclipse/paho.mqtt.golang v1.3.1
 	github.com/ethereum/go-ethereum v1.9.25
@@ -38,7 +40,6 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/satori/go.uuid v1.2.0
 	github.com/shirou/gopsutil v3.20.12+incompatible
-	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/wolfogre/go-pprof-practice v0.0.0-20190402114113-8ce266a210ee
 	go.mongodb.org/mongo-driver v1.4.6
 	go.uber.org/zap v1.16.0

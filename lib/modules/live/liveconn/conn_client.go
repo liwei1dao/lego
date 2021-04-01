@@ -146,6 +146,10 @@ func (connClient *ConnClient) Start(url string, method string) error {
 	return nil
 }
 
+func (connClient *ConnClient) Read(c *ChunkStream) (err error) {
+	return connClient.conn.Read(c)
+}
+
 func (connClient *ConnClient) Write(c ChunkStream) error {
 	if c.TypeID == av.TAG_SCRIPTDATAAMF0 ||
 		c.TypeID == av.TAG_SCRIPTDATAAMF3 {
@@ -156,6 +160,11 @@ func (connClient *ConnClient) Write(c ChunkStream) error {
 		c.Length = uint32(len(c.Data))
 	}
 	return connClient.conn.Write(&c)
+}
+
+func (connClient *ConnClient) DecodeBatch(r io.Reader, ver amf.Version) (ret []interface{}, err error) {
+	vs, err := connClient.decoder.DecodeBatch(r, ver)
+	return vs, err
 }
 
 func (connClient *ConnClient) GetStreamId() uint32 {

@@ -7,6 +7,7 @@ import (
 type (
 	IOptions interface {
 		GetRtmpAddr() string
+		GetAPIAddr() string
 		GetRtmpNoAuth() bool
 		GetCacheAddr() string
 		GetFLVArchive() bool
@@ -14,6 +15,8 @@ type (
 		GetReadTimeout() int
 		GetWriteTimeout() int
 		GetGopNum() int
+		GetJWTAlgorithm() string
+		GetJWTJWTSecret() string
 		GetHls() bool
 		GetFlv() bool
 		GetApi() bool
@@ -22,6 +25,7 @@ type (
 	}
 	Options struct {
 		RtmpAddr     string
+		APIAddr      string
 		RtmpNoAuth   bool
 		CacheAddr    string
 		FLVArchive   bool
@@ -29,6 +33,8 @@ type (
 		ReadTimeout  int
 		WriteTimeout int
 		GopNum       int
+		JWTAlgorithm string
+		JWTSecret    string
 		Appname      string
 		Live         bool
 		Hls          bool
@@ -50,6 +56,11 @@ func (this *Options) LoadConfig(settings map[string]interface{}) (err error) {
 func (this *Options) GetRtmpAddr() string {
 	return this.RtmpAddr
 }
+
+func (this *Options) GetAPIAddr() string {
+	return this.APIAddr
+}
+
 func (this *Options) GetCacheAddr() string {
 	return this.CacheAddr
 }
@@ -72,6 +83,14 @@ func (this *Options) GetWriteTimeout() int {
 func (this *Options) GetGopNum() int {
 	return this.GopNum
 }
+
+func (this *Options) GetJWTAlgorithm() string {
+	return this.JWTAlgorithm
+}
+func (this *Options) GetJWTJWTSecret() string {
+	return this.JWTSecret
+}
+
 func (this *Options) GetHls() bool {
 	return this.Hls
 }
