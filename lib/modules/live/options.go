@@ -69,6 +69,19 @@ func (this *Options) GetReadTimeout() int {
 func (this *Options) GetWriteTimeout() int {
 	return this.WriteTimeout
 }
+func (this *Options) GetGopNum() int {
+	return this.GopNum
+}
+func (this *Options) GetHls() bool {
+	return this.Hls
+}
+func (this *Options) GetFlv() bool {
+	return this.Flv
+}
+
+func (this *Options) GetApi() bool {
+	return this.Api
+}
 
 func (this *Options) CheckAppName(appname string) bool {
 	if this.Appname == appname {
