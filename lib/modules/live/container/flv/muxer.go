@@ -119,7 +119,7 @@ func (f *FlvDvr) GetWriter(flvDir string, info av.Info) av.WriteCloser {
 
 	err := os.MkdirAll(path.Join(flvDir, paths[0]), 0755)
 	if err != nil {
-		log.Errorf("mkdir error: ", err)
+		log.Errorf("mkdir error:%v", err)
 		return nil
 	}
 
@@ -127,11 +127,11 @@ func (f *FlvDvr) GetWriter(flvDir string, info av.Info) av.WriteCloser {
 	log.Debugf("flv dvr save stream to: ", fileName)
 	w, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0755)
 	if err != nil {
-		log.Errorf("open file error: ", err)
+		log.Errorf("open file error:%v ", err)
 		return nil
 	}
 
 	writer := NewFLVWriter(paths[0], paths[1], info.URL, w)
-	log.Debugf("new flv dvr: ", writer.Info())
+	log.Debugf("new flv dvr: %+v", writer.Info())
 	return writer
 }

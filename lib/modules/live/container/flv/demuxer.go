@@ -10,6 +10,10 @@ var (
 	ErrAvcEndSEQ = fmt.Errorf("avc end sequence")
 )
 
+func NewDemuxer() *Demuxer {
+	return &Demuxer{}
+}
+
 type Demuxer struct {
 }
 

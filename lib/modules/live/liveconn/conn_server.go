@@ -47,6 +47,8 @@ func NewConnServer(conn *Conn) *ConnServer {
 		conn:     conn,
 		streamID: 1,
 		bytesw:   bytes.NewBuffer(nil),
+		decoder:  &amf.Decoder{},
+		encoder:  &amf.Encoder{},
 	}
 }
 
@@ -274,7 +276,7 @@ func (connServer *ConnServer) handleCmdMsg(c *ChunkStream) error {
 		case cmdFCUnpublish:
 		case cmdDeleteStream:
 		default:
-			log.Debugf("no support command=", vs[0].(string))
+			log.Debugf("no support command=%s`", vs[0].(string))
 		}
 	}
 

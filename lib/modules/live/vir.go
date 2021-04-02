@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib/modules/live/av"
 	"github.com/liwei1dao/lego/lib/modules/live/container/flv"
 	"github.com/liwei1dao/lego/lib/modules/live/liveconn"
@@ -66,10 +67,13 @@ type (
 //        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //                      Buddha Bless, No Bug !
 //VirReader----------------------------------------------------------------------------------------------------------------------------------------------------------
-func NewVirReader(conn StreamReadWriteCloser) *VirReader {
+func NewVirReader(conn StreamReadWriteCloser, writeTimeout int) *VirReader {
 	return &VirReader{
-		Uid:  uid.NewId(),
-		conn: conn,
+		Uid:        uid.NewId(),
+		conn:       conn,
+		RWBaser:    av.NewRWBaser(time.Second * time.Duration(writeTimeout)),
+		demuxer:    flv.NewDemuxer(),
+		ReadBWInfo: StaticsBW{0, 0, 0, 0, 0, 0, 0, 0},
 	}
 }
 
@@ -107,11 +111,7 @@ func (v *VirReader) SaveStatics(streamid uint32, length uint64, isVideoFlag bool
 }
 
 func (v *VirReader) Read(p *av.Packet) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Warnf("rtmp read packet panic: ", r)
-		}
-	}()
+	defer cbase.Recover()
 
 	v.SetPreTime()
 	var cs liveconn.ChunkStream

@@ -45,8 +45,7 @@ func (this *RtmpComp) run() {
 			break
 		}
 		conn := liveconn.NewConn(netconn, 4*1024)
-		log.Debugf("new client, connect remote: ", conn.RemoteAddr().String(),
-			"local:", conn.LocalAddr().String())
+		log.Debugf("new client, connect remote: %s local:%s", conn.RemoteAddr().String(), conn.LocalAddr().String())
 		go this.handleConn(conn)
 	}
 	if err != nil {
@@ -57,14 +56,14 @@ func (this *RtmpComp) run() {
 func (this *RtmpComp) handleConn(conn *liveconn.Conn) (err error) {
 	if err = conn.HandshakeServer(); err != nil {
 		conn.Close()
-		log.Errorf("handleConn HandshakeServer err: ", err)
+		log.Errorf("handleConn HandshakeServer err: %v", err)
 		return err
 	}
 	connServer := liveconn.NewConnServer(conn)
 
 	if err := connServer.ReadMsg(); err != nil {
 		conn.Close()
-		log.Errorf("handleConn read msg err: ", err)
+		log.Errorf("handleConn read msg err: %v", err)
 		return err
 	}
 
@@ -72,7 +71,7 @@ func (this *RtmpComp) handleConn(conn *liveconn.Conn) (err error) {
 	if ret := this.options.CheckAppName(appname); !ret {
 		err := fmt.Errorf("application name=%s is not configured", appname)
 		conn.Close()
-		log.Errorf("CheckAppName err: ", err)
+		log.Errorf("CheckAppName err: %v", err)
 		return err
 	}
 	log.Debugf("handleConn: IsPublisher=%v", connServer.IsPublisher())
@@ -82,7 +81,7 @@ func (this *RtmpComp) handleConn(conn *liveconn.Conn) (err error) {
 			if err != nil {
 				err := fmt.Errorf("Cannot create key err=%s", err.Error())
 				conn.Close()
-				log.Errorf("GetKey err: ", err)
+				log.Errorf("GetKey err: %v", err)
 				return err
 			}
 			name = key
@@ -91,14 +90,14 @@ func (this *RtmpComp) handleConn(conn *liveconn.Conn) (err error) {
 		if err != nil {
 			err := fmt.Errorf("invalid key err=%s", err.Error())
 			conn.Close()
-			log.Errorf("CheckKey err: ", err)
+			log.Errorf("CheckKey err: %v", err)
 			return err
 		}
 		connServer.PublishInfo.Name = channel
 		if pushlist, ret := this.options.GetStaticPushUrlList(appname); ret && (pushlist != nil) {
 			log.Debugf("GetStaticPushUrlList: %v", pushlist)
 		}
-		reader := NewVirReader(connServer)
+		reader := NewVirReader(connServer, this.options.GetWriteTimeout())
 		this.module.GetHandler().HandleReader(reader)
 		log.Debugf("new publisher: %+v", reader.Info())
 

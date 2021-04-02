@@ -1,5 +1,7 @@
 package pool
 
+import "fmt"
+
 type Pool struct {
 	pos int
 	buf []byte
@@ -11,6 +13,9 @@ func (pool *Pool) Get(size int) []byte {
 	if maxpoolsize-pool.pos < size {
 		pool.pos = 0
 		pool.buf = make([]byte, maxpoolsize)
+	}
+	if len(pool.buf) < pool.pos+size {
+		fmt.Printf("err ")
 	}
 	b := pool.buf[pool.pos : pool.pos+size]
 	pool.pos += size

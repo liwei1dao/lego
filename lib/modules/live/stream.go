@@ -148,8 +148,9 @@ func (rs *RtmpStream) GetStreams() *sync.Map {
 //Stream----------------------------------------------------------------------------------------------------------------------------------------------------------
 func NewStream(options IOptions) *Stream {
 	return &Stream{
-		cache: cache.NewCache(options.GetGopNum()),
-		ws:    &sync.Map{},
+		options: options,
+		cache:   cache.NewCache(options.GetGopNum()),
+		ws:      &sync.Map{},
 	}
 }
 
@@ -176,7 +177,6 @@ func (s *Stream) CheckAlive() (n int) {
 		}
 		return true
 	})
-
 	return
 }
 

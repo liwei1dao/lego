@@ -24,7 +24,8 @@ func (this *CacheComp) Init(service core.IService, module core.IModule, comp cor
 	err = this.ModuleCompBase.Init(service, module, comp, options)
 	this.options = options.(IOptions)
 	if this.cache, err = redis.NewSys(redis.SetRedisUrl(this.options.GetCacheAddr())); err == nil {
-
+		this.cache.GetPool().Delete(string(Redis_Channel))
+		this.cache.GetPool().Delete(string(Redis_Key))
 	}
 	return
 }
