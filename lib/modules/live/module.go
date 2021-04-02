@@ -23,6 +23,10 @@ func (this *Live) NewOptions() (options core.IModuleOptions) {
 	return new(Options)
 }
 
+func (this *Live) GetOptions() (options IOptions) {
+	return this.options
+}
+
 func (this *Live) Init(service core.IService, module core.IModule, options core.IModuleOptions) (err error) {
 	this.options = options.(IOptions)
 	stream := NewRtmpStream(this.options)

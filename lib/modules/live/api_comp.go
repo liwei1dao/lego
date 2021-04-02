@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/form3tech-oss/jwt-go"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib/modules/live/rtmprelay"
@@ -67,7 +67,7 @@ func (this *ApiComp) Start() (err error) {
 
 func (this *ApiComp) run() (err error) {
 	defer cbase.Recover()
-	log.Infof("HTTP-API listen On ", this.options.GetAPIAddr())
+	log.Infof("HTTP-API listen On %s", this.options.GetAPIAddr())
 	this.Serve()
 	return
 }
@@ -91,7 +91,10 @@ func (this *ApiComp) JWTMiddleware(next http.Handler) http.Handler {
 		}
 
 		jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
-			Extractor:     jwtmiddleware.FromFirst(jwtmiddleware.FromAuthHeader, jwtmiddleware.FromParameter("jwt")),
+			Extractor: jwtmiddleware.FromFirst(jwtmiddleware.FromAuthHeader, jwtmiddleware.FromParameter("jwt")),
+			ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+				return []byte(this.options.GetJWTAlgorithm()), nil
+			},
 			SigningMethod: algorithm,
 			ErrorHandler: func(w http.ResponseWriter, r *http.Request, err string) {
 				res := &Response{

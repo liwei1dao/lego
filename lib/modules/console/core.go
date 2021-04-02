@@ -19,11 +19,11 @@ const ( //DB
 )
 
 const ( //Cache
-	Cache_ConsoleToken          core.Redis_Key = "console_token:%s"          //用户数据缓存
-	Cache_ConsoleUsers          core.Redis_Key = "console_users:%d"          //用户数据缓存
-	Cache_ConsoleClusterMonitor core.Redis_Key = "console_clustermonitor:%s" //集群监听数据
-	Cache_ConsoleHostMonitor    core.Redis_Key = "console_hostmonitor"       //主机监听数据
-	Cache_ConsoleCaptcha        core.Redis_Key = "console_captcha:%s-%d"     //验证码缓存
+	Cache_ConsoleToken          core.Redis_Key = "Console_Token:%s"          //用户数据缓存
+	Cache_ConsoleUsers          core.Redis_Key = "Console_Users:%d"          //用户数据缓存
+	Cache_ConsoleClusterMonitor core.Redis_Key = "Console_Clustermonitor:%s" //集群监听数据
+	Cache_ConsoleHostMonitor    core.Redis_Key = "Console_Hostmonitor"       //主机监听数据
+	Cache_ConsoleCaptcha        core.Redis_Key = "Console_Captcha:%s-%d"     //验证码缓存
 )
 
 type (
