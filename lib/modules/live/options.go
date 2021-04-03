@@ -8,6 +8,7 @@ type (
 	IOptions interface {
 		GetRtmpAddr() string
 		GetAPIAddr() string
+		GetHlsAddr() string
 		GetHttpFlvAddr() string
 		GetRtmpNoAuth() bool
 		GetCacheAddr() string
@@ -27,6 +28,7 @@ type (
 	Options struct {
 		RtmpAddr     string
 		APIAddr      string
+		HlsAddr      string
 		HttpFlvAddr  string
 		RtmpNoAuth   bool
 		CacheAddr    string
@@ -53,6 +55,10 @@ func (this *Options) LoadConfig(settings map[string]interface{}) (err error) {
 		}
 	}
 	return
+}
+
+func (this *Options) GetHlsAddr() string {
+	return this.HlsAddr
 }
 
 func (this *Options) GetHttpFlvAddr() string {
