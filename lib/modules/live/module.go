@@ -10,13 +10,14 @@ import (
 
 type Live struct {
 	cbase.ModuleBase
-	options    IOptions
-	handler    av.Handler
-	getter     av.GetWriter
-	rtmpListen net.Listener
-	cachecomp  ICacheComp
-	apicomp    *ApiComp
-	rtmpcomp   *RtmpComp
+	options     IOptions
+	handler     av.Handler
+	getter      av.GetWriter
+	rtmpListen  net.Listener
+	cachecomp   ICacheComp
+	apicomp     *ApiComp
+	rtmpcomp    *RtmpComp
+	httpflvcomp *HttpFlvComp
 }
 
 func (this *Live) NewOptions() (options core.IModuleOptions) {
@@ -39,6 +40,7 @@ func (this *Live) OnInstallComp() {
 	this.cachecomp = this.RegisterComp(new(CacheComp)).(ICacheComp)
 	this.rtmpcomp = this.RegisterComp(new(RtmpComp)).(*RtmpComp)
 	this.apicomp = this.RegisterComp(new(ApiComp)).(*ApiComp)
+	this.httpflvcomp = this.RegisterComp(new(HttpFlvComp)).(*HttpFlvComp)
 }
 
 func (this *Live) GetHandler() av.Handler {

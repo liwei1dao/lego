@@ -27,7 +27,7 @@ func (r *Response) SendJson() (int, error) {
 	return r.w.Write(resp)
 }
 
-type stream struct {
+type apistream struct {
 	Key             string `json:"key"`
 	Url             string `json:"url"`
 	StreamId        uint32 `json:"stream_id"`
@@ -36,9 +36,9 @@ type stream struct {
 	AudioTotalBytes uint64 `json:"audio_total_bytes"`
 	AudioSpeed      uint64 `json:"audio_speed"`
 }
-type streams struct {
-	Publishers []stream `json:"publishers"`
-	Players    []stream `json:"players"`
+type apistreams struct {
+	Publishers []apistream `json:"publishers"`
+	Players    []apistream `json:"players"`
 }
 
 //主机信息监控
@@ -379,7 +379,7 @@ func (this *ApiComp) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	msgs := new(streams)
+	msgs := new(apistreams)
 
 	rtmpStream.GetStreams().Range(func(key, val interface{}) bool {
 		if s, ok := val.(*Stream); ok {
@@ -387,7 +387,7 @@ func (this *ApiComp) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 				switch s.GetReader().(type) {
 				case *VirReader:
 					v := s.GetReader().(*VirReader)
-					msg := stream{key.(string), v.Info().URL, v.ReadBWInfo.StreamId, v.ReadBWInfo.VideoDatainBytes, v.ReadBWInfo.VideoSpeedInBytesperMS,
+					msg := apistream{key.(string), v.Info().URL, v.ReadBWInfo.StreamId, v.ReadBWInfo.VideoDatainBytes, v.ReadBWInfo.VideoSpeedInBytesperMS,
 						v.ReadBWInfo.AudioDatainBytes, v.ReadBWInfo.AudioSpeedInBytesperMS}
 					msgs.Publishers = append(msgs.Publishers, msg)
 				}
@@ -404,7 +404,7 @@ func (this *ApiComp) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 					switch pw.GetWriter().(type) {
 					case *VirWriter:
 						v := pw.GetWriter().(*VirWriter)
-						msg := stream{key.(string), v.Info().URL, v.WriteBWInfo.StreamId, v.WriteBWInfo.VideoDatainBytes, v.WriteBWInfo.VideoSpeedInBytesperMS,
+						msg := apistream{key.(string), v.Info().URL, v.WriteBWInfo.StreamId, v.WriteBWInfo.VideoDatainBytes, v.WriteBWInfo.VideoSpeedInBytesperMS,
 							v.WriteBWInfo.AudioDatainBytes, v.WriteBWInfo.AudioSpeedInBytesperMS}
 						msgs.Players = append(msgs.Players, msg)
 					}
