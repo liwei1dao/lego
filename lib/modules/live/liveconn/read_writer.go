@@ -17,6 +17,19 @@ type ReadWriter struct {
 	writeError error
 }
 
+func (rw *ReadWriter) Read(p []byte) (int, error) {
+	if rw.readError != nil {
+		return 0, rw.readError
+	}
+	n, err := io.ReadAtLeast(rw.ReadWriter, p, len(p))
+	rw.readError = err
+	return n, err
+}
+
+func (rw *ReadWriter) ReadError() error {
+	return rw.readError
+}
+
 func (rw *ReadWriter) ReadUintBE(n int) (uint32, error) {
 	if rw.readError != nil {
 		return 0, rw.readError
@@ -49,6 +62,24 @@ func (rw *ReadWriter) ReadUintLE(n int) (uint32, error) {
 	return ret, nil
 }
 
+func (rw *ReadWriter) Flush() error {
+	if rw.writeError != nil {
+		return rw.writeError
+	}
+
+	if rw.ReadWriter.Writer.Buffered() == 0 {
+		return nil
+	}
+	return rw.ReadWriter.Flush()
+}
+
+func (rw *ReadWriter) Write(p []byte) (int, error) {
+	if rw.writeError != nil {
+		return 0, rw.writeError
+	}
+	return rw.ReadWriter.Write(p)
+}
+
 func (rw *ReadWriter) WriteError() error {
 	return rw.writeError
 }
@@ -66,6 +97,7 @@ func (rw *ReadWriter) WriteUintBE(v uint32, n int) error {
 	}
 	return nil
 }
+
 func (rw *ReadWriter) WriteUintLE(v uint32, n int) error {
 	if rw.writeError != nil {
 		return rw.writeError

@@ -242,6 +242,7 @@ func (connServer *ConnServer) handleCmdMsg(c *ChunkStream) error {
 			if err = connServer.connectResp(c); err != nil {
 				return err
 			}
+			log.Debugf("handle connect req done")
 		case cmdCreateStream:
 			if err = connServer.createStream(vs[1:]); err != nil {
 				return err
@@ -249,6 +250,7 @@ func (connServer *ConnServer) handleCmdMsg(c *ChunkStream) error {
 			if err = connServer.createStreamResp(c); err != nil {
 				return err
 			}
+			log.Debugf("handle createStream req done")
 		case cmdPublish:
 			if err = connServer.publishOrPlay(vs[1:]); err != nil {
 				return err
