@@ -42,6 +42,7 @@ func (this *HlsComp) Init(service core.IService, module core.IModule, comp core.
 	err = this.ModuleCompBase.Init(service, module, comp, options)
 	this.options = options.(IOptions)
 	this.module = module.(ILive)
+	this.conns = &sync.Map{}
 	go this.checkStop()
 	return
 }
