@@ -19,3 +19,25 @@ type status struct {
 	firstTimestamp int64
 	lastTimestamp  int64
 }
+
+func (t *status) update(isVideo bool, timestamp uint32) {
+	if isVideo {
+		t.hasVideo = true
+	}
+	if !t.hasSetFirstTs {
+		t.hasSetFirstTs = true
+		t.firstTimestamp = int64(timestamp)
+	}
+	t.lastTimestamp = int64(timestamp)
+}
+
+func (t *status) durationMs() int64 {
+	return t.lastTimestamp - t.firstTimestamp
+}
+
+func (t *status) resetAndNew() {
+	t.seqId++
+	t.hasVideo = false
+	t.createdAt = time.Now()
+	t.hasSetFirstTs = false
+}

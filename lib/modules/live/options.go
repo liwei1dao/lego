@@ -10,6 +10,7 @@ type (
 		GetAPIAddr() string
 		GetHlsAddr() string
 		GetHttpFlvAddr() string
+		GetHlsKeepAfterEnd() bool
 		GetRtmpNoAuth() bool
 		GetCacheAddr() string
 		GetFLVArchive() bool
@@ -26,25 +27,26 @@ type (
 		GetStaticPushUrlList(appname string) ([]string, bool)
 	}
 	Options struct {
-		RtmpAddr     string
-		APIAddr      string
-		HlsAddr      string
-		HttpFlvAddr  string
-		RtmpNoAuth   bool
-		CacheAddr    string
-		FLVArchive   bool
-		FLVDir       string
-		ReadTimeout  int
-		WriteTimeout int
-		GopNum       int
-		JWTAlgorithm string
-		JWTSecret    string
-		Appname      string
-		Live         bool
-		Hls          bool
-		Flv          bool
-		Api          bool
-		StaticPush   []string
+		RtmpAddr        string
+		APIAddr         string
+		HlsAddr         string
+		HttpFlvAddr     string
+		HlsKeepAfterEnd bool
+		RtmpNoAuth      bool
+		CacheAddr       string
+		FLVArchive      bool
+		FLVDir          string
+		ReadTimeout     int
+		WriteTimeout    int
+		GopNum          int
+		JWTAlgorithm    string
+		JWTSecret       string
+		Appname         string
+		Live            bool
+		Hls             bool
+		Flv             bool
+		Api             bool
+		StaticPush      []string
 	}
 )
 
@@ -71,6 +73,10 @@ func (this *Options) GetRtmpAddr() string {
 
 func (this *Options) GetAPIAddr() string {
 	return this.APIAddr
+}
+
+func (this *Options) GetHlsKeepAfterEnd() bool {
+	return this.HlsKeepAfterEnd
 }
 
 func (this *Options) GetCacheAddr() string {

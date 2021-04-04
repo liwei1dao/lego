@@ -17,6 +17,7 @@ type Live struct {
 	cachecomp   ICacheComp
 	apicomp     *ApiComp
 	rtmpcomp    *RtmpComp
+	hlscomp     *HlsComp
 	httpflvcomp *HttpFlvComp
 }
 
@@ -39,6 +40,7 @@ func (this *Live) OnInstallComp() {
 	this.ModuleBase.OnInstallComp()
 	this.cachecomp = this.RegisterComp(new(CacheComp)).(ICacheComp)
 	this.rtmpcomp = this.RegisterComp(new(RtmpComp)).(*RtmpComp)
+	this.hlscomp = this.RegisterComp(new(HlsComp)).(*HlsComp)
 	this.apicomp = this.RegisterComp(new(ApiComp)).(*ApiComp)
 	this.httpflvcomp = this.RegisterComp(new(HttpFlvComp)).(*HttpFlvComp)
 }

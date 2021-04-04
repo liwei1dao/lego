@@ -1,16 +1,26 @@
 package live
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"path"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/lib/modules/live/av"
 	"github.com/liwei1dao/lego/sys/log"
+)
+
+var (
+	ErrNoPublisher         = fmt.Errorf("no publisher")
+	ErrInvalidReq          = fmt.Errorf("invalid req url path")
+	ErrNoSupportVideoCodec = fmt.Errorf("no support video codec")
+	ErrNoSupportAudioCodec = fmt.Errorf("no support audio codec")
 )
 
 var crossdomainxml = []byte(`<?xml version="1.0" ?>
@@ -32,6 +42,7 @@ func (this *HlsComp) Init(service core.IService, module core.IModule, comp core.
 	err = this.ModuleCompBase.Init(service, module, comp, options)
 	this.options = options.(IOptions)
 	this.module = module.(ILive)
+	go this.checkStop()
 	return
 }
 
@@ -43,11 +54,39 @@ func (this *HlsComp) Start() (err error) {
 	return
 }
 
+func (this *HlsComp) checkStop() {
+	for {
+		<-time.After(5 * time.Second)
+
+		this.conns.Range(func(key, val interface{}) bool {
+			v := val.(*Source)
+			if !v.Alive() && !this.options.GetHlsKeepAfterEnd() {
+				log.Debugf("check stop and remove:%v", v.Info())
+				this.conns.Delete(key)
+			}
+			return true
+		})
+	}
+}
+
 func (this *HlsComp) run() (err error) {
 	defer cbase.Recover()
-	log.Infof("HLS listen On %s", this.options.GetHttpFlvAddr())
+	log.Infof("HLS listen On %s", this.options.GetHlsAddr())
 	this.Serve()
 	return
+}
+
+func (this *HlsComp) GetWriter(info av.Info) av.WriteCloser {
+	var s *Source
+	v, ok := this.conns.Load(info.Key)
+	if !ok {
+		log.Debug("new hls source")
+		s = NewSource(this.options, info)
+		this.conns.Store(info.Key, s)
+	} else {
+		s = v.(*Source)
+	}
+	return s
 }
 
 func (this *HlsComp) Serve() error {
@@ -80,7 +119,7 @@ func (this *HlsComp) handle(w http.ResponseWriter, r *http.Request) {
 		}
 		body, err := tsCache.GenM3U8PlayList()
 		if err != nil {
-			log.Debug("GenM3U8PlayList error: ", err)
+			log.Debugf("GenM3U8PlayList error:%v", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -100,7 +139,7 @@ func (this *HlsComp) handle(w http.ResponseWriter, r *http.Request) {
 		tsCache := conn.GetCacheInc()
 		item, err := tsCache.GetItem(r.URL.Path)
 		if err != nil {
-			log.Debug("GetItem error: ", err)
+			log.Debugf("GetItem error: %v", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -123,4 +162,16 @@ func (this *HlsComp) getConn(key string) *Source {
 		return nil
 	}
 	return v.(*Source)
+}
+
+func (this *HlsComp) parseTs(pathstr string) (key string, err error) {
+	pathstr = strings.TrimLeft(pathstr, "/")
+	paths := strings.SplitN(pathstr, "/", 3)
+	if len(paths) != 3 {
+		err = fmt.Errorf("invalid path=%s", pathstr)
+		return
+	}
+	key = paths[0] + "/" + paths[1]
+
+	return
 }
