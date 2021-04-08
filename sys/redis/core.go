@@ -1,30 +1,19 @@
 package redis
 
 type (
-	IRedisFactory interface {
-		GetPool() *RedisPool
-		CloseAllPool()
+	IRedis interface {
+		
 	}
 )
 
-var (
-	defsys IRedisFactory
-)
+var defsys IRedis
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
-	defsys, err = newsys(newOptions(config, option...))
+	defsys, err = newSys(newOptions(config, option...))
 	return
 }
 
-func NewSys(option ...Option) (sys IRedisFactory, err error) {
-	sys, err = newsys(newOptionsByOption(option...))
+func NewSys(option ...Option) (sys IRedis, err error) {
+	sys, err = newSys(newOptionsByOption(option...))
 	return
-}
-
-func GetPool() *RedisPool {
-	return defsys.GetPool()
-}
-
-func CloseAllPool() {
-	defsys.CloseAllPool()
 }

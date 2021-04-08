@@ -17,27 +17,14 @@ const (
 type Option func(*Options)
 type Options struct {
 	RedisUrl         string
-	RedisPassword    string
-	RedisDB          int
 	RedisStorageType RedisStorageTyoe
 	TimeOut          time.Duration
 }
 
-///RedisUrl = "127.0.0.1:6379"
+///RedisUrl = "redis://<user>:<pass>@localhost:6379/<db>"
 func SetRedisUrl(v string) Option {
 	return func(o *Options) {
 		o.RedisUrl = v
-	}
-}
-
-func SetRedisPassword(v string) Option {
-	return func(o *Options) {
-		o.RedisPassword = v
-	}
-}
-func SetRedisDB(v int) Option {
-	return func(o *Options) {
-		o.RedisDB = v
 	}
 }
 
@@ -76,4 +63,32 @@ func newOptionsByOption(opts ...Option) Options {
 		o(&options)
 	}
 	return options
+}
+
+type RMutexOption func(*RMutexOptions)
+type RMutexOptions struct {
+	expiry int
+	delay  time.Duration
+}
+
+func SetExpiry(v int) RMutexOption {
+	return func(o *RMutexOptions) {
+		o.expiry = v
+	}
+}
+func Setdelay(v time.Duration) RMutexOption {
+	return func(o *RMutexOptions) {
+		o.delay = v
+	}
+}
+
+func newRMutexOptions(opts ...RMutexOption) RMutexOptions {
+	opt := RMutexOptions{
+		expiry: 3,
+		delay:  time.Millisecond * 8,
+	}
+	for _, o := range opts {
+		o(&opt)
+	}
+	return opt
 }

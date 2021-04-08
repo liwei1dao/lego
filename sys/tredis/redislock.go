@@ -1,8 +1,9 @@
 package redis
 
 import (
-	"github.com/pkg/errors"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 func NewRedisMutex(key string, opt ...RMutexOption) *RedisMutex {
