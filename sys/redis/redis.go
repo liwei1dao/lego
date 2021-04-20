@@ -46,3 +46,20 @@ func (this *Redis) QueryPatternKeys(key string) (keys []string, err error) {
 	keys, err = cmd.Result()
 	return
 }
+
+//删除Redis 缓存键数据
+func (this *Redis) Delete(key string) (err error) {
+	err = this.client.Del(this.getContext(), key).Err()
+	return
+}
+
+//添加键值对
+func (this *Redis) SetKeyForValue(key string, value interface{}) (err error) {
+	// this.client.Set(this.getContext(), key, value)
+	// if b, err := json.Marshal(value); err == nil {
+	// 	pool := this.Pool.Get()
+	// 	defer pool.Close()
+	// 	_, err = pool.Do("SET", key, b)
+	// }
+	return
+}
