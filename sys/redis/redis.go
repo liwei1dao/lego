@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/liwei1dao/lego/core"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -24,6 +25,7 @@ func (this *Redis) init() (err error) {
 		Addr:     this.options.RedisUrl,
 		Password: this.options.RedisPassword,
 		DB:       this.options.RedisDB,
+		PoolSize: this.options.PoolSize, // 连接池大小
 	})
 	_, err = this.client.Ping(this.getContext()).Result()
 	return
@@ -31,6 +33,22 @@ func (this *Redis) init() (err error) {
 
 func (this *Redis) getContext() (ctx context.Context) {
 	ctx, _ = context.WithTimeout(context.Background(), this.options.TimeOut)
+	return
+}
+
+///批处理
+func (this *Redis) Pipeline(fn func(pipe redis.Pipeliner) error) (err error) {
+	_, err = this.client.Pipelined(context.Background(), fn)
+	return
+}
+
+///事务处理
+func (this *Redis) Watch(fn func(*redis.Tx) error, keys ...core.Redis_Key) (err error) {
+	agrs := make([]string, len(keys))
+	for i, v := range keys {
+		agrs[i] = string(v)
+	}
+	err = this.client.Watch(this.getContext(), fn, agrs...)
 	return
 }
 

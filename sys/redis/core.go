@@ -4,11 +4,14 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/liwei1dao/lego/core"
 )
 
 type (
 	IRedis interface {
+		Pipeline(fn func(pipe redis.Pipeliner) error) (err error)
+		Watch(fn func(*redis.Tx) error, keys ...core.Redis_Key) (err error)
 		/*Key*/
 		Delete(key core.Redis_Key) (err error)
 		ExistsKey(key core.Redis_Key) (iskeep bool, err error)

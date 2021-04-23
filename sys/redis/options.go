@@ -19,6 +19,7 @@ type Options struct {
 	RedisUrl         string
 	RedisPassword    string
 	RedisDB          int
+	PoolSize         int
 	RedisStorageType RedisStorageTyoe
 	TimeOut          time.Duration
 }
@@ -41,6 +42,12 @@ func SetRedisDB(v int) Option {
 	}
 }
 
+func SetPoolSize(v int) Option {
+	return func(o *Options) {
+		o.PoolSize = v
+	}
+}
+
 func SetRedisStorageType(v RedisStorageTyoe) Option {
 	return func(o *Options) {
 		o.RedisStorageType = v
@@ -57,6 +64,7 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
 		RedisUrl: "redis://root:li13451234@127.0.0.1:6379/1",
 		TimeOut:  time.Second * 3,
+		PoolSize: 100,
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
@@ -71,6 +79,7 @@ func newOptionsByOption(opts ...Option) Options {
 	options := Options{
 		RedisUrl: "redis://root:li13451234@127.0.0.1:6379/1",
 		TimeOut:  time.Second * 3,
+		PoolSize: 100,
 	}
 	for _, o := range opts {
 		o(&options)
