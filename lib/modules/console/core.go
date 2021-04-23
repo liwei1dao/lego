@@ -43,7 +43,7 @@ type (
 	}
 	ICache interface {
 		core.IModuleComp
-		GetPool() *redis.RedisPool
+		GetRedis() redis.IRedis
 		QueryToken(token string) (uId uint32, err error)
 		WriteToken(token string, uId uint32) (err error)
 		CleanToken(token string) (err error)
@@ -51,9 +51,9 @@ type (
 		WriteUserData(data *Cache_UserData) (err error)
 		CleanUserData(uid uint32) (err error)
 		AddNewClusterMonitor(data map[string]*ClusterMonitor)
-		GetClusterMonitor(sIs string, timeleng int32) (result []*ClusterMonitor, err error)
+		GetClusterMonitor(sIs string, timeleng int) (result []*ClusterMonitor, err error)
 		AddNewHostMonitor(data *HostMonitor)
-		GetHostMonitor(timeleng int32) (result []*HostMonitor, err error)
+		GetHostMonitor(timeleng int) (result []*HostMonitor, err error)
 	}
 	IDB interface {
 		core.IModuleComp

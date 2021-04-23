@@ -2,6 +2,7 @@ package console
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
@@ -33,14 +34,14 @@ func (this *CaptchaComp) SendEmailCaptcha(email, captcha string) (err error) {
 //获取验证码
 func (this *CaptchaComp) QueryCaptcha(cId string, ctype CaptchaType) (captcha string, err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleCaptcha), cId, ctype)
-	pool := this.module.Cache().GetPool()
-	err = pool.GetKeyForValue(Id, &captcha)
+	redis := this.module.Cache().GetRedis()
+	err = redis.Get(core.Redis_Key(Id), &captcha)
 	return
 }
 
 //写入验证码
 func (this *CaptchaComp) WriteCaptcha(cId, captcha string, ctype CaptchaType) {
 	Id := fmt.Sprintf(string(Cache_ConsoleCaptcha), cId, ctype)
-	pool := this.module.Cache().GetPool()
-	pool.SetExKeyForValue(Id, captcha, this.module.Options().GetCaptchaExpirationdate())
+	redis := this.module.Cache().GetRedis()
+	redis.Set(core.Redis_Key(Id), captcha, time.Second*time.Duration(this.module.Options().GetCaptchaExpirationdate()))
 }
