@@ -109,7 +109,7 @@ func Test_CreateCompoundIndex(t *testing.T) {
 		fmt.Printf("start sys Fail err:%v", err)
 		return
 	}
-	str, err := mgo.CreateIndex(core.SqlTable("unreadmsg"), bson.M{"channeltype": 1, "targetid": 1, "uid": 1, "unreadmsg.sendtime": 1}, nil)
+	str, err := sys.CreateIndex(core.SqlTable("unreadmsg"), bson.M{"channeltype": 1, "targetid": 1, "uid": 1, "unreadmsg.sendtime": 1}, nil)
 	if err != nil {
 		fmt.Printf("CreateIndex  err:%v", err)
 	} else {
