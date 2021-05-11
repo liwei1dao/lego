@@ -3,8 +3,9 @@ option go_package = ".;console";
 
 //验证码类型
 enum CaptchaType {
-    LoginCaptcha = 0;            //登录验证码
-	BindCaptcha  = 1;            //绑定验证码
+    RegisterCaptcha = 0;         //注册验证码
+    LoginCaptcha = 1;            //登录验证码
+	  BindCaptcha  = 2;            //绑定验证码
 }
 
 //用户角色

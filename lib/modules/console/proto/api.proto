@@ -4,12 +4,20 @@ import "db.proto";
 
 //发送验证码请求
 message SendEmailCaptchaReq {
-    string Mailbox = 1;              //邮箱
+    string PhonOrEmail = 1;          //手机或者邮箱
     CaptchaType CaptchaType = 2;     //验证码类型
     string Sign = 3;                 //签名
- }
+}
 
- //登录请求 验证码
+//注册请求 验证码
+message RegisterByCaptchaReq{
+  string PhonOrEmail = 1;
+  string Password =2;
+  string Captcha =3;
+  string Sign = 4;                 //签名
+}
+
+//登录请求 验证码
 message LoginByCaptchaReq {
     string PhonOrEmail = 1; 
     string Captcha =2;
@@ -78,5 +86,5 @@ message ClusterMonitorData {
     repeated double Cpu = 6;
     repeated double Memory = 7;
     repeated double Goroutine = 8;
-	repeated double PreWeight = 9;
+	  repeated double PreWeight = 9;
 }

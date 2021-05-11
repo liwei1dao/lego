@@ -31,6 +31,7 @@ func (this *ApiComp) Init(service core.IService, module core.IModule, comp core.
 	console.POST("/getconsolecluster", this.module.CheckToken, this.GetClusterMonitorData)
 
 	user := this.module.Group("/lego/user")
+	user.POST("/registerbycaptcha", this.RegisterByCaptchaReq)
 	user.POST("/loginbycaptcha", this.LoginByCaptchaReq)
 	user.POST("/loginbypassword", this.LoginByPasswordReq)
 	user.POST("/getuserinfo", this.module.CheckToken, this.GetUserinfoReq)
@@ -70,19 +71,19 @@ func (this *ApiComp) SendEmailCaptchaReq(c *http.Context) {
 	req := &SendEmailCaptchaReq{}
 	c.ShouldBindJSON(req)
 	defer log.Debugf("SendEmailCaptchaReq:%+v", req)
-	if sgin := this.module.ParamSign(map[string]interface{}{"Mailbox": req.Mailbox, "CaptchaType": req.CaptchaType}); sgin != req.Sign {
+	if sgin := this.module.ParamSign(map[string]interface{}{"PhonOrEmail": req.PhonOrEmail, "CaptchaType": req.CaptchaType}); sgin != req.Sign {
 		log.Errorf("LoginByCaptchaReq SignError sgin:%s", sgin)
 		this.module.HttpStatusOK(c, core.ErrorCode_SignError, nil)
 		return
 	}
-	if req.Mailbox == "" {
+	if req.PhonOrEmail == "" {
 		this.module.HttpStatusOK(c, ErrorCode_ReqParameterError, nil)
 		return
 	}
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	captchacode := fmt.Sprintf("%06v", rnd.Int31n(1000000))
-	if err := this.module.Captcha().SendEmailCaptcha(req.Mailbox, captchacode); err == nil {
-		this.module.Captcha().WriteCaptcha(req.Mailbox, captchacode, req.CaptchaType)
+	if err := this.module.Captcha().SendEmailCaptcha(req.PhonOrEmail, captchacode); err == nil {
+		this.module.Captcha().WriteCaptcha(req.PhonOrEmail, captchacode, req.CaptchaType)
 		this.module.HttpStatusOK(c, ErrorCode_Success, nil)
 	} else {
 		this.module.HttpStatusOK(c, ErrorCode_ReqParameterError, nil)
@@ -252,6 +253,45 @@ func (this *ApiComp) GetClusterMonitorData(c *http.Context) {
  * ________##_______####________####______________
  */
 
+//注册请求 验证码
+func (this *ApiComp) RegisterByCaptchaReq(c *http.Context) {
+	req := &RegisterByCaptchaReq{}
+	c.ShouldBindJSON(req)
+	defer log.Debugf("RegisterByCaptchaReq:%+v", req)
+	if sgin := this.module.ParamSign(map[string]interface{}{"PhonOrEmail": req.PhonOrEmail, "Captcha": req.Captcha}); sgin != req.Sign {
+		log.Errorf("LoginByCaptchaReq SignError sgin:%s", sgin)
+		this.module.HttpStatusOK(c, ErrorCode_SignError, nil)
+		return
+	}
+	var (
+		captchecode string
+		token       string
+		err         error
+		udata       *DB_UserData
+	)
+	if captchecode, err = this.module.Captcha().QueryCaptcha(req.PhonOrEmail, CaptchaType_RegisterCaptcha); err == nil && captchecode == req.Captcha {
+		if udata, err = this.module.DB().LoginUserDataByPhonOrEmail(&DB_UserData{
+			PhonOrEmail: req.PhonOrEmail,
+			Password:    req.Password,
+			NickName:    req.PhonOrEmail,
+			UserRole:    UserRole_Guester,
+		}); err == nil {
+			this.module.Cache().CleanToken(udata.Token)
+			token = this.module.CreateToken(udata.Id)
+			udata.Token = token
+			this.module.DB().UpDataUserData(udata)
+			this.module.Cache().WriteToken(token, udata.Id)
+			this.module.Cache().WriteUserData(&Cache_UserData{
+				Db_UserData: udata,
+				IsOnLine:    true,
+			})
+			this.module.HttpStatusOK(c, ErrorCode_Success, token)
+			return
+		}
+	}
+	this.module.HttpStatusOK(c, ErrorCode_ReqParameterError, nil)
+}
+
 //登录请求 验证码
 func (this *ApiComp) LoginByCaptchaReq(c *http.Context) {
 	req := &LoginByCaptchaReq{}
@@ -289,7 +329,6 @@ func (this *ApiComp) LoginByCaptchaReq(c *http.Context) {
 		}
 	}
 	this.module.HttpStatusOK(c, ErrorCode_ReqParameterError, nil)
-	return
 }
 
 //登录请求 密码
@@ -323,7 +362,6 @@ func (this *ApiComp) LoginByPasswordReq(c *http.Context) {
 		}
 	}
 	this.module.HttpStatusOK(c, ErrorCode_ReqParameterError, nil)
-	return
 }
 
 //登录请求 Token
@@ -343,7 +381,6 @@ func (this *ApiComp) GetUserinfoReq(c *http.Context) {
 		return
 	}
 	this.module.HttpStatusOK(c, ErrorCode_TokenExpired, nil)
-	return
 }
 
 //登出
@@ -364,5 +401,4 @@ func (this *ApiComp) LoginOutReq(c *http.Context) {
 	}
 	log.Errorf("LoginOutReq err:%v", err)
 	this.module.HttpStatusOK(c, ErrorCode_SqlExecutionError, nil)
-	return
 }
