@@ -62,7 +62,8 @@ func SetTimeOut(v time.Duration) Option {
 
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
-		RedisUrl: "redis://root:li13451234@127.0.0.1:6379/1",
+		RedisUrl: "127.0.0.1:6379",
+		RedisDB:  1,
 		TimeOut:  time.Second * 3,
 		PoolSize: 100,
 	}
@@ -77,7 +78,8 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 
 func newOptionsByOption(opts ...Option) Options {
 	options := Options{
-		RedisUrl: "redis://root:li13451234@127.0.0.1:6379/1",
+		RedisUrl: "127.0.0.1:6379",
+		RedisDB:  1,
 		TimeOut:  time.Second * 3,
 		PoolSize: 100,
 	}

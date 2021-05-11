@@ -10,6 +10,7 @@ import (
 type IOptions interface {
 	http.IOptions
 	GetRedisUrl() string
+	GetRedisDB() int
 	GetUserCacheExpirationDate() int
 	GetTokenCacheExpirationDate() int
 	GetMonitorTotalTime() int
@@ -29,6 +30,7 @@ type IOptions interface {
 type Options struct {
 	http.Options
 	RedisUrl                 string                 `json:"-"` //缓存地址 不显示控制台配置信息中
+	RedisDB                  int                    `json:"-"` //缓存DB
 	UserCacheExpirationDate  int                    `json:"-"` //用户缓存过期时间 单位秒
 	TokenCacheExpirationDate int                    `json:"-"` //Token缓存过期时间 单位秒
 	MonitorTotalTime         int                    `json:"-"` //监控总时长 小时为单位
@@ -63,7 +65,9 @@ func (this *Options) LoadConfig(settings map[string]interface{}) (err error) {
 func (this *Options) GetRedisUrl() string {
 	return this.RedisUrl
 }
-
+func (this *Options) GetRedisDB() int {
+	return this.RedisDB
+}
 func (this *Options) GetUserCacheExpirationDate() int {
 	return this.UserCacheExpirationDate
 }
