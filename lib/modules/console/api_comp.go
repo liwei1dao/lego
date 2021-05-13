@@ -81,7 +81,7 @@ func (this *ApiComp) SendEmailCaptchaReq(c *http.Context) {
 		return
 	}
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	captchacode := fmt.Sprintf("%06v", rnd.Int31n(1000000))
+	captchacode := fmt.Sprintf("%04v", rnd.Int31n(10000))
 	if err := this.module.Captcha().SendEmailCaptcha(req.PhonOrEmail, captchacode); err == nil {
 		this.module.Captcha().WriteCaptcha(req.PhonOrEmail, captchacode, req.CaptchaType)
 		this.module.HttpStatusOK(c, ErrorCode_Success, nil)
@@ -125,7 +125,7 @@ func (this *ApiComp) GetProjectInfo(c *http.Context) {
 		udata *Cache_UserData
 	)
 	if udata, err = this.module.Cache().QueryUserData(uId); err == nil && udata.Db_UserData.UserRole >= UserRole_Developer {
-		this.module.HttpStatusOK(c, ErrorCode_Success, this.module.Options)
+		this.module.HttpStatusOK(c, ErrorCode_Success, this.module.Options())
 		return
 	} else {
 		this.module.HttpStatusOK(c, ErrorCode_AuthorityLow, nil)
@@ -258,8 +258,8 @@ func (this *ApiComp) RegisterByCaptchaReq(c *http.Context) {
 	req := &RegisterByCaptchaReq{}
 	c.ShouldBindJSON(req)
 	defer log.Debugf("RegisterByCaptchaReq:%+v", req)
-	if sgin := this.module.ParamSign(map[string]interface{}{"PhonOrEmail": req.PhonOrEmail, "Captcha": req.Captcha}); sgin != req.Sign {
-		log.Errorf("LoginByCaptchaReq SignError sgin:%s", sgin)
+	if sgin := this.module.ParamSign(map[string]interface{}{"PhonOrEmail": req.PhonOrEmail, "Password": req.Password, "Captcha": req.Captcha}); sgin != req.Sign {
+		log.Errorf("RegisterByCaptchaReq SignError sgin:%s", sgin)
 		this.module.HttpStatusOK(c, ErrorCode_SignError, nil)
 		return
 	}
@@ -357,7 +357,7 @@ func (this *ApiComp) LoginByPasswordReq(c *http.Context) {
 				Db_UserData: udata,
 				IsOnLine:    true,
 			})
-			this.module.HttpStatusOK(c, ErrorCode_Success, token)
+			this.module.HttpStatusOK(c, ErrorCode_Success, udata)
 			return
 		}
 	}

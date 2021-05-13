@@ -17,7 +17,7 @@ import (
 
 type Console struct {
 	http.Http
-	options            *Options
+	options            IOptions
 	db                 *DBComp
 	cache              *CacheComp
 	captcha            *CaptchaComp
@@ -35,7 +35,7 @@ func (this *Console) NewOptions() (options core.IModuleOptions) {
 }
 
 func (this *Console) Init(service core.IService, module core.IModule, options core.IModuleOptions) (err error) {
-	this.options = options.(*Options)
+	this.options = options.(IOptions)
 	err = this.Http.Init(service, module, options)
 	return
 }
@@ -94,7 +94,7 @@ func (this *Console) ParamSign(param map[string]interface{}) (sign string) {
 		}
 		builder.WriteString("&")
 	}
-	builder.WriteString("key=" + this.options.SignKey)
+	builder.WriteString("key=" + this.options.GetSignKey())
 	log.Infof("orsign:%s", builder.String())
 	sign = crypto.MD5EncToLower(builder.String())
 	return
@@ -127,13 +127,13 @@ func (this *Console) HttpStatusOK(c *http.Context, code core.ErrorCode, data int
 //创建token
 func (this *Console) CreateToken(uId uint32) (token string) {
 	orsign := fmt.Sprintf("%d|%d", uId, time.Now().Unix())
-	token = crypto.AesEncryptCBC(orsign, this.options.SignKey)
+	token = crypto.AesEncryptCBC(orsign, this.options.GetSignKey())
 	return
 }
 
 //校验token
 func (this *Console) checkToken(token string, uId uint32) (check bool) {
-	orsign := crypto.AesDecryptCBC(token, this.options.SignKey)
+	orsign := crypto.AesDecryptCBC(token, this.options.GetSignKey())
 	tempstr := strings.Split(orsign, "|")
 	if len(tempstr) == 2 && tempstr[0] == fmt.Sprintf("%d", uId) {
 		return true
