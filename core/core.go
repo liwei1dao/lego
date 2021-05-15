@@ -120,7 +120,12 @@ type (
 		TotalGoroutine  int                          //总的协程数
 		CurrPreWeight   float64                      //服务权重
 		Setting         map[string]*SettingItem      //服务器配置信息
+		SysSetting      map[string]*SysSetting       //服务器系统配置信息
 		ModuleMonitor   map[M_Modules]*ModuleMonitor //模块监听信息
+	}
+	SysSetting struct { //模块监听
+		SysName string                  //系统名称
+		Setting map[string]*SettingItem //系统配置信息
 	}
 	ModuleMonitor struct { //模块监听
 		ModuleName M_Modules               //模块名称

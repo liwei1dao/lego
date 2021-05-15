@@ -44,6 +44,7 @@ func (this *Monitor) Init(service core.IService, module core.IModule, options co
 		ServiceVersion:  this.service.GetVersion(),
 		ServiceTag:      this.service.GetTag(),
 		Setting:         make(map[string]*core.SettingItem),
+		SysSetting:      make(map[string]*core.SysSetting),
 		ModuleMonitor:   make(map[core.M_Modules]*core.ModuleMonitor),
 	}
 	this.ServiceSetting = make(map[string]func(newvalue string) (err error))
@@ -54,6 +55,19 @@ func (this *Monitor) Init(service core.IService, module core.IModule, options co
 			ItemName: k,
 			IsWrite:  false,
 			Data:     v,
+		}
+	}
+	for k, v := range this.service.GetSettings().Sys {
+		this.ServiceMonitor.SysSetting[k] = &core.SysSetting{
+			SysName: k,
+			Setting: make(map[string]*core.SettingItem),
+		}
+		for k1, v1 := range v {
+			this.ServiceMonitor.SysSetting[k].Setting[k1] = &core.SettingItem{
+				ItemName: k1,
+				IsWrite:  false,
+				Data:     v1,
+			}
 		}
 	}
 	for k, v := range this.service.GetSettings().Modules {
