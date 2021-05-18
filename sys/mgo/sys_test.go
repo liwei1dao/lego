@@ -22,12 +22,11 @@ type TestData struct {
 	HeadUrl  string //头像Id
 }
 
-//测试 系统
+//测试 系统 直连模式
 func Test_sys(t *testing.T) {
 	if err := OnInit(map[string]interface{}{
-		"MongodbUrl":      "mongodb://127.0.0.1:10001",
+		"MongodbUrl":      "mongodb://127.0.0.1:37017",
 		"MongodbDatabase": "testdb",
-		"Replset":         "replset0",
 	}); err == nil {
 		if _, err := UpdateOne(Sql_UserDataTable,
 			bson.M{"_id": 10001},
@@ -47,14 +46,14 @@ func Test_sys(t *testing.T) {
 			fmt.Printf("FindOne data:%+v", data)
 		}
 	} else {
-		fmt.Printf("FindOne errr:%v", err)
+		fmt.Printf("OnInit errr:%v", err)
 	}
 }
 
-//测试 事务
+//测试 事务 副本集模式
 func Test_Affair(t *testing.T) {
 	if err := OnInit(map[string]interface{}{
-		"MongodbUrl":      "mongodb://127.0.0.1:27017",
+		"MongodbUrl":      "mongodb://root:123@127.0.0.1:37017,127.0.0.1:37018,127.0.0.1:37019/admin?replicaSet=mongoReplSet",
 		"MongodbDatabase": "testdb",
 	}); err == nil {
 		err = UseSession(func(sessionContext mongo.SessionContext) error {
@@ -66,13 +65,13 @@ func Test_Affair(t *testing.T) {
 			col := Collection(Sql_UserDataTable)
 
 			//在事务内写一条id为“222”的记录
-			_, err = col.InsertOne(sessionContext, bson.M{"_id": 10002, "nicename": "liwei2dao", "headurl": "http://test1.web.com", "sex": 2})
+			_, err = col.InsertOne(sessionContext, bson.M{"_id": 10004, "nicename": "liwei2dao", "headurl": "http://test1.web.com", "sex": 2})
 			if err != nil {
 				fmt.Println(err)
 				return err
 			}
 			//在事务内写一条id为“333”的记录
-			_, err = col.InsertOne(sessionContext, bson.M{"_id": 10003, "nicename": "liwei3dao", "headurl": "http://test1.web.com", "sex": 2})
+			_, err = col.InsertOne(sessionContext, bson.M{"_id": 10005, "nicename": "liwei3dao", "headurl": "http://test1.web.com", "sex": 2})
 			if err != nil {
 				sessionContext.AbortTransaction(sessionContext)
 				return err

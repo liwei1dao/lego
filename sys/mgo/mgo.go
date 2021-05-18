@@ -36,7 +36,6 @@ func (this *Mongodb) init() (err error) {
 	readconcern.Majority()
 	//链接mongo服务
 	opt := options.Client().ApplyURI(this.options.MongodbUrl)
-	// opt.SetReplicaSet(this.options.Replset)   //副本集
 	opt.SetLocalThreshold(3 * time.Second)       //只使用与mongo操作耗时小于3秒的
 	opt.SetMaxConnIdleTime(5 * time.Second)      //指定连接可以保持空闲的最大毫秒数
 	opt.SetMaxPoolSize(this.options.MaxPoolSize) //使用最大的连接数
