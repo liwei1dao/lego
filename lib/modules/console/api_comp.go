@@ -8,6 +8,7 @@ import (
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib/modules/http"
+	"github.com/liwei1dao/lego/sys/event"
 	"github.com/liwei1dao/lego/sys/log"
 )
 
@@ -325,6 +326,7 @@ func (this *ApiComp) LoginByCaptchaReq(c *http.Context) {
 				IsOnLine:    true,
 			})
 			this.module.HttpStatusOK(c, ErrorCode_Success, token)
+			event.TriggerEvent(Event_Login, udata)
 			return
 		}
 	}
@@ -358,6 +360,7 @@ func (this *ApiComp) LoginByPasswordReq(c *http.Context) {
 				IsOnLine:    true,
 			})
 			this.module.HttpStatusOK(c, ErrorCode_Success, udata)
+			event.TriggerEvent(Event_Login, udata)
 			return
 		}
 	}
@@ -378,6 +381,7 @@ func (this *ApiComp) GetUserinfoReq(c *http.Context) {
 			IsOnLine:    true,
 		})
 		this.module.HttpStatusOK(c, ErrorCode_Success, udata)
+		event.TriggerEvent(Event_Login, udata)
 		return
 	}
 	this.module.HttpStatusOK(c, ErrorCode_TokenExpired, nil)

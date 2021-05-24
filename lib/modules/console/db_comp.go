@@ -8,6 +8,7 @@ import (
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/sys/event"
 	"github.com/liwei1dao/lego/sys/mgo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -136,6 +137,8 @@ func (this *DBComp) registeredUser(data *DB_UserData) (result *DB_UserData, err 
 		NickName:    data.NickName,
 		HeadUrl:     data.HeadUrl,
 	}
-	_, err = this.mgo.InsertOne(Sql_ConsoleUserDataTable, result)
+	if _, err = this.mgo.InsertOne(Sql_ConsoleUserDataTable, result); err == nil {
+		event.TriggerEvent(Event_Registered, result)
+	}
 	return
 }

@@ -19,10 +19,12 @@ type CacheComp struct {
 func (this *CacheComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
 	err = this.ModuleCompBase.Init(service, module, comp, options)
 	this.module = module.(IConsole)
-	this.redis, err = redis.NewSys(
+	if this.redis, err = redis.NewSys(
 		redis.SetRedisUrl(this.module.Options().GetRedisUrl()),
 		redis.SetRedisDB(this.module.Options().GetRedisDB()),
-	)
+	); err != nil {
+		err = fmt.Errorf("redis[%s]err:%v", this.module.Options().GetRedisUrl(), err)
+	}
 	return
 }
 

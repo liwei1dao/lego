@@ -26,6 +26,11 @@ const ( //Cache
 	Cache_ConsoleCaptcha        core.Redis_Key = "Console_Captcha:%s-%d"     //验证码缓存
 )
 
+const ( //event
+	Event_Registered core.Event_Key = "Console_Registered" //用户注册
+	Event_Login      core.Event_Key = "Console_Login"      //用户登录
+)
+
 type (
 	IConsole interface {
 		http.IHttp
