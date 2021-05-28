@@ -14,6 +14,7 @@ type (
 		GetRtmpNoAuth() bool
 		GetCacheAddr() string
 		GetCacheDB() int
+		GetCachePassword() string
 		GetFLVArchive() bool
 		GetFLVDir() string
 		GetReadTimeout() int
@@ -36,6 +37,7 @@ type (
 		RtmpNoAuth      bool
 		CacheAddr       string
 		CacheDB         int
+		CachePassword   string
 		FLVArchive      bool
 		FLVDir          string
 		ReadTimeout     int
@@ -86,6 +88,10 @@ func (this *Options) GetCacheAddr() string {
 }
 func (this *Options) GetCacheDB() int {
 	return this.CacheDB
+}
+
+func (this *Options) GetCachePassword() string {
+	return this.CachePassword
 }
 
 func (this *Options) GetRtmpNoAuth() bool {

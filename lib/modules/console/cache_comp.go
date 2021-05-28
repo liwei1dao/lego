@@ -22,6 +22,7 @@ func (this *CacheComp) Init(service core.IService, module core.IModule, comp cor
 	if this.redis, err = redis.NewSys(
 		redis.SetRedisUrl(this.module.Options().GetRedisUrl()),
 		redis.SetRedisDB(this.module.Options().GetRedisDB()),
+		redis.SetRedisPassword(this.module.Options().GetRedisPassword()),
 	); err != nil {
 		err = fmt.Errorf("redis[%s]err:%v", this.module.Options().GetRedisUrl(), err)
 	}
