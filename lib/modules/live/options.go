@@ -13,6 +13,7 @@ type (
 		GetHlsKeepAfterEnd() bool
 		GetRtmpNoAuth() bool
 		GetCacheAddr() string
+		GetCacheDB() int
 		GetFLVArchive() bool
 		GetFLVDir() string
 		GetReadTimeout() int
@@ -34,6 +35,7 @@ type (
 		HlsKeepAfterEnd bool
 		RtmpNoAuth      bool
 		CacheAddr       string
+		CacheDB         int
 		FLVArchive      bool
 		FLVDir          string
 		ReadTimeout     int
@@ -82,6 +84,10 @@ func (this *Options) GetHlsKeepAfterEnd() bool {
 func (this *Options) GetCacheAddr() string {
 	return this.CacheAddr
 }
+func (this *Options) GetCacheDB() int {
+	return this.CacheDB
+}
+
 func (this *Options) GetRtmpNoAuth() bool {
 	return this.RtmpNoAuth
 }
