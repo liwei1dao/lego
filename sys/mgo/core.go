@@ -16,6 +16,7 @@ type (
 		DeleteIndex(sqltable core.SqlTable, name string, options *options.DropIndexesOptions) (bson.Raw, error)
 		UseSession(fn func(sessionContext mongo.SessionContext) error) error
 		CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options.CountOptions) (int64, error)
+		CountDocumentsByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.CountOptions) (int64, error)
 		Find(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error)
 		FindByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error)
 		FindOne(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOneOptions) *mongo.SingleResult
@@ -65,6 +66,10 @@ func UseSession(fn func(sessionContext mongo.SessionContext) error) error {
 
 func CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options.CountOptions) (int64, error) {
 	return defsys.CountDocuments(sqltable, filter, opts...)
+}
+
+func CountDocumentsByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.CountOptions) (int64, error) {
+	return defsys.CountDocumentsByCtx(sqltable, ctx, filter, opts...)
 }
 
 func Find(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error) {

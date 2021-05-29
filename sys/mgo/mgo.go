@@ -78,7 +78,9 @@ func (this *Mongodb) UseSession(fn func(sessionContext mongo.SessionContext) err
 func (this *Mongodb) CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options.CountOptions) (int64, error) {
 	return this.Collection(sqltable).CountDocuments(this.getContext(), filter, opts...)
 }
-
+func (this *Mongodb) CountDocumentsByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.CountOptions) (int64, error) {
+	return this.Collection(sqltable).CountDocuments(ctx, filter, opts...)
+}
 func (this *Mongodb) Find(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error) {
 	return this.Collection(sqltable).Find(this.getContext(), filter, opts...)
 }
