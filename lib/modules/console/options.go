@@ -12,6 +12,7 @@ type IOptions interface {
 	GetRedisUrl() string
 	GetRedisDB() int
 	GetRedisPassword() string
+	GetInitUserIdNum() int
 	GetUserCacheExpirationDate() int
 	GetTokenCacheExpirationDate() int
 	GetMonitorTotalTime() int
@@ -33,6 +34,7 @@ type Options struct {
 	RedisUrl                 string                 `json:"-"` //缓存地址 不显示控制台配置信息中
 	RedisDB                  int                    `json:"-"` //缓存DB
 	RedisPassword            string                 `json:"-"` //缓存密码
+	InitUserIdNum            int                    `json:"-"` //初始化用户Id数
 	UserCacheExpirationDate  int                    `json:"-"` //用户缓存过期时间 单位秒
 	TokenCacheExpirationDate int                    `json:"-"` //Token缓存过期时间 单位秒
 	MonitorTotalTime         int                    `json:"-"` //监控总时长 小时为单位
@@ -56,6 +58,7 @@ func (this *Options) LoadConfig(settings map[string]interface{}) (err error) {
 	this.UserCacheExpirationDate = 60
 	this.TokenCacheExpirationDate = 3600
 	this.CaptchaExpirationdate = 60
+	this.InitUserIdNum = 100000
 	if err = this.Options.LoadConfig(settings); err == nil {
 		if settings != nil {
 			err = mapstructure.Decode(settings, this)
@@ -74,7 +77,9 @@ func (this *Options) GetRedisDB() int {
 func (this *Options) GetRedisPassword() string {
 	return this.RedisPassword
 }
-
+func (this *Options) GetInitUserIdNum() int {
+	return this.InitUserIdNum
+}
 func (this *Options) GetUserCacheExpirationDate() int {
 	return this.UserCacheExpirationDate
 }
