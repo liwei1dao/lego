@@ -11,6 +11,7 @@ const (
 	ErrorCode_ReqParameterError       ErrorCode = 14 //请求参数错误
 	ErrorCode_SignError               ErrorCode = 15 //签名错误
 	ErrorCode_InsufficientPermissions ErrorCode = 16 //权限不足
+	ErrorCode_NoLogin                 ErrorCode = 17 //未登录
 	//gate
 	ErrorCode_NoRoute                  ErrorCode = 201 //没有路由
 	ErrorCode_LocalRouteExecutionError ErrorCode = 202 //本地路由执行错误
@@ -25,6 +26,7 @@ var ErrorCodeMsg = map[ErrorCode]string{
 	ErrorCode_ReqParameterError:        "请求参数错误",
 	ErrorCode_SignError:                "签名错误",
 	ErrorCode_InsufficientPermissions:  "权限不足",
+	ErrorCode_NoLogin:                  "未登录",
 	ErrorCode_NoRoute:                  "没有路由",
 	ErrorCode_LocalRouteExecutionError: "本地路由执行错误",
 }
