@@ -1,0 +1,21 @@
+{
+  // 使用 IntelliSense 了解相关属性。 
+  // 悬停以查看现有属性的描述。
+  // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "brief",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/services/brief", //配置Go项目启动文件路径，即main函数所在的.go文件的路径,${workspaceRoot}代表项目的根目录,也就是 /bin /pkg /src这三个文件夹所在的目录
+      "args": [],
+      "cwd": "${workspaceFolder}/bin", //设置工作目录
+      "internalConsoleOptions": "openOnSessionStart",
+      "output": "${workspaceFolder}/bin/vsdebug_brief", //设置vscode调试时生成文件的路径
+      "showGlobalVariables": true,
+      "env": {}, //可以用来配置调试启动时所用的环境变量参数,比如gopath临时设置为某个参数就可以在这里指定，如果有多个gopath，用英文冒号:来连接多个gopath
+    },
+  ]
+}
