@@ -1,4 +1,4 @@
-package sqls
+package sqlserver
 
 import (
 	"time"
