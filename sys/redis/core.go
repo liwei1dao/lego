@@ -74,6 +74,10 @@ type (
 	}
 )
 
+const (
+	RedisNil = redis.Nil //数据为空错误
+)
+
 var defsys IRedis
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
