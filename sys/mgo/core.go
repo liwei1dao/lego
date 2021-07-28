@@ -36,6 +36,10 @@ type (
 )
 
 var (
+	MongodbNil = mongo.ErrNoDocuments //数据为空错误
+)
+
+var (
 	defsys IMongodb
 )
 
