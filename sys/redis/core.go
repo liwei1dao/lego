@@ -39,6 +39,10 @@ type (
 		Get(key core.Redis_Key, value interface{}) (err error)
 		GetSet(key core.Redis_Key, value interface{}, result interface{}) (err error)
 		MGet(keys ...core.Redis_Key) (result []string, err error)
+		/*Lock*/
+		NewRedisMutex(key core.Redis_Key, opt ...RMutexOption) (result *RedisMutex, err error)
+		Lock(key core.Redis_Key, outTime int) (err error)
+		UnLock(key core.Redis_Key) (err error)
 		/*List*/
 		Lindex(key core.Redis_Key, value interface{}) (err error)
 		Linsert(key core.Redis_Key, isbefore bool, tager interface{}, value interface{}) (err error)
@@ -167,6 +171,17 @@ func GetSet(key core.Redis_Key, value interface{}, result interface{}) (err erro
 }
 func MGet(keys ...core.Redis_Key) (result []string, err error) {
 	return defsys.MGet(keys...)
+}
+
+/*Lock*/
+func NewRedisMutex(key core.Redis_Key, opt ...RMutexOption) (result *RedisMutex, err error) {
+	return defsys.NewRedisMutex(key, opt...)
+}
+func Lock(key core.Redis_Key, outTime int) (err error) {
+	return defsys.Lock(key, outTime)
+}
+func UnLock(key core.Redis_Key) (err error) {
+	return defsys.UnLock(key)
 }
 
 /*List*/

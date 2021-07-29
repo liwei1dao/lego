@@ -80,3 +80,5 @@ func (this *Redis) Keys(pattern core.Redis_Key) (keys []string, err error) {
 	keys, err = cmd.Result()
 	return
 }
+
+
