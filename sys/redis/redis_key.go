@@ -75,10 +75,8 @@ func (this *Redis) RenamenxKey(oldkey core.Redis_Key, newkey string) (err error)
 
 ///判断是否存在key pattern:key*
 func (this *Redis) Keys(pattern core.Redis_Key) (keys []string, err error) {
-	cmd := redis.NewStringSliceCmd(this.getContext(), "KEYS", pattern)
+	cmd := redis.NewStringSliceCmd(this.getContext(), "KEYS", string(pattern))
 	this.client.Process(this.getContext(), cmd)
 	keys, err = cmd.Result()
 	return
 }
-
-
