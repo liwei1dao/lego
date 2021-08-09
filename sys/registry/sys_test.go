@@ -39,7 +39,6 @@ func Test_Sys_Nacose(t *testing.T) {
 		Ip:          "127.0.0.2",
 		Port:        8848,
 		Weight:      1,
-		GroupName:   "demo",
 		ServiceName: "test_1",
 		Enable:      true,
 		Healthy:     true,
@@ -59,7 +58,6 @@ func Test_Sys_Nacose(t *testing.T) {
 
 	if slist, err := client.GetAllServicesInfo(vo.GetAllServiceInfoParam{
 		NameSpace: "cb351549-86d2-4b65-9416-9dbe24856bdb",
-		GroupName: "demo",
 		PageNo:    1,
 		PageSize:  10,
 	}); err != nil {
@@ -68,7 +66,6 @@ func Test_Sys_Nacose(t *testing.T) {
 		fmt.Printf("GetAllServicesInfo :%+v\n", slist)
 		for _, v := range slist.Doms {
 			if services, err := client.SelectInstances(vo.SelectInstancesParam{
-				GroupName:   "demo",
 				ServiceName: v,
 				HealthyOnly: true,
 			}); err != nil {
@@ -77,7 +74,6 @@ func Test_Sys_Nacose(t *testing.T) {
 				fmt.Printf("SelectInstances :%+v\n", services)
 			}
 			if services, err := client.SelectAllInstances(vo.SelectAllInstancesParam{
-				GroupName:   "demo",
 				ServiceName: v,
 			}); err != nil {
 				fmt.Printf("SelectAllInstances err:%v\n", err)

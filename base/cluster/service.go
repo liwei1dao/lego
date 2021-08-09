@@ -35,7 +35,9 @@ func (this *ClusterService) GetId() string {
 func (this *ClusterService) GetType() string {
 	return this.opts.Setting.Type
 }
-
+func (this *ClusterService) GetIp() string {
+	return this.opts.Setting.Ip
+}
 func (this *ClusterService) GetCategory() core.S_Category {
 	return this.opts.Setting.Category
 }

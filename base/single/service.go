@@ -25,7 +25,9 @@ func (this *SingleService) GetType() string {
 func (this *SingleService) GetVersion() float32 {
 	return this.opts.Setting.Version
 }
-
+func (this *SingleService) GetIp() string {
+	return this.opts.Setting.Ip
+}
 func (this *SingleService) GetSettings() core.ServiceSttings {
 	return this.opts.Setting
 }
