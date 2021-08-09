@@ -264,16 +264,23 @@ func (this *Consul_Registry) addandupdataServiceNode(as *api.AgentService) (sn *
 		_, ok := this.services[snode.Id]
 		if !ok {
 			log.Infof("发现新的服务【%s】", snode.Id)
+			this.rlock.Lock()
 			this.services[snode.Id] = snode
 			this.shash[snode.Id] = h
+			this.rlock.Unlock()
 			if this.options.Listener != nil { //异步通知
 				go this.options.Listener.FindServiceHandlefunc(*snode)
 			}
 		} else {
-			if v, ok := this.shash[snode.Id]; !ok || v != h { //校验不一致
+			this.rlock.RLock()
+			v, ok := this.shash[snode.Id]
+			this.rlock.RUnlock()
+			if !ok || v != h { //校验不一致
 				// log.Debugf("更新服务【%s】", snode.Id)
+				this.rlock.Lock()
 				this.services[snode.Id] = snode
 				this.shash[snode.Id] = h
+				this.rlock.Unlock()
 				if this.options.Listener != nil { //异步通知
 					go this.options.Listener.UpDataServiceHandlefunc(*snode)
 				}
@@ -286,12 +293,17 @@ func (this *Consul_Registry) addandupdataServiceNode(as *api.AgentService) (sn *
 	return
 }
 func (this *Consul_Registry) removeServiceNode(sId string) {
+	this.rlock.RLock()
 	_, ok := this.services[sId]
+	this.rlock.RUnlock()
 	if !ok {
 		return
 	}
 	log.Infof("丢失服务【%s】", sId)
+	this.rlock.Lock()
+	delete(this.shash, sId)
 	delete(this.services, sId)
+	this.rlock.Unlock()
 	this.syncRpcInfo()
 	if this.options.Listener != nil { //异步通知
 		go this.options.Listener.LoseServiceHandlefunc(sId)
@@ -335,14 +347,18 @@ func (this *Consul_Registry) shandler(idx uint64, data interface{}) {
 			}
 		}
 	}
-	this.slock.Lock()
-	defer this.slock.Unlock()
+	temp := make(map[string]*ServiceNode)
+	this.rlock.RLock()
+	for k, v := range this.services {
+		temp[k] = v
+	}
+	this.rlock.RUnlock()
 	for k, v := range this.watchers {
 		if _, ok := services[k]; !ok { //不存在了
 			v.Stop()
 			delete(this.watchers, k)
 
-			for k1, v1 := range this.services {
+			for k1, v1 := range temp {
 				if v1.Type == k {
 					this.removeServiceNode(k1)
 				}
@@ -356,8 +372,6 @@ func (this *Consul_Registry) snodehandler(idx uint64, data interface{}) {
 	if !ok {
 		return
 	}
-	this.slock.Lock()
-	defer this.slock.Unlock()
 	stype := ""
 	serviceMap := map[string]struct{}{}
 	for _, v := range entries {
@@ -375,7 +389,14 @@ func (this *Consul_Registry) snodehandler(idx uint64, data interface{}) {
 			serviceMap[v.Service.ID] = struct{}{}
 		}
 	}
-	for _, v := range this.services {
+
+	temp := make(map[string]*ServiceNode)
+	this.rlock.RLock()
+	for k, v := range this.services {
+		temp[k] = v
+	}
+	this.rlock.RUnlock()
+	for _, v := range temp {
 		if v.Type == stype {
 			if _, ok := serviceMap[v.Id]; !ok {
 				this.removeServiceNode(v.Id)

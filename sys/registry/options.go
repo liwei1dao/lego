@@ -27,6 +27,7 @@ type (
 		Nacos_Port              uint64
 		Nacos_TimeoutMs         uint64 //连接超时 ms
 		Nacos_BeatInterval      int64  //心跳间隔 ms
+		Nacos_RegisterTTL       int
 	}
 )
 
@@ -50,9 +51,58 @@ func SetConsul_Addr(v string) Option {
 		o.Consul_Addr = v
 	}
 }
+func SetConsul_Timeout(v int) Option {
+	return func(o *Options) {
+		o.Consul_Timeout = v
+	}
+}
+func SetConsul_RegisterInterval(v int) Option {
+	return func(o *Options) {
+		o.Consul_RegisterInterval = v
+	}
+}
+func SetConsul_RegisterTTL(v int) Option {
+	return func(o *Options) {
+		o.Consul_RegisterTTL = v
+	}
+}
+func SetNacos_NamespaceId(v string) Option {
+	return func(o *Options) {
+		o.Nacos_NamespaceId = v
+	}
+}
+func SetNacos_NacosAddr(v string) Option {
+	return func(o *Options) {
+		o.Nacos_NacosAddr = v
+	}
+}
+
+func SetNacos_Port(v uint64) Option {
+	return func(o *Options) {
+		o.Nacos_Port = v
+	}
+}
+
+func SetNacos_TimeoutMs(v uint64) Option {
+	return func(o *Options) {
+		o.Nacos_TimeoutMs = v
+	}
+}
+func SetNacos_BeatInterval(v int64) Option {
+	return func(o *Options) {
+		o.Nacos_BeatInterval = v
+	}
+}
 
 func newOptions(config map[string]interface{}, opts ...Option) Options {
-	options := Options{}
+	options := Options{
+		Consul_Timeout:          5,
+		Consul_RegisterInterval: 10,
+		Consul_RegisterTTL:      15,
+		Nacos_TimeoutMs:         10000,
+		Nacos_BeatInterval:      5000,
+		Nacos_RegisterTTL:       8,
+	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
 	}
@@ -63,7 +113,14 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 }
 
 func newOptionsByOption(opts ...Option) Options {
-	options := Options{}
+	options := Options{
+		Consul_Timeout:          5,
+		Consul_RegisterInterval: 10,
+		Consul_RegisterTTL:      15,
+		Nacos_TimeoutMs:         10000,
+		Nacos_BeatInterval:      5000,
+		Nacos_RegisterTTL:       8,
+	}
 	for _, o := range opts {
 		o(&options)
 	}

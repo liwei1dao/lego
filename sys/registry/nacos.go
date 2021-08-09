@@ -23,12 +23,13 @@ import (
 func newNacos(options Options) (sys *Nacos_Registry, err error) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	sys = &Nacos_Registry{
-		options:  options,
-		ctx:      ctx,
-		cancel:   cancel,
-		shash:    make(map[string]uint64),
-		services: make(map[string]*ServiceNode),
-		rpcsubs:  make(map[core.Rpc_Key][]*ServiceNode),
+		options:   options,
+		ctx:       ctx,
+		cancel:    cancel,
+		shash:     make(map[string]uint64),
+		services:  make(map[string]*ServiceNode),
+		subscribe: make(map[string]*vo.SubscribeParam),
+		rpcsubs:   make(map[core.Rpc_Key][]*ServiceNode),
 	}
 	// 创建clientConfig
 	clientConfig := constant.ClientConfig{
@@ -63,16 +64,17 @@ func newNacos(options Options) (sys *Nacos_Registry, err error) {
 }
 
 type Nacos_Registry struct {
-	options  Options
-	client   naming_client.INamingClient
-	isstart  bool
-	ctx      context.Context
-	cancel   context.CancelFunc
-	slock    sync.RWMutex
-	shash    map[string]uint64
-	services map[string]*ServiceNode
-	rlock    sync.RWMutex
-	rpcsubs  map[core.Rpc_Key][]*ServiceNode
+	options   Options
+	client    naming_client.INamingClient
+	isstart   bool
+	ctx       context.Context
+	cancel    context.CancelFunc
+	slock     sync.RWMutex
+	shash     map[string]uint64
+	subscribe map[string]*vo.SubscribeParam
+	services  map[string]*ServiceNode
+	rlock     sync.RWMutex
+	rpcsubs   map[core.Rpc_Key][]*ServiceNode
 }
 
 func (this *Nacos_Registry) Start() (err error) {
@@ -191,21 +193,36 @@ locp:
 
 func (this *Nacos_Registry) listener(ctx context.Context) {
 	var (
+		slist     model.ServiceList
 		instances []model.Instance
 		err       error
 	)
-	t := time.NewTicker(time.Duration(this.options.Consul_RegisterInterval) * time.Second)
+	t := time.NewTicker(time.Duration(this.options.Nacos_RegisterTTL) * time.Second)
 	defer t.Stop()
 locp:
 	for {
 		select {
 		case <-t.C:
-			if instances, err = this.client.SelectAllInstances(vo.SelectAllInstancesParam{
-				Clusters: []string{this.options.Service.GetTag()},
+			if slist, err = this.client.GetAllServicesInfo(vo.GetAllServiceInfoParam{
+				NameSpace: this.options.Nacos_NamespaceId,
+				GroupName: this.options.Service.GetTag(),
+				PageNo:    1,
+				PageSize:  20,
 			}); err == nil {
-				for _, v := range instances {
-					if v.ClusterName == this.options.Service.GetTag() {
-						this.addandupdataServiceNode(v)
+				for _, v := range slist.Doms {
+					this.rlock.RLock()
+					_, ok := this.services[v]
+					this.rlock.RUnlock()
+					if !ok {
+						if instances, err = this.client.SelectInstances(vo.SelectInstancesParam{
+							ServiceName: v,
+							GroupName:   this.options.Service.GetTag(),
+							HealthyOnly: true,
+						}); err == nil {
+							for _, v1 := range instances {
+								this.addandupdataServiceNode(v1)
+							}
+						}
 					}
 				}
 			}
@@ -248,6 +265,8 @@ func (this *Nacos_Registry) registerSNode(snode *ServiceNode) (err error) {
 		ClusterName: snode.Tag,
 		ServiceName: snode.Id,
 		Enable:      true,
+		Healthy:     true,
+		Ephemeral:   true,
 		Metadata: map[string]string{
 			"type":         string(snode.Type),
 			"category":     string(snode.Category),
@@ -298,16 +317,28 @@ func (this *Nacos_Registry) addandupdataServiceNode(as model.Instance) (sn *Serv
 		_, ok := this.services[snode.Id]
 		if !ok {
 			log.Infof("发现新的服务【%s】", snode.Id)
+			this.rlock.Lock()
 			this.services[snode.Id] = snode
 			this.shash[snode.Id] = h
+			this.subscribe[snode.Id] = &vo.SubscribeParam{
+				ServiceName:       snode.Id,
+				GroupName:         snode.Tag,
+				SubscribeCallback: this.subscribecallback,
+			}
+			this.rlock.Unlock()
 			if this.options.Listener != nil { //异步通知
 				go this.options.Listener.FindServiceHandlefunc(*snode)
 			}
 		} else {
-			if v, ok := this.shash[snode.Id]; !ok || v != h { //校验不一致
+			this.rlock.RLock()
+			v, ok := this.shash[snode.Id]
+			this.rlock.RUnlock()
+			if !ok || v != h { //校验不一致
 				// log.Debugf("更新服务【%s】", snode.Id)
+				this.rlock.Lock()
 				this.services[snode.Id] = snode
 				this.shash[snode.Id] = h
+				this.rlock.Unlock()
 				if this.options.Listener != nil { //异步通知
 					go this.options.Listener.UpDataServiceHandlefunc(*snode)
 				}
@@ -320,13 +351,21 @@ func (this *Nacos_Registry) addandupdataServiceNode(as model.Instance) (sn *Serv
 	return
 }
 func (this *Nacos_Registry) removeServiceNode(sId string) {
+	this.rlock.RLock()
 	_, ok := this.services[sId]
+	sub, _ := this.subscribe[sId]
+	this.rlock.RUnlock()
 	if !ok {
 		return
 	}
 	log.Infof("丢失服务【%s】", sId)
+	this.rlock.Lock()
 	delete(this.services, sId)
+	delete(this.subscribe, sId)
+	delete(this.shash, sId)
+	this.rlock.Unlock()
 	this.syncRpcInfo()
+	this.client.Unsubscribe(sub)
 	if this.options.Listener != nil { //异步通知
 		go this.options.Listener.LoseServiceHandlefunc(sId)
 	}
@@ -356,4 +395,20 @@ func (this *Nacos_Registry) getRpcInfo() (rfs []core.Rpc_Key) {
 		rfs[i] = core.Rpc_Key(k)
 	}
 	return
+}
+
+func (this *Nacos_Registry) subscribecallback(services []model.SubscribeService, err error) {
+	for _, v := range services {
+		log.Debugf("subscribecallback:%+v", v)
+		this.addandupdataServiceNode(model.Instance{
+			Valid:       v.Valid,
+			Enable:      v.Enable,
+			ClusterName: v.ClusterName,
+			ServiceName: v.ServiceName,
+			Ip:          v.Ip,
+			Port:        v.Port,
+			Metadata:    v.Metadata,
+			Weight:      v.Weight,
+		})
+	}
 }
