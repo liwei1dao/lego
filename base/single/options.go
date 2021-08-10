@@ -5,6 +5,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/utils/ip"
 )
 
 type Option func(*Options)
@@ -35,6 +36,13 @@ func newOptions(option ...Option) *Options {
 
 	if options.Setting.Id == "" || options.Setting.Type == "" {
 		panic(fmt.Sprintf("服务[%s] 配置缺少必要配置: %+v", options.Id, options))
+	}
+	if len(options.Setting.Ip) == 0 {
+		if ipinfo := ip.GetEthernetInfo(); ipinfo != nil { //获取以太网Ip地址
+			options.Setting.Ip = ipinfo.IP
+		} else {
+			options.Setting.Ip = ip.GetOutboundIP() //局域网ip
+		}
 	}
 	return options
 }
