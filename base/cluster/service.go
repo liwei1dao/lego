@@ -91,7 +91,7 @@ func (this *ClusterService) InitSys() {
 	} else {
 		log.Infof("Sys cron Init success !")
 	}
-	if err := registry.OnInit(this.opts.Setting.Sys["registry"], registry.SetService(this.ClusterService)); err != nil {
+	if err := registry.OnInit(this.opts.Setting.Sys["registry"], registry.SetService(this.ClusterService), registry.SetListener(this.ClusterService.(registry.IListener))); err != nil {
 		panic(fmt.Sprintf("初始化registry系统失败 err:%v", err))
 	} else {
 		log.Infof("Sys registry Init success !")

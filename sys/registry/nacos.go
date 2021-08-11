@@ -3,7 +3,6 @@ package registry
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -79,7 +78,7 @@ type Nacos_Registry struct {
 }
 
 func (this *Nacos_Registry) Start() (err error) {
-	if err = this.getServices(); err != nil && err != errors.New("instance list is empty!") {
+	if err = this.getServices(); err != nil && err.Error() != "instance list is empty!" {
 		return
 	}
 	if err = this.registerSNode(&ServiceNode{
