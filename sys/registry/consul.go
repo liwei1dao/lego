@@ -25,9 +25,6 @@ func newConsul(options Options) (sys *Consul_Registry, err error) {
 	if len(options.Consul_Addr) > 0 {
 		config.Address = options.Consul_Addr
 	}
-	if options.Consul_Timeout > 0 {
-		config.HttpClient.Timeout = time.Duration(options.Consul_Timeout * int(time.Second))
-	}
 	if sys.client, err = api.NewClient(config); err != nil {
 		return nil, err
 	}

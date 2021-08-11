@@ -19,7 +19,6 @@ type (
 		Service                 base.IClusterService
 		Listener                IListener
 		Consul_Addr             string
-		Consul_Timeout          int
 		Consul_RegisterInterval int //定期注册
 		Consul_RegisterTTL      int
 		Nacos_NamespaceId       string
@@ -49,11 +48,6 @@ func SetListener(v IListener) Option {
 func SetConsul_Addr(v string) Option {
 	return func(o *Options) {
 		o.Consul_Addr = v
-	}
-}
-func SetConsul_Timeout(v int) Option {
-	return func(o *Options) {
-		o.Consul_Timeout = v
 	}
 }
 func SetConsul_RegisterInterval(v int) Option {
@@ -96,7 +90,6 @@ func SetNacos_BeatInterval(v int64) Option {
 
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
-		Consul_Timeout:          5,
 		Consul_RegisterInterval: 10,
 		Consul_RegisterTTL:      15,
 		Nacos_TimeoutMs:         10000,
@@ -114,7 +107,6 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 
 func newOptionsByOption(opts ...Option) Options {
 	options := Options{
-		Consul_Timeout:          5,
 		Consul_RegisterInterval: 10,
 		Consul_RegisterTTL:      15,
 		Nacos_TimeoutMs:         10000,

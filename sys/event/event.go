@@ -82,7 +82,7 @@ func (this *EventSys) TriggerEvent(eId core.Event_Key, agr ...interface{}) {
 			case error:
 				rn = r.(error).Error()
 			}
-			log.Errorf("Event:[%d] recover:[%s]", eId, rn)
+			log.Errorf("Event:%v recover:%v", eId, rn)
 		}
 	}()
 	if v, ok := this.functions[eId]; ok {

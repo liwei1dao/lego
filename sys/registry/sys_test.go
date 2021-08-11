@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hashicorp/consul/api"
 	"github.com/nacos-group/nacos-sdk-go/clients"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/vo"
@@ -80,6 +81,27 @@ func Test_Sys_Nacose(t *testing.T) {
 			} else {
 				fmt.Printf("SelectAllInstances :%+v\n", services)
 			}
+		}
+	}
+}
+
+func Test_Sys_Consul(t *testing.T) {
+	config := api.DefaultConfig()
+	config.Address = "172.20.27.145:10003"
+	if client, err := api.NewClient(config); err != nil {
+		fmt.Printf("NewClient Err:%v\n", err)
+		return
+	} else {
+		if err := client.Agent().ServiceRegister(&api.AgentServiceRegistration{
+			ID:   "test",
+			Name: "test",
+			Tags: []string{"test"},
+			Meta: map[string]string{},
+		}); err != nil {
+			fmt.Printf("ServiceRegister Err:%v\n", err)
+			return
+		} else {
+			fmt.Printf("ServiceRegister Succ\n")
 		}
 	}
 }
