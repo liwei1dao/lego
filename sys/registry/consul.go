@@ -192,7 +192,7 @@ func (this *Consul_Registry) registerSNode(snode *ServiceNode) (err error) {
 	}
 	deregTTL := this.getDeregisterTTL(time.Second * time.Duration(this.options.Consul_RegisterTTL))
 	check := &api.AgentServiceCheck{
-		TTL:                            fmt.Sprintf("%v", this.options.Consul_RegisterTTL),
+		TTL:                            fmt.Sprintf("%v", time.Second*time.Duration(this.options.Consul_RegisterTTL)),
 		DeregisterCriticalServiceAfter: fmt.Sprintf("%v", deregTTL),
 	}
 	rpcsubscribe, _ := json.Marshal(snode.RpcSubscribe)
