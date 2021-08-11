@@ -108,7 +108,7 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 func newOptionsByOption(opts ...Option) Options {
 	options := Options{
 		Consul_RegisterInterval: 10,
-		Consul_RegisterTTL:      15,
+		Consul_RegisterTTL:      30,
 		Nacos_TimeoutMs:         10000,
 		Nacos_BeatInterval:      5000,
 		Nacos_RegisterTTL:       8,
