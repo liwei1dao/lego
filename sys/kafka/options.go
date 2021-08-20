@@ -1,6 +1,8 @@
 package kafka
 
 import (
+	"time"
+
 	"github.com/Shopify/sarama"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
@@ -28,10 +30,10 @@ type Options struct {
 	Producer_Retry_Backoff    int                     //在重试之间等待集群稳定的时间（默认为 100 毫秒）
 	Producer_Compression      sarama.CompressionCodec //用于消息的压缩类型（默认为无压缩）
 	Producer_CompressionLevel int                     //用于消息的压缩级别。意义取决于在实际使用的压缩类型上，默认为默认压缩编解码器的级别。
-	Net_DialTimeout           int                     //默认30 秒
-	Net_ReadTimeout           int                     //默认30 秒
-	Net_WriteTimeout          int                     //默认30 秒
-	Net_KeepAlive             int                     //KeepAlive 指定活动网络连接的保持活动期。如果为零，则禁用保活。 （默认为 0：禁用）单位 秒
+	Net_DialTimeout           time.Duration           //默认30 秒
+	Net_ReadTimeout           time.Duration           //默认30 秒
+	Net_WriteTimeout          time.Duration           //默认30 秒
+	Net_KeepAlive             time.Duration           //KeepAlive 指定活动网络连接的保持活动期。如果为零，则禁用保活。 （默认为 0：禁用）单位 秒
 	Consumer_Offsets_Initial  int64                   //OffsetNewest -1 or OffsetOldest -2 默认 OffsetOldest
 	Consumer_Return_Errors    bool                    //如果启用，则在消费时发生的任何错误都将返回错误通道（默认禁用）
 }
@@ -113,29 +115,29 @@ func SetProducer_CompressionLevel(v int) Option {
 	}
 }
 
-///默认30 秒
-func SetNet_DialTimeout(v int) Option {
+///默认5 秒
+func SetNet_DialTimeout(v time.Duration) Option {
 	return func(o *Options) {
 		o.Net_DialTimeout = v
 	}
 }
 
-///默认30 秒
-func SetNet_ReadTimeout(v int) Option {
+///默认60 秒
+func SetNet_ReadTimeout(v time.Duration) Option {
 	return func(o *Options) {
 		o.Net_ReadTimeout = v
 	}
 }
 
-///默认30 秒
-func SetNet_WriteTimeout(v int) Option {
+///默认60 秒
+func SetNet_WriteTimeout(v time.Duration) Option {
 	return func(o *Options) {
 		o.Net_WriteTimeout = v
 	}
 }
 
 ///KeepAlive 指定活动网络连接的保持活动期。如果为零，则禁用保活。 （默认为 0：禁用）单位 秒
-func SetNet_KeepAlive(v int) Option {
+func SetNet_KeepAlive(v time.Duration) Option {
 	return func(o *Options) {
 		o.Net_KeepAlive = v
 	}
@@ -162,10 +164,10 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 		Producer_Retry_Max:       3,
 		Producer_Retry_Backoff:   100,
 		Producer_Compression:     sarama.CompressionNone,
-		Net_DialTimeout:          30,
-		Net_ReadTimeout:          30,
-		Net_WriteTimeout:         30,
-		Net_KeepAlive:            15,
+		Net_DialTimeout:          time.Second * 5,
+		Net_ReadTimeout:          time.Second * 60,
+		Net_WriteTimeout:         time.Second * 60,
+		Net_KeepAlive:            0,
 		Consumer_Offsets_Initial: -1,
 	}
 	if config != nil {

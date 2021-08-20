@@ -31,10 +31,10 @@ func (this *Kafka) init() (err error) {
 	config.Producer.Retry.Backoff = time.Duration(this.options.Producer_Retry_Backoff) * time.Millisecond
 	config.Producer.Compression = this.options.Producer_Compression
 	config.Producer.CompressionLevel = this.options.Producer_CompressionLevel
-	config.Net.DialTimeout = time.Duration(this.options.Net_DialTimeout) * time.Second
-	config.Net.ReadTimeout = time.Duration(this.options.Net_ReadTimeout) * time.Second
-	config.Net.WriteTimeout = time.Duration(this.options.Net_WriteTimeout) * time.Second
-	config.Net.KeepAlive = time.Duration(this.options.Net_KeepAlive) * time.Second
+	config.Net.DialTimeout = this.options.Net_DialTimeout
+	config.Net.ReadTimeout = this.options.Net_ReadTimeout
+	config.Net.WriteTimeout = this.options.Net_WriteTimeout
+	config.Net.KeepAlive = this.options.Net_KeepAlive
 	if this.options.StartType == Syncproducer || this.options.StartType == All {
 		if this.syncproducer, err = sarama.NewSyncProducer(this.options.Hosts, config); err != nil {
 			return
@@ -89,10 +89,26 @@ func (this *Kafka) Consumer_Messages() <-chan *sarama.ConsumerMessage {
 	return this.consumer.Messages()
 }
 
+func (this *Kafka) Consumer_Partitions() <-chan cluster.PartitionConsumer {
+	return this.consumer.Partitions()
+}
+
 func (this *Kafka) Consumer_Notifications() <-chan *cluster.Notification {
 	return this.consumer.Notifications()
 }
 
 func (this *Kafka) Consumer_Errors() <-chan error {
 	return this.consumer.Errors()
+}
+
+func (this *Kafka) Consumer_MarkOffset(msg *sarama.ConsumerMessage, metadata string) {
+	this.consumer.MarkOffset(msg, metadata)
+}
+
+func (this *Kafka) Consumer_MarkOffsets(s *cluster.OffsetStash) {
+	this.consumer.MarkOffsets(s)
+}
+
+func (this *Kafka) Consumer_Close() (err error) {
+	return this.consumer.Close()
 }

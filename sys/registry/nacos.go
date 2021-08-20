@@ -310,7 +310,7 @@ func (this *Nacos_Registry) registerSNode(snode *ServiceNode) (err error) {
 			"tag":          snode.Tag,
 			"type":         string(snode.Type),
 			"category":     string(snode.Category),
-			"version":      fmt.Sprintf("%e", snode.Version),
+			"version":      fmt.Sprintf("%f", snode.Version),
 			"rpcid":        snode.RpcId,
 			"rpcsubscribe": string(rpcsubscribe),
 		},

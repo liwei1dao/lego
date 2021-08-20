@@ -204,9 +204,9 @@ func (this *Consul_Registry) registerSNode(snode *ServiceNode) (err error) {
 		Meta: map[string]string{
 			"tag":          snode.Tag,
 			"category":     string(snode.Category),
-			"version":      fmt.Sprintf("%e", snode.Version),
+			"version":      fmt.Sprintf("%f", snode.Version),
 			"rpcid":        snode.RpcId,
-			"preweight":    fmt.Sprintf("%e", snode.PreWeight),
+			"preweight":    fmt.Sprintf("%f", snode.PreWeight),
 			"rpcsubscribe": string(rpcsubscribe),
 		},
 	}
