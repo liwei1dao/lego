@@ -14,3 +14,4 @@
 
 .vscode/
 bin/
+*.DS_Store
