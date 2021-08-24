@@ -438,7 +438,7 @@ func (this *Nacos_Registry) getRpcInfo() (rfs []core.Rpc_Key) {
 
 func (this *Nacos_Registry) subscribecallback(services []model.SubscribeService, err error) {
 	for _, v := range services {
-		log.Debugf("subscribecallback:%+v", v)
+		// log.Debugf("subscribecallback:%+v", v)
 		this.addandupdataServiceNode(model.Instance{
 			Valid:       v.Valid,
 			Enable:      v.Enable,
