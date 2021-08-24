@@ -1,15 +1,31 @@
 package nacos
 
-import "github.com/liwei1dao/lego/utils/mapstructure"
+import (
+	"github.com/liwei1dao/lego/utils/mapstructure"
+)
+
+type NacosClientType uint8
+
+const (
+	NamingClient NacosClientType = iota
+	ConfigClient
+	All
+)
 
 type Option func(*Options)
 type Options struct {
-	NamespaceId string
-	NacosAddr   string
-	Port        uint64
-	TimeoutMs   uint64
+	NacosClientType NacosClientType
+	NamespaceId     string
+	NacosAddr       string
+	Port            uint64
+	TimeoutMs       uint64
 }
 
+func SetNacosClientType(v NacosClientType) Option {
+	return func(o *Options) {
+		o.NacosClientType = v
+	}
+}
 func SetNamespaceId(v string) Option {
 	return func(o *Options) {
 		o.NamespaceId = v

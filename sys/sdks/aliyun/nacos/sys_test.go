@@ -16,7 +16,7 @@ func Test_SysInit(t *testing.T) {
 	if err != nil {
 		fmt.Printf("启动系统错误err:%v", err)
 	}
-	succ, err := sys.RegisterInstance(vo.RegisterInstanceParam{
+	succ, err := sys.Naming_RegisterInstance(vo.RegisterInstanceParam{
 		Ip:          "127.0.0.1",
 		Port:        8848,
 		Weight:      0.69,
@@ -29,7 +29,7 @@ func Test_SysInit(t *testing.T) {
 	})
 	fmt.Printf("sys RegisterInstance succ:%v err:%v", succ, err)
 	// time.Sleep(time.Second * 3)
-	serviceInfos, err := sys.GetAllServicesInfo(vo.GetAllServiceInfoParam{
+	serviceInfos, err := sys.Naming_GetAllServicesInfo(vo.GetAllServiceInfoParam{
 		NameSpace: "17d02ef9-afaa-4878-ad6c-9fd697f3b628",
 		GroupName: "demo",
 	})
