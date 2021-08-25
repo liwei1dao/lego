@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"net/http"
 	"sync"
@@ -54,7 +55,7 @@ func (this *Http) Init(service core.IService, module core.IModule, options core.
 	}
 
 	this.http = &http.Server{
-		Addr:    this.options.GetHttpAddr(),
+		Addr:    fmt.Sprintf("0.0.0.0:%d", this.options.GetListenProt()),
 		Handler: this,
 	}
 	if err = this.ModuleBase.Init(service, module, options); err != nil {

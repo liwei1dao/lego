@@ -344,6 +344,7 @@ func (this *Nacos_Registry) addandupdataServiceNode(as model.Instance) (sn *Serv
 		Type:         as.Metadata["type"],
 		Category:     core.S_Category(as.Metadata["category"]),
 		Id:           as.Metadata["id"],
+		IP:           as.Ip,
 		Version:      float32(version),
 		RpcId:        rpcid,
 		PreWeight:    as.Weight,
