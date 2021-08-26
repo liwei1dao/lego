@@ -55,7 +55,7 @@ func (this *Http) Init(service core.IService, module core.IModule, options core.
 	}
 
 	this.http = &http.Server{
-		Addr:    fmt.Sprintf("0.0.0.0:%d", this.options.GetListenProt()),
+		Addr:    fmt.Sprintf("0.0.0.0:%d", this.options.GetListenPort()),
 		Handler: this,
 	}
 	if err = this.ModuleBase.Init(service, module, options); err != nil {
