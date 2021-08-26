@@ -8,12 +8,12 @@ import (
 
 type (
 	IOptions interface {
-		GetListenProt() int
+		GetListenPort() int
 		GettCertPath() string
 		GetKeyPath() string
 	}
 	Options struct {
-		ListenProt int    `json:"-"`
+		ListenPort int    `json:"-"`
 		CertPath   string `json:"-"`
 		KeyPath    string `json:"-"`
 	}
@@ -25,14 +25,14 @@ func (this *Options) LoadConfig(settings map[string]interface{}) (err error) {
 			return
 		}
 	}
-	if this.ListenProt == 0 {
+	if this.ListenPort == 0 {
 		err = fmt.Errorf("module http missing necessary configuration:%v", settings)
 	}
 	return
 }
 
-func (this *Options) GetListenProt() int {
-	return this.ListenProt
+func (this *Options) GetListenPort() int {
+	return this.ListenPort
 }
 func (this *Options) GettCertPath() string {
 	return this.CertPath
