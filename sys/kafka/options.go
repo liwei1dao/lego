@@ -59,6 +59,13 @@ func SetTopics(v []string) Option {
 	}
 }
 
+///设置消费组 GroupId
+func SetGroupId(v string) Option {
+	return func(o *Options) {
+		o.GroupId = v
+	}
+}
+
 ///用户提供的字符串随每个请求发送到代理进行日志记录，调试和审计目的。默认为“sarama”，但你应该将其设置为特定于您的应用程序的内容。
 func SetClientID(v string) Option {
 	return func(o *Options) {
