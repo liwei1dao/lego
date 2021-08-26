@@ -281,7 +281,7 @@ func (this *ClusterService) DefauleRpcRouteRules(stype string, sip string) (ss c
 			})
 			return ss[0].(core.IServiceSession), nil
 		} else {
-			return nil, fmt.Errorf("未找到类型【%s】的服务信息", stype)
+			return nil, fmt.Errorf("未找到IP[%s]类型%s】的服务信息", sip, stype)
 		}
 	}
 }
@@ -324,7 +324,7 @@ func (this *ClusterService) RpcInvokeByType(sType string, rkey core.Rpc_Key, isc
 func (this *ClusterService) RpcInvokeByIp(sIp, sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error) {
 	ss, err := this.ClusterService.DefauleRpcRouteRules(sType, sIp)
 	if err != nil {
-		log.Errorf("未找到目标服务【%s】节点 err:%v", sType, err)
+		log.Errorf("未找到目标服务 ip:%s type:%s 节点 err:%v", sIp, sType, err)
 		return nil, err
 	}
 	if iscall {
