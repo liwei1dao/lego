@@ -10,6 +10,10 @@ type Redis_Key string  //Redis缓存
 type SqlTable string   //数据库表定义
 type CustomRoute uint8 //自定义网关
 
+const (
+	AutoIp = "0.0.0.0"
+)
+
 const ( //默认事件
 	Event_ServiceStartEnd  Event_Key = "ServiceStartEnd"  //服务完全启动完毕
 	Event_FindNewService   Event_Key = "FindNewService"   //发现新的服务

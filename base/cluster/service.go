@@ -184,23 +184,42 @@ func (this *ClusterService) LoseServiceHandlefunc(sId string) {
 	event.TriggerEvent(core.Event_LoseService, sId) //触发发现新的服务事件
 }
 
-func (this *ClusterService) getServiceSessionByType(sType string) (ss []core.IServiceSession, err error) {
+func (this *ClusterService) getServiceSessionByType(sType string, sIp string) (ss []core.IServiceSession, err error) {
 	ss = make([]core.IServiceSession, 0)
 	if nodes := registry.GetServiceByType(sType); nodes == nil {
 		log.Errorf("获取目标类型【%s】服务集失败", sType)
 		return nil, err
 	} else {
-		for _, v := range nodes {
-			if s, ok := this.serverList.Load(v.Id); ok {
-				ss = append(ss, s.(core.IServiceSession))
-			} else {
-				s, err = cbase.NewServiceSession(v)
-				if err != nil {
-					log.Errorf("创建服务会话失败【%s】 err:%v", v.Id, err)
-					continue
-				} else {
-					this.serverList.Store(v.Id, s)
+		if sIp == "0.0.0.0" {
+			for _, v := range nodes {
+				if s, ok := this.serverList.Load(v.Id); ok {
 					ss = append(ss, s.(core.IServiceSession))
+				} else {
+					s, err = cbase.NewServiceSession(v)
+					if err != nil {
+						log.Errorf("创建服务会话失败【%s】 err:%v", v.Id, err)
+						continue
+					} else {
+						this.serverList.Store(v.Id, s)
+						ss = append(ss, s.(core.IServiceSession))
+					}
+				}
+			}
+		} else {
+			for _, v := range nodes {
+				if v.IP == sIp {
+					if s, ok := this.serverList.Load(v.Id); ok {
+						ss = append(ss, s.(core.IServiceSession))
+					} else {
+						s, err = cbase.NewServiceSession(v)
+						if err != nil {
+							log.Errorf("创建服务会话失败【%s】 err:%v", v.Id, err)
+							continue
+						} else {
+							this.serverList.Store(v.Id, s)
+							ss = append(ss, s.(core.IServiceSession))
+						}
+					}
 				}
 			}
 		}
@@ -233,8 +252,8 @@ func (this *ClusterService) GetSessionsByCategory(category core.S_Category) (ss 
 }
 
 //默认路由规则
-func (this *ClusterService) DefauleRpcRouteRules(stype string) (ss core.IServiceSession, err error) {
-	if s, e := this.getServiceSessionByType(stype); e != nil {
+func (this *ClusterService) DefauleRpcRouteRules(stype string, sip string) (ss core.IServiceSession, err error) {
+	if s, e := this.getServiceSessionByType(stype, sip); e != nil {
 		return nil, e
 	} else {
 		ss := make([]interface{}, len(s))
@@ -289,7 +308,7 @@ func (this *ClusterService) RpcInvokeById(sId string, rkey core.Rpc_Key, iscall 
 	return
 }
 func (this *ClusterService) RpcInvokeByType(sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error) {
-	ss, err := this.ClusterService.DefauleRpcRouteRules(sType)
+	ss, err := this.ClusterService.DefauleRpcRouteRules(sType, core.AutoIp)
 	if err != nil {
 		log.Errorf("未找到目标服务【%s】节点 err:%v", sType, err)
 		return nil, err
@@ -301,6 +320,21 @@ func (this *ClusterService) RpcInvokeByType(sType string, rkey core.Rpc_Key, isc
 	}
 	return
 }
+
+func (this *ClusterService) RpcInvokeByIp(sIp, sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error) {
+	ss, err := this.ClusterService.DefauleRpcRouteRules(sType, sIp)
+	if err != nil {
+		log.Errorf("未找到目标服务【%s】节点 err:%v", sType, err)
+		return nil, err
+	}
+	if iscall {
+		result, err = ss.Call(rkey, arg...)
+	} else {
+		err = ss.CallNR(rkey, arg...)
+	}
+	return
+}
+
 func (this *ClusterService) ReleaseRpc(rkey core.Rpc_Key, arg ...interface{}) {
 	rpcf := registry.GetRpcSubById(rkey)
 	for _, v := range rpcf {
