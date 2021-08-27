@@ -66,7 +66,12 @@ func (this *Rpc) Done() (err error) {
 func (this *Rpc) OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {
 	core.OnRegisterRpcData(d, sf, unsf)
 }
-
+func (this *Rpc) OnRegisterJsonRpcData(d interface{}) {
+	core.OnRegisterJsonRpc(d)
+}
+func (this *Rpc) OnRegisterProtoDataData(d interface{}) {
+	core.OnRegisterProtoData(d)
+}
 func (this *Rpc) NewRpcClient(sId, rId string) (clent IRpcClient, err error) {
 	clent, err = core.NewRpcClient(
 		core.CId(sId),

@@ -200,10 +200,10 @@ func newOptionsByOption(opts ...Option) Options {
 		Producer_Retry_Max:       3,
 		Producer_Retry_Backoff:   100,
 		Producer_Compression:     sarama.CompressionNone,
-		Net_DialTimeout:          30,
-		Net_ReadTimeout:          30,
-		Net_WriteTimeout:         30,
-		Net_KeepAlive:            15,
+		Net_DialTimeout:          time.Second * 5,
+		Net_ReadTimeout:          time.Second * 60,
+		Net_WriteTimeout:         time.Second * 60,
+		Net_KeepAlive:            0,
 		Consumer_Offsets_Initial: -1,
 	}
 	for _, o := range opts {

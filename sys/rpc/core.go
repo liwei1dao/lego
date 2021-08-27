@@ -16,6 +16,8 @@ type (
 		UnRegister(id core.Rpc_Key, f interface{})
 		Done() (err error)
 		OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error))
+		OnRegisterJsonRpcData(d interface{})
+		OnRegisterProtoDataData(d interface{})
 		NewRpcClient(sId, rId string) (clent IRpcClient, err error)
 	}
 	IRpcServer interface {
@@ -68,6 +70,20 @@ func Done() (err error) {
 func OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {
 	if defsys != nil {
 		defsys.OnRegisterRpcData(d, sf, unsf)
+	} else {
+		log.Warnf("rpc sys no init,OnRegisterRpcData Fail !")
+	}
+}
+func OnRegisterJsonRpcData(d interface{}) {
+	if defsys != nil {
+		defsys.OnRegisterJsonRpcData(d)
+	} else {
+		log.Warnf("rpc sys no init,OnRegisterRpcData Fail !")
+	}
+}
+func OnRegisterProtoDataData(d interface{}) {
+	if defsys != nil {
+		defsys.OnRegisterProtoDataData(d)
 	} else {
 		log.Warnf("rpc sys no init,OnRegisterRpcData Fail !")
 	}

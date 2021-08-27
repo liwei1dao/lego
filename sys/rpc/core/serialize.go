@@ -110,16 +110,16 @@ func OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), un
 }
 
 //注册Proto Or Json 数据结构到RPC
-func OnRegisterProtoOrJsonRpcData(d interface{}) (err error) {
-	switch d.(type) {
-	case proto.Message:
+func OnRegisterProtoData(d interface{}) (err error) {
+	if _, ok := d.(proto.Message); ok {
 		OnRegisterRpcData(d, protoStructMarshal, protoStructUnmarshal)
-		break
-	default:
-		log.Warnf("Please try to reduce the %s Json message transmission method using Proto message transmission method", reflect.TypeOf(d).String())
-		OnRegisterRpcData(d, jsonStructMarshal, jsonStructUnmarshal)
-		break
+	} else {
+		log.Errorf("rpc OnRegisterProtoData d:%v no is proto.Message", d)
 	}
+	return
+}
+func OnRegisterJsonRpc(d interface{}) (err error) {
+	OnRegisterRpcData(d, protoStructMarshal, protoStructUnmarshal)
 	return
 }
 
