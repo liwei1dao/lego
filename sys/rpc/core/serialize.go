@@ -119,7 +119,7 @@ func OnRegisterProtoData(d interface{}) (err error) {
 	return
 }
 func OnRegisterJsonRpc(d interface{}) (err error) {
-	OnRegisterRpcData(d, protoStructMarshal, protoStructUnmarshal)
+	OnRegisterRpcData(d, jsonStructMarshal, jsonStructUnmarshal)
 	return
 }
 
