@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/liwei1dao/lego"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/sys/log"
@@ -44,7 +45,7 @@ func (this *HttpFlvComp) Start() (err error) {
 }
 
 func (this *HttpFlvComp) run() (err error) {
-	defer cbase.Recover()
+	defer lego.Recover()
 	log.Infof("HTTP-FLV listen On %s", this.options.GetHttpFlvAddr())
 	this.Serve()
 	return
@@ -111,7 +112,7 @@ func (this *HttpFlvComp) getStream(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *HttpFlvComp) handleConn(w http.ResponseWriter, r *http.Request) {
-	defer cbase.Recover()
+	defer lego.Recover()
 
 	url := r.URL.String()
 	u := r.URL.Path

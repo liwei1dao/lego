@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego"
 	"github.com/liwei1dao/lego/lib/modules/live/av"
 	"github.com/liwei1dao/lego/lib/modules/live/container/flv"
 	"github.com/liwei1dao/lego/lib/modules/live/liveconn"
@@ -111,7 +111,7 @@ func (v *VirReader) SaveStatics(streamid uint32, length uint64, isVideoFlag bool
 }
 
 func (v *VirReader) Read(p *av.Packet) (err error) {
-	defer cbase.Recover()
+	defer lego.Recover()
 
 	v.SetPreTime()
 	var cs liveconn.ChunkStream

@@ -8,6 +8,7 @@ import (
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware"
 	"github.com/form3tech-oss/jwt-go"
+	"github.com/liwei1dao/lego"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib/modules/live/rtmprelay"
@@ -66,7 +67,7 @@ func (this *ApiComp) Start() (err error) {
 }
 
 func (this *ApiComp) run() (err error) {
-	defer cbase.Recover()
+	defer lego.Recover()
 	log.Infof("HTTP-API listen On %s", this.options.GetAPIAddr())
 	this.Serve()
 	return

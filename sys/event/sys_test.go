@@ -1,17 +1,18 @@
-package event
+package event_test
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/event"
 )
 
 func Test_sys(t *testing.T) {
-	if err := OnInit(nil); err == nil {
-		Register(core.Event_Key("TestEvent"), func() {
+	if err := event.OnInit(nil); err == nil {
+		event.Register(core.Event_Key("TestEvent"), func() {
 			fmt.Printf("TestEvent TriggerEvent")
 		})
-		TriggerEvent(core.Event_Key("TestEvent"))
+		event.TriggerEvent(core.Event_Key("TestEvent"))
 	}
 }

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"runtime"
 	"sync"
 	"syscall"
 
+	"github.com/liwei1dao/lego"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/event"
 	"github.com/liwei1dao/lego/sys/log"
@@ -25,20 +25,12 @@ func (this *defaultModule) run() {
 	this.wg.Done()
 }
 func (this *defaultModule) destroy() (err error) {
-	defer Recover()
+	defer lego.Recover()
 	err = this.mi.Destroy()
 	if err != nil {
 		err = fmt.Errorf("关闭模块【%s】失败 err:%s", this.mi.GetType(), err.Error())
 	}
 	return
-}
-
-func Recover() {
-	if r := recover(); r != nil {
-		buf := make([]byte, 1024)
-		l := runtime.Stack(buf, false)
-		log.Panicf("%v: %s", r, buf[:l])
-	}
 }
 
 type ServiceBase struct {

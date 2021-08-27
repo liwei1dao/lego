@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/liwei1dao/lego"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib/modules/http/render"
@@ -141,6 +142,7 @@ func (this *Http) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func (this *Http) handleHTTPRequest(c *Context) {
+	defer lego.Recover()
 	httpMethod := c.Request.Method
 	rPath := c.Request.URL.Path
 	unescape := false

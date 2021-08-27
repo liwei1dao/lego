@@ -1,11 +1,21 @@
 package utils
 
 import (
+	"log"
 	"os"
 	"reflect"
+	"runtime"
 	"strings"
 	"time"
 )
+
+func Recover() {
+	if r := recover(); r != nil {
+		buf := make([]byte, 1024)
+		l := runtime.Stack(buf, false)
+		log.Panicf("%v: %s", r, buf[:l])
+	}
+}
 
 func GetApplicationDir() (ApplicationDir string) {
 	ApplicationDir, _ = os.Getwd()

@@ -27,3 +27,12 @@ func Run(service core.IService, mod ...core.IModule) {
 	}
 	log.Infof("服务【%s】关闭成功", service.GetId())
 }
+
+//错误采集
+func Recover() {
+	if r := recover(); r != nil {
+		buf := make([]byte, 1024)
+		l := runtime.Stack(buf, false)
+		log.Panicf("%v: %s", r, buf[:l])
+	}
+}

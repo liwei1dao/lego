@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/liwei1dao/lego"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib/modules/live/av"
@@ -71,7 +72,7 @@ func (this *HlsComp) checkStop() {
 }
 
 func (this *HlsComp) run() (err error) {
-	defer cbase.Recover()
+	defer lego.Recover()
 	log.Infof("HLS listen On %s", this.options.GetHlsAddr())
 	this.Serve()
 	return
