@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go v0.78.0
 	github.com/AgoraIO/Tools/DynamicKey/AgoraDynamicKey/go/src v0.0.0-20210224092639-29e04b7547d3
 	github.com/BurntSushi/toml v0.3.1
-	github.com/Shopify/sarama v1.29.1
+	github.com/Shopify/sarama v1.23.1
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.885
 	github.com/aliyun/aliyun-oss-go-sdk v2.1.6+incompatible
 	github.com/armon/go-metrics v0.3.6 // indirect
@@ -58,5 +58,6 @@ require (
 	gopkg.in/go-playground/validator.v8 v8.18.2
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/ini.v1 v1.51.0 // indirect
+	gopkg.in/jcmturner/goidentity.v3 v3.0.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
