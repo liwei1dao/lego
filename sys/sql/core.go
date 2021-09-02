@@ -1,4 +1,4 @@
-package sqlserver
+package sql
 
 import (
 	"database/sql"

@@ -1,4 +1,4 @@
-package sqlserver
+package sql
 
 import (
 	"time"
@@ -7,10 +7,24 @@ import (
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
 
+type SqlType string
+
+const (
+	SqlServer SqlType = "sqlserver"
+	MySql     SqlType = "mysql"
+)
+
 type Option func(*Options)
 type Options struct {
+	SqlType SqlType
 	SqlUrl  string
 	TimeOut time.Duration
+}
+
+func SetSqlType(v SqlType) Option {
+	return func(o *Options) {
+		o.SqlType = v
+	}
 }
 
 func SetSqlUrl(v string) Option {
@@ -27,6 +41,7 @@ func SetTimeOut(v time.Duration) Option {
 
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
+		SqlType: MySql,
 		TimeOut: 3 * time.Second,
 	}
 	if config != nil {
@@ -36,7 +51,7 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 		o(&options)
 	}
 	if len(options.SqlUrl) == 0 {
-		log.Panicf("start sqls Missing necessary configuration : SqlUrl is nul")
+		log.Errorf("start sqls Missing necessary configuration : SqlUrl is nul")
 	}
 	return options
 }
@@ -49,7 +64,7 @@ func newOptionsByOption(opts ...Option) Options {
 		o(&options)
 	}
 	if len(options.SqlUrl) == 0 {
-		log.Panicf("start sqls Missing necessary configuration : SqlUrl is nul")
+		log.Errorf("start sqls Missing necessary configuration : SqlUrl is nul")
 	}
 	return options
 }

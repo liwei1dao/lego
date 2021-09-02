@@ -1,8 +1,6 @@
-package sqlserver
+package sql
 
 import (
-	// "database/sql"
-
 	"database/sql"
 	"fmt"
 	"testing"
@@ -33,5 +31,17 @@ func Test_SqlServer(t *testing.T) {
 				fmt.Printf("%d,%s,%s,%s", uid, a, p, n)
 			}
 		}
+	}
+}
+
+func Test_MySql(t *testing.T) {
+	err := OnInit(nil,
+		SetSqlType(MySql),
+		SetSqlUrl("root:Idss@sjzt2021@tcp(172.20.27.125:3306)/mysql"),
+	)
+	if err != nil {
+		t.Logf("初始化失败=%s", err.Error())
+	} else {
+		t.Logf("初始化成功")
 	}
 }
