@@ -9,6 +9,7 @@ type (
 		Start()
 		Stop()
 		AddFunc(spec string, cmd func()) (tcron.EntryID, error)
+		Remove(id tcron.EntryID)
 	}
 )
 
