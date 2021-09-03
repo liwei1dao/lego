@@ -42,3 +42,7 @@ func Stop() {
 func AddFunc(spec string, cmd func()) (tcron.EntryID, error) {
 	return defsys.AddFunc(spec, cmd)
 }
+
+func Remove(id tcron.EntryID) {
+	defsys.Remove(id)
+}

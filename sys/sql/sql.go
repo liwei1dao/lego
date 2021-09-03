@@ -29,6 +29,11 @@ func (this *Sql) getContext() (ctx context.Context) {
 	return
 }
 
+func (this *Sql) Query(query string, args ...interface{}) (data *sql.Rows, err error) {
+	data, err = this.db.Query(query, args...)
+	return
+}
+
 func (this *Sql) QueryContext(query string, args ...interface{}) (data *sql.Rows, err error) {
 	data, err = this.db.QueryContext(this.getContext(), query, args...)
 	return

@@ -40,8 +40,27 @@ func Test_MySql(t *testing.T) {
 		SetSqlUrl("root:Idss@sjzt2021@tcp(172.20.27.125:3306)/mysql"),
 	)
 	if err != nil {
-		t.Logf("初始化失败=%s", err.Error())
+		t.Logf("初始化失败=%s\n", err.Error())
 	} else {
 		t.Logf("初始化成功")
+		// if data, err := Query("select table_name from information_schema.tables where table_schema='mysql' and table_type='base table'"); err == nil {
+		if data, err := Query("select table_name,table_rows from information_schema.tables where table_schema = 'mysql' order by table_rows asc"); err == nil {
+			if coluns, err := data.Columns(); err == nil {
+				fmt.Printf("coluns:%v\n", coluns)
+			} else {
+				fmt.Printf("coluns err:%v\n", err)
+			}
+			tablename := ""
+			count := 0
+			for data.Next() {
+				if err := data.Scan(&tablename, &count); err == nil {
+					fmt.Printf("tablename:%s count:%d\n", tablename, count)
+				} else {
+					fmt.Printf("tablename err :%v\n", err)
+				}
+			}
+		} else {
+			fmt.Printf("Query err:%v\n", err)
+		}
 	}
 }
