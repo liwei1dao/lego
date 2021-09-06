@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 
-	_ "github.com/denisenkom/go-mssqldb" //支持sqlserver 需要提前导入否赠会连接失败
-	_ "github.com/go-sql-driver/mysql"   //支持mysql
 	"github.com/jmoiron/sqlx"
+	// 更具需要启动的数据库服务 自己在上层业务添加驱动代码
+	// _ "github.com/denisenkom/go-mssqldb" //sqlserver 驱动 需要提前导入否赠会连接失败
+	// _ "github.com/go-sql-driver/mysql"   //mysql 驱动
+	// _ "github.com/godror/godror"		    //oracle 驱动
 )
 
 func newSys(options Options) (sys *Sql, err error) {

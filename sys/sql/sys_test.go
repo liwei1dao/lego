@@ -44,17 +44,19 @@ func Test_MySql(t *testing.T) {
 	} else {
 		t.Logf("初始化成功")
 		// if data, err := Query("select table_name from information_schema.tables where table_schema='mysql' and table_type='base table'"); err == nil {
-		if data, err := Query("select table_name,table_rows from information_schema.tables where table_schema = 'mysql' order by table_rows asc"); err == nil {
+		//SELECT * FROM (Select test.*,@rowno:=@rowno+1 as INCREMENTAL From test) AS T WHERE INCREMENTAL >= 0 and INCREMENTAL < 100 order by INCREMENTAL
+		if data, err := Query("select test.*,(@rowno:=@rowno+1) as rownum from test, (select @rowno:=0) as init;"); err == nil {
 			if coluns, err := data.Columns(); err == nil {
 				fmt.Printf("coluns:%v\n", coluns)
 			} else {
 				fmt.Printf("coluns err:%v\n", err)
 			}
-			tablename := ""
-			count := 0
+			a1 := ""
+			b2 := ""
+			id := 0
 			for data.Next() {
-				if err := data.Scan(&tablename, &count); err == nil {
-					fmt.Printf("tablename:%s count:%d\n", tablename, count)
+				if err := data.Scan(&a1, &b2, &id); err == nil {
+					fmt.Printf("a1:%s b2:%s id:%v\n", a1, b2, id)
 				} else {
 					fmt.Printf("tablename err :%v\n", err)
 				}
