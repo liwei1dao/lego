@@ -45,7 +45,7 @@ func (this *HttpFlvComp) Start() (err error) {
 }
 
 func (this *HttpFlvComp) run() (err error) {
-	defer lego.Recover()
+	defer lego.Recover("live HttpFlvComp run")
 	log.Infof("HTTP-FLV listen On %s", this.options.GetHttpFlvAddr())
 	this.Serve()
 	return
@@ -112,7 +112,7 @@ func (this *HttpFlvComp) getStream(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *HttpFlvComp) handleConn(w http.ResponseWriter, r *http.Request) {
-	defer lego.Recover()
+	defer lego.Recover("live HttpFlvComp handleConn")
 
 	url := r.URL.String()
 	u := r.URL.Path

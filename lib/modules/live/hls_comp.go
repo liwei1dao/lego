@@ -72,7 +72,7 @@ func (this *HlsComp) checkStop() {
 }
 
 func (this *HlsComp) run() (err error) {
-	defer lego.Recover()
+	defer lego.Recover("live HlsComp run")
 	log.Infof("HLS listen On %s", this.options.GetHlsAddr())
 	this.Serve()
 	return

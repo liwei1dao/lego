@@ -67,7 +67,7 @@ func (this *ApiComp) Start() (err error) {
 }
 
 func (this *ApiComp) run() (err error) {
-	defer lego.Recover()
+	defer lego.Recover("live ApiComp run")
 	log.Infof("HTTP-API listen On %s", this.options.GetAPIAddr())
 	this.Serve()
 	return

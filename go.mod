@@ -18,9 +18,11 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.3.1
 	github.com/ethereum/go-ethereum v1.9.25
 	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
-	github.com/garyburd/redigo v1.6.2
-	github.com/go-logfmt/logfmt v0.5.0 // indirect
 	github.com/go-redis/redis/v8 v8.8.0
+	github.com/go-sql-driver/mysql v1.5.0
+	github.com/gocolly/colly v1.2.0
+	github.com/gocolly/colly/v2 v2.1.0
+	github.com/godror/godror v0.25.3
 	github.com/golang/protobuf v1.4.3
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/websocket v1.4.2
@@ -38,7 +40,6 @@ require (
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/nats-io/nats-server/v2 v2.1.9 // indirect
 	github.com/nats-io/nats.go v1.10.0
-	github.com/pkg/errors v0.9.1
 	github.com/prometheus/tsdb v0.10.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/satori/go.uuid v1.2.0

@@ -29,10 +29,10 @@ func Run(service core.IService, mod ...core.IModule) {
 }
 
 //错误采集
-func Recover() {
+func Recover(tag string) {
 	if r := recover(); r != nil {
 		buf := make([]byte, 1024)
 		l := runtime.Stack(buf, false)
-		log.Panicf("%v: %s", r, buf[:l])
+		log.Panicf("%s - %v: %s", tag, r, buf[:l])
 	}
 }

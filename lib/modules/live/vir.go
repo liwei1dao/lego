@@ -111,7 +111,7 @@ func (v *VirReader) SaveStatics(streamid uint32, length uint64, isVideoFlag bool
 }
 
 func (v *VirReader) Read(p *av.Packet) (err error) {
-	defer lego.Recover()
+	defer lego.Recover("live VirReader Read")
 
 	v.SetPreTime()
 	var cs liveconn.ChunkStream

@@ -25,7 +25,7 @@ func (this *defaultModule) run() {
 	this.wg.Done()
 }
 func (this *defaultModule) destroy() (err error) {
-	defer lego.Recover()
+	defer lego.Recover(fmt.Sprintf("Module :%s destroy", this.mi.GetType()))
 	err = this.mi.Destroy()
 	if err != nil {
 		err = fmt.Errorf("关闭模块【%s】失败 err:%s", this.mi.GetType(), err.Error())
