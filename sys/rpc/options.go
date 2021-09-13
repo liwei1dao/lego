@@ -1,46 +1,24 @@
 package rpc
 
 import (
-	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/mapstructure"
-	"github.com/nats-io/nats.go"
 )
 
 type Option func(*Options)
 type Options struct {
-	sId          string
-	NatsAddr     string
+	RPCConnType  RPCConnType
+	Listener     RPCListener
+	ClusterTag   string
+	ServiceId    string
 	MaxCoroutine int
 	RpcExpired   int
-}
-
-func Id(v string) Option {
-	return func(o *Options) {
-		o.sId = v
-	}
-}
-func NatsAddr(v string) Option {
-	return func(o *Options) {
-		o.NatsAddr = v
-	}
-}
-
-func MaxCoroutine(v int) Option {
-	return func(o *Options) {
-		o.MaxCoroutine = v
-	}
-}
-
-func RpcExpired(v int) Option {
-	return func(o *Options) {
-		o.RpcExpired = v
-	}
+	Nats_Addr    string
 }
 
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
-		MaxCoroutine: 10000,
-		RpcExpired:   5,
+		RPCConnType:  Nats,
+		MaxCoroutine: 2000,
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
@@ -48,25 +26,13 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 	for _, o := range opts {
 		o(&options)
 	}
-	if len(options.NatsAddr) == 0 {
-		log.Panicf("start rpc Missing necessary configuration : NatsAddr is nul")
-	}
 	return options
 }
 
 func newOptionsByOption(opts ...Option) Options {
-	options := Options{
-		MaxCoroutine: 10000,
-		RpcExpired:   5,
-	}
+	options := Options{}
 	for _, o := range opts {
 		o(&options)
-	}
-	if len(options.NatsAddr) == 0 {
-		options.NatsAddr = nats.DefaultURL
-	}
-	if len(options.NatsAddr) == 0 {
-		log.Panicf("start rpc Missing necessary configuration : NatsAddr is nul")
 	}
 	return options
 }

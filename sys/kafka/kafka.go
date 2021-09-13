@@ -35,17 +35,17 @@ func (this *Kafka) init() (err error) {
 	config.Net.ReadTimeout = this.options.Net_ReadTimeout
 	config.Net.WriteTimeout = this.options.Net_WriteTimeout
 	config.Net.KeepAlive = this.options.Net_KeepAlive
-	if this.options.StartType == Syncproducer || this.options.StartType == All {
+	if this.options.StartType == Syncproducer || this.options.StartType == All || this.options.StartType == SyncproducerAndConsumer {
 		if this.syncproducer, err = sarama.NewSyncProducer(this.options.Hosts, config); err != nil {
 			return
 		}
 	}
-	if this.options.StartType == Asyncproducer || this.options.StartType == All {
+	if this.options.StartType == Asyncproducer || this.options.StartType == All || this.options.StartType == AsyncproducerAndConsumer {
 		if this.asyncproducer, err = sarama.NewAsyncProducer(this.options.Hosts, config); err == nil {
 			return
 		}
 	}
-	if this.options.StartType == Consumer || this.options.StartType == All {
+	if this.options.StartType == Consumer || this.options.StartType == All || this.options.StartType == SyncproducerAndConsumer || this.options.StartType == AsyncproducerAndConsumer {
 		config := cluster.NewConfig()
 		config.Consumer.Return.Errors = this.options.Consumer_Return_Errors
 		config.Group.Return.Notifications = true
@@ -111,4 +111,16 @@ func (this *Kafka) Consumer_MarkOffsets(s *cluster.OffsetStash) {
 
 func (this *Kafka) Consumer_Close() (err error) {
 	return this.consumer.Close()
+}
+func (this *Kafka) Close() (err error) {
+	if this.syncproducer != nil {
+		err = this.syncproducer.Close()
+	}
+	if this.asyncproducer != nil {
+		err = this.asyncproducer.Close()
+	}
+	if this.consumer != nil {
+		err = this.consumer.Close()
+	}
+	return
 }

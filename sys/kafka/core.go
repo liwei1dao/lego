@@ -22,6 +22,7 @@ type (
 		Consumer_MarkOffset(msg *sarama.ConsumerMessage, metadata string)
 		Consumer_MarkOffsets(s *cluster.OffsetStash)
 		Consumer_Close() (err error)
+		Close() (err error)
 	}
 )
 
@@ -93,4 +94,7 @@ func Consumer_MarkOffsets(s *cluster.OffsetStash) {
 
 func Consumer_Close() (err error) {
 	return defsys.Consumer_Close()
+}
+func Close() (err error) {
+	return defsys.Close()
 }

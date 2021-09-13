@@ -44,7 +44,7 @@ func (this *ServiceSession) SetPreWeight(p float64) {
 	this.node.PreWeight = p
 }
 func (this *ServiceSession) Done() {
-	this.rpc.Done()
+	this.rpc.Stop()
 }
 func (this *ServiceSession) Call(f core.Rpc_Key, params ...interface{}) (interface{}, error) {
 	return this.rpc.Call(string(f), params...)

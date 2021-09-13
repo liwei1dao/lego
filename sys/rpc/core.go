@@ -3,40 +3,60 @@ package rpc
 import (
 	"reflect"
 
-	"github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/sys/log"
+	lgcore "github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/rpc/core"
+)
+
+const (
+	Nats RPCConnType = iota
+	Kafka
 )
 
 type (
-	IRpc interface {
-		RpcId() string
-		GetRpcInfo() (rfs []core.Rpc_Key)
-		Register(id core.Rpc_Key, f interface{})
-		RegisterGO(id core.Rpc_Key, f interface{})
-		UnRegister(id core.Rpc_Key, f interface{})
-		Done() (err error)
+	RPCConnType int
+	ISys        interface {
+		IRpcServer
+		NewRpcClient(sId, rId string) (clent IRpcClient, err error)
 		OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error))
 		OnRegisterJsonRpcData(d interface{})
 		OnRegisterProtoDataData(d interface{})
-		NewRpcClient(sId, rId string) (clent IRpcClient, err error)
 	}
 	IRpcServer interface {
 		RpcId() string
-		GetRpcInfo() (rfs []core.Rpc_Key)
-		Register(id string, f interface{})
-		RegisterGO(id string, f interface{})
-		UnRegister(id string, f interface{})
-		Done() (err error)
+		GetRpcInfo() (rfs []lgcore.Rpc_Key)
+		Register(id lgcore.Rpc_Key, f interface{})
+		RegisterGO(id lgcore.Rpc_Key, f interface{})
+		UnRegister(id lgcore.Rpc_Key, f interface{})
+		Start() (err error)
+		Stop() (err error)
 	}
 	IRpcClient interface {
-		Done() (err error)
+		Stop() (err error)
 		Call(_func string, params ...interface{}) (interface{}, error)
 		CallNR(_func string, params ...interface{}) (err error)
+	}
+	RPCListener interface {
+		NoFoundFunction(fn string) (*core.FunctionInfo, error)
+		BeforeHandle(fn string, callInfo *core.CallInfo) error
+		OnTimeOut(fn string, Expired int64)
+		OnError(fn string, callInfo *core.CallInfo, err error)
+		OnComplete(fn string, callInfo *core.CallInfo, result *core.ResultInfo, exec_time int64)
+	}
+	IRPCConnServer interface {
+		Callback(callinfo core.CallInfo) error
+		Start(service core.IRpcServer) (err error)
+		Stop() (err error)
+	}
+	IRPCConnClient interface {
+		Stop() (err error)
+		Delete(key string) (err error)
+		Call(callInfo core.CallInfo, callback chan core.ResultInfo) error
+		CallNR(callInfo core.CallInfo) error
 	}
 )
 
 var (
-	defsys IRpc
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -44,7 +64,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys IRpc, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
 }
@@ -52,42 +72,27 @@ func NewSys(option ...Option) (sys IRpc, err error) {
 func RpcId() string {
 	return defsys.RpcId()
 }
-func GetRpcInfo() (rfs []core.Rpc_Key) {
+func GetRpcInfo() (rfs []lgcore.Rpc_Key) {
 	return defsys.GetRpcInfo()
 }
-func Register(id core.Rpc_Key, f interface{}) {
+func Register(id lgcore.Rpc_Key, f interface{}) {
 	defsys.Register(id, f)
 }
-func RegisterGO(id core.Rpc_Key, f interface{}) {
+func RegisterGO(id lgcore.Rpc_Key, f interface{}) {
 	defsys.RegisterGO(id, f)
 }
-func UnRegister(id core.Rpc_Key, f interface{}) {
+func UnRegister(id lgcore.Rpc_Key, f interface{}) {
 	defsys.UnRegister(id, f)
-}
-func Done() (err error) {
-	return defsys.Done()
-}
-func OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {
-	if defsys != nil {
-		defsys.OnRegisterRpcData(d, sf, unsf)
-	} else {
-		log.Warnf("rpc sys no init,OnRegisterRpcData Fail !")
-	}
-}
-func OnRegisterJsonRpcData(d interface{}) {
-	if defsys != nil {
-		defsys.OnRegisterJsonRpcData(d)
-	} else {
-		log.Warnf("rpc sys no init,OnRegisterRpcData Fail !")
-	}
-}
-func OnRegisterProtoDataData(d interface{}) {
-	if defsys != nil {
-		defsys.OnRegisterProtoDataData(d)
-	} else {
-		log.Warnf("rpc sys no init,OnRegisterRpcData Fail !")
-	}
 }
 func NewRpcClient(sId, rId string) (clent IRpcClient, err error) {
 	return defsys.NewRpcClient(sId, rId)
+}
+func OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {
+	defsys.OnRegisterRpcData(d, sf, unsf)
+}
+func OnRegisterJsonRpcData(d interface{}) {
+	defsys.OnRegisterJsonRpcData(d)
+}
+func OnRegisterProtoDataData(d interface{}) {
+	defsys.OnRegisterProtoDataData(d)
 }
