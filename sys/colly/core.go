@@ -1,13 +1,19 @@
 /// 爬虫系统
 package colly
 
+import "github.com/gocolly/colly/v2"
+
 type (
-	Isys interface {
+	ISys interface {
+		OnResponse(f colly.ResponseCallback)
+		Post(url string, requestData map[string]string) error
+		PostRaw(url string, requestData []byte) error
+		Visit(url string) error
 	}
 )
 
 var (
-	defsys Isys
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -16,8 +22,23 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys Isys, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	if sys, err = newSys(newOptionsByOption(option...)); err == nil {
 	}
 	return
+}
+
+func OnResponse(f colly.ResponseCallback) {
+	defsys.OnResponse(f)
+}
+
+func Post(url string, requestData map[string]string) error {
+	return defsys.Post(url, requestData)
+}
+
+func PostRaw(url string, requestData []byte) error {
+	return defsys.PostRaw(url, requestData)
+}
+func Visit(url string) error {
+	return defsys.Visit(url)
 }

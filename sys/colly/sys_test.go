@@ -2,13 +2,10 @@ package colly_test
 
 import (
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
 	"testing"
 
-	"github.com/gocolly/colly"
-	"golang.org/x/net/proxy"
+	"github.com/gocolly/colly/v2"
+	"github.com/gocolly/colly/v2/proxy"
 )
 
 func Test_sys(t *testing.T) {
@@ -16,13 +13,13 @@ func Test_sys(t *testing.T) {
 		colly.UserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36"),
 		colly.AllowURLRevisit(),
 	)
-	c.SetProxy("127.0.0.1:1080")
-	// if p, err := proxy.RoundRobinProxySwitcher(
-	// 	"socks5://127.0.0.1:1080",
-	// 	"http://127.0.0.1:1087",
-	// ); err == nil {
 
-	// }
+	if p, err := proxy.RoundRobinProxySwitcher(
+		"socks5://127.0.0.1:1080",
+		"http://127.0.0.1:1087",
+	); err == nil {
+		c.SetProxyFunc(p)
+	}
 	c.OnRequest(func(r *colly.Request) {
 		// r.Headers.Set("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
 		// r.Headers.Set("accept-encoding", "gzip, deflate, br")
@@ -44,7 +41,7 @@ func Test_sys(t *testing.T) {
 		fmt.Printf("OnError %v\n", err)
 	})
 	c.OnResponse(func(r *colly.Response) {
-		fmt.Printf("OnResponse %v\n", r)
+		fmt.Printf("OnResponse %v\n", string(r.Body))
 	})
 	c.OnScraped(func(r *colly.Response) {
 		fmt.Printf("OnScraped %v\n", r)
@@ -52,22 +49,22 @@ func Test_sys(t *testing.T) {
 	c.Visit("https://www.tangrenjie.tv/api.php/provide/vod/?ac=list&h=24")
 }
 
-func Test_AppleSMC(t *testing.T) {
-	dialer, err := proxy.SOCKS5("tcp", "127.0.0.1:1080", nil, proxy.Direct)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "can't connect to the proxy:", err)
-		os.Exit(1)
-	}
-	// setup a http client
-	httpTransport := &http.Transport{}
-	httpClient := &http.Client{Transport: httpTransport}
-	// set our socks5 as the dialer
-	httpTransport.Dial = dialer.Dial
-	if resp, err := httpClient.Get("https://www.tangrenjie.tv/api.php/provide/vod/?ac=list&h=24"); err != nil {
-		fmt.Printf("err:%v", err)
-	} else {
-		defer resp.Body.Close()
-		body, _ := ioutil.ReadAll(resp.Body)
-		fmt.Printf("%s\n", body)
-	}
-}
+// func Test_AppleSMC(t *testing.T) {
+// 	dialer, err := proxy.SOCKS5("tcp", "127.0.0.1:1080", nil, proxy.Direct)
+// 	if err != nil {
+// 		fmt.Fprintln(os.Stderr, "can't connect to the proxy:", err)
+// 		os.Exit(1)
+// 	}
+// 	// setup a http client
+// 	httpTransport := &http.Transport{}
+// 	httpClient := &http.Client{Transport: httpTransport}
+// 	// set our socks5 as the dialer
+// 	httpTransport.Dial = dialer.Dial
+// 	if resp, err := httpClient.Get("https://www.tangrenjie.tv/api.php/provide/vod/?ac=list&h=24"); err != nil {
+// 		fmt.Printf("err:%v", err)
+// 	} else {
+// 		defer resp.Body.Close()
+// 		body, _ := ioutil.ReadAll(resp.Body)
+// 		fmt.Printf("%s\n", body)
+// 	}
+// }

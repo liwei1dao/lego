@@ -14,4 +14,5 @@ const (
 	SM_MonitorModule core.M_Modules = "SM_MonitorModule" //monitor模块
 	SM_ConsoleModule core.M_Modules = "SM_ConsoleModule" //cnsole模块
 	SM_LiveModule    core.M_Modules = "SM_LiveModule"    //live模块
+	SM_CollyModule   core.M_Modules = "SM_CollyModule"   //colly模块
 )
