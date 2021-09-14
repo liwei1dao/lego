@@ -87,6 +87,7 @@ func (this *RPCClient) CallArgs(_func string, ArgsType []string, args [][]byte) 
 	var err error
 	err = this.conn.Call(*callInfo, callback)
 	if err != nil {
+		log.Errorf("RPC RPCClient CallArgs err:%v", err)
 		return nil, err.Error()
 	}
 	select {
@@ -105,7 +106,7 @@ func (this *RPCClient) CallArgs(_func string, ArgsType []string, args [][]byte) 
 	case <-time.After(this.rpcExpired):
 		close(callback)
 		this.conn.Delete(rpcInfo.Cid)
-		return nil, "deadline exceeded"
+		return nil, "timeout"
 	}
 }
 

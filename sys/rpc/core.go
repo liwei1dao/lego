@@ -5,6 +5,7 @@ import (
 
 	lgcore "github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/rpc/core"
+	_ "github.com/liwei1dao/lego/sys/rpc/serialize"
 )
 
 const (
@@ -68,7 +69,12 @@ func NewSys(option ...Option) (sys ISys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
 }
-
+func Start() (err error) {
+	return defsys.Start()
+}
+func Stop() (err error) {
+	return defsys.Stop()
+}
 func RpcId() string {
 	return defsys.RpcId()
 }

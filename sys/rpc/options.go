@@ -13,12 +13,24 @@ type Options struct {
 	MaxCoroutine int
 	RpcExpired   int
 	Nats_Addr    string
+	Kafka_Host   []string
 }
 
+func SetClusterTag(v string) Option {
+	return func(o *Options) {
+		o.ClusterTag = v
+	}
+}
+func SetServiceId(v string) Option {
+	return func(o *Options) {
+		o.ServiceId = v
+	}
+}
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
 		RPCConnType:  Nats,
 		MaxCoroutine: 2000,
+		RpcExpired:   5,
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)

@@ -12,27 +12,27 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-func NewNatsClient(natsaddr string, rpcId string) (natsClient *NatsClient, err error) {
+func NewNatsClient(natsaddr string, pushrpcId, receiveId string) (natsClient *NatsClient, err error) {
 	var (
-		conn              *nats.Conn
-		subs              *nats.Subscription
-		callbackqueueName string
+		conn *nats.Conn
+		subs *nats.Subscription
 	)
-	callbackqueueName = nats.NewInbox()
 	conn, err = nats.Connect(natsaddr)
 	if err != nil {
 		err = fmt.Errorf("RPC NewNatsClient nats.Connect err:%v", err)
 		return
 	}
-	if subs, err = natsClient.conn.SubscribeSync(callbackqueueName); err != nil {
+	if subs, err = conn.SubscribeSync(receiveId); err != nil {
 		return nil, fmt.Errorf("rpc NatsClient 连接错误 err:%s", err.Error())
 	}
 	natsClient = &NatsClient{
+		rpcId:             pushrpcId,
 		callinfos:         container.NewBeeMap(),
-		callbackqueueName: callbackqueueName,
+		callbackqueueName: receiveId,
 		conn:              conn,
 		subs:              subs,
 	}
+	go natsClient.on_request_handle()
 	return
 }
 
@@ -131,7 +131,7 @@ locp:
 			}
 		}
 	}
-	log.Debugf("NatsClient exit on_request_handle")
+	log.Debugf("RPC NatsClient on_request_handle exit")
 }
 
 func (this *NatsClient) UnmarshalResult(data []byte) (*core.ResultInfo, error) {

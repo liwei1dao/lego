@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/liwei1dao/lego"
+	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/rpc/core"
 	"github.com/nats-io/nats.go"
 )
@@ -45,6 +46,7 @@ func (this *NatsService) Callback(callinfo core.CallInfo) error {
 
 func (this *NatsService) Start(service core.IRpcServer) (err error) {
 	this.service = service
+	go this.on_request_handle()
 	return
 }
 
@@ -52,14 +54,15 @@ func (this *NatsService) Stop() (err error) {
 	err = this.subs.Unsubscribe()
 	return
 }
-func (this *NatsService) on_request_handle() error {
+func (this *NatsService) on_request_handle() {
 	defer lego.Recover("RPC NatsService")
+locp:
 	for {
 		m, err := this.subs.NextMsg(time.Minute)
 		if err != nil && err == nats.ErrTimeout {
 			continue
 		} else if err != nil {
-			return err
+			break locp
 		}
 		rpcInfo, err := this.Unmarshal(m.Data)
 		if err == nil {
@@ -75,6 +78,7 @@ func (this *NatsService) on_request_handle() error {
 			fmt.Println("error ", err)
 		}
 	}
+	log.Debugf("RPC NatsService on_request_handle exit")
 }
 func (s *NatsService) Unmarshal(data []byte) (*core.RPCInfo, error) {
 	var rpcInfo core.RPCInfo

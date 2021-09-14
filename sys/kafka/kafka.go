@@ -41,7 +41,7 @@ func (this *Kafka) init() (err error) {
 		}
 	}
 	if this.options.StartType == Asyncproducer || this.options.StartType == All || this.options.StartType == AsyncproducerAndConsumer {
-		if this.asyncproducer, err = sarama.NewAsyncProducer(this.options.Hosts, config); err == nil {
+		if this.asyncproducer, err = sarama.NewAsyncProducer(this.options.Hosts, config); err != nil {
 			return
 		}
 	}

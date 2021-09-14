@@ -12,9 +12,9 @@ const (
 	Syncproducer             KafkaStartType = iota ///同步生产者
 	Asyncproducer                                  ///异步生产者
 	Consumer                                       ///消费者
-	All                                            ///全部启动
-	AsyncproducerAndConsumer                       ///异步生产和消费
 	SyncproducerAndConsumer                        ///同步生产者和消费
+	AsyncproducerAndConsumer                       ///异步生产和消费
+	All                                            ///全部启动
 )
 
 type Option func(*Options)
@@ -175,16 +175,18 @@ func SetConsumer_Return_Errors(v bool) Option {
 
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
-		Producer_RequiredAcks:    sarama.NoResponse,
-		Producer_MaxMessageBytes: 1000000,
-		Producer_Retry_Max:       3,
-		Producer_Retry_Backoff:   100,
-		Producer_Compression:     sarama.CompressionNone,
-		Net_DialTimeout:          time.Second * 5,
-		Net_ReadTimeout:          time.Second * 60,
-		Net_WriteTimeout:         time.Second * 60,
-		Net_KeepAlive:            0,
-		Consumer_Offsets_Initial: -1,
+		Producer_Return_Successes: true,
+		Producer_Return_Errors:    true,
+		Producer_RequiredAcks:     sarama.NoResponse,
+		Producer_MaxMessageBytes:  1000000,
+		Producer_Retry_Max:        3,
+		Producer_Retry_Backoff:    100,
+		Producer_Compression:      sarama.CompressionNone,
+		Net_DialTimeout:           time.Second * 5,
+		Net_ReadTimeout:           time.Second * 60,
+		Net_WriteTimeout:          time.Second * 60,
+		Net_KeepAlive:             0,
+		Consumer_Offsets_Initial:  -1,
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)

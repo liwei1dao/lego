@@ -10,29 +10,30 @@ import (
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/rpc/core"
 	"github.com/liwei1dao/lego/utils/container"
-	"github.com/liwei1dao/lego/utils/id"
 )
 
-func NewKafkaClient(kafkahost []string, rpcId string) (kafkaClient *KafkaClient, err error) {
+func NewKafkaClient(serviceId string, kafkahost []string, pushrpcId, receiveId string) (kafkaClient *KafkaClient, err error) {
 	var (
-		callbackqueueName string
-		kfk               kafka.IKafka
+		kfk kafka.IKafka
 	)
-	callbackqueueName = fmt.Sprintf("lego-rpc-callback:%s", id.GenerateID().String())
 	if kfk, err = kafka.NewSys(
 		kafka.SetStartType(kafka.AsyncproducerAndConsumer),
+		kafka.SetClientID(serviceId),
 		kafka.SetHosts(kafkahost),
-		kafka.SetTopics([]string{rpcId}),
-		kafka.SetGroupId("rpc"),
+		kafka.SetTopics([]string{receiveId}),
+		kafka.SetGroupId(serviceId),
+		kafka.SetConsumer_Offsets_Initial(-1),
 	); err != nil {
 		err = fmt.Errorf("RPC NewKafkaClient kafka.NewSys err:%v", err)
 		return
 	}
 	kafkaClient = &KafkaClient{
 		callinfos:         container.NewBeeMap(),
-		callbackqueueName: callbackqueueName,
+		callbackqueueName: receiveId,
+		rpcId:             pushrpcId,
 		kafka:             kfk,
 	}
+	go kafkaClient.on_request_handle()
 	return
 }
 
@@ -119,20 +120,22 @@ func (this *KafkaClient) on_request_handle() {
 	defer lego.Recover("RPC KafkaClient")
 	go func() {
 		for v := range this.kafka.Consumer_Errors() {
-			log.Errorf("reader kafka flush kafka Errors: %v", v)
+			log.Errorf("reader kafka flush kafka Errors: %+v", v)
 		}
 	}()
 	go func() {
 		for v := range this.kafka.Consumer_Notifications() {
-			log.Debugf("reader kafka flush kafka Notifications: %v", v)
+			log.Debugf("reader kafka flush kafka Notifications: %+v", v)
 		}
 	}()
 	go func() {
 		for v := range this.kafka.Consumer_Partitions() {
-			log.Debugf("reader kafka flush kafka Partitions: %v", v)
+			log.Debugf("reader kafka flush kafka Partitions: %+v", v)
 		}
 	}()
 	for v := range this.kafka.Consumer_Messages() {
+		// log.Debugf("RPC KafkaClient Receive: %+v", v)
+		this.kafka.Consumer_MarkOffset(v, "")
 		resultInfo, err := this.UnmarshalResult(v.Value)
 		if err != nil {
 			log.Errorf("RPC NatsClient Unmarshal faild", err)
@@ -150,6 +153,7 @@ func (this *KafkaClient) on_request_handle() {
 			}
 		}
 	}
+	log.Debugf("RPC KafkaClient on_request_handle exit")
 }
 
 func (this *KafkaClient) UnmarshalResult(data []byte) (*core.ResultInfo, error) {

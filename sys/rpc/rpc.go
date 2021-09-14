@@ -9,7 +9,6 @@ import (
 	"github.com/liwei1dao/lego/sys/rpc/conn"
 	"github.com/liwei1dao/lego/sys/rpc/core"
 	"github.com/liwei1dao/lego/sys/rpc/serialize"
-	"github.com/liwei1dao/lego/utils/id"
 )
 
 func newSys(options Options) (sys *RPC, err error) {
@@ -18,9 +17,13 @@ func newSys(options Options) (sys *RPC, err error) {
 		service *RPCService
 		c       IRPCConnServer
 	)
-	rpcId = fmt.Sprintf("%s-%s", options.ClusterTag, id.GenerateID().String())
+	rpcId = fmt.Sprintf("%s-%s", options.ClusterTag, options.ServiceId)
 	if options.RPCConnType == Nats {
 		if c, err = conn.NewNatsService(options.Nats_Addr, rpcId); err != nil {
+			return
+		}
+	} else if options.RPCConnType == Kafka {
+		if c, err = conn.NewKafkaService(options.ServiceId, options.Kafka_Host, rpcId); err != nil {
 			return
 		}
 	}
@@ -42,6 +45,29 @@ func newSys(options Options) (sys *RPC, err error) {
 type RPC struct {
 	options Options
 	service IRpcServer
+}
+
+func (this *RPC) NewRpcClient(sId, rId string) (clent IRpcClient, err error) {
+	var (
+		c         IRPCConnClient
+		receiveId string
+	)
+	receiveId = fmt.Sprintf("%s-%s-%s", this.options.ClusterTag, this.options.ServiceId, sId)
+	if this.options.RPCConnType == Nats {
+		if c, err = conn.NewNatsClient(this.options.Nats_Addr, rId, receiveId); err != nil {
+			return
+		}
+	} else if this.options.RPCConnType == Kafka {
+		if c, err = conn.NewKafkaClient(this.options.ServiceId, this.options.Kafka_Host, rId, receiveId); err != nil {
+			return
+		}
+	}
+	clent = &RPCClient{
+		ServiceId:  sId,
+		rpcExpired: time.Second * time.Duration(this.options.RpcExpired),
+		conn:       c,
+	}
+	return
 }
 
 func (this *RPC) Start() (err error) {
@@ -70,23 +96,6 @@ func (this *RPC) RegisterGO(id lgcore.Rpc_Key, f interface{}) {
 
 func (this *RPC) UnRegister(id lgcore.Rpc_Key, f interface{}) {
 	this.service.UnRegister(id, f)
-}
-
-func (this *RPC) NewRpcClient(sId, rId string) (clent IRpcClient, err error) {
-	var (
-		c IRPCConnClient
-	)
-	if this.options.RPCConnType == Nats {
-		if c, err = conn.NewNatsClient(this.options.Nats_Addr, rId); err != nil {
-			return
-		}
-	}
-	clent = &RPCClient{
-		ServiceId:  sId,
-		rpcExpired: time.Second * time.Duration(this.options.RpcExpired),
-		conn:       c,
-	}
-	return
 }
 
 func (this *RPC) OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {

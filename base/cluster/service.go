@@ -96,12 +96,15 @@ func (this *ClusterService) InitSys() {
 	} else {
 		log.Infof("Sys registry Init success !")
 	}
-	if err := rpc.OnInit(this.opts.Setting.Sys["rpc"]); err != nil {
+	if err := rpc.OnInit(this.opts.Setting.Sys["rpc"], rpc.SetClusterTag(this.GetTag()), rpc.SetServiceId(this.GetId())); err != nil {
 		panic(fmt.Sprintf("初始化rpc系统 err:%v", err))
 	} else {
 		log.Infof("Sys rpc Init success !")
 	}
 	event.Register(core.Event_ServiceStartEnd, func() { //阻塞 先注册服务集群 保证其他服务能及时发现
+		if err := rpc.Start(); err != nil {
+			panic(fmt.Sprintf("启动RPC失败 err:%v", err))
+		}
 		if err := registry.Start(); err != nil {
 			panic(fmt.Sprintf("加入集群服务失败 err:%v", err))
 		}
@@ -124,9 +127,13 @@ func (this *ClusterService) Run(mod ...core.IModule) {
 }
 
 func (this *ClusterService) Destroy() (err error) {
+	if err = rpc.Stop(); err != nil {
+		return
+	}
 	if err = registry.Stop(); err != nil {
 		return
 	}
+	cron.Stop()
 	err = this.ServiceBase.Destroy()
 	return
 }
