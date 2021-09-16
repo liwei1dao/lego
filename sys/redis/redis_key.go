@@ -9,13 +9,13 @@ import (
 
 ///删除redis key
 func (this *Redis) Delete(key core.Redis_Key) (err error) {
-	err = this.client.Do(this.getContext(), "DEL", key).Err()
+	err = this.client.Do(this.getContext(), "DEL", string(key)).Err()
 	return
 }
 
 ///判断是否存在key
 func (this *Redis) ExistsKey(key core.Redis_Key) (iskeep bool, err error) {
-	iskeep, err = this.client.Do(this.getContext(), "EXISTS", key).Bool()
+	iskeep, err = this.client.Do(this.getContext(), "EXISTS", string(key)).Bool()
 	return
 }
 

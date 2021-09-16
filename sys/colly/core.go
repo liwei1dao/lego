@@ -6,6 +6,7 @@ import "github.com/gocolly/colly/v2"
 type (
 	ISys interface {
 		OnResponse(f colly.ResponseCallback)
+		OnScraped(f colly.ScrapedCallback)
 		Post(url string, requestData map[string]string) error
 		PostRaw(url string, requestData []byte) error
 		Visit(url string) error
@@ -30,6 +31,9 @@ func NewSys(option ...Option) (sys ISys, err error) {
 
 func OnResponse(f colly.ResponseCallback) {
 	defsys.OnResponse(f)
+}
+func OnScraped(f colly.ScrapedCallback) {
+	defsys.OnScraped(f)
 }
 
 func Post(url string, requestData map[string]string) error {

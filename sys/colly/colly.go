@@ -15,6 +15,12 @@ func newSys(options Options) (sys *Colly, err error) {
 			colly.AllowURLRevisit(),
 		),
 	}
+	//限速
+	// sys.colly.Limit(&colly.LimitRule{
+	// 	DomainGlob:  "www.douban.com",
+	// 	Parallelism: 1,
+	// 	Delay:       2 * time.Second,
+	// })
 	if len(options.UserAgent) > 0 {
 		sys.colly.UserAgent = options.UserAgent
 	}
@@ -33,6 +39,10 @@ type Colly struct {
 
 func (this *Colly) OnResponse(f colly.ResponseCallback) {
 	this.colly.OnResponse(f)
+}
+
+func (this *Colly) OnScraped(f colly.ScrapedCallback) {
+	this.colly.OnScraped(f)
 }
 
 func (this *Colly) Post(url string, requestData map[string]string) error {
