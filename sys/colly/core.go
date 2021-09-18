@@ -9,6 +9,7 @@ type (
 	ISys interface {
 		OnResponse(f colly.ResponseCallback)
 		OnScraped(f colly.ScrapedCallback)
+		OnError(f colly.ErrorCallback)
 		Post(url string, requestData map[string]string) error
 		PostRaw(url string, requestData []byte) error
 		Wait()
@@ -37,6 +38,10 @@ func OnResponse(f colly.ResponseCallback) {
 }
 func OnScraped(f colly.ScrapedCallback) {
 	defsys.OnScraped(f)
+}
+
+func OnError(f colly.ErrorCallback) {
+	defsys.OnError(f)
 }
 
 func Post(url string, requestData map[string]string) error {

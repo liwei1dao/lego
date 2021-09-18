@@ -46,6 +46,9 @@ func (this *Colly) OnResponse(f colly.ResponseCallback) {
 func (this *Colly) OnScraped(f colly.ScrapedCallback) {
 	this.colly.OnScraped(f)
 }
+func (this *Colly) OnError(f colly.ErrorCallback) {
+	this.colly.OnError(f)
+}
 
 func (this *Colly) Wait() {
 	this.colly.Wait()
