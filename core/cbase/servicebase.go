@@ -99,16 +99,16 @@ func (this *ServiceBase) Run(mod ...core.IModule) {
 		if err := options.LoadConfig(v.seetring); err == nil {
 			err := v.mi.Init(this.Service, v.mi, options)
 			if err != nil {
-				panic(fmt.Sprintf("初始化模块【%s】错误 err:%v", v.mi.GetType(), err))
+				log.Panicf(fmt.Sprintf("初始化模块【%s】错误 err:%v", v.mi.GetType(), err))
 			}
 		} else {
-			panic(fmt.Sprintf("模块【%s】 Options:%v 配置错误 err:%v", v.mi.GetType(), v.seetring, err))
+			log.Panicf(fmt.Sprintf("模块【%s】 Options:%v 配置错误 err:%v", v.mi.GetType(), v.seetring, err))
 		}
 	}
 	for _, v := range this.modules {
 		err := v.mi.Start()
 		if err != nil {
-			panic(fmt.Sprintf("启动模块【%s】错误 err:%v", v.mi.GetType(), err))
+			log.Panicf(fmt.Sprintf("启动模块【%s】错误 err:%v", v.mi.GetType(), err))
 		}
 	}
 	for _, v := range this.modules {

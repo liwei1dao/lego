@@ -1,7 +1,9 @@
 /// 爬虫系统
 package colly
 
-import "github.com/gocolly/colly/v2"
+import (
+	"github.com/gocolly/colly/v2"
+)
 
 type (
 	ISys interface {
@@ -9,6 +11,7 @@ type (
 		OnScraped(f colly.ScrapedCallback)
 		Post(url string, requestData map[string]string) error
 		PostRaw(url string, requestData []byte) error
+		Wait()
 		Visit(url string) error
 	}
 )
@@ -42,6 +45,10 @@ func Post(url string, requestData map[string]string) error {
 
 func PostRaw(url string, requestData []byte) error {
 	return defsys.PostRaw(url, requestData)
+}
+
+func Wait() {
+	defsys.Wait()
 }
 func Visit(url string) error {
 	return defsys.Visit(url)

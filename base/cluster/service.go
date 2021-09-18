@@ -82,31 +82,31 @@ func (this *ClusterService) InitSys() {
 		log.Infof("Sys log Init success !")
 	}
 	if err := event.OnInit(this.opts.Setting.Sys["event"]); err != nil {
-		panic(fmt.Sprintf("初始化event系统失败 err:%v", err))
+		log.Panicf(fmt.Sprintf("初始化event系统失败 err:%v", err))
 	} else {
 		log.Infof("Sys event Init success !")
 	}
 	if err := cron.OnInit(this.opts.Setting.Sys["cron"]); err != nil {
-		panic(fmt.Sprintf("初始化cron系统 err:%v", err))
+		log.Panicf(fmt.Sprintf("初始化cron系统 err:%v", err))
 	} else {
 		log.Infof("Sys cron Init success !")
 	}
 	if err := registry.OnInit(this.opts.Setting.Sys["registry"], registry.SetService(this.ClusterService), registry.SetListener(this.ClusterService.(registry.IListener))); err != nil {
-		panic(fmt.Sprintf("初始化registry系统失败 err:%v", err))
+		log.Panicf(fmt.Sprintf("初始化registry系统失败 err:%v", err))
 	} else {
 		log.Infof("Sys registry Init success !")
 	}
 	if err := rpc.OnInit(this.opts.Setting.Sys["rpc"], rpc.SetClusterTag(this.GetTag()), rpc.SetServiceId(this.GetId())); err != nil {
-		panic(fmt.Sprintf("初始化rpc系统 err:%v", err))
+		log.Panicf(fmt.Sprintf("初始化rpc系统 err:%v", err))
 	} else {
 		log.Infof("Sys rpc Init success !")
 	}
 	event.Register(core.Event_ServiceStartEnd, func() { //阻塞 先注册服务集群 保证其他服务能及时发现
 		if err := rpc.Start(); err != nil {
-			panic(fmt.Sprintf("启动RPC失败 err:%v", err))
+			log.Panicf(fmt.Sprintf("启动RPC失败 err:%v", err))
 		}
 		if err := registry.Start(); err != nil {
-			panic(fmt.Sprintf("加入集群服务失败 err:%v", err))
+			log.Panicf(fmt.Sprintf("加入集群服务失败 err:%v", err))
 		}
 	})
 }

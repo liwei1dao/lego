@@ -42,6 +42,6 @@ func (this *SingleService) InitSys() {
 		panic(fmt.Sprintf("初始化log系统失败 %s", err.Error()))
 	}
 	if err := event.OnInit(this.opts.Setting.Sys["event"]); err != nil {
-		panic(fmt.Sprintf("初始化event系统失败 %s", err.Error()))
+		log.Panicf(fmt.Sprintf("初始化event系统失败 %s", err.Error()))
 	}
 }
