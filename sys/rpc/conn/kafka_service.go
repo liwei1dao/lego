@@ -51,7 +51,7 @@ func (this *KafkaService) Stop() (err error) {
 func (this *KafkaService) Callback(callinfo core.CallInfo) error {
 	body, _ := this.MarshalResult(callinfo.Result)
 	reply_to := callinfo.Props["reply_to"].(string)
-	log.Debugf("RPC KafkaService Callback reply_to:%v", reply_to)
+	// log.Debugf("RPC KafkaService Callback reply_to:%v", reply_to)
 	this.kafka.Asyncproducer_Input() <- &sarama.ProducerMessage{
 		Topic: reply_to,
 		Value: sarama.ByteEncoder(body),
