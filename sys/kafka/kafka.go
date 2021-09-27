@@ -22,6 +22,7 @@ type Kafka struct {
 
 func (this *Kafka) init() (err error) {
 	config := sarama.NewConfig()
+	config.Version = sarama.V2_1_0_0
 	config.ClientID = this.options.ClientID
 	config.Producer.MaxMessageBytes = this.options.Producer_MaxMessageBytes
 	config.Producer.RequiredAcks = this.options.Producer_RequiredAcks
