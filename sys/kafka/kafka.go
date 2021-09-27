@@ -48,9 +48,15 @@ func (this *Kafka) init() (err error) {
 	}
 	if this.options.StartType == Consumer || this.options.StartType == All || this.options.StartType == SyncproducerAndConsumer || this.options.StartType == AsyncproducerAndConsumer {
 		config := cluster.NewConfig()
+		config.Version = sarama.V2_1_0_0
 		config.Consumer.Return.Errors = this.options.Consumer_Return_Errors
 		config.Group.Return.Notifications = true
 		config.Consumer.Offsets.Initial = this.options.Consumer_Offsets_Initial
+		config.ClientID = this.options.ClientID
+		config.Net.DialTimeout = this.options.Net_DialTimeout
+		config.Net.ReadTimeout = this.options.Net_ReadTimeout
+		config.Net.WriteTimeout = this.options.Net_WriteTimeout
+		config.Net.KeepAlive = this.options.Net_KeepAlive
 		if this.consumer, err = cluster.NewConsumer(this.options.Hosts, this.options.GroupId, this.options.Topics, config); err != nil {
 			return
 		}
