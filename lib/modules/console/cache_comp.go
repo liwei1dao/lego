@@ -62,21 +62,21 @@ func (this *CacheComp) GetRedis() redis.IRedis {
 //查询用户数据
 func (this *CacheComp) QueryToken(token string) (uId uint32, err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleToken), token)
-	err = this.redis.Get(core.Redis_Key(Id), &uId)
+	err = this.redis.Get(Id, &uId)
 	return
 }
 
 //写入Token
 func (this *CacheComp) WriteToken(token string, uId uint32) (err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleToken), token)
-	err = this.redis.Set(core.Redis_Key(Id), uId, time.Second*time.Duration(this.module.Options().GetTokenCacheExpirationDate()))
+	err = this.redis.Set(Id, uId, time.Second*time.Duration(this.module.Options().GetTokenCacheExpirationDate()))
 	return
 }
 
 //清理Token
 func (this *CacheComp) CleanToken(token string) (err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleToken), token)
-	err = this.redis.Delete(core.Redis_Key(Id))
+	err = this.redis.Delete(Id)
 	return
 }
 
@@ -110,7 +110,7 @@ func (this *CacheComp) CleanToken(token string) (err error) {
 func (this *CacheComp) QueryUserData(uId uint32) (result *Cache_UserData, err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleUsers), uId)
 	result = &Cache_UserData{}
-	err = this.redis.Get(core.Redis_Key(Id), result)
+	err = this.redis.Get(Id, result)
 	return
 }
 
@@ -130,21 +130,21 @@ func (this *CacheComp) synchronizeUserToCache(uId uint32) (result *Cache_UserDat
 //离线用户缓存读取之后保存10分钟
 func (this *CacheComp) writeUserDataByEx(result *Cache_UserData) (err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleUsers), result.Db_UserData.Id)
-	err = this.redis.Set(core.Redis_Key(Id), result, time.Second*time.Duration(this.module.Options().GetUserCacheExpirationDate()))
+	err = this.redis.Set(Id, result, time.Second*time.Duration(this.module.Options().GetUserCacheExpirationDate()))
 	return
 }
 
 //登录用户缓存信息长期驻留
 func (this *CacheComp) WriteUserData(data *Cache_UserData) (err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleUsers), data.Db_UserData.Id)
-	err = this.redis.Set(core.Redis_Key(Id), data, 0)
+	err = this.redis.Set(Id, data, 0)
 	return
 }
 
 //清理用户缓存
 func (this *CacheComp) CleanUserData(uid uint32) (err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleUsers), uid)
-	err = this.redis.Delete(core.Redis_Key(Id))
+	err = this.redis.Delete(Id)
 	return
 }
 
@@ -178,8 +178,8 @@ func (this *CacheComp) CleanUserData(uid uint32) (err error) {
 func (this *CacheComp) AddNewClusterMonitor(data map[string]*ClusterMonitor) {
 	for k, v := range data {
 		id := fmt.Sprintf(string(Cache_ConsoleClusterMonitor), k)
-		this.redis.RPush(core.Redis_Key(id), v)
-		if len, err := this.redis.Llen(core.Redis_Key(id)); err == nil && len > this.module.Options().GetMonitorTotalTime() {
+		this.redis.RPush(id, v)
+		if len, err := this.redis.Llen(id); err == nil && len > this.module.Options().GetMonitorTotalTime() {
 			this.redis.LPop(Cache_ConsoleClusterMonitor, v)
 		}
 	}
@@ -190,7 +190,7 @@ func (this *CacheComp) GetClusterMonitor(sIs string, timeleng int) (result []*Cl
 	var values []interface{}
 	result = make([]*ClusterMonitor, 0)
 	id := fmt.Sprintf(string(Cache_ConsoleClusterMonitor), sIs)
-	values, err = this.redis.LRange(core.Redis_Key(id), 0, timeleng, reflect.TypeOf(&ClusterMonitor{}))
+	values, err = this.redis.LRange(id, 0, timeleng, reflect.TypeOf(&ClusterMonitor{}))
 	if err == nil && values != nil && len(values) > 0 {
 		result = make([]*ClusterMonitor, len(values))
 		for i, v := range values {

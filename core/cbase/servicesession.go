@@ -22,7 +22,9 @@ type ServiceSession struct {
 func (this *ServiceSession) GetId() string {
 	return this.node.Id
 }
-
+func (this *ServiceSession) GetIp() string {
+	return this.node.IP
+}
 func (this *ServiceSession) GetRpcId() string {
 	return this.node.RpcId
 }

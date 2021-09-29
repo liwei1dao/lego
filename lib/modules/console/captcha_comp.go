@@ -35,7 +35,7 @@ func (this *CaptchaComp) SendEmailCaptcha(email, captcha string) (err error) {
 func (this *CaptchaComp) QueryCaptcha(cId string, ctype CaptchaType) (captcha string, err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleCaptcha), cId, ctype)
 	redis := this.module.Cache().GetRedis()
-	err = redis.Get(core.Redis_Key(Id), &captcha)
+	err = redis.Get(Id, &captcha)
 	return
 }
 
@@ -43,5 +43,5 @@ func (this *CaptchaComp) QueryCaptcha(cId string, ctype CaptchaType) (captcha st
 func (this *CaptchaComp) WriteCaptcha(cId, captcha string, ctype CaptchaType) {
 	Id := fmt.Sprintf(string(Cache_ConsoleCaptcha), cId, ctype)
 	redis := this.module.Cache().GetRedis()
-	redis.Set(core.Redis_Key(Id), captcha, time.Second*time.Duration(this.module.Options().GetCaptchaExpirationdate()))
+	redis.Set(Id, captcha, time.Second*time.Duration(this.module.Options().GetCaptchaExpirationdate()))
 }

@@ -178,7 +178,6 @@ func (this *ClusterService) UpDataServiceHandlefunc(node registry.ServiceNode) {
 			event.TriggerEvent(core.Event_UpDataOldService, node) //触发发现新的服务事件
 		}
 	}
-
 }
 
 //注销服务会话
@@ -194,10 +193,10 @@ func (this *ClusterService) LoseServiceHandlefunc(sId string) {
 func (this *ClusterService) getServiceSessionByType(sType string, sIp string) (ss []core.IServiceSession, err error) {
 	ss = make([]core.IServiceSession, 0)
 	if nodes := registry.GetServiceByType(sType); nodes == nil {
-		log.Errorf("获取目标类型【%s】服务集失败", sType)
+		log.Errorf("获取目标类型 type【%s】ip [%s] 服务集失败", sType, sIp)
 		return nil, err
 	} else {
-		if sIp == "0.0.0.0" {
+		if sIp == core.AutoIp {
 			for _, v := range nodes {
 				if s, ok := this.serverList.Load(v.Id); ok {
 					ss = append(ss, s.(core.IServiceSession))
@@ -230,6 +229,78 @@ func (this *ClusterService) getServiceSessionByType(sType string, sIp string) (s
 				}
 			}
 		}
+	}
+	return
+}
+func (this *ClusterService) getServiceSessionByIds(Ids []string) (result []core.IServiceSession, err error) {
+
+	var (
+		ss    = make(map[string]core.IServiceSession)
+		nodes *registry.ServiceNode
+	)
+	for _, v := range Ids {
+		if nodes, err = registry.GetServiceById(v); err != nil {
+			log.Errorf("获取目标类型 ip[%v] 服务集失败:%v", v, err)
+			return
+		} else {
+			if s, ok := this.serverList.Load(v); ok {
+				ss[v] = s.(core.IServiceSession)
+			} else {
+				s, err = cbase.NewServiceSession(nodes)
+				if err != nil {
+					log.Errorf("创建服务会话失败【%s】 err:%v", v, err)
+					continue
+				} else {
+					this.serverList.Store(v, s)
+					ss[v] = s.(core.IServiceSession)
+				}
+			}
+		}
+	}
+	result = make([]core.IServiceSession, len(ss))
+	n := 0
+	for _, v := range ss {
+		result[n] = v
+		n++
+	}
+	return
+}
+func (this *ClusterService) getServiceSessionByIps(sType string, sIps []string) (result []core.IServiceSession, err error) {
+	ss := make(map[string]core.IServiceSession)
+	Include := func(ip string, ips []string) bool {
+		for _, v := range ips {
+			if v == core.AutoIp || ip == v {
+				return true
+			}
+		}
+		return false
+	}
+	if nodes := registry.GetServiceByType(sType); nodes == nil {
+		log.Errorf("获取目标类型 type【%s】ips [%v] 服务集失败", sType, sIps)
+		return nil, err
+	} else {
+		for _, v := range nodes {
+			if Include(v.IP, sIps) {
+				if s, ok := this.serverList.Load(v.Id); ok {
+					ss[v.Id] = s.(core.IServiceSession)
+				} else {
+					s, err = cbase.NewServiceSession(v)
+					if err != nil {
+						log.Errorf("创建服务会话失败【%s】 err:%v", v.Id, err)
+						continue
+					} else {
+						this.serverList.Store(v.Id, s)
+						ss[v.Id] = s.(core.IServiceSession)
+					}
+				}
+			}
+		}
+	}
+	result = make([]core.IServiceSession, len(ss))
+	n := 0
+	for _, v := range ss {
+		result[n] = v
+		n++
 	}
 	return
 }
@@ -314,6 +385,47 @@ func (this *ClusterService) RpcInvokeById(sId string, rkey core.Rpc_Key, iscall 
 	}
 	return
 }
+
+func (this *ClusterService) RpcInvokeByIds(sId []string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (results map[string]*base.Result, err error) {
+	var (
+		ss         []core.IServiceSession
+		wg         *sync.WaitGroup
+		resultPipe chan *base.Result
+	)
+	if ss, err = this.getServiceSessionByIds(sId); err != nil {
+		log.Errorf("未找到目标服务 ip:%s 节点 err:%v", sId, err)
+		return
+	}
+	results = make(map[string]*base.Result)
+	if !iscall {
+		for _, v := range ss {
+			results[v.GetId()] = &base.Result{
+				Index: v.GetId(),
+				Err:   v.CallNR(rkey, arg...),
+			}
+		}
+	} else {
+		wg = new(sync.WaitGroup)
+		resultPipe = make(chan *base.Result)
+		wg.Add(len(ss))
+		for _, v := range ss {
+			go func(ss core.IServiceSession, resultPipe chan *base.Result, wg *sync.WaitGroup) {
+				result, err := ss.Call(rkey, arg...)
+				resultPipe <- &base.Result{Index: ss.GetId(), Result: result, Err: err}
+				wg.Done()
+			}(v, resultPipe, wg)
+		}
+		go func(resultPipe <-chan *base.Result) {
+			for v := range resultPipe {
+				results[v.Index] = v
+			}
+		}(resultPipe)
+		wg.Wait()
+		close(resultPipe)
+	}
+	return
+}
+
 func (this *ClusterService) RpcInvokeByType(sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error) {
 	ss, err := this.ClusterService.DefauleRpcRouteRules(sType, core.AutoIp)
 	if err != nil {
@@ -327,7 +439,6 @@ func (this *ClusterService) RpcInvokeByType(sType string, rkey core.Rpc_Key, isc
 	}
 	return
 }
-
 func (this *ClusterService) RpcInvokeByIp(sIp, sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error) {
 	ss, err := this.ClusterService.DefauleRpcRouteRules(sType, sIp)
 	if err != nil {
@@ -338,6 +449,45 @@ func (this *ClusterService) RpcInvokeByIp(sIp, sType string, rkey core.Rpc_Key, 
 		result, err = ss.Call(rkey, arg...)
 	} else {
 		err = ss.CallNR(rkey, arg...)
+	}
+	return
+}
+
+func (this *ClusterService) RpcInvokeByIps(sIp []string, sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (results map[string]*base.Result, err error) {
+	var (
+		ss         []core.IServiceSession
+		wg         *sync.WaitGroup
+		resultPipe chan *base.Result
+	)
+	if ss, err = this.getServiceSessionByIps(sType, sIp); err != nil {
+		log.Errorf("未找到目标服务 ip:%s type:%s 节点 err:%v", sIp, sType, err)
+		return
+	}
+	results = make(map[string]*base.Result)
+	if !iscall {
+		for _, v := range ss {
+			results[v.GetIp()] = &base.Result{
+				Err: v.CallNR(rkey, arg...),
+			}
+		}
+	} else {
+		wg = new(sync.WaitGroup)
+		resultPipe = make(chan *base.Result)
+		wg.Add(len(ss))
+		for _, v := range ss {
+			go func(ss core.IServiceSession, resultPipe chan *base.Result, wg *sync.WaitGroup) {
+				result, err := ss.Call(rkey, arg...)
+				resultPipe <- &base.Result{Index: ss.GetIp(), Result: result, Err: err}
+				wg.Done()
+			}(v, resultPipe, wg)
+		}
+		go func(resultPipe <-chan *base.Result) {
+			for v := range resultPipe {
+				results[v.Index] = v
+			}
+		}(resultPipe)
+		wg.Wait()
+		close(resultPipe)
 	}
 	return
 }

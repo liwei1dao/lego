@@ -83,6 +83,7 @@ type IModuleComp interface {
 }
 type IServiceSession interface {
 	GetId() string
+	GetIp() string
 	GetRpcId() string
 	GetType() string
 	GetVersion() float32

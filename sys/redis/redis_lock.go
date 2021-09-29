@@ -3,14 +3,12 @@ package redis
 import (
 	"errors"
 	"time"
-
-	"github.com/liwei1dao/lego/core"
 )
 
 /*
 Redis Scard 命令返回集合中元素的数量
 */
-func (this *Redis) NewRedisMutex(key core.Redis_Key, opt ...RMutexOption) (result *RedisMutex, err error) {
+func (this *Redis) NewRedisMutex(key string, opt ...RMutexOption) (result *RedisMutex, err error) {
 	opts := newRMutexOptions(opt...)
 	result = &RedisMutex{
 		sys:    this,
@@ -21,18 +19,18 @@ func (this *Redis) NewRedisMutex(key core.Redis_Key, opt ...RMutexOption) (resul
 	return
 }
 
-func (this *Redis) Lock(key core.Redis_Key, outTime int) (err error) {
+func (this *Redis) Lock(key string, outTime int) (err error) {
 	err = this.client.Do(this.getContext(), "set", key, 1, "ex", outTime, "nx").Err()
 	return
 }
-func (this *Redis) UnLock(key core.Redis_Key) (err error) {
+func (this *Redis) UnLock(key string) (err error) {
 	err = this.client.Do(this.getContext(), "del", key).Err()
 	return
 }
 
 type RedisMutex struct {
 	sys    IRedis
-	key    core.Redis_Key
+	key    string
 	expiry int //过期时间 单位秒
 	delay  time.Duration
 }

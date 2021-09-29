@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	Redis_Channel core.Redis_Key = "LiveChannel" //用户数据缓存
-	Redis_Key     core.Redis_Key = "LiveKey"     //用户数据缓存
+	Redis_Channel string = "LiveChannel" //用户数据缓存
+	Redis_Key     string = "LiveKey"     //用户数据缓存
 )
 
 //主机信息监控
