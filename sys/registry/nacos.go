@@ -229,6 +229,8 @@ locp:
 								}
 							}
 						}
+					} else {
+						service[v] = struct{}{}
 					}
 				}
 				temp := make(map[string]*ServiceNode)
