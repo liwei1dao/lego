@@ -13,14 +13,14 @@ import (
 func Test_Sys_Nacose(t *testing.T) {
 	// 创建clientConfig
 	clientConfig := constant.ClientConfig{
-		NamespaceId: "cb351549-86d2-4b65-9416-9dbe24856bdb",
+		NamespaceId: "ac1b23d5-1c14-4485-9e08-f3cde8c83163",
 	}
 	// 至少一个ServerConfig
 	serverConfigs := []constant.ServerConfig{
 		{
-			IpAddr:      "172.20.27.145",
+			IpAddr:      "172.20.27.126",
 			ContextPath: "/nacos",
-			Port:        10005,
+			Port:        8888,
 			Scheme:      "http",
 		},
 	}
@@ -36,51 +36,61 @@ func Test_Sys_Nacose(t *testing.T) {
 		fmt.Printf("初始化系统失败\n")
 	}
 
-	if succ, err := client.RegisterInstance(vo.RegisterInstanceParam{
-		Ip:          "127.0.0.2",
-		Port:        8848,
-		Weight:      1,
-		ServiceName: "test_1",
-		Enable:      true,
-		Healthy:     true,
-		Ephemeral:   true,
-		Metadata: map[string]string{
-			"type":         "test",
-			"category":     "test",
-			"version":      fmt.Sprintf("%e", 1.0),
-			"rpcid":        "rwercsfsdwer",
-			"rpcsubscribe": "{}",
-		},
-	}); err != nil {
-		fmt.Printf("RegisterInstance err:%v\n", err)
-	} else {
-		fmt.Printf("RegisterInstance succ:%v\n", succ)
-	}
+	// if succ, err := client.RegisterInstance(vo.RegisterInstanceParam{
+	// 	Ip:          "127.0.0.2",
+	// 	Port:        8848,
+	// 	Weight:      1,
+	// 	ServiceName: "test_1",
+	// 	Enable:      true,
+	// 	Healthy:     true,
+	// 	Ephemeral:   true,
+	// 	Metadata: map[string]string{
+	// 		"type":         "test",
+	// 		"category":     "test",
+	// 		"version":      fmt.Sprintf("%e", 1.0),
+	// 		"rpcid":        "rwercsfsdwer",
+	// 		"rpcsubscribe": "{}",
+	// 	},
+	// }); err != nil {
+	// 	fmt.Printf("RegisterInstance err:%v\n", err)
+	// } else {
+	// 	fmt.Printf("RegisterInstance succ:%v\n", succ)
+	// }
 
 	if slist, err := client.GetAllServicesInfo(vo.GetAllServiceInfoParam{
-		NameSpace: "cb351549-86d2-4b65-9416-9dbe24856bdb",
+		NameSpace: "ac1b23d5-1c14-4485-9e08-f3cde8c83163",
+		GroupName: "datacollector",
 		PageNo:    1,
-		PageSize:  10,
+		PageSize:  20,
 	}); err != nil {
 		fmt.Printf("GetAllServicesInfo err:%v\n", err)
 	} else {
 		fmt.Printf("GetAllServicesInfo :%+v\n", slist)
 		for _, v := range slist.Doms {
-			if services, err := client.SelectInstances(vo.SelectInstancesParam{
+			if instances, err := client.SelectInstances(vo.SelectInstancesParam{
 				ServiceName: v,
+				GroupName:   "datacollector",
 				HealthyOnly: true,
-			}); err != nil {
-				fmt.Printf("SelectInstances err:%v\n", err)
+			}); err == nil {
+				fmt.Printf("instances :%+v\n", instances)
 			} else {
-				fmt.Printf("SelectInstances :%+v\n", services)
+				fmt.Printf("instances err:%v\n", err)
 			}
-			if services, err := client.SelectAllInstances(vo.SelectAllInstancesParam{
-				ServiceName: v,
-			}); err != nil {
-				fmt.Printf("SelectAllInstances err:%v\n", err)
-			} else {
-				fmt.Printf("SelectAllInstances :%+v\n", services)
-			}
+			// if services, err := client.SelectInstances(vo.SelectInstancesParam{
+			// 	ServiceName: v,
+			// 	HealthyOnly: true,
+			// }); err != nil {
+			// 	fmt.Printf("SelectInstances err:%v\n", err)
+			// } else {
+			// 	fmt.Printf("SelectInstances :%+v\n", services)
+			// }
+			// if services, err := client.SelectAllInstances(vo.SelectAllInstancesParam{
+			// 	ServiceName: v,
+			// }); err != nil {
+			// 	fmt.Printf("SelectAllInstances err:%v\n", err)
+			// } else {
+			// 	fmt.Printf("SelectAllInstances :%+v\n", services)
+			// }
 		}
 	}
 }

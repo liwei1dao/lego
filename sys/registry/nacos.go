@@ -213,7 +213,6 @@ locp:
 			}); err == nil {
 				var service = make(map[string]struct{})
 				for _, v := range slist.Doms {
-					service[v] = struct{}{}
 					this.rlock.RLock()
 					_, ok := this.services[v]
 					this.rlock.RUnlock()
@@ -225,11 +224,14 @@ locp:
 						}); err == nil {
 							for _, v1 := range instances {
 								if v1.Enable && v1.Healthy {
+									service[v] = struct{}{}
 									this.addandupdataServiceNode(v1)
 								} else {
 									this.removeServiceNode(v)
 								}
 							}
+						} else if err.Error() == "instance list is empty!" {
+							this.removeServiceNode(v)
 						}
 					}
 				}
