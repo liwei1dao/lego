@@ -213,24 +213,17 @@ locp:
 			}); err == nil {
 				var service = make(map[string]struct{})
 				for _, v := range slist.Doms {
-					this.rlock.RLock()
-					_, ok := this.services[v]
-					this.rlock.RUnlock()
-					if !ok {
-						if instances, err = this.client.SelectInstances(vo.SelectInstancesParam{
-							ServiceName: v,
-							GroupName:   this.options.Service.GetTag(),
-							HealthyOnly: true,
-						}); err == nil {
-							for _, v1 := range instances {
-								if v1.Enable && v1.Healthy {
-									service[v] = struct{}{}
-									this.addandupdataServiceNode(v1)
-								}
+					if instances, err = this.client.SelectInstances(vo.SelectInstancesParam{
+						ServiceName: v,
+						GroupName:   this.options.Service.GetTag(),
+						HealthyOnly: true,
+					}); err == nil {
+						for _, v1 := range instances {
+							if v1.Enable && v1.Healthy {
+								service[v] = struct{}{}
+								this.addandupdataServiceNode(v1)
 							}
 						}
-					} else {
-						service[v] = struct{}{}
 					}
 				}
 				temp := make(map[string]*ServiceNode)
