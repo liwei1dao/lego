@@ -226,12 +226,8 @@ locp:
 								if v1.Enable && v1.Healthy {
 									service[v] = struct{}{}
 									this.addandupdataServiceNode(v1)
-								} else {
-									this.removeServiceNode(v)
 								}
 							}
-						} else if err.Error() == "instance list is empty!" {
-							this.removeServiceNode(v)
 						}
 					}
 				}
