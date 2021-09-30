@@ -33,15 +33,16 @@ func newNacos(options Options) (sys *Nacos_Registry, err error) {
 	}
 	// 创建clientConfig
 	clientConfig := constant.ClientConfig{
-		NamespaceId:         options.Nacos_NamespaceId,
-		TimeoutMs:           options.Nacos_TimeoutMs,
-		BeatInterval:        options.Nacos_BeatInterval,
-		NotLoadCacheAtStart: true,
-		LogDir:              "nacos/log",
-		CacheDir:            "nacos/cache",
-		RotateTime:          "1h",
-		MaxAge:              3,
-		LogLevel:            "error",
+		NamespaceId:          options.Nacos_NamespaceId,
+		TimeoutMs:            options.Nacos_TimeoutMs,
+		BeatInterval:         options.Nacos_BeatInterval,
+		NotLoadCacheAtStart:  true,
+		UpdateCacheWhenEmpty: true,
+		LogDir:               "nacos/log",
+		CacheDir:             "nacos/cache",
+		RotateTime:           "1h",
+		MaxAge:               3,
+		LogLevel:             "error",
 	}
 	// 至少一个ServerConfig
 	serverConfigs := []constant.ServerConfig{
