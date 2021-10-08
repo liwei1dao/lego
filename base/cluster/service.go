@@ -140,7 +140,7 @@ func (this *ClusterService) Destroy() (err error) {
 
 //注册服务会话 当有新的服务加入时
 func (this *ClusterService) FindServiceHandlefunc(node registry.ServiceNode) {
-	if _, ok := this.serverList.Load(node.Id); ok { //已经在缓存中 需要更新节点信息
+	if _, ok := this.serverList.Load(node.Id); !ok {
 		if s, err := cbase.NewServiceSession(&node); err != nil {
 			log.Errorf("创建服务会话失败【%s】 err:%v", node.Id, err)
 		} else {
