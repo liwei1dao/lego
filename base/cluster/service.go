@@ -463,6 +463,11 @@ func (this *ClusterService) RpcInvokeByIps(sIp []string, sType string, rkey core
 		log.Errorf("未找到目标服务 ip:%s type:%s 节点 err:%v", sIp, sType, err)
 		return
 	}
+	if len(ss) == 0 {
+		log.Errorf("未找到目标服务 ip:%s type:%s 节点", sIp, sType)
+		err = fmt.Errorf("未找到目标服务 ip:%s type:%s 节点", sIp, sType)
+		return
+	}
 	results = make(map[string]*base.Result)
 	if !iscall {
 		for _, v := range ss {
