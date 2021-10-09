@@ -267,8 +267,9 @@ func (this *ClusterService) getServiceSessionByIds(Ids []string) (result []core.
 }
 func (this *ClusterService) getServiceSessionByIps(sType string, sIps []string) (result []core.IServiceSession, err error) {
 	var (
-		ss map[string]core.IServiceSession = make(map[string]core.IServiceSession)
-		s  core.IServiceSession
+		ss    map[string]core.IServiceSession = make(map[string]core.IServiceSession)
+		s     core.IServiceSession
+		found bool
 	)
 	//容错处理
 	if len(sIps) == 0 && sIps[0] == core.AutoIp {
@@ -310,6 +311,24 @@ func (this *ClusterService) getServiceSessionByIps(sType string, sIps []string) 
 			}
 		}
 	}
+
+	for _, v := range sIps {
+		if v != core.AllIp {
+			found = false
+			for _, v1 := range ss {
+				if v == v1.GetIp() {
+					found = true
+					break
+				}
+			}
+			if !found { //未查询到目标服务节点
+				log.Errorf("获取目标类型 type【%s】ips [%v] 服务集失败", sType, sIps)
+				err = fmt.Errorf("未查询到服务 type【%s】ip [%v]", sType, v)
+				return
+			}
+		}
+	}
+
 	result = make([]core.IServiceSession, len(ss))
 	n := 0
 	for _, v := range ss {
