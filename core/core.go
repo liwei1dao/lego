@@ -12,6 +12,7 @@ type CustomRoute uint8 //自定义网关
 
 const (
 	AutoIp = "0.0.0.0"
+	AllIp  = "255.255.255.255"
 )
 
 const ( //默认事件

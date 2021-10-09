@@ -266,10 +266,24 @@ func (this *ClusterService) getServiceSessionByIds(Ids []string) (result []core.
 	return
 }
 func (this *ClusterService) getServiceSessionByIps(sType string, sIps []string) (result []core.IServiceSession, err error) {
-	ss := make(map[string]core.IServiceSession)
+	var (
+		ss map[string]core.IServiceSession = make(map[string]core.IServiceSession)
+		s  core.IServiceSession
+	)
+	//容错处理
+	if len(sIps) == 0 && sIps[0] == core.AutoIp {
+		s, err = this.ClusterService.DefauleRpcRouteRules(sType, core.AutoIp)
+		if err == nil {
+			ss[s.GetId()] = s
+		} else {
+			log.Errorf("未找到目标服务 ip:%v type:%s 节点 err:%v", sIps, sType, err)
+		}
+		return
+	}
+
 	Include := func(ip string, ips []string) bool {
 		for _, v := range ips {
-			if v == core.AutoIp || ip == v {
+			if v == core.AllIp || ip == v {
 				return true
 			}
 		}
