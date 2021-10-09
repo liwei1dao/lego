@@ -272,7 +272,7 @@ func (this *ClusterService) getServiceSessionByIps(sType string, sIps []string) 
 		found bool
 	)
 	//容错处理
-	if len(sIps) == 0 && sIps[0] == core.AutoIp {
+	if len(sIps) == 1 && sIps[0] == core.AutoIp {
 		s, err = this.ClusterService.DefauleRpcRouteRules(sType, core.AutoIp)
 		if err == nil {
 			ss[s.GetId()] = s
