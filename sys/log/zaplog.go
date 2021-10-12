@@ -56,7 +56,11 @@ func newSys(options Options) (sys *Logger, err error) {
 		encoderConfig = zap.NewProductionEncoderConfig()
 		encoderConfig.EncodeTime = timeFormat
 	}
-	allCore = append(allCore, zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig), fileWriter, level))
+	if options.Encoder == Console {
+		allCore = append(allCore, zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig), fileWriter, level))
+	} else {
+		allCore = append(allCore, zapcore.NewCore(zapcore.NewJSONEncoder(encoderConfig), fileWriter, level))
+	}
 	core := zapcore.NewTee(allCore...)
 	tlog := zap.New(core).WithOptions(zap.AddCaller(), zap.AddCallerSkip(options.Loglayer))
 	sys = &Logger{
