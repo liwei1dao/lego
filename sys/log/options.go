@@ -15,10 +15,10 @@ const (
 	FatalLevel
 )
 
-type logEncoder int8
+type LogEncoder int8
 
 const (
-	Console logEncoder = iota
+	Console LogEncoder = iota
 	JSON
 )
 
@@ -27,7 +27,7 @@ type Options struct {
 	FileName      string     //日志文件名包含
 	Loglevel      Loglevel   //日志输出级别
 	Debugmode     bool       //是否debug模式
-	Encoder       logEncoder //日志输出样式
+	Encoder       LogEncoder //日志输出样式
 	Loglayer      int        //日志堆栈信息打印层级
 	LogMaxSize    int        //每个日志文件最大尺寸 单位 M 默认 1024M
 	LogMaxBackups int        //最多保留备份个数	默认 10个
@@ -51,7 +51,7 @@ func SetDebugMode(v bool) Option {
 		o.Debugmode = v
 	}
 }
-func SetEncoder(v logEncoder) Option {
+func SetEncoder(v LogEncoder) Option {
 	return func(o *Options) {
 		o.Encoder = v
 	}
