@@ -150,7 +150,7 @@ func (this *ClusterService) FindServiceHandlefunc(node registry.ServiceNode) {
 	if this.IsInClustered {
 		event.TriggerEvent(core.Event_FindNewService, node) //触发发现新的服务事件
 	} else {
-		if node.Id == this.opts.Id { //发现自己 加入集群成功
+		if node.Id == this.opts.Setting.Id { //发现自己 加入集群成功
 			this.IsInClustered = true
 			event.TriggerEvent(core.Event_RegistryStart)
 		}
