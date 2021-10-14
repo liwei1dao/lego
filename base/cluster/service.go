@@ -379,9 +379,9 @@ func (this *ClusterService) DefauleRpcRouteRules(stype string, sip string) (ss c
 				if as.GetVersion() > bs.GetVersion() {
 					return 1
 				} else if as.GetVersion() == bs.GetVersion() {
-					if as.GetPreWeight() > bs.GetPreWeight() {
+					if as.GetPreWeight() < bs.GetPreWeight() {
 						return 1
-					} else if as.GetPreWeight() < bs.GetPreWeight() {
+					} else if as.GetPreWeight() > bs.GetPreWeight() {
 						return -1
 					} else {
 						return 0
