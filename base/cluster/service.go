@@ -443,8 +443,8 @@ func (this *ClusterService) RpcInvokeByIds(sId []string, rkey core.Rpc_Key, isca
 		wg.Add(len(ss))
 		for _, v := range ss {
 			go func(ss core.IServiceSession, resultPipe chan *base.Result, wg *sync.WaitGroup) {
-				result, err := ss.Call(rkey, arg...)
-				resultPipe <- &base.Result{Index: ss.GetId(), Result: result, Err: err}
+				result, e := ss.Call(rkey, arg...)
+				resultPipe <- &base.Result{Index: ss.GetId(), Result: result, Err: e}
 				wg.Done()
 			}(v, resultPipe, wg)
 		}
@@ -514,8 +514,8 @@ func (this *ClusterService) RpcInvokeByIps(sIp []string, sType string, rkey core
 		wg.Add(len(ss))
 		for _, v := range ss {
 			go func(ss core.IServiceSession, resultPipe chan *base.Result, wg *sync.WaitGroup) {
-				result, err := ss.Call(rkey, arg...)
-				resultPipe <- &base.Result{Index: ss.GetIp(), Result: result, Err: err}
+				result, e := ss.Call(rkey, arg...)
+				resultPipe <- &base.Result{Index: ss.GetIp(), Result: result, Err: e}
 				wg.Done()
 			}(v, resultPipe, wg)
 		}
