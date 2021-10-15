@@ -1,1 +1,0 @@
-abigen --sol TokenCoin.sol --pkg mytoken --out TokenCoin.go
