@@ -5,7 +5,7 @@ go 1.14
 require (
 	cloud.google.com/go v0.78.0
 	github.com/BurntSushi/toml v0.3.1
-	github.com/Shopify/sarama v1.30.0
+	github.com/Shopify/sarama v1.23.1
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.885
 	github.com/aliyun/aliyun-oss-go-sdk v2.1.6+incompatible
@@ -56,5 +56,6 @@ require (
 	gopkg.in/go-playground/validator.v8 v8.18.2
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/ini.v1 v1.51.0 // indirect
+	gopkg.in/jcmturner/goidentity.v3 v3.0.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
