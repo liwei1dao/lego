@@ -63,6 +63,7 @@ func (this *Consul_Registry) Start() (err error) {
 	if err = this.registerSNode(&ServiceNode{
 		Tag:          this.options.Service.GetTag(),
 		Id:           this.options.Service.GetId(),
+		IP:           this.options.Service.GetIp(),
 		Type:         this.options.Service.GetType(),
 		Category:     this.options.Service.GetCategory(),
 		Version:      this.options.Service.GetVersion(),
@@ -89,6 +90,7 @@ func (this *Consul_Registry) PushServiceInfo() (err error) {
 		err = this.registerSNode(&ServiceNode{
 			Tag:          this.options.Service.GetTag(),
 			Id:           this.options.Service.GetId(),
+			IP:           this.options.Service.GetIp(),
 			Type:         this.options.Service.GetType(),
 			Category:     this.options.Service.GetCategory(),
 			Version:      this.options.Service.GetVersion(),
@@ -203,6 +205,7 @@ func (this *Consul_Registry) registerSNode(snode *ServiceNode) (err error) {
 		Check: check,
 		Meta: map[string]string{
 			"tag":          snode.Tag,
+			"ip":           snode.IP,
 			"category":     string(snode.Category),
 			"version":      fmt.Sprintf("%f", snode.Version),
 			"rpcid":        snode.RpcId,
@@ -233,6 +236,7 @@ func (this *Consul_Registry) getRpcInfo() (rfs []core.Rpc_Key) {
 }
 func (this *Consul_Registry) addandupdataServiceNode(as *api.AgentService) (sn *ServiceNode, err error) {
 	tag := as.Meta["tag"]
+	ip := as.Meta["ip"]
 	category := as.Meta["category"]
 	version, err := strconv.ParseFloat(as.Meta["version"], 32)
 	if err != nil {
@@ -251,6 +255,7 @@ func (this *Consul_Registry) addandupdataServiceNode(as *api.AgentService) (sn *
 		Type:         as.Service,
 		Category:     core.S_Category(category),
 		Id:           as.ID,
+		IP:           ip,
 		Version:      float32(version),
 		RpcId:        rpcid,
 		PreWeight:    preweight,
