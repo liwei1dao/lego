@@ -2,7 +2,6 @@ package kafka
 
 import (
 	"github.com/Shopify/sarama"
-	cluster "github.com/bsm/sarama-cluster"
 )
 
 type (
@@ -16,12 +15,7 @@ type (
 		Asyncproducer_AsyncClose()
 		Asyncproducer_Close() error
 		Consumer_Messages() <-chan *sarama.ConsumerMessage
-		Consumer_Partitions() <-chan cluster.PartitionConsumer
-		Consumer_Notifications() <-chan *cluster.Notification
-		Consumer_Errors() <-chan error
-		Consumer_MarkOffset(msg *sarama.ConsumerMessage, metadata string)
-		Consumer_MarkOffsets(s *cluster.OffsetStash)
-		Consumer_Close() (err error)
+		Consumer_Close() error
 		Close() (err error)
 	}
 )
@@ -69,30 +63,12 @@ func Asyncproducer_AsyncClose() {
 func Asyncproducer_Close() error {
 	return defsys.Asyncproducer_Close()
 }
+
 func Consumer_Messages() <-chan *sarama.ConsumerMessage {
 	return defsys.Consumer_Messages()
 }
 
-func Consumer_Partitions() <-chan cluster.PartitionConsumer {
-	return defsys.Consumer_Partitions()
-}
-func Consumer_Notifications() <-chan *cluster.Notification {
-	return defsys.Consumer_Notifications()
-}
-
-func Consumer_Errors() <-chan error {
-	return defsys.Consumer_Errors()
-}
-
-func Consumer_MarkOffset(msg *sarama.ConsumerMessage, metadata string) {
-	defsys.Consumer_MarkOffset(msg, metadata)
-}
-
-func Consumer_MarkOffsets(s *cluster.OffsetStash) {
-	defsys.Consumer_MarkOffsets(s)
-}
-
-func Consumer_Close() (err error) {
+func Consumer_Close() error {
 	return defsys.Consumer_Close()
 }
 func Close() (err error) {

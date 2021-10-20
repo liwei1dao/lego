@@ -61,24 +61,8 @@ func (this *KafkaService) Callback(callinfo core.CallInfo) error {
 
 func (this *KafkaService) on_request_handle() {
 	defer lego.Recover("RPC KafkaService")
-	go func() {
-		for v := range this.kafka.Consumer_Errors() {
-			log.Errorf("reader kafka flush kafka Errors: %v", v)
-		}
-	}()
-	go func() {
-		for v := range this.kafka.Consumer_Notifications() {
-			log.Debugf("reader kafka flush kafka Notifications: %+v", v)
-		}
-	}()
-	go func() {
-		for v := range this.kafka.Consumer_Partitions() {
-			log.Debugf("reader kafka flush kafka Partitions: %+v", v)
-		}
-	}()
 	for v := range this.kafka.Consumer_Messages() {
 		// log.Debugf("RPC KafkaService Receive: %+v", v)
-		this.kafka.Consumer_MarkOffset(v, "")
 		rpcInfo, err := this.Unmarshal(v.Value)
 		if err == nil {
 			callInfo := &core.CallInfo{

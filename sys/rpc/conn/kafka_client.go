@@ -118,24 +118,23 @@ func (this *KafkaClient) CallNR(callInfo core.CallInfo) (err error) {
 
 func (this *KafkaClient) on_request_handle() {
 	defer lego.Recover("RPC KafkaClient")
-	go func() {
-		for v := range this.kafka.Consumer_Errors() {
-			log.Errorf("reader kafka flush kafka Errors: %+v", v)
-		}
-	}()
-	go func() {
-		for v := range this.kafka.Consumer_Notifications() {
-			log.Debugf("reader kafka flush kafka Notifications: %+v", v)
-		}
-	}()
-	go func() {
-		for v := range this.kafka.Consumer_Partitions() {
-			log.Debugf("reader kafka flush kafka Partitions: %+v", v)
-		}
-	}()
+	// go func() {
+	// 	for v := range this.kafka.Consumer_Errors() {
+	// 		log.Errorf("reader kafka flush kafka Errors: %+v", v)
+	// 	}
+	// }()
+	// go func() {
+	// 	for v := range this.kafka.Consumer_Notifications() {
+	// 		log.Debugf("reader kafka flush kafka Notifications: %+v", v)
+	// 	}
+	// }()
+	// go func() {
+	// 	for v := range this.kafka.Consumer_Partitions() {
+	// 		log.Debugf("reader kafka flush kafka Partitions: %+v", v)
+	// 	}
+	// }()
 	for v := range this.kafka.Consumer_Messages() {
 		// log.Debugf("RPC KafkaClient Receive: %+v", v)
-		this.kafka.Consumer_MarkOffset(v, "")
 		resultInfo, err := this.UnmarshalResult(v.Value)
 		if err != nil {
 			log.Errorf("RPC NatsClient Unmarshal faild", err)

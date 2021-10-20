@@ -21,6 +21,7 @@ type Option func(*Options)
 type Options struct {
 	StartType                 KafkaStartType          //kafka启动类型
 	Hosts                     []string                //集群地址
+	Version                   string                  //制定版本
 	Topics                    []string                //消费者配置 Topics
 	GroupId                   string                  //消费者配置 GroupId
 	ClientID                  string                  //用户提供的字符串随每个请求发送到代理进行日志记录，调试和审计目的。默认为“sarama”，但你应该将其设置为特定于您的应用程序的内容。
@@ -36,6 +37,7 @@ type Options struct {
 	Net_ReadTimeout           time.Duration           //默认30 秒
 	Net_WriteTimeout          time.Duration           //默认30 秒
 	Net_KeepAlive             time.Duration           //KeepAlive 指定活动网络连接的保持活动期。如果为零，则禁用保活。 （默认为 0：禁用）单位 秒
+	Consumer_Assignor         string                  //Consumer group partition assignment strategy (range, roundrobin, sticky)
 	Consumer_Offsets_Initial  int64                   //OffsetNewest -1 or OffsetOldest -2 默认 OffsetOldest
 	Consumer_Return_Errors    bool                    //如果启用，则在消费时发生的任何错误都将返回错误通道（默认禁用）
 }
@@ -51,6 +53,13 @@ func SetStartType(v KafkaStartType) Option {
 func SetHosts(v []string) Option {
 	return func(o *Options) {
 		o.Hosts = v
+	}
+}
+
+///设置kafka版本
+func SetVersion(v string) Option {
+	return func(o *Options) {
+		o.Version = v
 	}
 }
 
@@ -159,6 +168,13 @@ func SetNet_KeepAlive(v time.Duration) Option {
 	}
 }
 
+//设置kafka消费者配
+func SetConsumer_Assignor(v string) Option {
+	return func(o *Options) {
+		o.Consumer_Assignor = v
+	}
+}
+
 ///OffsetNewest -1 or OffsetOldest -2 默认 OffsetOldest
 func SetConsumer_Offsets_Initial(v int64) Option {
 	return func(o *Options) {
@@ -175,8 +191,9 @@ func SetConsumer_Return_Errors(v bool) Option {
 
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
-		Producer_Return_Successes: true,
-		Producer_Return_Errors:    true,
+		Version:                   "2.1.1",
+		Producer_Return_Successes: false,
+		Producer_Return_Errors:    false,
 		Producer_RequiredAcks:     sarama.NoResponse,
 		Producer_MaxMessageBytes:  1000000,
 		Producer_Retry_Max:        3,
@@ -186,7 +203,8 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 		Net_ReadTimeout:           time.Second * 60,
 		Net_WriteTimeout:          time.Second * 60,
 		Net_KeepAlive:             0,
-		Consumer_Offsets_Initial:  -1,
+		Consumer_Assignor:         "range",
+		Consumer_Offsets_Initial:  sarama.OffsetOldest,
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
@@ -199,16 +217,20 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 
 func newOptionsByOption(opts ...Option) Options {
 	options := Options{
-		Producer_RequiredAcks:    sarama.NoResponse,
-		Producer_MaxMessageBytes: 1000000,
-		Producer_Retry_Max:       3,
-		Producer_Retry_Backoff:   100,
-		Producer_Compression:     sarama.CompressionNone,
-		Net_DialTimeout:          time.Second * 5,
-		Net_ReadTimeout:          time.Second * 60,
-		Net_WriteTimeout:         time.Second * 60,
-		Net_KeepAlive:            0,
-		Consumer_Offsets_Initial: -1,
+		Version:                   "2.1.1",
+		Producer_Return_Successes: false,
+		Producer_Return_Errors:    false,
+		Producer_RequiredAcks:     sarama.NoResponse,
+		Producer_MaxMessageBytes:  1000000,
+		Producer_Retry_Max:        3,
+		Producer_Retry_Backoff:    100,
+		Producer_Compression:      sarama.CompressionNone,
+		Net_DialTimeout:           time.Second * 5,
+		Net_ReadTimeout:           time.Second * 60,
+		Net_WriteTimeout:          time.Second * 60,
+		Net_KeepAlive:             0,
+		Consumer_Assignor:         "range",
+		Consumer_Offsets_Initial:  sarama.OffsetOldest,
 	}
 	for _, o := range opts {
 		o(&options)
