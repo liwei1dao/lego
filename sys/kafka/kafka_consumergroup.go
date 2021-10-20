@@ -84,10 +84,12 @@ func (this *KafkaConsumerGroup) Cleanup(sarama.ConsumerGroupSession) error {
 
 // ConsumeClaim must start a consumer loop of ConsumerGroupClaim's Messages().
 func (this *KafkaConsumerGroup) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+	log.Debugf("Sarama consumer ConsumeClaim%s...1", session.MemberID())
 	for message := range claim.Messages() {
 		// log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
 		this.messages <- message
 		session.MarkMessage(message, "")
 	}
+	log.Debugf("Sarama consumer ConsumeClaim%s...2", session.MemberID())
 	return nil
 }
