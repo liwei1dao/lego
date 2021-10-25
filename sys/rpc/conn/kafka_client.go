@@ -45,6 +45,7 @@ type KafkaClient struct {
 }
 
 func (this *KafkaClient) Stop() (err error) {
+	err = this.kafka.Close()
 	if this.callinfos != nil {
 		//清理 callinfos 列表
 		for key, clinetCallInfo := range this.callinfos.Items() {
@@ -59,7 +60,6 @@ func (this *KafkaClient) Stop() (err error) {
 	} else {
 		log.Errorf("RCP NatsClient callinfos 异常为空")
 	}
-	err = this.kafka.Close()
 	return
 }
 
@@ -118,21 +118,6 @@ func (this *KafkaClient) CallNR(callInfo core.CallInfo) (err error) {
 
 func (this *KafkaClient) on_request_handle() {
 	defer lego.Recover("RPC KafkaClient")
-	// go func() {
-	// 	for v := range this.kafka.Consumer_Errors() {
-	// 		log.Errorf("reader kafka flush kafka Errors: %+v", v)
-	// 	}
-	// }()
-	// go func() {
-	// 	for v := range this.kafka.Consumer_Notifications() {
-	// 		log.Debugf("reader kafka flush kafka Notifications: %+v", v)
-	// 	}
-	// }()
-	// go func() {
-	// 	for v := range this.kafka.Consumer_Partitions() {
-	// 		log.Debugf("reader kafka flush kafka Partitions: %+v", v)
-	// 	}
-	// }()
 	for v := range this.kafka.Consumer_Messages() {
 		// log.Debugf("RPC KafkaClient Receive: %+v", v)
 		resultInfo, err := this.UnmarshalResult(v.Value)

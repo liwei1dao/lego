@@ -112,5 +112,8 @@ func (this *Kafka) Close() (err error) {
 	if this.asyncproducer != nil {
 		err = this.asyncproducer.Close()
 	}
+	if this.consumerGroup != nil {
+		err = this.consumerGroup.Consumer_Close()
+	}
 	return
 }
