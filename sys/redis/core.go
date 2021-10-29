@@ -42,6 +42,7 @@ type (
 		Get(key string, value interface{}) (err error)
 		GetSet(key string, value interface{}, result interface{}) (err error)
 		MGet(keys ...string) (result []string, err error)
+		INCRBY(key string, amount int64) (result int64, err error)
 		/*Lock*/
 		NewRedisMutex(key string, opt ...RMutexOption) (result *RedisMutex, err error)
 		Lock(key string, outTime int) (err error)
@@ -180,6 +181,9 @@ func GetSet(key string, value interface{}, result interface{}) (err error) {
 }
 func MGet(keys ...string) (result []string, err error) {
 	return defsys.MGet(keys...)
+}
+func INCRBY(key string, amount int64) (result int64, err error) {
+	return defsys.INCRBY(key, amount)
 }
 
 /*Lock*/

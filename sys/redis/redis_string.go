@@ -167,3 +167,11 @@ func (this *Redis) MGet(keys ...string) (result []string, err error) {
 	result, err = cmd.Result()
 	return
 }
+
+///判断是否存在key pattern:key*
+func (this *Redis) INCRBY(key string, amount int64) (result int64, err error) {
+	cmd := redis.NewIntCmd(this.getContext(), "INCRBY", key, amount)
+	this.client.Process(this.getContext(), cmd)
+	result, err = cmd.Result()
+	return
+}

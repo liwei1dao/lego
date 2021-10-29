@@ -210,7 +210,7 @@ locp:
 				NameSpace: this.options.Nacos_NamespaceId,
 				GroupName: this.options.Service.GetTag(),
 				PageNo:    1,
-				PageSize:  20,
+				PageSize:  100,
 			}); err == nil {
 				var service = make(map[string]struct{})
 				for _, v := range slist.Doms {
