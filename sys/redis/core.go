@@ -30,7 +30,7 @@ type (
 		Keys(pattern string) (keys []string, err error)
 		/*String*/
 		Set(key string, value interface{}, expiration time.Duration) (err error)
-		SetNX(key string, value interface{}) (err error)
+		SetNX(key string, value interface{}) (result int64, err error)
 		MSet(keyvalues map[string]interface{}) (err error)
 		MSetNX(keyvalues map[string]interface{}) (err error)
 		Incr(key string) (err error)
@@ -45,7 +45,7 @@ type (
 		INCRBY(key string, amount int64) (result int64, err error)
 		/*Lock*/
 		NewRedisMutex(key string, opt ...RMutexOption) (result *RedisMutex, err error)
-		Lock(key string, outTime int) (err error)
+		Lock(key string, outTime int) (result bool, err error)
 		UnLock(key string) (err error)
 		/*List*/
 		Lindex(key string, value interface{}) (err error)
@@ -146,7 +146,7 @@ func Keys(pattern string) (keys []string, err error) {
 func Set(key string, value interface{}, expiration time.Duration) (err error) {
 	return defsys.Set(key, value, expiration)
 }
-func SetNX(key string, value interface{}) (err error) {
+func SetNX(key string, value interface{}) (result int64, err error) {
 	return defsys.SetNX(key, value)
 }
 func MSet(keyvalues map[string]interface{}) (err error) {
@@ -190,7 +190,7 @@ func INCRBY(key string, amount int64) (result int64, err error) {
 func NewRedisMutex(key string, opt ...RMutexOption) (result *RedisMutex, err error) {
 	return defsys.NewRedisMutex(key, opt...)
 }
-func Lock(key string, outTime int) (err error) {
+func Lock(key string, outTime int) (result bool, err error) {
 	return defsys.Lock(key, outTime)
 }
 func UnLock(key string) (err error) {

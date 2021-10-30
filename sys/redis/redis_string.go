@@ -22,11 +22,14 @@ func (this *Redis) Set(key string, value interface{}, expiration time.Duration) 
 /*
 指定的 key 不存在时，为 key 设置指定的值
 */
-func (this *Redis) SetNX(key string, value interface{}) (err error) {
-	var result []byte
-	if result, err = this.Encode(value); err == nil {
-		err = this.client.Do(this.getContext(), "SETNX", key, result).Err()
-	}
+func (this *Redis) SetNX(key string, value interface{}) (result int64, err error) {
+	// var _value []byte
+	// if result, err = this.Encode(value); err == nil {
+	// err = this.client.Do(this.getContext(), "SETNX", key, result).Err()
+	cmd := redis.NewIntCmd(this.getContext(), "SETNX", key, value)
+	this.client.Process(this.getContext(), cmd)
+	result, err = cmd.Result()
+	// }
 	return
 }
 

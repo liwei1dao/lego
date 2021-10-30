@@ -3,6 +3,8 @@ package redis
 import (
 	"errors"
 	"time"
+
+	"github.com/go-redis/redis/v8"
 )
 
 /*
@@ -19,12 +21,14 @@ func (this *Redis) NewRedisMutex(key string, opt ...RMutexOption) (result *Redis
 	return
 }
 
-func (this *Redis) Lock(key string, outTime int) (err error) {
-	err = this.client.Do(this.getContext(), "set", key, 1, "ex", outTime, "nx").Err()
+func (this *Redis) Lock(key string, outTime int) (result bool, err error) {
+	cmd := redis.NewBoolCmd(this.getContext(), "set", key, 1, "ex", outTime, "nx")
+	this.client.Process(this.getContext(), cmd)
+	result, err = cmd.Result()
 	return
 }
 func (this *Redis) UnLock(key string) (err error) {
-	err = this.client.Do(this.getContext(), "del", key).Err()
+	err = this.Delete(key)
 	return
 }
 
@@ -41,11 +45,14 @@ func (this *RedisMutex) Lock() (err error) {
 	go func() {
 		start := time.Now()
 		for int(time.Now().Sub(start).Seconds()) <= this.expiry {
-			if err := this.sys.Lock(this.key, this.expiry); err == nil {
+			if result, err := this.sys.Lock(this.key, this.expiry); err == nil && result {
 				wait <- nil
 				return
-			} else {
+			} else if err == nil && !result {
 				time.Sleep(this.delay)
+			} else {
+				wait <- err
+				return
 			}
 		}
 		wait <- errors.New("time out")

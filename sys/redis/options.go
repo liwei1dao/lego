@@ -108,8 +108,8 @@ func Setdelay(v time.Duration) RMutexOption {
 
 func newRMutexOptions(opts ...RMutexOption) RMutexOptions {
 	opt := RMutexOptions{
-		expiry: 3,
-		delay:  time.Millisecond * 8,
+		expiry: 5,
+		delay:  time.Millisecond * 50,
 	}
 	for _, o := range opts {
 		o(&opt)
