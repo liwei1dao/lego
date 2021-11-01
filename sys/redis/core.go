@@ -10,8 +10,8 @@ import (
 
 type (
 	IRedis interface {
-		Encode(value interface{}) (result []byte, err error)
-		Decode(value []byte, result interface{}) (err error)
+		Lock(key string, outTime int) (result bool, err error)
+		UnLock(key string) (err error)
 		Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error)
 		TxPipelined(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error)
 		Watch(ctx context.Context, fn func(*redis.Tx) error, keys ...string) (err error)
@@ -43,10 +43,6 @@ type (
 		GetSet(key string, value interface{}, result interface{}) (err error)
 		MGet(keys ...string) (result []string, err error)
 		INCRBY(key string, amount int64) (result int64, err error)
-		/*Lock*/
-		NewRedisMutex(key string, opt ...RMutexOption) (result *RedisMutex, err error)
-		Lock(key string, outTime int) (result bool, err error)
-		UnLock(key string) (err error)
 		/*List*/
 		Lindex(key string, value interface{}) (err error)
 		Linsert(key string, isbefore bool, tager interface{}, value interface{}) (err error)
@@ -80,6 +76,14 @@ type (
 		Scard(key string) (result int, err error)
 		Sismember(key string, value interface{}) (iskeep bool, err error)
 	}
+
+	IRedisSys interface {
+		IRedis
+		Encode(value interface{}) (result []byte, err error)
+		Decode(value []byte, result interface{}) (err error)
+		/*Lock*/
+		NewRedisMutex(key string, opt ...RMutexOption) (result *RedisMutex, err error)
+	}
 )
 
 const (
@@ -87,17 +91,28 @@ const (
 	TxFailedErr = redis.TxFailedErr
 )
 
-var defsys IRedis
+var defsys IRedisSys
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	defsys, err = newSys(newOptions(config, option...))
 	return
 }
 
-func NewSys(option ...Option) (sys IRedis, err error) {
+func NewSys(option ...Option) (sys IRedisSys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
 }
+
+func Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {
+	return defsys.Pipeline(ctx, fn)
+}
+func TxPipelined(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {
+	return defsys.TxPipelined(ctx, fn)
+}
+func Watch(ctx context.Context, fn func(*redis.Tx) error, keys ...string) (err error) {
+	return defsys.Watch(ctx, fn)
+}
+
 func Encode(value interface{}) (result []byte, err error) {
 	return defsys.Encode(value)
 }
@@ -190,6 +205,7 @@ func INCRBY(key string, amount int64) (result int64, err error) {
 func NewRedisMutex(key string, opt ...RMutexOption) (result *RedisMutex, err error) {
 	return defsys.NewRedisMutex(key, opt...)
 }
+
 func Lock(key string, outTime int) (result bool, err error) {
 	return defsys.Lock(key, outTime)
 }

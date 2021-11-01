@@ -3,8 +3,6 @@ package redis
 import (
 	"errors"
 	"time"
-
-	"github.com/go-redis/redis/v8"
 )
 
 /*
@@ -13,22 +11,11 @@ Redis Scard 命令返回集合中元素的数量
 func (this *Redis) NewRedisMutex(key string, opt ...RMutexOption) (result *RedisMutex, err error) {
 	opts := newRMutexOptions(opt...)
 	result = &RedisMutex{
-		sys:    this,
+		sys:    this.client,
 		key:    key,
 		expiry: opts.expiry,
 		delay:  opts.delay,
 	}
-	return
-}
-
-func (this *Redis) Lock(key string, outTime int) (result bool, err error) {
-	cmd := redis.NewBoolCmd(this.getContext(), "set", key, 1, "ex", outTime, "nx")
-	this.client.Process(this.getContext(), cmd)
-	result, err = cmd.Result()
-	return
-}
-func (this *Redis) UnLock(key string) (err error) {
-	err = this.Delete(key)
 	return
 }
 

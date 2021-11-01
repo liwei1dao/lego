@@ -9,13 +9,19 @@ import (
 )
 
 func Test_SysIPV6(t *testing.T) {
-	// this.client = redis.NewClient(&redis.Options{
-	// 	Addr:     this.options.RedisUrl,
-	// 	Password: this.options.RedisPassword,
-	// 	DB:       this.options.RedisDB,
-	// 	PoolSize: this.options.PoolSize, // 连接池大小
-	// })
-	// _, err = this.client.Ping(this.getContext()).Result()
+	err := OnInit(map[string]interface{}{
+		"RedisUrl":      "172.27.100.143:6382",
+		"RedisDB":       0,
+		"RedisPassword": "idss@sjzt",
+	})
+	if err != nil {
+		fmt.Printf("Redis:err:%v \n", err)
+		return
+	}
+	fmt.Printf("Redis:succ \n")
+	if err = Set("liwei1dao", 123, -1); err != nil {
+		fmt.Printf("Redis:err:%v \n", err)
+	}
 }
 
 func Test_Redis_ExpireatKey(t *testing.T) {

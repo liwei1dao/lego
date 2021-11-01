@@ -6,6 +6,13 @@ import (
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
 
+type RedisType int8
+
+const (
+	Redis_Single RedisType = iota
+	Redis_Cluster
+)
+
 ///redis 存储数据格式化类型
 type RedisStorageTyoe int8
 
@@ -16,38 +23,57 @@ const (
 
 type Option func(*Options)
 type Options struct {
-	RedisUrl         string
-	RedisPassword    string
-	RedisDB          int
-	PoolSize         int
-	RedisStorageType RedisStorageTyoe
-	TimeOut          time.Duration
+	RedisType              RedisType
+	Redis_Single_Addr      string
+	Redis_Single_Password  string
+	Redis_Single_DB        int
+	Redis_Single_PoolSize  int
+	Redis_Cluster_Addr     []string
+	Redis_Cluster_Password string
+	RedisStorageType       RedisStorageTyoe
+	TimeOut                time.Duration
+}
+
+func SetRedisType(v RedisType) Option {
+	return func(o *Options) {
+		o.RedisType = v
+	}
 }
 
 ///RedisUrl = "127.0.0.1:6379"
-func SetRedisUrl(v string) Option {
+func SetRedis_Single_Addr(v string) Option {
 	return func(o *Options) {
-		o.RedisUrl = v
+		o.Redis_Single_Addr = v
 	}
 }
 
-func SetRedisPassword(v string) Option {
+func SetRedis_Single_Password(v string) Option {
 	return func(o *Options) {
-		o.RedisPassword = v
+		o.Redis_Single_Password = v
 	}
 }
-func SetRedisDB(v int) Option {
+func SetRedis_Single_DB(v int) Option {
 	return func(o *Options) {
-		o.RedisDB = v
-	}
-}
-
-func SetPoolSize(v int) Option {
-	return func(o *Options) {
-		o.PoolSize = v
+		o.Redis_Single_DB = v
 	}
 }
 
+func SetRedis_Single_PoolSize(v int) Option {
+	return func(o *Options) {
+		o.Redis_Single_PoolSize = v
+	}
+}
+func Redis_Cluster_Addr(v []string) Option {
+	return func(o *Options) {
+		o.Redis_Cluster_Addr = v
+	}
+}
+
+func SetRedis_Cluster_Password(v string) Option {
+	return func(o *Options) {
+		o.Redis_Cluster_Password = v
+	}
+}
 func SetRedisStorageType(v RedisStorageTyoe) Option {
 	return func(o *Options) {
 		o.RedisStorageType = v
@@ -62,10 +88,13 @@ func SetTimeOut(v time.Duration) Option {
 
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
-		RedisUrl: "127.0.0.1:6379",
-		RedisDB:  1,
-		TimeOut:  time.Second * 3,
-		PoolSize: 100,
+		Redis_Single_Addr:      "127.0.0.1:6379",
+		Redis_Single_Password:  "",
+		Redis_Single_DB:        1,
+		Redis_Cluster_Addr:     []string{"127.0.0.1:6379"},
+		Redis_Cluster_Password: "",
+		TimeOut:                time.Second * 3,
+		Redis_Single_PoolSize:  100,
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
@@ -78,10 +107,13 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 
 func newOptionsByOption(opts ...Option) Options {
 	options := Options{
-		RedisUrl: "127.0.0.1:6379",
-		RedisDB:  1,
-		TimeOut:  time.Second * 3,
-		PoolSize: 100,
+		Redis_Single_Addr:      "127.0.0.1:6379",
+		Redis_Single_Password:  "",
+		Redis_Single_DB:        1,
+		Redis_Cluster_Addr:     []string{"127.0.0.1:6379"},
+		Redis_Cluster_Password: "",
+		TimeOut:                time.Second * 3,
+		Redis_Single_PoolSize:  100,
 	}
 	for _, o := range opts {
 		o(&options)
