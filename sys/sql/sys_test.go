@@ -13,16 +13,17 @@ import (
 ///测试SqlServer 存储过程
 func Test_SqlServer(t *testing.T) {
 	err := OnInit(nil,
-		SetSqlUrl("sqlserver://sa:Jiangnancyhd2017@119.23.148.95:1433?database=THAccountsDB&connection+timeout=30"),
+		SetSqlType(SqlServer),
+		SetSqlUrl(fmt.Sprintf("server=%s;port%d;database=%s;user id=%s;password=%s;encrypt=disable", "172.27.100.118", 1433, "test", "sa", "123456")),
 	)
 	if err != nil {
-		t.Logf("初始化失败=%s", err.Error())
+		fmt.Printf("初始化失败=%s", err.Error())
 	} else {
 		row, err := QueryContext("Login", sql.Named("@Account", "liwei1dao"), sql.Named("@Password", "li13451234"))
 		if err != nil {
-			t.Logf("执行存储工程失败:%s", err.Error())
+			fmt.Printf("执行存储工程失败:%s", err.Error())
 		} else {
-			t.Log("执行存储工程成功", row)
+			fmt.Printf("执行存储工程成功:%v", row)
 			//获取结果集
 			for row.Next() {
 				var uid int
