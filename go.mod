@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	cloud.google.com/go v0.78.0
+	gitee.com/chunanyong/dm v1.8.3
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Shopify/sarama v1.30.0
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect

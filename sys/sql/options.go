@@ -13,6 +13,7 @@ const (
 	SqlServer SqlType = "sqlserver"
 	MySql     SqlType = "mysql"
 	Oracle    SqlType = "godror"
+	DM        SqlType = "dm"
 )
 
 type Option func(*Options)

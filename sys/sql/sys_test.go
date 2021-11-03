@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	_ "gitee.com/chunanyong/dm"          //达梦数据库 驱动
 	_ "github.com/denisenkom/go-mssqldb" //sqlservice 驱动
 	_ "github.com/go-sql-driver/mysql"   //mysql 驱动
 	_ "github.com/godror/godror"         //oracle 驱动
@@ -72,34 +73,17 @@ func Test_MySql(t *testing.T) {
 
 func Test_Oracle(t *testing.T) {
 	err := OnInit(nil,
-		SetSqlType(Oracle),
+		SetSqlType(DM),
 		//jdbc:oracle:thin:@192.168.1.100:1521:oracle
-		SetSqlUrl("idss_sjzt/idss1234@172.20.27.125:1521/nek"),
+		SetSqlUrl("Sysdba:Boe888888@172.20.27.145:5236"),
 	)
 	if err != nil {
 		fmt.Printf("初始化失败=%v\n", err)
 	} else {
 		fmt.Printf("初始化成功\n")
-		// if data, err := Query("select table_name from information_schema.tables where table_schema='mysql' and table_type='base table'"); err == nil {
-		//SELECT * FROM (Select test.*,@rowno:=@rowno+1 as INCREMENTAL From test) AS T WHERE INCREMENTAL >= 0 and INCREMENTAL < 100 order by INCREMENTAL
-		if data, err := Query(`select * From IDSS_SJZT."test" t`); err == nil {
-			if coluns, err := data.Columns(); err == nil {
-				fmt.Printf("coluns:%v\n", coluns)
-			} else {
-				fmt.Printf("coluns err:%v\n", err)
-			}
-			// a1 := ""
-			// b2 := ""
-			// id := 0
-			// for data.Next() {
-			// 	if err := data.Scan(&a1, &b2, &id); err == nil {
-			// 		fmt.Printf("a1:%s b2:%s id:%v\n", a1, b2, id)
-			// 	} else {
-			// 		fmt.Printf("tablename err :%v\n", err)
-			// 	}
-			// }
-		} else {
-			fmt.Printf("Query err:%v\n", err)
-		}
 	}
+}
+
+func Test_DM(t *testing.T) {
+
 }

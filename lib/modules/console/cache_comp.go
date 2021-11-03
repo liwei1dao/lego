@@ -20,9 +20,10 @@ func (this *CacheComp) Init(service core.IService, module core.IModule, comp cor
 	err = this.ModuleCompBase.Init(service, module, comp, options)
 	this.module = module.(IConsole)
 	if this.redis, err = redis.NewSys(
-		redis.SetRedisUrl(this.module.Options().GetRedisUrl()),
-		redis.SetRedisDB(this.module.Options().GetRedisDB()),
-		redis.SetRedisPassword(this.module.Options().GetRedisPassword()),
+		redis.SetRedisType(redis.Redis_Single),
+		redis.SetRedis_Single_Addr(this.module.Options().GetRedisUrl()),
+		redis.SetRedis_Single_DB(this.module.Options().GetRedisDB()),
+		redis.SetRedis_Single_Password(this.module.Options().GetRedisPassword()),
 	); err != nil {
 		err = fmt.Errorf("redis[%s]err:%v", this.module.Options().GetRedisUrl(), err)
 	}
