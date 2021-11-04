@@ -9,7 +9,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/liwei1dao/lego/utils/pio"
+	"github.com/liwei1dao/lego/lib/modules/live/utils/pio"
 )
 
 var (

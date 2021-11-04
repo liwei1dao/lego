@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"net"
 
-	"github.com/liwei1dao/lego/utils/pio"
-	"github.com/liwei1dao/lego/utils/pool"
+	"github.com/liwei1dao/lego/lib/modules/live/utils/pio"
+	"github.com/liwei1dao/lego/lib/modules/live/utils/pool"
 )
 
 const (

@@ -7,9 +7,9 @@ import (
 
 	"github.com/liwei1dao/lego/lib/modules/live/amf"
 	"github.com/liwei1dao/lego/lib/modules/live/av"
+	"github.com/liwei1dao/lego/lib/modules/live/utils/pio"
+	"github.com/liwei1dao/lego/lib/modules/live/utils/uid"
 	"github.com/liwei1dao/lego/sys/log"
-	"github.com/liwei1dao/lego/utils/pio"
-	"github.com/liwei1dao/lego/utils/uid"
 )
 
 const (

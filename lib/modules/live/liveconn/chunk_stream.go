@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/liwei1dao/lego/lib/modules/live/av"
-	"github.com/liwei1dao/lego/utils/pool"
+	"github.com/liwei1dao/lego/lib/modules/live/utils/pool"
 )
 
 type ChunkStream struct {

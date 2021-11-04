@@ -5,7 +5,6 @@ go 1.14
 require (
 	cloud.google.com/go v0.78.0
 	gitee.com/chunanyong/dm v1.8.3
-	gitee.com/chunanyong/zorm v1.5.1
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Shopify/sarama v1.30.0
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
@@ -42,6 +41,7 @@ require (
 	github.com/nats-io/nats-server/v2 v2.1.9 // indirect
 	github.com/nats-io/nats.go v1.10.0
 	github.com/robfig/cron/v3 v3.0.1
+	github.com/rs/xid v1.3.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/shirou/gopsutil v3.20.12+incompatible
 	github.com/wolfogre/go-pprof-practice v0.0.0-20190402114113-8ce266a210ee
