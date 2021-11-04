@@ -50,8 +50,13 @@ func (this *Mongodb) init() (err error) {
 			return fmt.Errorf("数据库不可用 err=%s", err.Error())
 		}
 		this.Database = client.Database(this.options.MongodbDatabase)
+
 	}
 	return
+}
+
+func (this *Mongodb) ListCollectionNames(filter interface{}, opts ...*options.ListCollectionsOptions) ([]string, error) {
+	return this.Database.ListCollectionNames(this.getContext(), filter, opts...)
 }
 
 func (this *Mongodb) Collection(sqltable core.SqlTable) *mongo.Collection {
