@@ -73,9 +73,8 @@ func Test_MySql(t *testing.T) {
 
 func Test_Oracle(t *testing.T) {
 	err := OnInit(nil,
-		SetSqlType(DM),
-		//jdbc:oracle:thin:@192.168.1.100:1521:oracle
-		SetSqlUrl("dm://Sysdba:Boe888888@172.20.27.145:5236"),
+		SetSqlType(Oracle),
+		SetSqlUrl("idss_sjzt/idss1234@172.20.27.125:1521/nek"),
 	)
 	if err != nil {
 		fmt.Printf("初始化失败=%v\n", err)
@@ -87,8 +86,7 @@ func Test_Oracle(t *testing.T) {
 func Test_DM(t *testing.T) {
 	err := OnInit(nil,
 		SetSqlType(DM),
-		//jdbc:oracle:thin:@192.168.1.100:1521:oracle
-		SetSqlUrl("Sysdba:Boe888888@172.20.27.145:5236"),
+		SetSqlUrl("dm://Sysdba:Sysdba@172.20.27.145:5236"),
 	)
 	if err != nil {
 		fmt.Printf("初始化失败=%v\n", err)
