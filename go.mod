@@ -5,6 +5,7 @@ go 1.14
 require (
 	cloud.google.com/go v0.78.0
 	gitee.com/chunanyong/dm v1.8.3
+	gitee.com/chunanyong/zorm v1.5.1
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Shopify/sarama v1.30.0
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
@@ -58,3 +59,5 @@ require (
 	gopkg.in/ini.v1 v1.51.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
+
+// replace gitee.com/chunanyong/dm => /Users/liwei1dao/work/go/src/dm
