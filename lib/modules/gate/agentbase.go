@@ -47,7 +47,7 @@ func (this *AgentBase) OnInit(module IGateModule, coon IConn, agent IAgent) (err
 	this.Module = module
 	this.Agent = agent
 	this.Conn = coon
-	this.id = id.GenerateID().String()
+	this.id = id.NewXId()
 	this.ip = coon.RemoteAddr().String()
 	this.closeSignal = make(chan bool)
 	this.writeChan = make(chan proto.IMessage, 10)
