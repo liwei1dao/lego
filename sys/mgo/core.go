@@ -11,6 +11,7 @@ import (
 
 type (
 	IMongodb interface {
+		Close() (err error)
 		ListCollectionNames(filter interface{}, opts ...*options.ListCollectionsOptions) ([]string, error)
 		Collection(sqltable core.SqlTable) *mongo.Collection
 		CreateIndex(sqltable core.SqlTable, keys interface{}, options *options.IndexOptions) (string, error)
@@ -52,6 +53,10 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 func NewSys(option ...Option) (sys IMongodb, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
+}
+
+func Close() (err error) {
+	return defsys.Close()
 }
 
 func ListCollectionNames(filter interface{}, opts ...*options.ListCollectionsOptions) ([]string, error) {
