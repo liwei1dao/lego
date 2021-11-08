@@ -55,6 +55,11 @@ func (this *Mongodb) init() (err error) {
 	return
 }
 
+func (this *Mongodb) Close() (err error) {
+	err = this.Client.Disconnect(this.getContext())
+	return
+}
+
 func (this *Mongodb) ListCollectionNames(filter interface{}, opts ...*options.ListCollectionsOptions) ([]string, error) {
 	return this.Database.ListCollectionNames(this.getContext(), filter, opts...)
 }
