@@ -14,7 +14,7 @@ type (
 		Close() (err error)
 		ListCollectionNames(filter interface{}, opts ...*options.ListCollectionsOptions) ([]string, error)
 		Collection(sqltable core.SqlTable) *mongo.Collection
-		CreateIndex(sqltable core.SqlTable, keys interface{}, options *options.IndexOptions) (string, error)
+		CreateIndex(sqltable core.SqlTable, model mongo.IndexModel, opts ...*options.CreateIndexesOptions) (string, error)
 		DeleteIndex(sqltable core.SqlTable, name string, options *options.DropIndexesOptions) (bson.Raw, error)
 		UseSession(fn func(sessionContext mongo.SessionContext) error) error
 		CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options.CountOptions) (int64, error)
@@ -67,8 +67,8 @@ func Collection(sqltable core.SqlTable) *mongo.Collection {
 	return defsys.Collection(sqltable)
 }
 
-func CreateIndex(sqltable core.SqlTable, keys interface{}, options *options.IndexOptions) (string, error) {
-	return defsys.CreateIndex(sqltable, keys, options)
+func CreateIndex(sqltable core.SqlTable, model mongo.IndexModel, opts ...*options.CreateIndexesOptions) (string, error) {
+	return defsys.CreateIndex(sqltable, model, opts...)
 }
 func DeleteIndex(sqltable core.SqlTable, name string, options *options.DropIndexesOptions) (bson.Raw, error) {
 	return defsys.DeleteIndex(sqltable, name, options)

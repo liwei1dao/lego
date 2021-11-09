@@ -73,8 +73,8 @@ func (this *Mongodb) getContext() (ctx context.Context) {
 	return
 }
 
-func (this *Mongodb) CreateIndex(sqltable core.SqlTable, keys interface{}, options *options.IndexOptions) (string, error) {
-	return this.Collection(sqltable).Indexes().CreateOne(this.getContext(), mongo.IndexModel{Keys: keys, Options: options})
+func (this *Mongodb) CreateIndex(sqltable core.SqlTable, model mongo.IndexModel, opts ...*options.CreateIndexesOptions) (string, error) {
+	return this.Collection(sqltable).Indexes().CreateOne(this.getContext(), model, opts...)
 }
 
 func (this *Mongodb) DeleteIndex(sqltable core.SqlTable, name string, options *options.DropIndexesOptions) (bson.Raw, error) {

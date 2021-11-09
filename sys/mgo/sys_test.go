@@ -93,7 +93,12 @@ func Test_CreateIndex(t *testing.T) {
 		fmt.Printf("start sys Fail err:%v", err)
 		return
 	}
-	str, err := sys.CreateIndex(core.SqlTable("dynamics"), bson.M{"location": "2dsphere"}, new(options.IndexOptions).SetBits(11111))
+
+	indexModel := mongo.IndexModel{
+		Keys:    bson.M{"location": "2dsphere"},
+		Options: options.Index().SetBits(11111),
+	}
+	str, err := sys.CreateIndex(core.SqlTable("dynamics"), indexModel)
 	if err != nil {
 		fmt.Printf("CreateIndex  err:%v", err)
 	} else {
@@ -108,7 +113,7 @@ func Test_CreateCompoundIndex(t *testing.T) {
 		fmt.Printf("start sys Fail err:%v", err)
 		return
 	}
-	str, err := sys.CreateIndex(core.SqlTable("unreadmsg"), bson.M{"channeltype": 1, "targetid": 1, "uid": 1, "unreadmsg.sendtime": 1}, nil)
+	str, err := sys.CreateIndex(core.SqlTable("unreadmsg"), mongo.IndexModel{Keys: bson.M{"channeltype": 1, "targetid": 1, "uid": 1, "unreadmsg.sendtime": 1}}, nil)
 	if err != nil {
 		fmt.Printf("CreateIndex  err:%v", err)
 	} else {
