@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
 const (
@@ -83,6 +84,26 @@ func Test_Affair(t *testing.T) {
 		fmt.Printf("FindOne errr:%v", err)
 	} else {
 		fmt.Printf("FindOne errr:%v", err)
+	}
+}
+
+//测试创建索引 过期索引
+func Test_CreateTTLIndex(t *testing.T) {
+	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("square"))
+	if err != nil {
+		fmt.Printf("start sys Fail err:%v", err)
+		return
+	}
+
+	indexModel := mongo.IndexModel{
+		Keys:    bsonx.Doc{{"expire_date", bsonx.Int32(1)}},           // 设置TTL索引列"expire_date"
+		Options: options.Index().SetExpireAfterSeconds(1 * 24 * 3600), // 设置过期时间1天，即，条目过期一天过自动删除
+	}
+	str, err := sys.CreateIndex(core.SqlTable("dynamics"), indexModel)
+	if err != nil {
+		fmt.Printf("CreateIndex  err:%v", err)
+	} else {
+		fmt.Printf("CreateIndex  str:%v", str)
 	}
 }
 
