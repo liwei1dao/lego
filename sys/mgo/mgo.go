@@ -77,8 +77,8 @@ func (this *Mongodb) CreateIndex(sqltable core.SqlTable, model mongo.IndexModel,
 	return this.Collection(sqltable).Indexes().CreateOne(this.getContext(), model, opts...)
 }
 
-func (this *Mongodb) DeleteIndex(sqltable core.SqlTable, name string, options *options.DropIndexesOptions) (bson.Raw, error) {
-	return this.Collection(sqltable).Indexes().DropOne(this.getContext(), name, options)
+func (this *Mongodb) DeleteIndex(sqltable core.SqlTable, name string, opts ...*options.DropIndexesOptions) (bson.Raw, error) {
+	return this.Collection(sqltable).Indexes().DropOne(this.getContext(), name, opts...)
 }
 
 func (this *Mongodb) UseSession(fn func(sessionContext mongo.SessionContext) error) error {
