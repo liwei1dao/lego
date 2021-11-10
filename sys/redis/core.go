@@ -11,6 +11,7 @@ import (
 type (
 	IRedis interface {
 		Close() (err error)
+		Do(ctx context.Context, args ...interface{}) *redis.Cmd
 		Lock(key string, outTime int) (result bool, err error)
 		UnLock(key string) (err error)
 		Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error)
@@ -106,6 +107,9 @@ func NewSys(option ...Option) (sys IRedisSys, err error) {
 
 func Close() (err error) {
 	return defsys.Close()
+}
+func Do(ctx context.Context, args ...interface{}) *redis.Cmd {
+	return defsys.Do(ctx, args...)
 }
 
 func Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {

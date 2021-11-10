@@ -52,7 +52,9 @@ func (this *Redis) init() (err error) {
 func (this *Redis) Close() (err error) {
 	return this.client.Close()
 }
-
+func (this *Redis) Do(ctx context.Context, args ...interface{}) *redis.Cmd {
+	return this.client.Do(ctx, args...)
+}
 func (this *Redis) Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {
 	return this.client.Pipeline(ctx, fn)
 }

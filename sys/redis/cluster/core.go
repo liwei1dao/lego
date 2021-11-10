@@ -45,6 +45,11 @@ func (this *Redis) Close() (err error) {
 	return
 }
 
+/// 命令接口
+func (this *Redis) Do(ctx context.Context, args ...interface{}) *redis.Cmd {
+	return this.client.Do(ctx, args...)
+}
+
 ///批处理
 func (this *Redis) Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {
 	_, err = this.client.Pipelined(ctx, fn)
