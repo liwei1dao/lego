@@ -10,6 +10,7 @@ import (
 
 type (
 	IRedis interface {
+		Close() (err error)
 		Lock(key string, outTime int) (result bool, err error)
 		UnLock(key string) (err error)
 		Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error)
@@ -101,6 +102,10 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 func NewSys(option ...Option) (sys IRedisSys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
+}
+
+func Close() (err error) {
+	return defsys.Close()
 }
 
 func Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {

@@ -49,6 +49,10 @@ func (this *Redis) init() (err error) {
 	return
 }
 
+func (this *Redis) Close() (err error) {
+	return this.client.Close()
+}
+
 func (this *Redis) Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {
 	return this.client.Pipeline(ctx, fn)
 }

@@ -40,6 +40,9 @@ func (this *Redis) getContext() (ctx context.Context) {
 	ctx, _ = context.WithTimeout(context.Background(), this.timeOut)
 	return
 }
+func (this *Redis) Close() (err error) {
+	return this.client.Close()
+}
 
 ///批处理
 func (this *Redis) Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {

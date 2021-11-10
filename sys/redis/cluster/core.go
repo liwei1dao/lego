@@ -39,6 +39,12 @@ func (this *Redis) getContext() (ctx context.Context) {
 	return
 }
 
+///事务
+func (this *Redis) Close() (err error) {
+	err = this.client.Close()
+	return
+}
+
 ///批处理
 func (this *Redis) Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {
 	_, err = this.client.Pipelined(ctx, fn)
