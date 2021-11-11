@@ -421,9 +421,9 @@ func (this *ClusterService) RpcInvokeById(sId string, rkey core.Rpc_Key, iscall 
 
 func (this *ClusterService) RpcInvokeByIds(sId []string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (results map[string]*base.Result, err error) {
 	var (
-		ss         []core.IServiceSession
-		wg         *sync.WaitGroup
-		resultPipe chan *base.Result
+		ss   []core.IServiceSession
+		lock sync.Mutex
+		wg   *sync.WaitGroup
 	)
 	if ss, err = this.getServiceSessionByIds(sId); err != nil {
 		log.Errorf("未找到目标服务 ip:%s 节点 err:%v", sId, err)
@@ -439,22 +439,17 @@ func (this *ClusterService) RpcInvokeByIds(sId []string, rkey core.Rpc_Key, isca
 		}
 	} else {
 		wg = new(sync.WaitGroup)
-		resultPipe = make(chan *base.Result)
 		wg.Add(len(ss))
 		for _, v := range ss {
-			go func(ss core.IServiceSession, resultPipe chan *base.Result, wg *sync.WaitGroup) {
+			go func(ss core.IServiceSession, wg *sync.WaitGroup) {
 				result, e := ss.Call(rkey, arg...)
-				resultPipe <- &base.Result{Index: ss.GetId(), Result: result, Err: e}
+				lock.Lock()
+				results[ss.GetId()] = &base.Result{Index: ss.GetId(), Result: result, Err: e}
+				lock.Unlock()
 				wg.Done()
-			}(v, resultPipe, wg)
+			}(v, wg)
 		}
-		go func(resultPipe <-chan *base.Result) {
-			for v := range resultPipe {
-				results[v.Index] = v
-			}
-		}(resultPipe)
 		wg.Wait()
-		close(resultPipe)
 	}
 	return
 }
@@ -488,9 +483,9 @@ func (this *ClusterService) RpcInvokeByIp(sIp, sType string, rkey core.Rpc_Key, 
 
 func (this *ClusterService) RpcInvokeByIps(sIp []string, sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (results map[string]*base.Result, err error) {
 	var (
-		ss         []core.IServiceSession
-		wg         *sync.WaitGroup
-		resultPipe chan *base.Result
+		ss   []core.IServiceSession
+		lock sync.Mutex
+		wg   *sync.WaitGroup
 	)
 	if ss, err = this.getServiceSessionByIps(sType, sIp); err != nil {
 		log.Errorf("未找到目标服务 ip:%s type:%s 节点 err:%v", sIp, sType, err)
@@ -510,22 +505,17 @@ func (this *ClusterService) RpcInvokeByIps(sIp []string, sType string, rkey core
 		}
 	} else {
 		wg = new(sync.WaitGroup)
-		resultPipe = make(chan *base.Result)
 		wg.Add(len(ss))
 		for _, v := range ss {
-			go func(ss core.IServiceSession, resultPipe chan *base.Result, wg *sync.WaitGroup) {
+			go func(ss core.IServiceSession, wg *sync.WaitGroup) {
 				result, e := ss.Call(rkey, arg...)
-				resultPipe <- &base.Result{Index: ss.GetIp(), Result: result, Err: e}
+				lock.Lock()
+				results[ss.GetIp()] = &base.Result{Index: ss.GetIp(), Result: result, Err: e}
+				lock.Unlock()
 				wg.Done()
-			}(v, resultPipe, wg)
+			}(v, wg)
 		}
-		go func(resultPipe <-chan *base.Result) {
-			for v := range resultPipe {
-				results[v.Index] = v
-			}
-		}(resultPipe)
 		wg.Wait()
-		close(resultPipe)
 	}
 	return
 }
