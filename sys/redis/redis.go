@@ -137,6 +137,11 @@ func (this *Redis) Keys(pattern string) (keys []string, err error) {
 	return this.client.Keys(pattern)
 }
 
+///获取键类型
+func (this *Redis) Type(key string) (ty string, err error) {
+	return this.client.Type(key)
+}
+
 /*String*/
 func (this *Redis) Set(key string, value interface{}, expiration time.Duration) (err error) {
 	return this.client.Set(key, value, expiration)
@@ -265,11 +270,47 @@ func (this *Redis) HSetNX(key string, field string, value interface{}) (err erro
 
 /*Set*/
 func (this *Redis) SAdd(key string, values ...interface{}) (err error) {
-	return this.client.SAdd(key)
+	return this.client.SAdd(key, values...)
 }
-func (this *Redis) Scard(key string) (result int, err error) {
-	return this.client.Scard(key)
+func (this *Redis) SCard(key string) (result int64, err error) {
+	return this.client.SCard(key)
+}
+func (this *Redis) SDiff(valuetype reflect.Type, keys ...string) (result []interface{}, err error) {
+	return this.client.SDiff(valuetype, keys...)
+}
+func (this *Redis) SDiffStore(destination string, keys ...string) (result int64, err error) {
+	return this.client.SDiffStore(destination, keys...)
+}
+func (this *Redis) SInter(valuetype reflect.Type, keys ...string) (result []interface{}, err error) {
+	return this.client.SInter(valuetype, keys...)
+}
+func (this *Redis) SInterStore(destination string, keys ...string) (result int64, err error) {
+	return this.client.SInterStore(destination, keys...)
 }
 func (this *Redis) Sismember(key string, value interface{}) (iskeep bool, err error) {
 	return this.client.Sismember(key, value)
+}
+func (this *Redis) SMembers(valuetype reflect.Type, key string) (result []interface{}, err error) {
+	return this.client.SMembers(valuetype, key)
+}
+func (this *Redis) SMove(source string, destination string, member interface{}) (result bool, err error) {
+	return this.client.SMove(source, destination, member)
+}
+func (this *Redis) Spop(key string) (result string, err error) {
+	return this.client.Spop(key)
+}
+func (this *Redis) Srandmember(key string) (result string, err error) {
+	return this.client.Srandmember(key)
+}
+func (this *Redis) SRem(key string, members ...interface{}) (result int64, err error) {
+	return this.client.SRem(key, members...)
+}
+func (this *Redis) SUnion(valuetype reflect.Type, keys ...string) (result []interface{}, err error) {
+	return this.client.SUnion(valuetype, keys...)
+}
+func (this *Redis) Sunionstore(destination string, keys ...string) (result int64, err error) {
+	return this.client.Sunionstore(destination, keys...)
+}
+func (this *Redis) Sscan(key string, _cursor uint64, match string, count int64) (keys []string, cursor uint64, err error) {
+	return this.client.Sscan(key, _cursor, match, count)
 }

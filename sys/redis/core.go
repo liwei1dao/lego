@@ -30,6 +30,7 @@ type (
 		RenameKye(oldkey string, newkey string) (err error)
 		RenamenxKey(oldkey string, newkey string) (err error)
 		Keys(pattern string) (keys []string, err error)
+		Type(key string) (ty string, err error)
 		/*String*/
 		Set(key string, value interface{}, expiration time.Duration) (err error)
 		SetNX(key string, value interface{}) (result int64, err error)
@@ -75,8 +76,20 @@ type (
 		HSetNX(key string, field string, value interface{}) (err error)
 		/*Set*/
 		SAdd(key string, values ...interface{}) (err error)
-		Scard(key string) (result int, err error)
+		SCard(key string) (result int64, err error)
+		SDiff(valuetype reflect.Type, keys ...string) (result []interface{}, err error)
+		SDiffStore(destination string, keys ...string) (result int64, err error)
+		SInter(valuetype reflect.Type, keys ...string) (result []interface{}, err error)
+		SInterStore(destination string, keys ...string) (result int64, err error)
 		Sismember(key string, value interface{}) (iskeep bool, err error)
+		SMembers(valuetype reflect.Type, key string) (result []interface{}, err error)
+		SMove(source string, destination string, member interface{}) (result bool, err error)
+		Spop(key string) (result string, err error)
+		Srandmember(key string) (result string, err error)
+		SRem(key string, members ...interface{}) (result int64, err error)
+		SUnion(valuetype reflect.Type, keys ...string) (result []interface{}, err error)
+		Sunionstore(destination string, keys ...string) (result int64, err error)
+		Sscan(key string, _cursor uint64, match string, count int64) (keys []string, cursor uint64, err error)
 	}
 
 	IRedisSys interface {
@@ -164,6 +177,11 @@ func RenamenxKey(oldkey string, newkey string) (err error) {
 }
 func Keys(pattern string) (keys []string, err error) {
 	return defsys.Keys(pattern)
+}
+
+///获取键类型
+func Type(key string) (ty string, err error) {
+	return defsys.Type(key)
 }
 
 /*String*/
@@ -306,11 +324,47 @@ func HSetNX(key string, field string, value interface{}) (err error) {
 
 /*Set*/
 func SAdd(key string, values ...interface{}) (err error) {
-	return defsys.SAdd(key)
+	return defsys.SAdd(key, values...)
 }
-func Scard(key string) (result int, err error) {
-	return defsys.Scard(key)
+func SCard(key string) (result int64, err error) {
+	return defsys.SCard(key)
+}
+func SDiff(valuetype reflect.Type, keys ...string) (result []interface{}, err error) {
+	return defsys.SDiff(valuetype, keys...)
+}
+func SDiffStore(destination string, keys ...string) (result int64, err error) {
+	return defsys.SDiffStore(destination, keys...)
+}
+func SInter(valuetype reflect.Type, keys ...string) (result []interface{}, err error) {
+	return defsys.SInter(valuetype, keys...)
+}
+func SInterStore(destination string, keys ...string) (result int64, err error) {
+	return defsys.SInterStore(destination, keys...)
 }
 func Sismember(key string, value interface{}) (iskeep bool, err error) {
 	return defsys.Sismember(key, value)
+}
+func SMembers(valuetype reflect.Type, key string) (result []interface{}, err error) {
+	return defsys.SMembers(valuetype, key)
+}
+func SMove(source string, destination string, member interface{}) (result bool, err error) {
+	return defsys.SMove(source, destination, member)
+}
+func Spop(key string) (result string, err error) {
+	return defsys.Spop(key)
+}
+func Srandmember(key string) (result string, err error) {
+	return defsys.Srandmember(key)
+}
+func SRem(key string, members ...interface{}) (result int64, err error) {
+	return defsys.SRem(key, members...)
+}
+func SUnion(valuetype reflect.Type, keys ...string) (result []interface{}, err error) {
+	return defsys.SUnion(valuetype, keys...)
+}
+func Sunionstore(destination string, keys ...string) (result int64, err error) {
+	return defsys.Sunionstore(destination, keys...)
+}
+func Sscan(key string, _cursor uint64, match string, count int64) (keys []string, cursor uint64, err error) {
+	return defsys.Sscan(key, _cursor, match, count)
 }

@@ -10,9 +10,9 @@ import (
 
 func Test_SysIPV6(t *testing.T) {
 	err := OnInit(map[string]interface{}{
-		"RedisUrl":      "172.27.100.143:6382",
-		"RedisDB":       0,
-		"RedisPassword": "idss@sjzt",
+		"Redis_Single_Addr":     "172.27.100.143:6382",
+		"Redis_Single_DB":       0,
+		"Redis_Single_Password": "idss@sjzt",
 	})
 	if err != nil {
 		fmt.Printf("Redis:err:%v \n", err)
@@ -26,9 +26,9 @@ func Test_SysIPV6(t *testing.T) {
 
 func Test_Redis_ExpireatKey(t *testing.T) {
 	err := OnInit(map[string]interface{}{
-		"RedisUrl":      "172.20.27.145:10001",
-		"RedisDB":       0,
-		"RedisPassword": "li13451234",
+		"Redis_Single_Addr":     "172.20.27.145:10001",
+		"Redis_Single_DB":       0,
+		"Redis_Single_Password": "li13451234",
 	})
 	if err != nil {
 		fmt.Printf("Redis:err:%v \n", err)
@@ -51,9 +51,9 @@ func Test_JsonMarshal(t *testing.T) {
 
 func Test_Redis_SetNX(t *testing.T) {
 	err := OnInit(map[string]interface{}{
-		"RedisUrl":      "172.20.27.145:10001",
-		"RedisDB":       0,
-		"RedisPassword": "li13451234",
+		"Redis_Single_Addr":     "172.20.27.145:10001",
+		"RedisDB":               0,
+		"Redis_Single_Password": "li13451234",
 	})
 	if err != nil {
 		fmt.Printf("Redis:err:%v \n", err)
@@ -74,9 +74,9 @@ func Test_Redis_SetNX(t *testing.T) {
 }
 func Test_Redis_Lock(t *testing.T) {
 	err := OnInit(map[string]interface{}{
-		"RedisUrl":      "172.20.27.145:10001",
-		"RedisDB":       0,
-		"RedisPassword": "li13451234",
+		"Redis_Single_Addr":     "172.20.27.145:10001",
+		"Redis_Single_DB":       0,
+		"Redis_Single_Password": "li13451234",
 	})
 	if err != nil {
 		fmt.Printf("Redis:err:%v \n", err)
@@ -88,9 +88,9 @@ func Test_Redis_Lock(t *testing.T) {
 
 func Test_Redis_Mutex(t *testing.T) {
 	err := OnInit(map[string]interface{}{
-		"RedisUrl":      "172.20.27.145:10001",
-		"RedisDB":       0,
-		"RedisPassword": "li13451234",
+		"Redis_Single_Addr":     "172.20.27.145:10001",
+		"Redis_Single_DB":       0,
+		"Redis_Single_Password": "li13451234",
 	})
 	if err != nil {
 		fmt.Printf("Redis:err:%v \n", err)
@@ -118,4 +118,24 @@ func Test_Redis_Mutex(t *testing.T) {
 	}
 	wg.Wait()
 	fmt.Printf("Redis:end \n")
+}
+
+func Test_Redis_Type(t *testing.T) {
+	err := OnInit(map[string]interface{}{
+		"Redis_Single_Addr":     "172.20.27.145:10001",
+		"Redis_Single_DB":       1,
+		"Redis_Single_Password": "li13451234",
+	})
+	if err != nil {
+		fmt.Printf("Redis:err:%v \n", err)
+		return
+	}
+	fmt.Printf("Redis:succ \n")
+
+	if ty, err := Type("test_set"); err != nil {
+		fmt.Printf("Test_Redis_Type:err:%v \n", err)
+	} else {
+		fmt.Printf("Test_Redis_Type:%s \n", ty)
+	}
+
 }

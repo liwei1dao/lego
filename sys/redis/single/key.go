@@ -79,3 +79,9 @@ func (this *Redis) Keys(pattern string) (keys []string, err error) {
 	keys, err = cmd.Result()
 	return
 }
+
+///获取键类型
+func (this *Redis) Type(key string) (ty string, err error) {
+	ty, err = this.client.Type(this.getContext(), key).Result()
+	return
+}
