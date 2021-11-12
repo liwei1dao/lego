@@ -90,6 +90,27 @@ type (
 		SUnion(valuetype reflect.Type, keys ...string) (result []interface{}, err error)
 		Sunionstore(destination string, keys ...string) (result int64, err error)
 		Sscan(key string, _cursor uint64, match string, count int64) (keys []string, cursor uint64, err error)
+		/*ZSet*/
+		ZAdd(key string, members ...*redis.Z) (err error)
+		ZCard(key string) (result int64, err error)
+		ZCount(key string, min string, max string) (result int64, err error)
+		ZIncrBy(key string, increment float64, member string) (result float64, err error)
+		ZInterStore(destination string, store *redis.ZStore) (result int64, err error)
+		ZLexCount(key string, min string, max string) (result int64, err error)
+		ZRange(valuetype reflect.Type, key string, start int64, stop int64) (result []interface{}, err error)
+		ZRangeByLex(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error)
+		ZRangeByScore(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error)
+		ZRank(key string, member string) (result int64, err error)
+		ZRem(key string, members ...interface{}) (result int64, err error)
+		ZRemRangeByLex(key string, min string, max string) (result int64, err error)
+		ZRemRangeByRank(key string, start int64, stop int64) (result int64, err error)
+		ZRemRangeByScore(key string, min string, max string) (result int64, err error)
+		ZRevRange(valuetype reflect.Type, key string, start int64, stop int64) (result []interface{}, err error)
+		ZRevRangeByScore(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error)
+		ZRevRank(key string, member string) (result int64, err error)
+		ZScore(key string, member string) (result float64, err error)
+		ZUnionStore(dest string, store *redis.ZStore) (result int64, err error)
+		ZScan(key string, _cursor uint64, match string, count int64) (keys []string, cursor uint64, err error)
 	}
 
 	IRedisSys interface {
@@ -367,4 +388,66 @@ func Sunionstore(destination string, keys ...string) (result int64, err error) {
 }
 func Sscan(key string, _cursor uint64, match string, count int64) (keys []string, cursor uint64, err error) {
 	return defsys.Sscan(key, _cursor, match, count)
+}
+
+/*ZSet*/
+func ZAdd(key string, members ...*redis.Z) (err error) {
+	return defsys.ZAdd(key, members...)
+}
+func ZCard(key string) (result int64, err error) {
+	return defsys.ZCard(key)
+}
+func ZCount(key string, min string, max string) (result int64, err error) {
+	return defsys.ZCount(key, min, max)
+}
+func ZIncrBy(key string, increment float64, member string) (result float64, err error) {
+	return defsys.ZIncrBy(key, increment, member)
+}
+func ZInterStore(destination string, store *redis.ZStore) (result int64, err error) {
+	return defsys.ZInterStore(destination, store)
+}
+func ZLexCount(key string, min string, max string) (result int64, err error) {
+	return defsys.ZLexCount(key, min, max)
+}
+func ZRange(valuetype reflect.Type, key string, start int64, stop int64) (result []interface{}, err error) {
+	return defsys.ZRange(valuetype, key, start, stop)
+}
+func ZRangeByLex(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error) {
+	return defsys.ZRangeByLex(valuetype, key, opt)
+}
+func ZRangeByScore(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error) {
+	return defsys.ZRangeByScore(valuetype, key, opt)
+}
+func ZRank(key string, member string) (result int64, err error) {
+	return defsys.ZRank(key, member)
+}
+func ZRem(key string, members ...interface{}) (result int64, err error) {
+	return defsys.ZRem(key, members...)
+}
+func ZRemRangeByLex(key string, min string, max string) (result int64, err error) {
+	return defsys.ZRemRangeByLex(key, min, max)
+}
+func ZRemRangeByRank(key string, start int64, stop int64) (result int64, err error) {
+	return defsys.ZRemRangeByRank(key, start, stop)
+}
+func ZRemRangeByScore(key string, min string, max string) (result int64, err error) {
+	return defsys.ZRemRangeByScore(key, min, max)
+}
+func ZRevRange(valuetype reflect.Type, key string, start int64, stop int64) (result []interface{}, err error) {
+	return defsys.ZRevRange(valuetype, key, start, stop)
+}
+func ZRevRangeByScore(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error) {
+	return defsys.ZRevRangeByScore(valuetype, key, opt)
+}
+func ZRevRank(key string, member string) (result int64, err error) {
+	return defsys.ZRevRank(key, member)
+}
+func ZScore(key string, member string) (result float64, err error) {
+	return defsys.ZScore(key, member)
+}
+func ZUnionStore(dest string, store *redis.ZStore) (result int64, err error) {
+	return defsys.ZUnionStore(dest, store)
+}
+func ZScan(key string, _cursor uint64, match string, count int64) (keys []string, cursor uint64, err error) {
+	return defsys.ZScan(key, _cursor, match, count)
 }

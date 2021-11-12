@@ -314,3 +314,65 @@ func (this *Redis) Sunionstore(destination string, keys ...string) (result int64
 func (this *Redis) Sscan(key string, _cursor uint64, match string, count int64) (keys []string, cursor uint64, err error) {
 	return this.client.Sscan(key, _cursor, match, count)
 }
+
+/*ZSet*/
+func (this *Redis) ZAdd(key string, members ...*redis.Z) (err error) {
+	return this.client.ZAdd(key, members...)
+}
+func (this *Redis) ZCard(key string) (result int64, err error) {
+	return this.client.ZCard(key)
+}
+func (this *Redis) ZCount(key string, min string, max string) (result int64, err error) {
+	return this.client.ZCount(key, min, max)
+}
+func (this *Redis) ZIncrBy(key string, increment float64, member string) (result float64, err error) {
+	return this.client.ZIncrBy(key, increment, member)
+}
+func (this *Redis) ZInterStore(destination string, store *redis.ZStore) (result int64, err error) {
+	return this.client.ZInterStore(destination, store)
+}
+func (this *Redis) ZLexCount(key string, min string, max string) (result int64, err error) {
+	return this.client.ZLexCount(key, min, max)
+}
+func (this *Redis) ZRange(valuetype reflect.Type, key string, start int64, stop int64) (result []interface{}, err error) {
+	return this.client.ZRange(valuetype, key, start, stop)
+}
+func (this *Redis) ZRangeByLex(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error) {
+	return this.client.ZRangeByLex(valuetype, key, opt)
+}
+func (this *Redis) ZRangeByScore(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error) {
+	return this.client.ZRangeByScore(valuetype, key, opt)
+}
+func (this *Redis) ZRank(key string, member string) (result int64, err error) {
+	return this.client.ZRank(key, member)
+}
+func (this *Redis) ZRem(key string, members ...interface{}) (result int64, err error) {
+	return this.client.ZRem(key, members...)
+}
+func (this *Redis) ZRemRangeByLex(key string, min string, max string) (result int64, err error) {
+	return this.client.ZRemRangeByLex(key, min, max)
+}
+func (this *Redis) ZRemRangeByRank(key string, start int64, stop int64) (result int64, err error) {
+	return this.client.ZRemRangeByRank(key, start, stop)
+}
+func (this *Redis) ZRemRangeByScore(key string, min string, max string) (result int64, err error) {
+	return this.client.ZRemRangeByScore(key, min, max)
+}
+func (this *Redis) ZRevRange(valuetype reflect.Type, key string, start int64, stop int64) (result []interface{}, err error) {
+	return this.client.ZRevRange(valuetype, key, start, stop)
+}
+func (this *Redis) ZRevRangeByScore(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error) {
+	return this.client.ZRevRangeByScore(valuetype, key, opt)
+}
+func (this *Redis) ZRevRank(key string, member string) (result int64, err error) {
+	return this.client.ZRevRank(key, member)
+}
+func (this *Redis) ZScore(key string, member string) (result float64, err error) {
+	return this.client.ZScore(key, member)
+}
+func (this *Redis) ZUnionStore(dest string, store *redis.ZStore) (result int64, err error) {
+	return this.client.ZUnionStore(dest, store)
+}
+func (this *Redis) ZScan(key string, _cursor uint64, match string, count int64) (keys []string, cursor uint64, err error) {
+	return this.client.ZScan(key, _cursor, match, count)
+}
