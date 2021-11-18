@@ -99,6 +99,7 @@ func (this *Nacos_Registry) Start() (err error) {
 	go this.run(ctx1)
 	ctx2, _ := context.WithCancel(this.ctx)
 	go this.listener(ctx2)
+	this.isstart = true
 	return
 }
 
