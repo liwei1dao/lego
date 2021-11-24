@@ -291,6 +291,7 @@ func (this *Nacos_Registry) registerSNode(snode *ServiceNode) (err error) {
 	// success bool
 	)
 	rpcsubscribe, _ := json.Marshal(snode.RpcSubscribe)
+	this.deregisterSNode()
 	_, err = this.client.RegisterInstance(vo.RegisterInstanceParam{
 		Ip:          snode.IP,
 		Port:        8848,
