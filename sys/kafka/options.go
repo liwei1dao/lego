@@ -40,6 +40,9 @@ type Options struct {
 	Consumer_Assignor         string                  //Consumer group partition assignment strategy (range, roundrobin, sticky)
 	Consumer_Offsets_Initial  int64                   //OffsetNewest -1 or OffsetOldest -2 默认 OffsetOldest
 	Consumer_Return_Errors    bool                    //如果启用，则在消费时发生的任何错误都将返回错误通道（默认禁用）
+	Sasl_Enable               bool                    //开启认证
+	Sasl_Mechanism            sarama.SASLMechanism    //认证方法
+	Sasl_GSSAPI               sarama.GSSAPIConfig     //认证配置
 }
 
 ///kafka启动类型
@@ -189,6 +192,27 @@ func SetConsumer_Return_Errors(v bool) Option {
 	}
 }
 
+///如果启用，则开启认证过程
+func SetSasl_Enable(v bool) Option {
+	return func(o *Options) {
+		o.Sasl_Enable = v
+	}
+}
+
+///Sasl_Enable 开启 时需要确定认证方式
+func SetSasl_Mechanism(v sarama.SASLMechanism) Option {
+	return func(o *Options) {
+		o.Sasl_Mechanism = v
+	}
+}
+
+///Sasl_Enable 开启 时需要确定认证方式
+func SetSasl_GSSAPI(v sarama.GSSAPIConfig) Option {
+	return func(o *Options) {
+		o.Sasl_GSSAPI = v
+	}
+}
+
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
 		Version:                   "2.1.1",
@@ -205,6 +229,7 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 		Net_KeepAlive:             0,
 		Consumer_Assignor:         "range",
 		Consumer_Offsets_Initial:  sarama.OffsetOldest,
+		Sasl_Enable:               false,
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
@@ -231,6 +256,7 @@ func newOptionsByOption(opts ...Option) Options {
 		Net_KeepAlive:             0,
 		Consumer_Assignor:         "range",
 		Consumer_Offsets_Initial:  sarama.OffsetOldest,
+		Sasl_Enable:               false,
 	}
 	for _, o := range opts {
 		o(&options)

@@ -32,6 +32,9 @@ func (this *Kafka) init() (err error) {
 	}
 	config.Version = version
 	config.ClientID = this.options.ClientID
+	config.Net.SASL.Enable = this.options.Sasl_Enable
+	config.Net.SASL.Mechanism = this.options.Sasl_Mechanism
+	config.Net.SASL.GSSAPI = this.options.Sasl_GSSAPI
 	config.Producer.MaxMessageBytes = this.options.Producer_MaxMessageBytes
 	config.Producer.RequiredAcks = this.options.Producer_RequiredAcks
 	config.Producer.Return.Successes = this.options.Producer_Return_Successes

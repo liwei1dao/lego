@@ -13,8 +13,8 @@ import (
 
 func Test_sys(t *testing.T) {
 	if err := OnInit(map[string]interface{}{
-		"StartType":                 Consumer,
-		"Hosts":                     []string{"172.20.27.126:9092", "172.20.27.127:9092", " 172.20.27.128:9092"},
+		"StartType":                 Asyncproducer,
+		"Hosts":                     []string{"172.20.27.148:9092", "172.20.27.149:9092", "172.20.27.150:9092"},
 		"Topics":                    []string{"ETL-IN-CX20211013641233861142316500871138900239"},
 		"GroupId":                   "liwei3dao",
 		"ClientID":                  "test",
@@ -24,7 +24,17 @@ func Test_sys(t *testing.T) {
 		"Producer_Compression":      sarama.CompressionGZIP,
 		"Producer_CompressionLevel": 1,
 		"Producer_Retry_Max":        3,
-	}); err != nil {
+		"Sasl_Enable":               true,
+		"Sasl_Mechanism":            sarama.SASLTypeGSSAPI,
+	}, SetSasl_GSSAPI(sarama.GSSAPIConfig{
+		AuthType:           sarama.KRB5_USER_AUTH,
+		Realm:              "TUJL.COM",
+		ServiceName:        "kafka",
+		Username:           "kafka/sjzt-wuhan-11@TUJL.COM",
+		Password:           "IDSS",
+		KerberosConfigPath: "./krb5.conf",
+		DisablePAFXFAST:    true,
+	})); err != nil {
 		fmt.Printf("start sys err:%v", err)
 	} else {
 		fmt.Printf("start sys succ")
