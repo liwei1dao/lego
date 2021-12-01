@@ -14,7 +14,7 @@ import (
 func Test_sys(t *testing.T) {
 	if err := OnInit(map[string]interface{}{
 		"StartType":                 Asyncproducer,
-		"Hosts":                     []string{"172.20.27.148:9092", "172.20.27.149:9092", "172.20.27.150:9092"},
+		"Hosts":                     []string{"172.20.27.150:9092"},
 		"Topics":                    []string{"ETL-IN-CX20211013641233861142316500871138900239"},
 		"GroupId":                   "liwei3dao",
 		"ClientID":                  "test",
@@ -27,21 +27,17 @@ func Test_sys(t *testing.T) {
 		"Sasl_Enable":               true,
 		"Sasl_Mechanism":            sarama.SASLTypeGSSAPI,
 	}, SetSasl_GSSAPI(sarama.GSSAPIConfig{
-		AuthType:           sarama.KRB5_USER_AUTH,
+		AuthType:           sarama.KRB5_KEYTAB_AUTH,
 		Realm:              "TUJL.COM",
 		ServiceName:        "kafka",
-		Username:           "kafka/sjzt-wuhan-11@TUJL.COM",
-		Password:           "IDSS",
+		Username:           "kafka",
+		KeyTabPath:         "./sjzt-wuhan-13.keytab",
 		KerberosConfigPath: "./krb5.conf",
 		DisablePAFXFAST:    true,
 	})); err != nil {
 		fmt.Printf("start sys err:%v", err)
 	} else {
 		fmt.Printf("start sys succ")
-		// Syncproducer_SendMessage(&sarama.ProducerMessage{
-		// 	Topic: "send",
-		// 	Value: sarama.StringEncoder("asdasd"),
-		// })
 	}
 }
 
