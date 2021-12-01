@@ -14,7 +14,7 @@ import (
 func Test_sys(t *testing.T) {
 	if err := OnInit(map[string]interface{}{
 		"StartType":                 Asyncproducer,
-		"Hosts":                     []string{"172.20.27.150:9092"},
+		"Hosts":                     []string{"sjzt-wuhan-13:9092"},
 		"Topics":                    []string{"ETL-IN-CX20211013641233861142316500871138900239"},
 		"GroupId":                   "liwei3dao",
 		"ClientID":                  "test",
@@ -30,7 +30,7 @@ func Test_sys(t *testing.T) {
 		AuthType:           sarama.KRB5_KEYTAB_AUTH,
 		Realm:              "TUJL.COM",
 		ServiceName:        "kafka",
-		Username:           "kafka",
+		Username:           "kafka/sjzt-wuhan-13",
 		KeyTabPath:         "./sjzt-wuhan-13.keytab",
 		KerberosConfigPath: "./krb5.conf",
 		DisablePAFXFAST:    true,
