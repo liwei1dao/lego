@@ -36,6 +36,11 @@ func (this *Sql) Query(query string, args ...interface{}) (data *sql.Rows, err e
 	return
 }
 
+func (this *Sql) Exec(query string, args ...interface{}) (data sql.Result, err error) {
+	data, err = this.db.Exec(query, args...)
+	return
+}
+
 func (this *Sql) QueryContext(query string, args ...interface{}) (data *sql.Rows, err error) {
 	data, err = this.db.QueryContext(this.getContext(), query, args...)
 	return

@@ -9,6 +9,7 @@ import (
 type (
 	ISys interface {
 		Close() error
+		Exec(query string, args ...interface{}) (data sql.Result, err error)
 		Query(query string, args ...interface{}) (data *sql.Rows, err error)
 		ExecContext(query string, args ...interface{}) (data sql.Result, err error)
 		QueryContext(query string, args ...interface{}) (data *sql.Rows, err error)
@@ -36,6 +37,11 @@ func NewSys(option ...Option) (sys ISys, err error) {
 func Close() error {
 	return defsys.Close()
 }
+
+func Exec(query string, args ...interface{}) (data sql.Result, err error) {
+	return defsys.Exec(query, args...)
+}
+
 func Query(query string, args ...interface{}) (data *sql.Rows, err error) {
 	return defsys.Query(query, args...)
 }
