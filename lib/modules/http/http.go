@@ -59,9 +59,6 @@ func (this *Http) Init(service core.IService, module core.IModule, options core.
 		Addr:    fmt.Sprintf("0.0.0.0:%d", this.options.GetListenPort()),
 		Handler: this,
 	}
-	if this.options.GetCors() { //配置跨域
-		this.Use(handlerCors())
-	}
 	return
 }
 func (this *Http) Start() (err error) {
@@ -86,6 +83,10 @@ func (this *Http) starthttp() {
 	}
 	if err != nil {
 		log.Errorf("启动http服务错误%s", err)
+	} else {
+		if this.options.GetCors() { //配置跨域
+			this.Use(handlerCors())
+		}
 	}
 	this.wg.Done()
 }
