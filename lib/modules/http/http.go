@@ -39,6 +39,9 @@ func (this *Http) NewOptions() (options core.IModuleOptions) {
 }
 
 func (this *Http) Init(service core.IService, module core.IModule, options core.IModuleOptions) (err error) {
+	if err = this.ModuleBase.Init(service, module, options); err != nil {
+		return
+	}
 	this.service = service
 	this.options = options.(IOptions)
 	this.RouterGroup = RouterGroup{
@@ -52,13 +55,12 @@ func (this *Http) Init(service core.IService, module core.IModule, options core.
 	this.pool.New = func() interface{} {
 		return this.allocateContext()
 	}
-
 	this.http = &http.Server{
 		Addr:    fmt.Sprintf("0.0.0.0:%d", this.options.GetListenPort()),
 		Handler: this,
 	}
-	if err = this.ModuleBase.Init(service, module, options); err != nil {
-		return
+	if this.options.GetCors() { //配置跨域
+		this.Use(handlerCors())
 	}
 	return
 }
