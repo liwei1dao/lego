@@ -39,9 +39,6 @@ func (this *Http) NewOptions() (options core.IModuleOptions) {
 }
 
 func (this *Http) Init(service core.IService, module core.IModule, options core.IModuleOptions) (err error) {
-	if err = this.ModuleBase.Init(service, module, options); err != nil {
-		return
-	}
 	this.service = service
 	this.options = options.(IOptions)
 	this.RouterGroup = RouterGroup{
@@ -58,6 +55,12 @@ func (this *Http) Init(service core.IService, module core.IModule, options core.
 	this.http = &http.Server{
 		Addr:    fmt.Sprintf("0.0.0.0:%d", this.options.GetListenPort()),
 		Handler: this,
+	}
+	if this.options.GetCors() { //配置跨域
+		this.Use(handlerCors())
+	}
+	if err = this.ModuleBase.Init(service, module, options); err != nil {
+		return
 	}
 	return
 }
@@ -83,10 +86,6 @@ func (this *Http) starthttp() {
 	}
 	if err != nil {
 		log.Errorf("启动http服务错误%s", err)
-	} else {
-		if this.options.GetCors() { //配置跨域
-			this.Use(handlerCors())
-		}
 	}
 	this.wg.Done()
 }
