@@ -26,6 +26,7 @@ func NewSys(RedisUrl, RedisPassword string, RedisDB, PoolSize int, timeOut time.
 		Encode:  encode,
 		Decode:  decode,
 	}
+	_, err = sys.Ping()
 	return
 }
 
@@ -42,6 +43,11 @@ func (this *Redis) getContext() (ctx context.Context) {
 }
 func (this *Redis) Close() (err error) {
 	return this.client.Close()
+}
+
+/// Ping
+func (this *Redis) Ping() (string, error) {
+	return this.client.Ping(this.getContext()).Result()
 }
 
 /// 命令接口
