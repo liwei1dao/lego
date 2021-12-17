@@ -21,7 +21,6 @@ func NewKafkaClient(serviceId string, kafkahost []string, pushrpcId, receiveId s
 		kafka.SetClientID(serviceId),
 		kafka.SetHosts(kafkahost),
 		kafka.SetTopics([]string{receiveId}),
-		kafka.SetGroupId(serviceId+"_client"),
 		kafka.SetConsumer_Offsets_Initial(-1),
 	); err != nil {
 		err = fmt.Errorf("RPC NewKafkaClient kafka.NewSys err:%v", err)
