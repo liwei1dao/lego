@@ -30,6 +30,7 @@ func newConsumerGroup(brokers []string, group string, topics []string, config *s
 		messages: make(chan *sarama.ConsumerMessage, 10),
 	}
 	go kcgroup.run()
+
 	<-kcgroup.ready // Await till the consumer has been set up
 	return
 }
@@ -46,6 +47,10 @@ type KafkaConsumerGroup struct {
 
 func (this *KafkaConsumerGroup) Consumer_Messages() <-chan *sarama.ConsumerMessage {
 	return this.messages
+}
+
+func (this *KafkaConsumerGroup) Consumer_Errors() <-chan error {
+	return this.cgroup.Errors()
 }
 
 func (this *KafkaConsumerGroup) Consumer_Close() (err error) {
@@ -84,12 +89,12 @@ func (this *KafkaConsumerGroup) Cleanup(sarama.ConsumerGroupSession) error {
 
 // ConsumeClaim must start a consumer loop of ConsumerGroupClaim's Messages().
 func (this *KafkaConsumerGroup) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
-	// log.Debugf("Sarama consumer ConsumeClaim%s...1", session.MemberID())
+	// fmt.Printf("Sarama consumer ConsumeClaim%s...1\n", session.MemberID())
 	for message := range claim.Messages() {
 		// log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
 		this.messages <- message
 		session.MarkMessage(message, "")
 	}
-	// log.Debugf("Sarama consumer ConsumeClaim%s...2", session.MemberID())
+	// fmt.Printf("Sarama consumer ConsumeClaim%s...2", session.MemberID())
 	return nil
 }

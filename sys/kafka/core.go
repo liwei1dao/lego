@@ -15,6 +15,7 @@ type (
 		Asyncproducer_AsyncClose()
 		Asyncproducer_Close() error
 		Consumer_Messages() <-chan *sarama.ConsumerMessage
+		Consumer_Errors() <-chan error
 		Consumer_Close() error
 		Close() (err error)
 	}
@@ -67,7 +68,9 @@ func Asyncproducer_Close() error {
 func Consumer_Messages() <-chan *sarama.ConsumerMessage {
 	return defsys.Consumer_Messages()
 }
-
+func Consumer_Errors() <-chan error {
+	return defsys.Consumer_Errors()
+}
 func Consumer_Close() error {
 	return defsys.Consumer_Close()
 }

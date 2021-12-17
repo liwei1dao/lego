@@ -48,6 +48,7 @@ func (this *Kafka) init() (err error) {
 	config.Net.WriteTimeout = this.options.Net_WriteTimeout
 	config.Net.KeepAlive = this.options.Net_KeepAlive
 	config.Consumer.Offsets.Initial = this.options.Consumer_Offsets_Initial
+	config.Consumer.Return.Errors = this.options.Consumer_Return_Errors
 	switch this.options.Consumer_Assignor {
 	case "sticky":
 		config.Consumer.Group.Rebalance.Strategy = sarama.BalanceStrategySticky
@@ -103,6 +104,10 @@ func (this *Kafka) Asyncproducer_Close() error {
 }
 func (this *Kafka) Consumer_Messages() <-chan *sarama.ConsumerMessage {
 	return this.consumerGroup.Consumer_Messages()
+}
+
+func (this *Kafka) Consumer_Errors() <-chan error {
+	return this.consumerGroup.Consumer_Errors()
 }
 func (this *Kafka) Consumer_Close() (err error) {
 	return this.consumerGroup.Consumer_Close()
