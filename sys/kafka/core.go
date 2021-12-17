@@ -5,6 +5,11 @@ import (
 )
 
 type (
+	IConsumer interface {
+		Consumer_Messages() <-chan *sarama.ConsumerMessage
+		Consumer_Errors() <-chan error
+		Consumer_Close() error
+	}
 	IKafka interface {
 		Syncproducer_SendMessage(msg *sarama.ProducerMessage) (partition int32, offset int64, err error)
 		Syncproducer_SendMessages(msgs []*sarama.ProducerMessage) error

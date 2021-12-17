@@ -17,7 +17,7 @@ type Kafka struct {
 	options       Options
 	syncproducer  sarama.SyncProducer
 	asyncproducer sarama.AsyncProducer
-	consumerGroup *KafkaConsumerGroup
+	consumer      IConsumer
 }
 
 func (this *Kafka) init() (err error) {
@@ -71,8 +71,14 @@ func (this *Kafka) init() (err error) {
 		}
 	}
 	if this.options.StartType == Consumer || this.options.StartType == All || this.options.StartType == SyncproducerAndConsumer || this.options.StartType == AsyncproducerAndConsumer {
-		if this.consumerGroup, err = newConsumerGroup(this.options.Hosts, this.options.GroupId, this.options.Topics, config); err != nil {
-			return
+		if this.options.GroupId != "" {
+			if this.consumer, err = newConsumerGroup(this.options.Hosts, this.options.GroupId, this.options.Topics, config); err != nil {
+				return
+			}
+		} else {
+			if this.consumer, err = newConsumer(this.options.Hosts, this.options.Topics[0], config); err != nil {
+				return
+			}
 		}
 	}
 	return
@@ -103,14 +109,14 @@ func (this *Kafka) Asyncproducer_Close() error {
 	return this.asyncproducer.Close()
 }
 func (this *Kafka) Consumer_Messages() <-chan *sarama.ConsumerMessage {
-	return this.consumerGroup.Consumer_Messages()
+	return this.consumer.Consumer_Messages()
 }
 
 func (this *Kafka) Consumer_Errors() <-chan error {
-	return this.consumerGroup.Consumer_Errors()
+	return this.consumer.Consumer_Errors()
 }
 func (this *Kafka) Consumer_Close() (err error) {
-	return this.consumerGroup.Consumer_Close()
+	return this.consumer.Consumer_Close()
 }
 
 func (this *Kafka) Close() (err error) {
@@ -120,8 +126,8 @@ func (this *Kafka) Close() (err error) {
 	if this.asyncproducer != nil {
 		err = this.asyncproducer.Close()
 	}
-	if this.consumerGroup != nil {
-		err = this.consumerGroup.Consumer_Close()
+	if this.consumer != nil {
+		err = this.consumer.Consumer_Close()
 	}
 	return
 }

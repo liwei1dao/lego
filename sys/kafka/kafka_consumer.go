@@ -1,6 +1,7 @@
 package kafka
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/Shopify/sarama"
@@ -11,6 +12,7 @@ func newConsumer(brokers []string, topic string, config *sarama.Config) (consume
 	consumer = &KafkaConsumer{
 		topic:    topic,
 		messages: make(chan *sarama.ConsumerMessage, 10),
+		errors:   make(chan error, 0),
 	}
 	//创建消费者
 	consumer.consumer, err = sarama.NewConsumer(brokers, config)
@@ -34,16 +36,20 @@ type KafkaConsumer struct {
 	topic         string
 	partitionList []int32
 	messages      chan *sarama.ConsumerMessage
+	errors        chan error
 }
 
 func (this *KafkaConsumer) Consumer_Messages() <-chan *sarama.ConsumerMessage {
 	return this.messages
 }
-
+func (this *KafkaConsumer) Consumer_Errors() <-chan error {
+	return this.errors
+}
 func (this *KafkaConsumer) Consumer_Close() (err error) {
 	err = this.consumer.Close()
 	this.wg.Wait()
 	close(this.messages)
+	close(this.errors)
 	return
 }
 
@@ -58,7 +64,7 @@ func (this *KafkaConsumer) run() {
 		}
 		defer pc.AsyncClose()
 		// 异步从每个分区消费信息
-		this.wg.Add(1) //+1
+		this.wg.Add(2) //+1
 		go func(sarama.PartitionConsumer) {
 			defer this.wg.Done() //-1
 			for msg := range pc.Messages() {
@@ -66,6 +72,14 @@ func (this *KafkaConsumer) run() {
 				this.messages <- msg
 			}
 		}(pc)
+		go func(sarama.PartitionConsumer) {
+			defer this.wg.Done() //-1
+			for err := range pc.Errors() {
+				//fmt.Printf("Partition:%d Offset:%d Key:%v Value:%s\n", msg.Partition, msg.Offset, msg.Key, msg.Value)
+				this.errors <- fmt.Errorf("Topic:%s Partition:%d err:%v", err.Topic, err.Partition, err.Err)
+			}
+		}(pc)
+
 	}
 	this.wg.Wait() //
 }
