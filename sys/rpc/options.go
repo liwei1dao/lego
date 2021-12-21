@@ -6,14 +6,15 @@ import (
 
 type Option func(*Options)
 type Options struct {
-	RPCConnType  RPCConnType
-	Listener     RPCListener
-	ClusterTag   string
-	ServiceId    string
-	MaxCoroutine int
-	RpcExpired   int
-	Nats_Addr    string
-	Kafka_Host   []string
+	RPCConnType   RPCConnType
+	Listener      RPCListener
+	ClusterTag    string
+	ServiceId     string
+	MaxCoroutine  int
+	RpcExpired    int
+	Nats_Addr     string
+	Kafka_Host    []string
+	Kafka_Version string
 }
 
 func SetClusterTag(v string) Option {
@@ -28,9 +29,10 @@ func SetServiceId(v string) Option {
 }
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
-		RPCConnType:  Nats,
-		MaxCoroutine: 2000,
-		RpcExpired:   5,
+		RPCConnType:   Nats,
+		MaxCoroutine:  2000,
+		RpcExpired:    5,
+		Kafka_Version: "1.0.0",
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
@@ -42,7 +44,12 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 }
 
 func newOptionsByOption(opts ...Option) Options {
-	options := Options{}
+	options := Options{
+		RPCConnType:   Nats,
+		MaxCoroutine:  2000,
+		RpcExpired:    5,
+		Kafka_Version: "1.0.0",
+	}
 	for _, o := range opts {
 		o(&options)
 	}

@@ -12,11 +12,12 @@ import (
 	"github.com/liwei1dao/lego/utils/container"
 )
 
-func NewKafkaClient(serviceId string, kafkahost []string, pushrpcId, receiveId string) (kafkaClient *KafkaClient, err error) {
+func NewKafkaClient(serviceId string, kafkaversion string, kafkahost []string, pushrpcId, receiveId string) (kafkaClient *KafkaClient, err error) {
 	var (
 		kfk kafka.IKafka
 	)
 	if kfk, err = kafka.NewSys(
+		kafka.SetVersion(kafkaversion),
 		kafka.SetStartType(kafka.AsyncproducerAndConsumer),
 		kafka.SetClientID(serviceId),
 		kafka.SetHosts(kafkahost),

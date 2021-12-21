@@ -23,7 +23,7 @@ func newSys(options Options) (sys *RPC, err error) {
 			return
 		}
 	} else if options.RPCConnType == Kafka {
-		if c, err = conn.NewKafkaService(options.ServiceId, options.Kafka_Host, rpcId); err != nil {
+		if c, err = conn.NewKafkaService(options.ServiceId, options.Kafka_Version, options.Kafka_Host, rpcId); err != nil {
 			return
 		}
 	}
@@ -58,7 +58,7 @@ func (this *RPC) NewRpcClient(sId, rId string) (clent IRpcClient, err error) {
 			return
 		}
 	} else if this.options.RPCConnType == Kafka {
-		if c, err = conn.NewKafkaClient(this.options.ServiceId, this.options.Kafka_Host, rId, receiveId); err != nil {
+		if c, err = conn.NewKafkaClient(this.options.ServiceId, this.options.Kafka_Version, this.options.Kafka_Host, rId, receiveId); err != nil {
 			return
 		}
 	}

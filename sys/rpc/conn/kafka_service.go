@@ -11,11 +11,12 @@ import (
 	"github.com/liwei1dao/lego/sys/rpc/core"
 )
 
-func NewKafkaService(serviceId string, kafkahost []string, rpcId string) (kafkaService *KafkaService, err error) {
+func NewKafkaService(serviceId string, kafkaversion string, kafkahost []string, rpcId string) (kafkaService *KafkaService, err error) {
 	var (
 		kfk kafka.IKafka
 	)
 	if kfk, err = kafka.NewSys(
+		kafka.SetVersion(kafkaversion),
 		kafka.SetStartType(kafka.AsyncproducerAndConsumer),
 		kafka.SetHosts(kafkahost),
 		kafka.SetClientID(serviceId),
