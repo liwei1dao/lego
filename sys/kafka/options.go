@@ -242,7 +242,7 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 
 func newOptionsByOption(opts ...Option) Options {
 	options := Options{
-		Version:                   "2.1.1",
+		Version:                   "1.0.0",
 		Producer_Return_Successes: false,
 		Producer_Return_Errors:    false,
 		Producer_RequiredAcks:     sarama.NoResponse,
