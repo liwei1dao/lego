@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/liwei1dao/lego"
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
@@ -397,6 +398,7 @@ func (this *ClusterService) DefauleRpcRouteRules(stype string, sip string) (ss c
 	}
 }
 func (this *ClusterService) RpcInvokeById(sId string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error) {
+	defer lego.Recover(fmt.Sprintf("RpcInvokeById sId:%s rkey:%v iscall %v arg %v", sId, rkey, iscall, arg))
 	ss, ok := this.serverList.Load(sId)
 	if !ok {
 		if node, err := registry.GetServiceById(sId); err != nil {
@@ -425,6 +427,7 @@ func (this *ClusterService) RpcInvokeByIds(sId []string, rkey core.Rpc_Key, isca
 		lock sync.Mutex
 		wg   *sync.WaitGroup
 	)
+	defer lego.Recover(fmt.Sprintf("RpcInvokeByIds sId:%v rkey:%v iscall %v arg %v", sId, rkey, iscall, arg))
 	if ss, err = this.getServiceSessionByIds(sId); err != nil {
 		log.Errorf("未找到目标服务 ip:%s 节点 err:%v", sId, err)
 		return
@@ -455,6 +458,7 @@ func (this *ClusterService) RpcInvokeByIds(sId []string, rkey core.Rpc_Key, isca
 }
 
 func (this *ClusterService) RpcInvokeByType(sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error) {
+	defer lego.Recover(fmt.Sprintf("RpcInvokeByType sType:%s rkey:%v iscall %v arg %v", sType, rkey, iscall, arg))
 	ss, err := this.ClusterService.DefauleRpcRouteRules(sType, core.AutoIp)
 	if err != nil {
 		log.Errorf("未找到目标服务【%s】节点 err:%v", sType, err)
@@ -468,6 +472,7 @@ func (this *ClusterService) RpcInvokeByType(sType string, rkey core.Rpc_Key, isc
 	return
 }
 func (this *ClusterService) RpcInvokeByIp(sIp, sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error) {
+	defer lego.Recover(fmt.Sprintf("RpcInvokeByIp sIp:%s sType:%s rkey:%v iscall %v arg %v", sIp, sType, rkey, iscall, arg))
 	ss, err := this.ClusterService.DefauleRpcRouteRules(sType, sIp)
 	if err != nil {
 		log.Errorf("未找到目标服务 ip:%s type:%s 节点 err:%v", sIp, sType, err)
@@ -487,6 +492,7 @@ func (this *ClusterService) RpcInvokeByIps(sIp []string, sType string, rkey core
 		lock sync.Mutex
 		wg   *sync.WaitGroup
 	)
+	defer lego.Recover(fmt.Sprintf("RpcInvokeByIps sIp:%v sType:%s rkey:%v iscall %v arg %v", sIp, sType, rkey, iscall, arg))
 	if ss, err = this.getServiceSessionByIps(sType, sIp); err != nil {
 		log.Errorf("未找到目标服务 ip:%s type:%s 节点 err:%v", sIp, sType, err)
 		return
@@ -521,6 +527,7 @@ func (this *ClusterService) RpcInvokeByIps(sIp []string, sType string, rkey core
 }
 
 func (this *ClusterService) ReleaseRpc(rkey core.Rpc_Key, arg ...interface{}) {
+	defer lego.Recover(fmt.Sprintf("ReleaseRpc rkey:%v arg %v", rkey, arg))
 	rpcf := registry.GetRpcSubById(rkey)
 	for _, v := range rpcf {
 		this.RpcInvokeById(v.Id, rkey, false, arg...)
