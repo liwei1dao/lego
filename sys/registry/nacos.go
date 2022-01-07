@@ -186,7 +186,7 @@ locp:
 		case <-t.C:
 			err := this.PushServiceInfo()
 			if err != nil {
-				log.Warnf("service run Server.Register error: ", err)
+				log.Warnf("service run Server.Register error: %v", err)
 			}
 		case <-ctx.Done():
 			break locp
