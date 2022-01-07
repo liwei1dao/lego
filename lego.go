@@ -21,6 +21,7 @@ func Run(service core.IService, mod ...core.IModule) {
 		log.Panicf("服务启动失败 err=%s", err.Error())
 	}
 	service.Run(mod...)
+	log.Infof("服务【%s】关闭中")
 	err = service.Destroy()
 	if err != nil {
 		log.Panicf("服务销毁失败 err=%s", err.Error())
