@@ -26,6 +26,7 @@ func newConsumer(brokers []string, topic string, config *sarama.Config) (consume
 		log.Errorf("fail to get list of partition:err%v\n", err)
 		return
 	}
+	consumer.pc = make([]sarama.PartitionConsumer, len(consumer.partitionList))
 	go consumer.run()
 	return
 }
