@@ -140,11 +140,9 @@ func (this *ServiceBase) Close(closemsg string) {
 
 func (this *ServiceBase) Destroy() (err error) {
 	for _, v := range this.modules {
-		log.Debugf("Destroy modules:%s start", v.mi.GetType())
 		v.closeSig <- true
 		v.wg.Wait()
 		err = v.destroy()
-		log.Debugf("Destroy modules:%s end", v.mi.GetType())
 		if err != nil {
 			return
 		}
