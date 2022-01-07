@@ -102,6 +102,7 @@ func (this *KafkaClient) Call(callInfo core.CallInfo, callback chan core.ResultI
 消息请求 不需要回复
 */
 func (this *KafkaClient) CallNR(callInfo core.CallInfo) (err error) {
+	defer lego.Recover("RPC KafkaClient")
 	var (
 		body []byte
 	)

@@ -49,6 +49,7 @@ func (this *KafkaService) Stop() (err error) {
 }
 
 func (this *KafkaService) Callback(callinfo core.CallInfo) error {
+	defer lego.Recover("RPC KafkaService")
 	body, _ := this.MarshalResult(callinfo.Result)
 	reply_to := callinfo.Props["reply_to"].(string)
 	// log.Debugf("RPC KafkaService Callback reply_to:%v", reply_to)
