@@ -35,6 +35,7 @@ type KafkaConsumer struct {
 	wg            sync.WaitGroup
 	topic         string
 	partitionList []int32
+	pc            []sarama.PartitionConsumer
 	messages      chan *sarama.ConsumerMessage
 	errors        chan error
 }
@@ -47,6 +48,11 @@ func (this *KafkaConsumer) Consumer_Errors() <-chan error {
 }
 func (this *KafkaConsumer) Consumer_Close() (err error) {
 	err = this.consumer.Close()
+	for _, v := range this.pc {
+		if v != nil {
+			v.Close()
+		}
+	}
 	this.wg.Wait()
 	close(this.messages)
 	close(this.errors)
@@ -54,7 +60,7 @@ func (this *KafkaConsumer) Consumer_Close() (err error) {
 }
 
 func (this *KafkaConsumer) run() {
-	for partition := range this.partitionList {
+	for i, partition := range this.partitionList {
 		//针对每个分区创建一个对应的分区消费者
 		pc, err := this.consumer.ConsumePartition(this.topic, int32(partition), sarama.OffsetNewest)
 		//pc, err := consumer.ConsumePartition("web_log", int32(partition), 90)
@@ -62,7 +68,7 @@ func (this *KafkaConsumer) run() {
 			log.Errorf("failed to start consumer for partition %d,err:%v\n", partition, err)
 			return
 		}
-		defer pc.AsyncClose()
+		this.pc[i] = pc
 		// 异步从每个分区消费信息
 		this.wg.Add(2) //+1
 		go func(sarama.PartitionConsumer) {
