@@ -24,13 +24,13 @@ func (this *SComp_GateRouteComp) GetName() core.S_Comps {
 	return lib.SC_ServiceGateRouteComp
 }
 
-func (this *SComp_GateRouteComp) Init(service core.IService, comp core.IServiceComp) (err error) {
+func (this *SComp_GateRouteComp) Init(service core.IService, comp core.IServiceComp, options core.ICompOptions) (err error) {
 	if s, ok := service.(base.IClusterService); !ok {
 		return fmt.Errorf("SC_GateRouteComp Init service is no IClusterService")
 	} else {
 		this.Service = s
 	}
-	err = this.ServiceCompBase.Init(service, comp)
+	err = this.ServiceCompBase.Init(service, comp, options)
 	this.Routes = make(map[uint16]func(s core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string))
 	return err
 }

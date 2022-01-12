@@ -2,6 +2,7 @@
 
 import "fmt"
 
+///内置错误码 0-1000  请外部应用服务不要占用
 const (
 	ErrorCode_Success                 ErrorCode = 0  //成功
 	ErrorCode_NoFindService           ErrorCode = 10 //没有找到远程服务器

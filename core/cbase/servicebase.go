@@ -46,7 +46,11 @@ func (this *ServiceBase) Init(service core.IService) (err error) {
 	this.modules = make(map[core.M_Modules]*defaultModule)
 	this.Service.InitSys()
 	for _, v := range this.comps {
-		err = v.Init(this.Service, v)
+		options := v.NewOptions()
+		if o, ok := service.GetSettings().Comps[string(v.GetName())]; ok {
+			options.LoadConfig(o)
+		}
+		err = v.Init(this.Service, v, options)
 		if err != nil {
 			return
 		}

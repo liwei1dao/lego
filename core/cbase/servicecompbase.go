@@ -7,8 +7,11 @@ import (
 type ServiceCompBase struct {
 }
 
-func (this *ServiceCompBase) Init(service core.IService, comp core.IServiceComp) (err error) {
+func (this *ServiceCompBase) NewOptions() (options core.ICompOptions) {
+	return new(ServiceCompOptions)
+}
 
+func (this *ServiceCompBase) Init(service core.IService, comp core.IServiceComp, options core.ICompOptions) (err error) {
 	return
 }
 
