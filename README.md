@@ -1,7 +1,8 @@
 @[TOC](lego  开发框架使用)
 
 ## lego GoLang开发框架
-一直想转服务端开发,最开始一直在学C++，但是一直没找到好的框架学习资料，知道发现GoLang,而且Golang的开源社区有大量经典的开源框架值得学习，从此就一头扎进去了,参考过mqant,gorm,gin,以及lgu3d 组件模式设计思路的影响，组件形成了现在这套lego分布式微服务开发框架
+lego是一款微服务快速开发框架,框架采用容器化组件设计理念，实现业务功能的随意组合和部署，框架由四大核心快组成:Server,Module,Sys,utils 内部更是集成了诸多基础模块和使用系统，例如 网关模块(gate) Web模块(http),监控后台(console),通信系统(rpc),服务发现注册系统(registry),数据系统(redis,mgo,sql...
+
 ## lego 功能介绍
 lego 的设计之初大量参考了mqant设计理念，所以还有一部分功能设计与mqant一致，后期发现mqant的设计模式对service 对象定义的不是很清晰,所以我后面引入了service + module 的设计方式，后期受到gorm的插件设计形成了sys功能库
 1. servic 服务对象，进程的主要载体,可以挂在service-component(服务组件),module(功能模块),服务可以根据自己的业务需求挂在相应的服务组件以及业务模块同时可以启动相应的系统

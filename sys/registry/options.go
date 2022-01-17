@@ -94,7 +94,7 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 		Consul_RegisterTTL:      15,
 		Nacos_TimeoutMs:         10000,
 		Nacos_BeatInterval:      5000,
-		Nacos_RegisterTTL:       3,
+		Nacos_RegisterTTL:       8,
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
