@@ -349,7 +349,7 @@ func (this *Nacos_Registry) addandupdataServiceNode(as model.Instance) (sn *Serv
 	if h, err = hash.Hash(snode, nil); err == nil {
 		_, ok := this.services[snode.Id]
 		if !ok {
-			log.Infof("发现新的服务【%s】", snode.Id)
+			log.Infof("发现新的服务【%s:%s】", snode.Id, snode.Version)
 			sub := &vo.SubscribeParam{
 				ServiceName:       snode.Id,
 				GroupName:         snode.Tag,

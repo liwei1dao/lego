@@ -262,7 +262,7 @@ func (this *Consul_Registry) addandupdataServiceNode(as *api.AgentService) (sn *
 	if h, err := hash.Hash(snode, nil); err == nil {
 		_, ok := this.services[snode.Id]
 		if !ok {
-			log.Infof("发现新的服务【%s】", snode.Id)
+			log.Infof("发现新的服务【%s:%s】", snode.Id, snode.Version)
 			this.rlock.Lock()
 			this.services[snode.Id] = snode
 			this.shash[snode.Id] = h

@@ -11,7 +11,6 @@ import (
 func Run(service core.IService, mod ...core.IModule) {
 	cpuNum := runtime.NumCPU() //获得当前设备的cpu核心数
 	runtime.GOMAXPROCS(cpuNum) //设置需要用到的cpu数量
-
 	err := service.Init(service)
 	if err != nil {
 		log.Panicf("服务初始化失败 err=%s", err.Error())

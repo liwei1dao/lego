@@ -77,7 +77,7 @@ func (this *ServiceBase) Start() (err error) {
 			return
 		}
 	}
-	log.Infof("服务[%s] 启动完成!", this.Service.GetId())
+	log.Infof("服务[%s:%s] 启动完成!", this.Service.GetId(), this.Service.GetVersion())
 	return
 }
 
