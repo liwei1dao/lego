@@ -13,6 +13,7 @@ type Option func(*Options)
 
 type Options struct {
 	ConfPath string
+	Version  string //服务版本
 	Setting  core.ServiceSttings
 }
 
@@ -22,11 +23,17 @@ func SetConfPath(v string) Option {
 	}
 }
 
-func SetSetting(v core.ServiceSttings) Option {
+func SetVersion(v string) Option {
 	return func(o *Options) {
-		o.Setting = v
+		o.Version = v
 	}
 }
+
+// func SetSetting(v core.ServiceSttings) Option {
+// 	return func(o *Options) {
+// 		o.Setting = v
+// 	}
+// }
 
 func newOptions(option ...Option) *Options {
 	options := &Options{

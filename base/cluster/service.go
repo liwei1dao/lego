@@ -16,6 +16,7 @@ import (
 	"github.com/liwei1dao/lego/sys/registry"
 	"github.com/liwei1dao/lego/sys/rpc"
 	"github.com/liwei1dao/lego/utils"
+	"github.com/liwei1dao/lego/utils/version"
 )
 
 type ClusterService struct {
@@ -44,8 +45,8 @@ func (this *ClusterService) GetCategory() core.S_Category {
 	return this.opts.Setting.Category
 }
 
-func (this *ClusterService) GetVersion() float32 {
-	return this.opts.Setting.Version
+func (this *ClusterService) GetVersion() string {
+	return this.opts.Version
 }
 func (this *ClusterService) GetSettings() core.ServiceSttings {
 	return this.opts.Setting
@@ -382,9 +383,9 @@ func (this *ClusterService) DefauleRpcRouteRules(stype string, sip string) (ss c
 			utils.Sort(ss, func(a interface{}, b interface{}) int8 {
 				as := a.(core.IServiceSession)
 				bs := b.(core.IServiceSession)
-				if as.GetVersion() > bs.GetVersion() {
-					return 1
-				} else if as.GetVersion() == bs.GetVersion() {
+				if iscompare := version.CompareStrVer(as.GetVersion(), bs.GetVersion()); iscompare != 0 {
+					return iscompare
+				} else {
 					if as.GetPreWeight() < bs.GetPreWeight() {
 						return 1
 					} else if as.GetPreWeight() > bs.GetPreWeight() {
@@ -392,8 +393,6 @@ func (this *ClusterService) DefauleRpcRouteRules(stype string, sip string) (ss c
 					} else {
 						return 0
 					}
-				} else {
-					return -1
 				}
 			})
 			return ss[0].(core.IServiceSession), nil

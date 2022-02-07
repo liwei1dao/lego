@@ -32,10 +32,10 @@ func (this *ServiceSession) GetRpcId() string {
 func (this *ServiceSession) GetType() string {
 	return this.node.Type
 }
-func (this *ServiceSession) GetVersion() float32 {
+func (this *ServiceSession) GetVersion() string {
 	return this.node.Version
 }
-func (this *ServiceSession) SetVersion(v float32) {
+func (this *ServiceSession) SetVersion(v string) {
 	this.node.Version = v
 }
 

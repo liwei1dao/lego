@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
 
@@ -324,13 +323,13 @@ func (this *Nacos_Registry) deregisterSNode() (err error) {
 }
 func (this *Nacos_Registry) addandupdataServiceNode(as model.Instance) (sn *ServiceNode, err error) {
 	var (
-		version float64
+		version string
 		rpcid   string
 		snode   *ServiceNode
 		h       uint64
+		ok      bool
 	)
-	version, err = strconv.ParseFloat(as.Metadata["version"], 32)
-	if err != nil {
+	if version, ok = as.Metadata["version"]; ok {
 		log.Errorf("registry 读取服务节点异常:%s err:%v", as.Metadata["version"], err)
 		return
 	}
@@ -341,7 +340,7 @@ func (this *Nacos_Registry) addandupdataServiceNode(as model.Instance) (sn *Serv
 		Category:     core.S_Category(as.Metadata["category"]),
 		Id:           as.Metadata["id"],
 		IP:           as.Ip,
-		Version:      float32(version),
+		Version:      version,
 		RpcId:        rpcid,
 		PreWeight:    as.Weight,
 		RpcSubscribe: make([]core.Rpc_Key, 0),

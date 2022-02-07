@@ -235,14 +235,11 @@ func (this *Consul_Registry) getRpcInfo() (rfs []core.Rpc_Key) {
 	return
 }
 func (this *Consul_Registry) addandupdataServiceNode(as *api.AgentService) (sn *ServiceNode, err error) {
+
 	tag := as.Meta["tag"]
 	ip := as.Meta["ip"]
 	category := as.Meta["category"]
-	version, err := strconv.ParseFloat(as.Meta["version"], 32)
-	if err != nil {
-		log.Errorf("registry 读取服务节点异常:%s", as.Meta["version"])
-		return
-	}
+	version := as.Meta["version"]
 	rpcid := as.Meta["rpcid"]
 	preweight, err := strconv.ParseFloat(as.Meta["preweight"], 64)
 	if err != nil {
@@ -256,7 +253,7 @@ func (this *Consul_Registry) addandupdataServiceNode(as *api.AgentService) (sn *
 		Category:     core.S_Category(category),
 		Id:           as.ID,
 		IP:           ip,
-		Version:      float32(version),
+		Version:      version,
 		RpcId:        rpcid,
 		PreWeight:    preweight,
 		RpcSubscribe: make([]core.Rpc_Key, 0),

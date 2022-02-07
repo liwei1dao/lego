@@ -12,6 +12,7 @@ type Option func(*Options)
 
 type Options struct {
 	ConfPath string
+	Version  string //服务版本
 	Setting  core.ServiceSttings
 }
 
