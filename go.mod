@@ -44,6 +44,7 @@ require (
 	github.com/rs/xid v1.3.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/shirou/gopsutil v3.20.12+incompatible
+	github.com/tjfoc/gmsm v1.4.1
 	github.com/wolfogre/go-pprof-practice v0.0.0-20190402114113-8ce266a210ee
 	go.mongodb.org/mongo-driver v1.4.6
 	go.uber.org/zap v1.16.0
