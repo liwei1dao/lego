@@ -327,12 +327,8 @@ func (this *Nacos_Registry) addandupdataServiceNode(as model.Instance) (sn *Serv
 		rpcid   string
 		snode   *ServiceNode
 		h       uint64
-		ok      bool
 	)
-	if version, ok = as.Metadata["version"]; ok {
-		log.Errorf("registry 读取服务节点异常:%s err:%v", as.Metadata["version"], err)
-		return
-	}
+	version = as.Metadata["version"]
 	rpcid = as.Metadata["rpcid"]
 	snode = &ServiceNode{
 		Tag:          as.Metadata["tag"],
