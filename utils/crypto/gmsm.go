@@ -7,6 +7,7 @@ import (
 	"github.com/tjfoc/gmsm/sm2"
 	"github.com/tjfoc/gmsm/sm3"
 	"github.com/tjfoc/gmsm/sm4"
+	"github.com/tjfoc/gmsm/x509"
 )
 
 ///生成密钥对
@@ -14,41 +15,25 @@ func GenerateKey(key string) (*sm2.PrivateKey, error) {
 	return sm2.GenerateKey(bytes.NewBufferString(key))
 }
 
+///读取私钥
+func ReadPrivateKeyFromPem(privateKeyPem []byte, pwd []byte) (*sm2.PrivateKey, error) {
+	return x509.ReadPrivateKeyFromPem(privateKeyPem, pwd)
+}
+
+///读取私钥
+func ReadPublicKeyFromPem(privateKeyPem []byte) (*sm2.PublicKey, error) {
+	return x509.ReadPublicKeyFromPem(privateKeyPem)
+}
+
 ///国密—SM2-加密
-func GM_SM2_Encry(origData, key string) (ciphertext string, err error) {
-	var (
-		priv      *sm2.PrivateKey
-		pub       *sm2.PublicKey
-		msg       []byte
-		ciphertxt []byte
-	)
-	if priv, err = GenerateKey(key); err != nil {
-		return
-	}
-	msg = []byte(origData)
-	pub = &priv.PublicKey
-	if ciphertxt, err = pub.EncryptAsn1(msg, rand.Reader); err != nil { //sm2加密
-		return
-	}
-	ciphertext = string(ciphertxt)
+func GM_SM2_Encry(origData []byte, pub *sm2.PublicKey) (ciphertext []byte, err error) {
+	ciphertext, err = pub.EncryptAsn1(origData, rand.Reader)
 	return
 }
 
 ///国密—SM2-解密
-func GM_SM2_Decry(ciphertext, key string) (origData string, err error) {
-	var (
-		priv    *sm2.PrivateKey
-		msg     []byte
-		origtxt []byte
-	)
-	if priv, err = sm2.GenerateKey(bytes.NewBufferString(key)); err != nil {
-		return
-	}
-	msg = []byte(ciphertext)
-	if origtxt, err = priv.DecryptAsn1(msg); err != nil {
-		return
-	}
-	origData = string(origtxt)
+func GM_SM2_Decry(ciphertext []byte, priv *sm2.PrivateKey) (origData []byte, err error) {
+	origData, err = priv.DecryptAsn1(ciphertext)
 	return
 }
 

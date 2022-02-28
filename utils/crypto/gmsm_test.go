@@ -3,16 +3,34 @@ package crypto
 import (
 	"fmt"
 	"testing"
+
+	"github.com/tjfoc/gmsm/sm2"
+	"github.com/tjfoc/gmsm/x509"
 )
 
 func Test_GM_SM2_Encry(t *testing.T) {
-	origData, err := GM_SM2_Encry("token", "123456781234567812345678")
-	fmt.Printf("origData:%s err:%v", origData, err)
+	priv, err := sm2.GenerateKey(nil) // 生成密钥对
+	if err != nil {
+		t.Fatal(err)
+	}
+	privPem, err := x509.WritePrivateKeyToPem(priv, nil) // 生成密钥文件
+	if err != nil {
+		t.Fatal(err)
+	}
+	pubKey, _ := priv.Public().(*sm2.PublicKey)
+	pubkeyPem, err := x509.WritePublicKeyToPem(pubKey) // 生成公钥文件
+	_, err = x509.ReadPrivateKeyFromPem(privPem, nil)  // 读取密钥
+	if err != nil {
+		t.Fatal(err)
+	}
+	pubKey, err = x509.ReadPublicKeyFromPem(pubkeyPem) // 读取公钥
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func Test_GM_SM2_Decry(t *testing.T) {
-	origData, err := GM_SM2_Decry("token", "123456781234567812345678")
-	fmt.Printf("origData:%s err:%v", origData, err)
+
 }
 
 func Test_GM_SM2_Sign(t *testing.T) {
