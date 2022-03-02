@@ -2,11 +2,11 @@ package cluster
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/utils/ip"
-
-	"github.com/BurntSushi/toml"
+	"gopkg.in/yaml.v2"
 )
 
 type Option func(*Options)
@@ -43,7 +43,11 @@ func newOptions(option ...Option) *Options {
 		o(options)
 	}
 	// confpath := fmt.Sprintf("conf/%s.toml", options.Id)
-	_, err := toml.DecodeFile(options.ConfPath, &options.Setting)
+	yamlFile, err := ioutil.ReadFile(options.ConfPath)
+	if err != nil {
+		panic(fmt.Sprintf("读取服务配置【%s】文件失败err:%v:", options.ConfPath, err))
+	}
+	err = yaml.Unmarshal(yamlFile, &options.Setting)
 	if err != nil {
 		panic(fmt.Sprintf("读取服务配置【%s】文件失败err:%v:", options.ConfPath, err))
 	}

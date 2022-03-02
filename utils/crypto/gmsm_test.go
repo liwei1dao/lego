@@ -1,6 +1,7 @@
 package crypto
 
 import (
+	"crypto/rand"
 	"fmt"
 	"testing"
 
@@ -16,16 +17,37 @@ func Test_GM_SM2_Encry(t *testing.T) {
 	privPem, err := x509.WritePrivateKeyToPem(priv, nil) // 生成密钥文件
 	if err != nil {
 		t.Fatal(err)
+	} else {
+		fmt.Printf("privPem:%s\n", string(privPem))
 	}
 	pubKey, _ := priv.Public().(*sm2.PublicKey)
 	pubkeyPem, err := x509.WritePublicKeyToPem(pubKey) // 生成公钥文件
 	_, err = x509.ReadPrivateKeyFromPem(privPem, nil)  // 读取密钥
 	if err != nil {
 		t.Fatal(err)
+	} else {
+		fmt.Printf("pubkeyPem:%s\n", string(pubkeyPem))
 	}
 	pubKey, err = x509.ReadPublicKeyFromPem(pubkeyPem) // 读取公钥
 	if err != nil {
 		t.Fatal(err)
+	}
+	cipher, err := pubKey.EncryptAsn1([]byte(
+		`liwei1dao
+		liwei2dao
+		liwei3dao
+		liwei4dao`), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	} else {
+		fmt.Printf("cipher:%s\n", string(cipher))
+	}
+
+	origData, err := priv.DecryptAsn1(cipher)
+	if err != nil {
+		t.Fatal(err)
+	} else {
+		fmt.Printf("origData:%s\n", string(origData))
 	}
 }
 
