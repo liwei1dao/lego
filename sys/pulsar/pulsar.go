@@ -63,7 +63,7 @@ func (this *Pulsar) init() (err error) {
 func (this *Pulsar) Producer_Errors() <-chan *ProducerError {
 	return this.errors
 }
-func (this *Pulsar) Producer_SendAsync() <-chan *pulsar.ProducerMessage {
+func (this *Pulsar) Producer_SendAsync() chan<- *pulsar.ProducerMessage {
 	return this.input
 }
 

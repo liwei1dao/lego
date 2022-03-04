@@ -13,7 +13,7 @@ type (
 	}
 	IPulsar interface {
 		Producer_Errors() <-chan *ProducerError
-		Producer_SendAsync() <-chan *pulsar.ProducerMessage
+		Producer_SendAsync() chan<- *pulsar.ProducerMessage
 		Producer_Send(msg *pulsar.ProducerMessage) (pulsar.MessageID, error)
 		Consumer_Receive(ctx context.Context) (pulsar.Message, error)
 		Consumer_Messages() <-chan pulsar.ConsumerMessage
@@ -40,7 +40,7 @@ func NewSys(option ...Option) (sys IPulsar, err error) {
 func Producer_Errors() <-chan *ProducerError {
 	return defsys.Producer_Errors()
 }
-func Producer_SendAsync() <-chan *pulsar.ProducerMessage {
+func Producer_SendAsync() chan<- *pulsar.ProducerMessage {
 	return defsys.Producer_SendAsync()
 }
 

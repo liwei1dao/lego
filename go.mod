@@ -5,6 +5,7 @@ go 1.14
 require (
 	cloud.google.com/go v0.81.0
 	gitee.com/chunanyong/dm v1.8.3
+	github.com/BurntSushi/toml v0.3.1
 	github.com/Shopify/sarama v1.30.1
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.885
@@ -34,6 +35,7 @@ require (
 	github.com/lib/pq v1.9.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/hashstructure v1.1.0
+	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/nacos-group/nacos-sdk-go v1.0.8
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/nats-io/nats-server/v2 v2.1.9 // indirect
@@ -55,6 +57,7 @@ require (
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
 
