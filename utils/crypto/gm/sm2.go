@@ -1,5 +1,9 @@
 package crypto
 
+/*
+国密算法库  github.com/tjfoc/gmsm/ 封装
+*/
+
 import (
 	"bytes"
 	"crypto/rand"

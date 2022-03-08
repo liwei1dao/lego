@@ -79,3 +79,9 @@ func Test_GM_SM4_Dec(t *testing.T) {
 	ciphertext, err := GM_SM4_Dec("123456781234567812345678", "")
 	fmt.Printf("ciphertext:%v err:%v", ciphertext, err)
 }
+
+func Test_GM_SM2_Hex(t *testing.T) {
+	// if priv, err := x509.ReadPrivateKeyFromHex(""); err != nil {
+
+	// }
+}
