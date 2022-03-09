@@ -31,6 +31,7 @@ require (
 	github.com/hashicorp/go-msgpack v1.1.5 // indirect
 	github.com/hashicorp/go-sockaddr v1.0.2 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/jlaffaye/ftp v0.0.0-20220309012535-813c8a838452
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/lib/pq v1.9.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect

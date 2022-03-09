@@ -1,64 +1,11 @@
-package utils
+package copy
 
 import (
-	"log"
-	"os"
 	"reflect"
-	"runtime"
-	"strings"
 	"time"
 )
 
-func Recover() {
-	if r := recover(); r != nil {
-		buf := make([]byte, 1024)
-		l := runtime.Stack(buf, false)
-		log.Panicf("%v: %s", r, buf[:l])
-	}
-}
-
-func GetApplicationDir() (ApplicationDir string) {
-	ApplicationDir, _ = os.Getwd()
-	ApplicationDir = strings.Replace(ApplicationDir, "\\", "/", -1)
-	ApplicationDir += "/"
-	return ApplicationDir
-}
-
-//排序工具
-func quickSort(arr []interface{}, start, end int, compete func(a interface{}, b interface{}) int8) {
-	if start < end {
-		i, j := start, end
-		key := arr[(start+end)/2]
-		for i <= j {
-			for compete(arr[i], key) == -1 {
-				i++
-			}
-			for compete(arr[j], key) == 1 {
-				j--
-			}
-			if i <= j {
-				arr[i], arr[j] = arr[j], arr[i]
-				i++
-				j--
-			}
-		}
-		if start < j {
-			quickSort(arr, start, j, compete)
-		}
-		if end > i {
-			quickSort(arr, i, end, compete)
-		}
-	}
-}
-
-func Sort(a []interface{}, compete func(a interface{}, b interface{}) int8) {
-	if len(a) < 2 {
-		return
-	}
-	quickSort(a, 0, len(a)-1, compete)
-}
-
-func Copy(src interface{}) interface{} {
+func CopyInterface(src interface{}) interface{} {
 	if src == nil {
 		return nil
 	}
@@ -120,7 +67,7 @@ func copyRecursive(src, dst reflect.Value) {
 			originalValue := src.MapIndex(key)
 			copyValue := reflect.New(originalValue.Type()).Elem()
 			copyRecursive(originalValue, copyValue)
-			copyKey := Copy(key.Interface())
+			copyKey := CopyInterface(key.Interface())
 			dst.SetMapIndex(reflect.ValueOf(copyKey), copyValue)
 		}
 

@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 
 	"github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/utils/ip"
+	"github.com/liwei1dao/lego/utils/container/ip"
 	"gopkg.in/yaml.v2"
 )
 

@@ -1,4 +1,4 @@
-package utils
+package convert
 
 import (
 	"encoding/binary"
@@ -8,6 +8,7 @@ import (
 func ByteToBytes(v byte) []byte {
 	return []byte{v}
 }
+
 func BoolToBytes(v bool) []byte {
 	var buf = make([]byte, 1)
 	if v {

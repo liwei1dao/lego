@@ -12,7 +12,8 @@ import (
 	"github.com/liwei1dao/lego/lib"
 	"github.com/liwei1dao/lego/lib/modules/http"
 	"github.com/liwei1dao/lego/sys/log"
-	"github.com/liwei1dao/lego/utils/crypto"
+	"github.com/liwei1dao/lego/utils/crypto/aes"
+	"github.com/liwei1dao/lego/utils/crypto/md5"
 )
 
 type Console struct {
@@ -96,7 +97,7 @@ func (this *Console) ParamSign(param map[string]interface{}) (sign string) {
 	}
 	builder.WriteString("key=" + this.options.GetSignKey())
 	log.Infof("orsign:%s", builder.String())
-	sign = crypto.MD5EncToLower(builder.String())
+	sign = md5.MD5EncToLower(builder.String())
 	return
 }
 
@@ -127,13 +128,13 @@ func (this *Console) HttpStatusOK(c *http.Context, code core.ErrorCode, data int
 //创建token
 func (this *Console) CreateToken(uId uint32) (token string) {
 	orsign := fmt.Sprintf("%d|%d", uId, time.Now().Unix())
-	token = crypto.AesEncryptCBC(orsign, this.options.GetSignKey())
+	token = aes.AesEncryptCBC(orsign, this.options.GetSignKey())
 	return
 }
 
 //校验token
 func (this *Console) checkToken(token string, uId uint32) (check bool) {
-	orsign := crypto.AesDecryptCBC(token, this.options.GetSignKey())
+	orsign := aes.AesDecryptCBC(token, this.options.GetSignKey())
 	tempstr := strings.Split(orsign, "|")
 	if len(tempstr) == 2 && tempstr[0] == fmt.Sprintf("%d", uId) {
 		return true

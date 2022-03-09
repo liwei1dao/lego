@@ -7,7 +7,7 @@ import (
 
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/proto"
-	"github.com/liwei1dao/lego/utils/id"
+	"github.com/liwei1dao/lego/utils/container/id"
 )
 
 //远程链接代理

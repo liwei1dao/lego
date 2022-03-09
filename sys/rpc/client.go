@@ -7,7 +7,7 @@ import (
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/rpc/core"
 	"github.com/liwei1dao/lego/sys/rpc/serialize"
-	"github.com/liwei1dao/lego/utils/id"
+	"github.com/liwei1dao/lego/utils/container/id"
 	"google.golang.org/protobuf/proto"
 )
 

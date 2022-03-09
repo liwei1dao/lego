@@ -15,8 +15,8 @@ import (
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/registry"
 	"github.com/liwei1dao/lego/sys/rpc"
-	"github.com/liwei1dao/lego/utils"
-	"github.com/liwei1dao/lego/utils/version"
+	"github.com/liwei1dao/lego/utils/container/sortslice"
+	"github.com/liwei1dao/lego/utils/container/version"
 )
 
 type ClusterService struct {
@@ -380,7 +380,7 @@ func (this *ClusterService) DefauleRpcRouteRules(stype string, sip string) (ss c
 		}
 		if len(ss) > 0 {
 			//排序找到最优服务
-			utils.Sort(ss, func(a interface{}, b interface{}) int8 {
+			sortslice.Sort(ss, func(a interface{}, b interface{}) int8 {
 				as := a.(core.IServiceSession)
 				bs := b.(core.IServiceSession)
 				if iscompare := version.CompareStrVer(as.GetVersion(), bs.GetVersion()); iscompare != 0 {
