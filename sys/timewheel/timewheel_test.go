@@ -1,9 +1,11 @@
-package timewheel
+package timewheel_test
 
 import (
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/liwei1dao/lego/sys/timewheel"
 )
 
 func checkTimeCost(t *testing.T, start, end time.Time, before int, after int) bool {
@@ -22,14 +24,14 @@ func checkTimeCost(t *testing.T, start, end time.Time, before int, after int) bo
 }
 
 func TestAddFunc(t *testing.T) {
-	tw, _ := NewSys(SetTick(100), SetBucketsNum(10))
+	tw, _ := timewheel.NewSys(timewheel.SetTick(100), timewheel.SetBucketsNum(10))
 	tw.Start()
 	defer tw.Stop()
 
 	for index := 1; index < 6; index++ {
 		queue := make(chan bool, 0)
 		start := time.Now()
-		tw.Add(time.Duration(index)*time.Second, func(*Task, ...interface{}) {
+		tw.Add(time.Duration(index)*time.Second, func(*timewheel.Task, ...interface{}) {
 			queue <- true
 		})
 

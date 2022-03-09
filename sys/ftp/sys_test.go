@@ -1,13 +1,15 @@
-package ftp
+package ftp_test
 
 import (
 	"fmt"
 	"testing"
+
+	"github.com/liwei1dao/lego/sys/ftp"
 )
 
 func Test_sys_ftp(t *testing.T) {
-	if err := OnInit(map[string]interface{}{
-		"SType":    FTP,
+	if err := ftp.OnInit(map[string]interface{}{
+		"SType":    ftp.FTP,
 		"IP":       "172.20.27.145",
 		"Port":     21,
 		"User":     "ftpuser",
@@ -16,14 +18,14 @@ func Test_sys_ftp(t *testing.T) {
 		fmt.Printf("start sys err:%v", err)
 	} else {
 		fmt.Printf("start sys succ")
-		entries, err := ReadDir("./")
+		entries, err := ftp.ReadDir("./")
 		fmt.Printf("start sys entriesL%v err:%v", entries, err)
 	}
 }
 
 func Test_sys_sftp(t *testing.T) {
-	if err := OnInit(map[string]interface{}{
-		"SType":    SFTP,
+	if err := ftp.OnInit(map[string]interface{}{
+		"SType":    ftp.SFTP,
 		"IP":       "172.20.27.145",
 		"Port":     22,
 		"User":     "root",
@@ -32,7 +34,7 @@ func Test_sys_sftp(t *testing.T) {
 		fmt.Printf("start sys err:%v", err)
 	} else {
 		fmt.Printf("start sys succ")
-		entries, err := ReadDir("/opt/idss/gm/")
+		entries, err := ftp.ReadDir("/opt/idss/gm/")
 		fmt.Printf("start sys entriesL%v err:%v", entries, err)
 	}
 }

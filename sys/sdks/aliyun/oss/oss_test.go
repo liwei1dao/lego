@@ -1,16 +1,18 @@
-package oss
+package oss_test
 
 import (
 	"fmt"
 	"testing"
+
+	"github.com/liwei1dao/lego/sys/sdks/aliyun/oss"
 )
 
 func Test_OSSUploadFile(t *testing.T) {
-	sys, err := NewSys(
-		SetEndpoint("http://gohitool.oss-accelerate.aliyuncs.com"),
-		SetAccessKeyId("xxxxxxx"),
-		SetAccessKeySecret("xxxxxxxxxxxxxxxxxxxxxxxxxx"),
-		SetBucketName("xxxxxxxxxxx"),
+	sys, err := oss.NewSys(
+		oss.SetEndpoint("http://gohitool.oss-accelerate.aliyuncs.com"),
+		oss.SetAccessKeyId("xxxxxxx"),
+		oss.SetAccessKeySecret("xxxxxxxxxxxxxxxxxxxxxxxxxx"),
+		oss.SetBucketName("xxxxxxxxxxx"),
 	)
 	if err != nil {
 		fmt.Printf("初始化OSS 系统失败 err:%v", err)

@@ -1,4 +1,4 @@
-package registry
+package registry_test
 
 import (
 	"fmt"

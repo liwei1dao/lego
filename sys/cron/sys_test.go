@@ -1,9 +1,11 @@
-package cron
+package cron_test
 
 import (
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/liwei1dao/lego/sys/cron"
 )
 
 // 1. cron表达式格式：
@@ -97,7 +99,7 @@ import (
 // 0 15 10 ? * 6#3 每月的第三个星期五上午10:15触发
 
 func Test_sys(t *testing.T) {
-	if err := OnInit(nil); err == nil {
+	if err := cron.OnInit(nil); err == nil {
 		// AddFunc("@every 1s", func() { //每一秒
 		// 	fmt.Printf("@every 1s")
 		// })
@@ -116,7 +118,7 @@ func Test_sys(t *testing.T) {
 		// AddFunc("*/5 * * * * ?", func() { //每天凌晨
 		// 	fmt.Printf("*/5 * * * * ?")
 		// })
-		AddFunc("30/59 0/2 * * * ?", func() { //每隔90秒
+		cron.AddFunc("30/59 0/2 * * * ?", func() { //每隔90秒
 			fmt.Printf("*/5 * * * * ?")
 		})
 

@@ -1,4 +1,4 @@
-package mgo
+package mgo_test
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/mgo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -25,11 +26,11 @@ type TestData struct {
 
 //测试 系统 直连模式
 func Test_sys(t *testing.T) {
-	if err := OnInit(map[string]interface{}{
+	if err := mgo.OnInit(map[string]interface{}{
 		"MongodbUrl":      "mongodb://127.0.0.1:37017",
 		"MongodbDatabase": "testdb",
 	}); err == nil {
-		if _, err := UpdateOne(Sql_UserDataTable,
+		if _, err := mgo.UpdateOne(Sql_UserDataTable,
 			bson.M{"_id": 10001},
 			bson.M{"$set": bson.M{
 				"nicename": "liwei1dao",
@@ -41,7 +42,7 @@ func Test_sys(t *testing.T) {
 		}
 
 		data := &TestData{}
-		if err := FindOne(Sql_UserDataTable, bson.M{"_id": 10002}).Decode(data); err != nil {
+		if err := mgo.FindOne(Sql_UserDataTable, bson.M{"_id": 10002}).Decode(data); err != nil {
 			fmt.Printf("FindOne errr:%v", err)
 		} else {
 			fmt.Printf("FindOne data:%+v", data)
@@ -53,17 +54,17 @@ func Test_sys(t *testing.T) {
 
 //测试 事务 副本集模式
 func Test_Affair(t *testing.T) {
-	if err := OnInit(map[string]interface{}{
+	if err := mgo.OnInit(map[string]interface{}{
 		"MongodbUrl":      "mongodb://root:123@127.0.0.1:37017,127.0.0.1:37018,127.0.0.1:37019/admin?replicaSet=mongoReplSet",
 		"MongodbDatabase": "testdb",
 	}); err == nil {
-		err = UseSession(func(sessionContext mongo.SessionContext) error {
+		err = mgo.UseSession(func(sessionContext mongo.SessionContext) error {
 			err := sessionContext.StartTransaction()
 			if err != nil {
 				fmt.Println(err)
 				return err
 			}
-			col := Collection(Sql_UserDataTable)
+			col := mgo.Collection(Sql_UserDataTable)
 
 			//在事务内写一条id为“222”的记录
 			_, err = col.InsertOne(sessionContext, bson.M{"_id": 10004, "nicename": "liwei2dao", "headurl": "http://test1.web.com", "sex": 2})
@@ -89,7 +90,7 @@ func Test_Affair(t *testing.T) {
 
 //测试创建索引 过期索引
 func Test_CreateTTLIndex(t *testing.T) {
-	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("square"))
+	sys, err := mgo.NewSys(mgo.SetMongodbUrl("mongodb://47.90.84.157:9094"), mgo.SetMongodbDatabase("square"))
 	if err != nil {
 		fmt.Printf("start sys Fail err:%v", err)
 		return
@@ -109,7 +110,7 @@ func Test_CreateTTLIndex(t *testing.T) {
 
 //测试创建索引 地图索引
 func Test_CreateIndex(t *testing.T) {
-	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("square"))
+	sys, err := mgo.NewSys(mgo.SetMongodbUrl("mongodb://47.90.84.157:9094"), mgo.SetMongodbDatabase("square"))
 	if err != nil {
 		fmt.Printf("start sys Fail err:%v", err)
 		return
@@ -129,7 +130,7 @@ func Test_CreateIndex(t *testing.T) {
 
 //创建复合索引
 func Test_CreateCompoundIndex(t *testing.T) {
-	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("lego_yl"))
+	sys, err := mgo.NewSys(mgo.SetMongodbUrl("mongodb://47.90.84.157:9094"), mgo.SetMongodbDatabase("lego_yl"))
 	if err != nil {
 		fmt.Printf("start sys Fail err:%v", err)
 		return
@@ -144,7 +145,7 @@ func Test_CreateCompoundIndex(t *testing.T) {
 
 //测试删除索引 地图索引
 func Test_DeleteIndex(t *testing.T) {
-	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("square"))
+	sys, err := mgo.NewSys(mgo.SetMongodbUrl("mongodb://47.90.84.157:9094"), mgo.SetMongodbDatabase("square"))
 	if err != nil {
 		fmt.Printf("start sys Fail err:%v", err)
 		return
@@ -169,7 +170,7 @@ db.<collection>.find( { <location field> :
 						})
 */
 func Test_QueryRound(t *testing.T) {
-	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("square"))
+	sys, err := mgo.NewSys(mgo.SetMongodbUrl("mongodb://47.90.84.157:9094"), mgo.SetMongodbDatabase("square"))
 	if err != nil {
 		fmt.Printf("start sys Fail err:%v", err)
 		return
@@ -193,7 +194,7 @@ func Test_QueryRound(t *testing.T) {
 
 //聚合查询演示
 func Test_Aggregate(t *testing.T) {
-	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("square"))
+	sys, err := mgo.NewSys(mgo.SetMongodbUrl("mongodb://47.90.84.157:9094"), mgo.SetMongodbDatabase("square"))
 	if err != nil {
 		fmt.Printf("start sys Fail err:%v", err)
 		return

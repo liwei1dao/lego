@@ -1,4 +1,4 @@
-package pprof
+package pprof_test
 
 /*
 查看堆栈调用信息

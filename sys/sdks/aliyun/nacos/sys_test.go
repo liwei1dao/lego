@@ -1,17 +1,18 @@
-package nacos
+package nacos_test
 
 import (
 	"fmt"
 	"testing"
 
+	"github.com/liwei1dao/lego/sys/sdks/aliyun/nacos"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 )
 
 func Test_SysInit(t *testing.T) {
-	sys, err := NewSys(
-		SetNacosAddr("127.0.0.1"),
-		SetPort(8848),
-		SetNamespaceId("17d02ef9-afaa-4878-ad6c-9fd697f3b628"),
+	sys, err := nacos.NewSys(
+		nacos.SetNacosAddr("127.0.0.1"),
+		nacos.SetPort(8848),
+		nacos.SetNamespaceId("17d02ef9-afaa-4878-ad6c-9fd697f3b628"),
 	)
 	if err != nil {
 		fmt.Printf("启动系统错误err:%v", err)
