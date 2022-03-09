@@ -40,6 +40,7 @@ require (
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/nats-io/nats-server/v2 v2.1.9 // indirect
 	github.com/nats-io/nats.go v1.10.0
+	github.com/pkg/sftp v1.10.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/xid v1.3.0
 	github.com/satori/go.uuid v1.2.0
@@ -48,6 +49,7 @@ require (
 	github.com/wolfogre/go-pprof-practice v0.0.0-20190402114113-8ce266a210ee
 	go.mongodb.org/mongo-driver v1.4.6
 	go.uber.org/zap v1.17.0
+	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
 	golang.org/x/text v0.3.7
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324 // indirect
 	gonum.org/v1/gonum v0.8.2

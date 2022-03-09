@@ -7,7 +7,7 @@ import (
 	"github.com/jlaffaye/ftp"
 )
 
-func newSys(options Options) (sys *Ftp, err error) {
+func newFtp(options Options) (sys *Ftp, err error) {
 	sys = &Ftp{options: options}
 	err = sys.init()
 	return
@@ -29,8 +29,25 @@ func (this *Ftp) init() (err error) {
 	return
 }
 
-func (this *Ftp) List(path string) (entries []*ftp.Entry, err error) {
-	return this.conn.List(path)
+func (this *Ftp) ReadDir(dir string) (files []*FileEntry, err error) {
+	var (
+		entries []*ftp.Entry
+	)
+	if entries, err = this.conn.List(dir); err == nil {
+		files = make([]*FileEntry, len(entries))
+		for i, v := range entries {
+			files[i] = &FileEntry{
+				FileName: v.Name,
+				FileSize: v.Size,
+				ModTime:  v.Time.Unix(),
+				IsDir:    false,
+			}
+			if v.Type == ftp.EntryTypeFolder {
+				files[i].IsDir = true
+			}
+		}
+	}
+	return
 }
 
 func (this *Ftp) MakeDir(path string) error {
