@@ -47,7 +47,7 @@ require (
 	github.com/shirou/gopsutil v3.20.12+incompatible
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/wolfogre/go-pprof-practice v0.0.0-20190402114113-8ce266a210ee
-	go.mongodb.org/mongo-driver v1.4.6
+	go.mongodb.org/mongo-driver v1.5.1
 	go.uber.org/zap v1.17.0
 	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
 	golang.org/x/text v0.3.7
