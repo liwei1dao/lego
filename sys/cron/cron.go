@@ -26,3 +26,7 @@ func (this *Cron) Stop() {
 func (this *Cron) AddFunc(spec string, cmd func()) (tcron.EntryID, error) {
 	return this.cron.AddFunc(spec, cmd)
 }
+
+func (this *Cron) Remove(id tcron.EntryID) {
+	this.cron.Remove(id)
+}

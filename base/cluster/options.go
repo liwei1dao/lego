@@ -2,45 +2,64 @@ package cluster
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"github.com/liwei1dao/lego/core"
-
-	"github.com/BurntSushi/toml"
+	"github.com/liwei1dao/lego/utils/container/ip"
+	"gopkg.in/yaml.v2"
 )
 
 type Option func(*Options)
 
 type Options struct {
-	Id      string
-	Setting core.ServiceSttings
+	ConfPath string
+	Version  string //服务版本
+	Setting  core.ServiceSttings
 }
 
-func SetId(v string) Option {
+func SetConfPath(v string) Option {
 	return func(o *Options) {
-		o.Id = v
+		o.ConfPath = v
 	}
 }
 
-func SetSetting(v core.ServiceSttings) Option {
+func SetVersion(v string) Option {
 	return func(o *Options) {
-		o.Setting = v
+		o.Version = v
 	}
 }
+
+// func SetSetting(v core.ServiceSttings) Option {
+// 	return func(o *Options) {
+// 		o.Setting = v
+// 	}
+// }
 
 func newOptions(option ...Option) *Options {
 	options := &Options{
-		Id: "cluster_1",
+		ConfPath: "conf/cluster.toml",
 	}
 	for _, o := range option {
 		o(options)
 	}
-	confpath := fmt.Sprintf("conf/%s.toml", options.Id)
-	_, err := toml.DecodeFile(confpath, &options.Setting)
+	// confpath := fmt.Sprintf("conf/%s.toml", options.Id)
+	yamlFile, err := ioutil.ReadFile(options.ConfPath)
 	if err != nil {
-		panic(fmt.Sprintf("读取服务配置【%s】文件失败err:%v:", confpath, err))
+		panic(fmt.Sprintf("读取服务配置【%s】文件失败err:%v:", options.ConfPath, err))
 	}
-	if options.Setting.Id == "" || options.Setting.Type == "" || options.Setting.Tag == "" {
-		panic(fmt.Sprintf("服务[%s] 配置缺少必要配置: %+v", options.Id, options))
+	err = yaml.Unmarshal(yamlFile, &options.Setting)
+	if err != nil {
+		panic(fmt.Sprintf("读取服务配置【%s】文件失败err:%v:", options.ConfPath, err))
+	}
+	if len(options.Setting.Id) == 0 || len(options.Setting.Type) == 0 || len(options.Setting.Tag) == 0 {
+		panic(fmt.Sprintf("[%s] 配置缺少必要配置: %+v", options.ConfPath, options))
+	}
+	if len(options.Setting.Ip) == 0 {
+		if ipinfo := ip.GetEthernetInfo(); ipinfo != nil { //获取以太网Ip地址
+			options.Setting.Ip = ipinfo.IP
+		} else {
+			options.Setting.Ip = ip.GetOutboundIP() //局域网ip
+		}
 	}
 	return options
 }

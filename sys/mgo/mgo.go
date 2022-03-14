@@ -36,7 +36,6 @@ func (this *Mongodb) init() (err error) {
 	readconcern.Majority()
 	//链接mongo服务
 	opt := options.Client().ApplyURI(this.options.MongodbUrl)
-	// opt.SetReplicaSet(this.options.Replset)   //副本集
 	opt.SetLocalThreshold(3 * time.Second)       //只使用与mongo操作耗时小于3秒的
 	opt.SetMaxConnIdleTime(5 * time.Second)      //指定连接可以保持空闲的最大毫秒数
 	opt.SetMaxPoolSize(this.options.MaxPoolSize) //使用最大的连接数
@@ -51,8 +50,18 @@ func (this *Mongodb) init() (err error) {
 			return fmt.Errorf("数据库不可用 err=%s", err.Error())
 		}
 		this.Database = client.Database(this.options.MongodbDatabase)
+
 	}
 	return
+}
+
+func (this *Mongodb) Close() (err error) {
+	err = this.Client.Disconnect(this.getContext())
+	return
+}
+
+func (this *Mongodb) ListCollectionNames(filter interface{}, opts ...*options.ListCollectionsOptions) ([]string, error) {
+	return this.Database.ListCollectionNames(this.getContext(), filter, opts...)
 }
 
 func (this *Mongodb) Collection(sqltable core.SqlTable) *mongo.Collection {
@@ -64,12 +73,12 @@ func (this *Mongodb) getContext() (ctx context.Context) {
 	return
 }
 
-func (this *Mongodb) CreateIndex(sqltable core.SqlTable, keys interface{}, options *options.IndexOptions) (string, error) {
-	return this.Collection(sqltable).Indexes().CreateOne(this.getContext(), mongo.IndexModel{Keys: keys, Options: options})
+func (this *Mongodb) CreateIndex(sqltable core.SqlTable, model mongo.IndexModel, opts ...*options.CreateIndexesOptions) (string, error) {
+	return this.Collection(sqltable).Indexes().CreateOne(this.getContext(), model, opts...)
 }
 
-func (this *Mongodb) DeleteIndex(sqltable core.SqlTable, name string, options *options.DropIndexesOptions) (bson.Raw, error) {
-	return this.Collection(sqltable).Indexes().DropOne(this.getContext(), name, options)
+func (this *Mongodb) DeleteIndex(sqltable core.SqlTable, name string, opts ...*options.DropIndexesOptions) (bson.Raw, error) {
+	return this.Collection(sqltable).Indexes().DropOne(this.getContext(), name, opts...)
 }
 
 func (this *Mongodb) UseSession(fn func(sessionContext mongo.SessionContext) error) error {
@@ -79,7 +88,9 @@ func (this *Mongodb) UseSession(fn func(sessionContext mongo.SessionContext) err
 func (this *Mongodb) CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options.CountOptions) (int64, error) {
 	return this.Collection(sqltable).CountDocuments(this.getContext(), filter, opts...)
 }
-
+func (this *Mongodb) CountDocumentsByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.CountOptions) (int64, error) {
+	return this.Collection(sqltable).CountDocuments(ctx, filter, opts...)
+}
 func (this *Mongodb) Find(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error) {
 	return this.Collection(sqltable).Find(this.getContext(), filter, opts...)
 }

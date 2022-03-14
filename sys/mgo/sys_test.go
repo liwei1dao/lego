@@ -1,4 +1,4 @@
-package mgo
+package mgo_test
 
 import (
 	"context"
@@ -6,9 +6,11 @@ import (
 	"testing"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/mgo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
 const (
@@ -22,14 +24,13 @@ type TestData struct {
 	HeadUrl  string //头像Id
 }
 
-//测试 系统
+//测试 系统 直连模式
 func Test_sys(t *testing.T) {
-	if err := OnInit(map[string]interface{}{
-		"MongodbUrl":      "mongodb://127.0.0.1:10001",
+	if err := mgo.OnInit(map[string]interface{}{
+		"MongodbUrl":      "mongodb://127.0.0.1:37017",
 		"MongodbDatabase": "testdb",
-		"Replset":         "replset0",
 	}); err == nil {
-		if _, err := UpdateOne(Sql_UserDataTable,
+		if _, err := mgo.UpdateOne(Sql_UserDataTable,
 			bson.M{"_id": 10001},
 			bson.M{"$set": bson.M{
 				"nicename": "liwei1dao",
@@ -41,38 +42,38 @@ func Test_sys(t *testing.T) {
 		}
 
 		data := &TestData{}
-		if err := FindOne(Sql_UserDataTable, bson.M{"_id": 10002}).Decode(data); err != nil {
+		if err := mgo.FindOne(Sql_UserDataTable, bson.M{"_id": 10002}).Decode(data); err != nil {
 			fmt.Printf("FindOne errr:%v", err)
 		} else {
 			fmt.Printf("FindOne data:%+v", data)
 		}
 	} else {
-		fmt.Printf("FindOne errr:%v", err)
+		fmt.Printf("OnInit errr:%v", err)
 	}
 }
 
-//测试 事务
+//测试 事务 副本集模式
 func Test_Affair(t *testing.T) {
-	if err := OnInit(map[string]interface{}{
-		"MongodbUrl":      "mongodb://127.0.0.1:27017",
+	if err := mgo.OnInit(map[string]interface{}{
+		"MongodbUrl":      "mongodb://root:123@127.0.0.1:37017,127.0.0.1:37018,127.0.0.1:37019/admin?replicaSet=mongoReplSet",
 		"MongodbDatabase": "testdb",
 	}); err == nil {
-		err = UseSession(func(sessionContext mongo.SessionContext) error {
+		err = mgo.UseSession(func(sessionContext mongo.SessionContext) error {
 			err := sessionContext.StartTransaction()
 			if err != nil {
 				fmt.Println(err)
 				return err
 			}
-			col := Collection(Sql_UserDataTable)
+			col := mgo.Collection(Sql_UserDataTable)
 
 			//在事务内写一条id为“222”的记录
-			_, err = col.InsertOne(sessionContext, bson.M{"_id": 10002, "nicename": "liwei2dao", "headurl": "http://test1.web.com", "sex": 2})
+			_, err = col.InsertOne(sessionContext, bson.M{"_id": 10004, "nicename": "liwei2dao", "headurl": "http://test1.web.com", "sex": 2})
 			if err != nil {
 				fmt.Println(err)
 				return err
 			}
 			//在事务内写一条id为“333”的记录
-			_, err = col.InsertOne(sessionContext, bson.M{"_id": 10003, "nicename": "liwei3dao", "headurl": "http://test1.web.com", "sex": 2})
+			_, err = col.InsertOne(sessionContext, bson.M{"_id": 10005, "nicename": "liwei3dao", "headurl": "http://test1.web.com", "sex": 2})
 			if err != nil {
 				sessionContext.AbortTransaction(sessionContext)
 				return err
@@ -87,14 +88,39 @@ func Test_Affair(t *testing.T) {
 	}
 }
 
-//测试创建索引 地图索引
-func Test_CreateIndex(t *testing.T) {
-	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("square"))
+//测试创建索引 过期索引
+func Test_CreateTTLIndex(t *testing.T) {
+	sys, err := mgo.NewSys(mgo.SetMongodbUrl("mongodb://47.90.84.157:9094"), mgo.SetMongodbDatabase("square"))
 	if err != nil {
 		fmt.Printf("start sys Fail err:%v", err)
 		return
 	}
-	str, err := sys.CreateIndex(core.SqlTable("dynamics"), bson.M{"location": "2dsphere"}, new(options.IndexOptions).SetBits(11111))
+
+	indexModel := mongo.IndexModel{
+		Keys:    bsonx.Doc{{"expire_date", bsonx.Int32(1)}},           // 设置TTL索引列"expire_date"
+		Options: options.Index().SetExpireAfterSeconds(1 * 24 * 3600), // 设置过期时间1天，即，条目过期一天过自动删除
+	}
+	str, err := sys.CreateIndex(core.SqlTable("dynamics"), indexModel)
+	if err != nil {
+		fmt.Printf("CreateIndex  err:%v", err)
+	} else {
+		fmt.Printf("CreateIndex  str:%v", str)
+	}
+}
+
+//测试创建索引 地图索引
+func Test_CreateIndex(t *testing.T) {
+	sys, err := mgo.NewSys(mgo.SetMongodbUrl("mongodb://47.90.84.157:9094"), mgo.SetMongodbDatabase("square"))
+	if err != nil {
+		fmt.Printf("start sys Fail err:%v", err)
+		return
+	}
+
+	indexModel := mongo.IndexModel{
+		Keys:    bson.M{"location": "2dsphere"},
+		Options: options.Index().SetBits(11111),
+	}
+	str, err := sys.CreateIndex(core.SqlTable("dynamics"), indexModel)
 	if err != nil {
 		fmt.Printf("CreateIndex  err:%v", err)
 	} else {
@@ -104,12 +130,12 @@ func Test_CreateIndex(t *testing.T) {
 
 //创建复合索引
 func Test_CreateCompoundIndex(t *testing.T) {
-	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("lego_yl"))
+	sys, err := mgo.NewSys(mgo.SetMongodbUrl("mongodb://47.90.84.157:9094"), mgo.SetMongodbDatabase("lego_yl"))
 	if err != nil {
 		fmt.Printf("start sys Fail err:%v", err)
 		return
 	}
-	str, err := mgo.CreateIndex(core.SqlTable("unreadmsg"), bson.M{"channeltype": 1, "targetid": 1, "uid": 1, "unreadmsg.sendtime": 1}, nil)
+	str, err := sys.CreateIndex(core.SqlTable("unreadmsg"), mongo.IndexModel{Keys: bson.M{"channeltype": 1, "targetid": 1, "uid": 1, "unreadmsg.sendtime": 1}}, nil)
 	if err != nil {
 		fmt.Printf("CreateIndex  err:%v", err)
 	} else {
@@ -119,7 +145,7 @@ func Test_CreateCompoundIndex(t *testing.T) {
 
 //测试删除索引 地图索引
 func Test_DeleteIndex(t *testing.T) {
-	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("square"))
+	sys, err := mgo.NewSys(mgo.SetMongodbUrl("mongodb://47.90.84.157:9094"), mgo.SetMongodbDatabase("square"))
 	if err != nil {
 		fmt.Printf("start sys Fail err:%v", err)
 		return
@@ -144,7 +170,7 @@ db.<collection>.find( { <location field> :
 						})
 */
 func Test_QueryRound(t *testing.T) {
-	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("square"))
+	sys, err := mgo.NewSys(mgo.SetMongodbUrl("mongodb://47.90.84.157:9094"), mgo.SetMongodbDatabase("square"))
 	if err != nil {
 		fmt.Printf("start sys Fail err:%v", err)
 		return
@@ -168,7 +194,7 @@ func Test_QueryRound(t *testing.T) {
 
 //聚合查询演示
 func Test_Aggregate(t *testing.T) {
-	sys, err := NewSys(SetMongodbUrl("mongodb://47.90.84.157:9094"), SetMongodbDatabase("square"))
+	sys, err := mgo.NewSys(mgo.SetMongodbUrl("mongodb://47.90.84.157:9094"), mgo.SetMongodbDatabase("square"))
 	if err != nil {
 		fmt.Printf("start sys Fail err:%v", err)
 		return

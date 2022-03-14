@@ -11,11 +11,14 @@ import (
 
 type (
 	IMongodb interface {
+		Close() (err error)
+		ListCollectionNames(filter interface{}, opts ...*options.ListCollectionsOptions) ([]string, error)
 		Collection(sqltable core.SqlTable) *mongo.Collection
-		CreateIndex(sqltable core.SqlTable, keys interface{}, options *options.IndexOptions) (string, error)
-		DeleteIndex(sqltable core.SqlTable, name string, options *options.DropIndexesOptions) (bson.Raw, error)
+		CreateIndex(sqltable core.SqlTable, model mongo.IndexModel, opts ...*options.CreateIndexesOptions) (string, error)
+		DeleteIndex(sqltable core.SqlTable, name string, opts ...*options.DropIndexesOptions) (bson.Raw, error)
 		UseSession(fn func(sessionContext mongo.SessionContext) error) error
 		CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options.CountOptions) (int64, error)
+		CountDocumentsByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.CountOptions) (int64, error)
 		Find(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error)
 		FindByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error)
 		FindOne(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOneOptions) *mongo.SingleResult
@@ -35,6 +38,10 @@ type (
 )
 
 var (
+	MongodbNil = mongo.ErrNoDocuments //数据为空错误
+)
+
+var (
 	defsys IMongodb
 )
 
@@ -48,15 +55,23 @@ func NewSys(option ...Option) (sys IMongodb, err error) {
 	return
 }
 
+func Close() (err error) {
+	return defsys.Close()
+}
+
+func ListCollectionNames(filter interface{}, opts ...*options.ListCollectionsOptions) ([]string, error) {
+	return defsys.ListCollectionNames(filter, opts...)
+}
+
 func Collection(sqltable core.SqlTable) *mongo.Collection {
 	return defsys.Collection(sqltable)
 }
 
-func CreateIndex(sqltable core.SqlTable, keys interface{}, options *options.IndexOptions) (string, error) {
-	return defsys.CreateIndex(sqltable, keys, options)
+func CreateIndex(sqltable core.SqlTable, model mongo.IndexModel, opts ...*options.CreateIndexesOptions) (string, error) {
+	return defsys.CreateIndex(sqltable, model, opts...)
 }
-func DeleteIndex(sqltable core.SqlTable, name string, options *options.DropIndexesOptions) (bson.Raw, error) {
-	return defsys.DeleteIndex(sqltable, name, options)
+func DeleteIndex(sqltable core.SqlTable, name string, opts ...*options.DropIndexesOptions) (bson.Raw, error) {
+	return defsys.DeleteIndex(sqltable, name, opts...)
 }
 
 func UseSession(fn func(sessionContext mongo.SessionContext) error) error {
@@ -65,6 +80,10 @@ func UseSession(fn func(sessionContext mongo.SessionContext) error) error {
 
 func CountDocuments(sqltable core.SqlTable, filter interface{}, opts ...*options.CountOptions) (int64, error) {
 	return defsys.CountDocuments(sqltable, filter, opts...)
+}
+
+func CountDocumentsByCtx(sqltable core.SqlTable, ctx context.Context, filter interface{}, opts ...*options.CountOptions) (int64, error) {
+	return defsys.CountDocumentsByCtx(sqltable, ctx, filter, opts...)
 }
 
 func Find(sqltable core.SqlTable, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error) {

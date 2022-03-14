@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/liwei1dao/lego"
 	"github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/sys/log"
 )
 
 func newSys(options Options) (sys *EventSys, err error) {
@@ -72,19 +72,7 @@ func (this *EventSys) RemoveEvent(eId core.Event_Key, f interface{}) (err error)
 
 //触发
 func (this *EventSys) TriggerEvent(eId core.Event_Key, agr ...interface{}) {
-	defer func() {
-		if r := recover(); r != nil {
-			var rn = ""
-			switch r.(type) {
-
-			case string:
-				rn = r.(string)
-			case error:
-				rn = r.(error).Error()
-			}
-			log.Errorf("Event:[%d] recover:[%s]", eId, rn)
-		}
-	}()
+	defer lego.Recover(fmt.Sprintf("event TriggerEvent:%s", eId))
 	if v, ok := this.functions[eId]; ok {
 		for _, f := range v {
 			in := make([]reflect.Value, len(agr))

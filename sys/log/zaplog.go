@@ -13,12 +13,12 @@ func newSys(options Options) (sys *Logger, err error) {
 	createlogfile(options.FileName)
 	var allCore []zapcore.Core
 	hook := lumberjack.Logger{
-		Filename:   options.FileName, //日志文件路径
-		MaxSize:    2,                //每个日志文件保存的最大尺寸 单位：M
-		MaxBackups: 30,               //最多保留备份个数
-		MaxAge:     7,                //文件最多保存多少天
-		Compress:   false,            //是否压缩 disabled by default
-		LocalTime:  true,             //使用本地时间
+		Filename:   options.FileName,      //日志文件路径
+		MaxSize:    options.LogMaxSize,    //每个日志文件保存的最大尺寸 单位：M
+		MaxBackups: options.LogMaxBackups, //最多保留备份个数
+		MaxAge:     options.LogMaxAge,     //文件最多保存多少天
+		Compress:   false,                 //是否压缩 disabled by default
+		LocalTime:  true,                  //使用本地时间
 	}
 	var level zapcore.Level
 	switch options.Loglevel {
@@ -56,7 +56,11 @@ func newSys(options Options) (sys *Logger, err error) {
 		encoderConfig = zap.NewProductionEncoderConfig()
 		encoderConfig.EncodeTime = timeFormat
 	}
-	allCore = append(allCore, zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig), fileWriter, level))
+	if options.Encoder == Console {
+		allCore = append(allCore, zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig), fileWriter, level))
+	} else {
+		allCore = append(allCore, zapcore.NewCore(zapcore.NewJSONEncoder(encoderConfig), fileWriter, level))
+	}
 	core := zapcore.NewTee(allCore...)
 	tlog := zap.New(core).WithOptions(zap.AddCaller(), zap.AddCallerSkip(options.Loglayer))
 	sys = &Logger{

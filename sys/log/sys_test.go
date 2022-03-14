@@ -1,16 +1,18 @@
-package log
+package log_test
 
 import (
 	"testing"
+
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 func Test_sys(t *testing.T) {
-	if err := OnInit(map[string]interface{}{
+	if err := log.OnInit(map[string]interface{}{
 		"FileName":  "./test.log",
-		"Loglevel":  FatalLevel,
+		"Loglevel":  log.FatalLevel,
 		"Debugmode": true,
 		"Loglayer":  2,
 	}); err == nil {
-		Infof("测试日志接口代码!")
+		log.Infof("测试日志接口代码!")
 	}
 }

@@ -22,10 +22,12 @@ func (this *SingleService) GetType() string {
 	return this.opts.Setting.Type
 }
 
-func (this *SingleService) GetVersion() float32 {
-	return this.opts.Setting.Version
+func (this *SingleService) GetVersion() string {
+	return this.opts.Version
 }
-
+func (this *SingleService) GetIp() string {
+	return this.opts.Setting.Ip
+}
 func (this *SingleService) GetSettings() core.ServiceSttings {
 	return this.opts.Setting
 }
@@ -40,6 +42,6 @@ func (this *SingleService) InitSys() {
 		panic(fmt.Sprintf("初始化log系统失败 %s", err.Error()))
 	}
 	if err := event.OnInit(this.opts.Setting.Sys["event"]); err != nil {
-		panic(fmt.Sprintf("初始化event系统失败 %s", err.Error()))
+		log.Panicf(fmt.Sprintf("初始化event系统失败 %s", err.Error()))
 	}
 }

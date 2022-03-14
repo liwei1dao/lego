@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 type (
@@ -46,5 +47,9 @@ func RemoveEvent(eId core.Event_Key, f interface{}) (err error) {
 }
 
 func TriggerEvent(eId core.Event_Key, agr ...interface{}) {
-	defsys.TriggerEvent(eId, agr...)
+	if defsys != nil {
+		defsys.TriggerEvent(eId, agr...)
+	} else {
+		log.Warnf("event no start")
+	}
 }

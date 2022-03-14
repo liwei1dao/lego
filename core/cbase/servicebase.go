@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"runtime"
 	"sync"
 	"syscall"
 
+	"github.com/liwei1dao/lego"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/event"
 	"github.com/liwei1dao/lego/sys/log"
@@ -25,20 +25,12 @@ func (this *defaultModule) run() {
 	this.wg.Done()
 }
 func (this *defaultModule) destroy() (err error) {
-	defer Recover()
+	defer lego.Recover(fmt.Sprintf("Module :%s destroy", this.mi.GetType()))
 	err = this.mi.Destroy()
 	if err != nil {
 		err = fmt.Errorf("关闭模块【%s】失败 err:%s", this.mi.GetType(), err.Error())
 	}
 	return
-}
-
-func Recover() {
-	if r := recover(); r != nil {
-		buf := make([]byte, 1024)
-		l := runtime.Stack(buf, false)
-		log.Panicf("%v: %s", r, buf[:l])
-	}
 }
 
 type ServiceBase struct {
@@ -54,7 +46,11 @@ func (this *ServiceBase) Init(service core.IService) (err error) {
 	this.modules = make(map[core.M_Modules]*defaultModule)
 	this.Service.InitSys()
 	for _, v := range this.comps {
-		err = v.Init(this.Service, v)
+		options := v.NewOptions()
+		if o, ok := service.GetSettings().Comps[string(v.GetName())]; ok {
+			options.LoadConfig(o)
+		}
+		err = v.Init(this.Service, v, options)
 		if err != nil {
 			return
 		}
@@ -81,7 +77,7 @@ func (this *ServiceBase) Start() (err error) {
 			return
 		}
 	}
-	log.Infof("服务[%s] 启动完成!", this.Service.GetId())
+	log.Infof("服务[%s:%s] 启动完成!", this.Service.GetId(), this.Service.GetVersion())
 	return
 }
 
@@ -107,16 +103,16 @@ func (this *ServiceBase) Run(mod ...core.IModule) {
 		if err := options.LoadConfig(v.seetring); err == nil {
 			err := v.mi.Init(this.Service, v.mi, options)
 			if err != nil {
-				panic(fmt.Sprintf("初始化模块【%s】错误 err:%v", v.mi.GetType(), err))
+				log.Panicf(fmt.Sprintf("初始化模块【%s】错误 err:%v", v.mi.GetType(), err))
 			}
 		} else {
-			panic(fmt.Sprintf("模块【%s】 Options:%v 配置错误 err:%v", v.mi.GetType(), v.seetring, err))
+			log.Panicf(fmt.Sprintf("模块【%s】 Options:%v 配置错误 err:%v", v.mi.GetType(), v.seetring, err))
 		}
 	}
 	for _, v := range this.modules {
 		err := v.mi.Start()
 		if err != nil {
-			panic(fmt.Sprintf("启动模块【%s】错误 err:%v", v.mi.GetType(), err))
+			log.Panicf(fmt.Sprintf("启动模块【%s】错误 err:%v", v.mi.GetType(), err))
 		}
 	}
 	for _, v := range this.modules {

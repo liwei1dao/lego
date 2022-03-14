@@ -12,6 +12,8 @@ type (
 	}
 	IMComp_GateCompOptions interface {
 		core.IModuleOptions
-		GetGateMaxGoroutine() int
+		GetDefGoroutine() int     //网关工作池默认协程数
+		GetGateMaxGoroutine() int //网关工作池最大协程数
+		GetHandleTimeOut() int    //工作池处理超时时间
 	}
 )

@@ -22,7 +22,9 @@ type ServiceSession struct {
 func (this *ServiceSession) GetId() string {
 	return this.node.Id
 }
-
+func (this *ServiceSession) GetIp() string {
+	return this.node.IP
+}
 func (this *ServiceSession) GetRpcId() string {
 	return this.node.RpcId
 }
@@ -30,10 +32,10 @@ func (this *ServiceSession) GetRpcId() string {
 func (this *ServiceSession) GetType() string {
 	return this.node.Type
 }
-func (this *ServiceSession) GetVersion() float32 {
+func (this *ServiceSession) GetVersion() string {
 	return this.node.Version
 }
-func (this *ServiceSession) SetVersion(v float32) {
+func (this *ServiceSession) SetVersion(v string) {
 	this.node.Version = v
 }
 
@@ -44,7 +46,7 @@ func (this *ServiceSession) SetPreWeight(p float64) {
 	this.node.PreWeight = p
 }
 func (this *ServiceSession) Done() {
-	this.rpc.Done()
+	this.rpc.Stop()
 }
 func (this *ServiceSession) Call(f core.Rpc_Key, params ...interface{}) (interface{}, error) {
 	return this.rpc.Call(string(f), params...)

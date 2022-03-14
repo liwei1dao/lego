@@ -3,6 +3,7 @@ package console
 import (
 	"fmt"
 	reflect "reflect"
+	"time"
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
@@ -12,18 +13,25 @@ import (
 type CacheComp struct {
 	cbase.ModuleCompBase
 	module IConsole
-	redis  redis.IRedisFactory
+	redis  redis.IRedis
 }
 
 func (this *CacheComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
 	err = this.ModuleCompBase.Init(service, module, comp, options)
 	this.module = module.(IConsole)
-	this.redis, err = redis.NewSys(redis.SetRedisUrl(this.module.Options().GetRedisUrl()))
+	if this.redis, err = redis.NewSys(
+		redis.SetRedisType(redis.Redis_Single),
+		redis.SetRedis_Single_Addr(this.module.Options().GetRedisUrl()),
+		redis.SetRedis_Single_DB(this.module.Options().GetRedisDB()),
+		redis.SetRedis_Single_Password(this.module.Options().GetRedisPassword()),
+	); err != nil {
+		err = fmt.Errorf("redis[%s]err:%v", this.module.Options().GetRedisUrl(), err)
+	}
 	return
 }
 
-func (this *CacheComp) GetPool() *redis.RedisPool {
-	return this.redis.GetPool()
+func (this *CacheComp) GetRedis() redis.IRedis {
+	return this.redis
 }
 
 /*				Token相关接口
@@ -55,24 +63,21 @@ func (this *CacheComp) GetPool() *redis.RedisPool {
 //查询用户数据
 func (this *CacheComp) QueryToken(token string) (uId uint32, err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleToken), token)
-	pool := this.redis.GetPool()
-	err = pool.GetKeyForValue(Id, &uId)
+	err = this.redis.Get(Id, &uId)
 	return
 }
 
 //写入Token
 func (this *CacheComp) WriteToken(token string, uId uint32) (err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleToken), token)
-	pool := this.redis.GetPool()
-	err = pool.SetExKeyForValue(Id, uId, this.module.Options().GetTokenCacheExpirationDate())
+	err = this.redis.Set(Id, uId, time.Second*time.Duration(this.module.Options().GetTokenCacheExpirationDate()))
 	return
 }
 
 //清理Token
 func (this *CacheComp) CleanToken(token string) (err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleToken), token)
-	pool := this.redis.GetPool()
-	err = pool.Delete(Id)
+	err = this.redis.Delete(Id)
 	return
 }
 
@@ -105,9 +110,8 @@ func (this *CacheComp) CleanToken(token string) (err error) {
 //查询用户数据
 func (this *CacheComp) QueryUserData(uId uint32) (result *Cache_UserData, err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleUsers), uId)
-	pool := this.redis.GetPool()
 	result = &Cache_UserData{}
-	err = pool.GetKeyForValue(Id, result)
+	err = this.redis.Get(Id, result)
 	return
 }
 
@@ -127,24 +131,21 @@ func (this *CacheComp) synchronizeUserToCache(uId uint32) (result *Cache_UserDat
 //离线用户缓存读取之后保存10分钟
 func (this *CacheComp) writeUserDataByEx(result *Cache_UserData) (err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleUsers), result.Db_UserData.Id)
-	pool := this.redis.GetPool()
-	err = pool.SetExKeyForValue(Id, result, this.module.Options().GetUserCacheExpirationDate())
+	err = this.redis.Set(Id, result, time.Second*time.Duration(this.module.Options().GetUserCacheExpirationDate()))
 	return
 }
 
 //登录用户缓存信息长期驻留
 func (this *CacheComp) WriteUserData(data *Cache_UserData) (err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleUsers), data.Db_UserData.Id)
-	pool := this.redis.GetPool()
-	err = pool.SetKeyForValue(Id, data)
+	err = this.redis.Set(Id, data, 0)
 	return
 }
 
 //清理用户缓存
 func (this *CacheComp) CleanUserData(uid uint32) (err error) {
 	Id := fmt.Sprintf(string(Cache_ConsoleUsers), uid)
-	pool := this.redis.GetPool()
-	err = pool.Delete(Id)
+	err = this.redis.Delete(Id)
 	return
 }
 
@@ -176,23 +177,21 @@ func (this *CacheComp) CleanUserData(uid uint32) (err error) {
 
 //添加新的ClusterMonitor
 func (this *CacheComp) AddNewClusterMonitor(data map[string]*ClusterMonitor) {
-	pool := this.redis.GetPool()
 	for k, v := range data {
 		id := fmt.Sprintf(string(Cache_ConsoleClusterMonitor), k)
-		pool.SetListByRPush(id, []interface{}{v})
-		if len, err := pool.GetListCount(id); err == nil && len > this.module.Options().GetMonitorTotalTime() {
-			pool.GetListByLPop(string(Cache_ConsoleClusterMonitor), v)
+		this.redis.RPush(id, v)
+		if len, err := this.redis.Llen(id); err == nil && len > this.module.Options().GetMonitorTotalTime() {
+			this.redis.LPop(Cache_ConsoleClusterMonitor, v)
 		}
 	}
 }
 
 //添加新的ClusterMonitor
-func (this *CacheComp) GetClusterMonitor(sIs string, timeleng int32) (result []*ClusterMonitor, err error) {
+func (this *CacheComp) GetClusterMonitor(sIs string, timeleng int) (result []*ClusterMonitor, err error) {
 	var values []interface{}
 	result = make([]*ClusterMonitor, 0)
 	id := fmt.Sprintf(string(Cache_ConsoleClusterMonitor), sIs)
-	pool := this.redis.GetPool()
-	values, err = pool.GetListByLrange(id, 0, timeleng, reflect.TypeOf(&ClusterMonitor{}))
+	values, err = this.redis.LRange(id, 0, timeleng, reflect.TypeOf(&ClusterMonitor{}))
 	if err == nil && values != nil && len(values) > 0 {
 		result = make([]*ClusterMonitor, len(values))
 		for i, v := range values {
@@ -230,19 +229,17 @@ func (this *CacheComp) GetClusterMonitor(sIs string, timeleng int32) (result []*
 
 //添加新的HostMonitor
 func (this *CacheComp) AddNewHostMonitor(data *HostMonitor) {
-	pool := this.redis.GetPool()
-	pool.SetListByRPush(string(Cache_ConsoleHostMonitor), []interface{}{data})
-	if len, err := pool.GetListCount(string(Cache_ConsoleHostMonitor)); err == nil && len > this.module.Options().GetMonitorTotalTime() {
-		pool.GetListByLPop(string(Cache_ConsoleHostMonitor), data)
+	this.redis.RPush(Cache_ConsoleHostMonitor, data)
+	if len, err := this.redis.Llen(Cache_ConsoleHostMonitor); err == nil && len > this.module.Options().GetMonitorTotalTime() {
+		this.redis.LPop(Cache_ConsoleHostMonitor, data)
 	}
 }
 
 //添加新的HostMonitor
-func (this *CacheComp) GetHostMonitor(timeleng int32) (result []*HostMonitor, err error) {
+func (this *CacheComp) GetHostMonitor(timeleng int) (result []*HostMonitor, err error) {
 	var values []interface{}
 	result = make([]*HostMonitor, 0)
-	pool := this.redis.GetPool()
-	values, err = pool.GetListByLrange(string(Cache_ConsoleHostMonitor), 0, timeleng, reflect.TypeOf(&HostMonitor{}))
+	values, err = this.redis.LRange(Cache_ConsoleHostMonitor, 0, timeleng, reflect.TypeOf(&HostMonitor{}))
 	if values != nil && len(values) > 0 {
 		result = make([]*HostMonitor, len(values))
 		for i, v := range values {

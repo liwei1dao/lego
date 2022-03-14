@@ -8,6 +8,7 @@ import (
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
+	"github.com/liwei1dao/lego/sys/event"
 	"github.com/liwei1dao/lego/sys/mgo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -30,26 +31,20 @@ func (this *DBComp) Init(service core.IService, module core.IModule, comp core.I
 
 //校验数据库初始化工作是否完成
 func (this DBComp) checkDbInit() (err error) {
-	ctx, _ := context.WithTimeout(context.Background(), time.Second*60)
 	count, err := this.mgo.CountDocuments(Sql_ConsoleUserDataIdTable, bson.M{})
 	if err != nil || count == 0 {
 		//批量插入数据
-		leng := 1000000
-		cIds := make([]interface{}, leng)
-		for i, _ := range cIds {
-			cIds[i] = 1000000 + i
-		}
-		data := make([]interface{}, leng)
+		data := make([]interface{}, this.module.Options().GetInitUserIdNum())
 		r := rand.New(rand.NewSource(time.Now().Unix()))
 		n := 0
-		for _, i := range r.Perm(leng) {
+		for _, i := range r.Perm(this.module.Options().GetInitUserIdNum()) {
 			data[n] = bson.M{"_id": i}
 			n++
 		}
 		var (
 			err error
 		)
-		if _, err = this.mgo.InsertManyByCtx(Sql_ConsoleUserDataIdTable, ctx, data); err != nil {
+		if _, err = this.mgo.InsertManyByCtx(Sql_ConsoleUserDataIdTable, context.TODO(), data); err != nil {
 			return fmt.Errorf("CheckDbInit  err=%s", err.Error())
 		}
 	}
@@ -136,6 +131,8 @@ func (this *DBComp) registeredUser(data *DB_UserData) (result *DB_UserData, err 
 		NickName:    data.NickName,
 		HeadUrl:     data.HeadUrl,
 	}
-	_, err = this.mgo.InsertOne(Sql_ConsoleUserDataTable, result)
+	if _, err = this.mgo.InsertOne(Sql_ConsoleUserDataTable, result); err == nil {
+		event.TriggerEvent(Event_Registered, result)
+	}
 	return
 }

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"sync"
 	"time"
 
+	"github.com/liwei1dao/lego"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib"
@@ -19,19 +19,29 @@ import (
 )
 
 type MComp_GateCompOptions struct {
-	MaxGoroutine int
+	DefGoroutine  int //网关工作池默认协程数
+	MaxGoroutine  int //网关工作池最大协程数
+	HandleTimeOut int //工作池处理超时时间
 }
 
 func (this *MComp_GateCompOptions) LoadConfig(settings map[string]interface{}) (err error) {
+	this.DefGoroutine = 100
 	this.MaxGoroutine = 1000
+	this.HandleTimeOut = 5
 	if settings != nil {
 		err = mapstructure.Decode(settings, this)
 	}
 	return
 }
 
+func (this *MComp_GateCompOptions) GetDefGoroutine() int {
+	return this.DefGoroutine
+}
 func (this *MComp_GateCompOptions) GetGateMaxGoroutine() int {
 	return this.MaxGoroutine
+}
+func (this *MComp_GateCompOptions) GetHandleTimeOut() int {
+	return this.HandleTimeOut
 }
 
 /*
@@ -42,25 +52,26 @@ type MComp_GateComp struct {
 	cbase.ModuleCompBase
 	service    core.IService
 	comp       IMComp_GateComp
+	options    IMComp_GateCompOptions
 	ComId      uint16 //协议分类Id
 	IsLog      bool   //是否输出消息日志
 	Msghandles map[uint16]*msgRecep
-	Mrlock     sync.RWMutex
 	Workerpool workerpools.IWorkerPool
 }
 
 type msgRecep struct {
 	msgId   uint16
 	MsgType reflect.Type
-	F       func(session core.IUserSession, msg interface{})
+	F       func(ctx context.Context, session core.IUserSession, msg interface{})
 }
 
 func (this *MComp_GateComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
 	this.ModuleCompBase.Init(service, module, comp, options)
 	this.service = service
 	this.comp = comp.(IMComp_GateComp)
+	this.options = options.(IMComp_GateCompOptions)
 	this.Msghandles = make(map[uint16]*msgRecep)
-	this.Workerpool, err = workerpools.NewSys(workerpools.SetMaxWorkers(options.(IMComp_GateCompOptions).GetGateMaxGoroutine()), workerpools.SetTaskTimeOut(time.Second*2))
+	this.Workerpool, err = workerpools.NewSys(workerpools.SetDefWorkers(this.options.GetDefGoroutine()), workerpools.SetMaxWorkers(this.options.GetGateMaxGoroutine()), workerpools.SetTaskTimeOut(time.Second*time.Duration(this.options.GetHandleTimeOut())))
 	return
 }
 
@@ -91,42 +102,39 @@ func (this *MComp_GateComp) Start() (err error) {
 }
 
 func (this *MComp_GateComp) ReceiveMsg(session core.IUserSession, msg proto.IMessage) (code core.ErrorCode, err string) {
-	this.Workerpool.Submit(func(ctx context.Context, cancel context.CancelFunc, agrs ...interface{}) {
-		defer cancel()        //任务结束通知上层
-		defer cbase.Recover() //打印消息处理异常信息
-		_gatecomp, _session, _msg := agrs[0].(*MComp_GateComp), agrs[1].(core.IUserSession), agrs[2].(proto.IMessage)
-
-		_gatecomp.Mrlock.RLock()
-		msghandles, ok := _gatecomp.Msghandles[msg.GetMsgId()]
-		_gatecomp.Mrlock.RUnlock()
-		if !ok {
-			log.Errorf("模块网关路由【%d】没有注册消息【%d】接口", _gatecomp.ComId, _msg.GetMsgId())
-			return
-		}
-		msgdata, e := proto.ByteDecodeToStruct(msghandles.MsgType, _msg.GetBuffer())
-		if e != nil {
-			log.Errorf("收到异常消息【%d:%d】来自【%s】的消息:%v err:%v", _gatecomp.ComId, _msg.GetMsgId(), _session.GetSessionId(), _msg.GetBuffer(), e)
-			session.Close()
-			return
-		}
-		if _gatecomp.IsLog {
-			log.Infof("收到【%d:%d】来自【%s】的消息:%v", _gatecomp.ComId, _msg.GetMsgId(), _session.GetSessionId(), msgdata)
-		}
-		msghandles.F(_session, msgdata)
-	}, this, session, msg)
+	this.Workerpool.Submit(this.handlemsg, session, msg)
 	return core.ErrorCode_Success, ""
 }
 
-func (this *MComp_GateComp) RegisterHandle(mId uint16, msg interface{}, f func(session core.IUserSession, msg interface{})) {
+func (this *MComp_GateComp) RegisterHandle(mId uint16, msg interface{}, f func(ctx context.Context, session core.IUserSession, msg interface{})) {
 	if _, ok := this.Msghandles[mId]; ok {
 		log.Errorf("重复 注册网关【%d】消息【%d】", this.ComId, mId)
 		return
 	}
-	this.Mrlock.Lock()
 	this.Msghandles[mId] = &msgRecep{
 		msgId:   mId,
 		MsgType: reflect.TypeOf(msg),
 		F:       f,
 	}
-	this.Mrlock.Unlock()
+}
+
+func (this *MComp_GateComp) handlemsg(ctx context.Context, cancel context.CancelFunc, agrs ...interface{}) {
+	defer cancel()
+	session, msg := agrs[0].(core.IUserSession), agrs[1].(proto.IMessage)    //任务结束通知上层
+	defer lego.Recover(fmt.Sprintf("MComp_GateComp ReceiveMsg msg:%v", msg)) //打印消息处理异常信息
+	msghandles, ok := this.Msghandles[msg.GetMsgId()]
+	if !ok {
+		log.Errorf("模块网关路由【%d】没有注册消息【%d】接口", this.ComId, msg.GetMsgId())
+		return
+	}
+	msgdata, e := proto.ByteDecodeToStruct(msghandles.MsgType, msg.GetBuffer())
+	if e != nil {
+		log.Errorf("收到异常消息【%d:%d】来自【%s】的消息:%v err:%v", this.ComId, msg.GetMsgId(), session.GetSessionId(), msg.GetBuffer(), e)
+		session.Close()
+		return
+	}
+	if this.IsLog {
+		log.Infof("收到【%d:%d】来自【%s】的消息:%v", this.ComId, msg.GetMsgId(), session.GetSessionId(), msgdata)
+	}
+	msghandles.F(ctx, session, msgdata)
 }

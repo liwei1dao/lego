@@ -1,22 +1,26 @@
 package registry
 
-import (
-	"github.com/liwei1dao/lego/core"
-)
+import "github.com/liwei1dao/lego/core"
 
 type (
+	IListener interface {
+		FindServiceHandlefunc(snode ServiceNode)
+		UpDataServiceHandlefunc(snode ServiceNode)
+		LoseServiceHandlefunc(sId string)
+	}
 	ServiceNode struct {
 		Tag          string          `json:"Tag"`          //服务集群标签
 		Type         string          `json:"Type"`         //服务类型
 		Category     core.S_Category `json:"Category"`     //服务列别
 		Id           string          `json:"Id"`           //服务Id
-		Version      float32         `json:"Version"`      //服务版本
+		Version      string          `json:"Version"`      //服务版本
+		IP           string          `json:"Ip"`           //服务Ip
 		RpcId        string          `json:"RpcId"`        //服务通信Id
 		PreWeight    float64         `json:"PreWeight"`    //服务负载权重
 		RpcSubscribe []core.Rpc_Key  `json:"RpcSubscribe"` //服务开放接口
 	}
 
-	IRegistry interface {
+	ISys interface {
 		Start() error
 		Stop() error
 		PushServiceInfo() (err error)
@@ -29,7 +33,7 @@ type (
 )
 
 var (
-	defsys IRegistry
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -37,7 +41,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys IRegistry, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
 }

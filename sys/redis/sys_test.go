@@ -1,66 +1,143 @@
-package redis
+package redis_test
 
 import (
+	"encoding/json"
 	"fmt"
-	"reflect"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/liwei1dao/lego/sys/redis"
 )
 
-func TestRedisMutex_Lock(t *testing.T) {
-	if err := OnInit(map[string]interface{}{
-		"RedisUrl": "redis://127.0.0.1:6379/1",
-	}); err != nil {
-		t.Errorf("初始化 redis 失败 err:%s", err.Error())
+func Test_SysIPV6(t *testing.T) {
+	err := redis.OnInit(map[string]interface{}{
+		"Redis_Single_Addr":     "172.27.100.143:6382",
+		"Redis_Single_DB":       0,
+		"Redis_Single_Password": "idss@sjzt",
+	})
+	if err != nil {
+		fmt.Printf("Redis:err:%v \n", err)
 		return
 	}
-	wg := sync.WaitGroup{}
-	wg.Add(100)
-	for i := 0; i < 100; i++ {
-		go func() {
-			rlock := NewRedisMutex("roomIds")
-			start := time.Now()
-			if err := rlock.Lock(); err == nil {
-				t.Log("通过 ", time.Now().Sub(start))
-			} else {
-				t.Error("超时通过 ", time.Now().Sub(start))
-			}
-			time.Sleep(time.Millisecond * 5)
-			rlock.Unlock()
+	fmt.Printf("Redis:succ \n")
+	if err = redis.Set("liwei1dao", 123, -1); err != nil {
+		fmt.Printf("Redis:err:%v \n", err)
+	}
+}
+
+func Test_Redis_ExpireatKey(t *testing.T) {
+	err := redis.OnInit(map[string]interface{}{
+		"Redis_Single_Addr":     "172.20.27.145:10001",
+		"Redis_Single_DB":       0,
+		"Redis_Single_Password": "li13451234",
+	})
+	if err != nil {
+		fmt.Printf("Redis:err:%v \n", err)
+		return
+	}
+	fmt.Printf("Redis:succ \n")
+	if err = redis.Set("liwei1dao", 123, -1); err != nil {
+		fmt.Printf("Redis:err:%v \n", err)
+	}
+	if err = redis.ExpireKey("liwei1dao", 120); err != nil {
+		fmt.Printf("Redis:err:%v \n", err)
+	}
+	fmt.Printf("Redis:end \n")
+}
+
+func Test_JsonMarshal(t *testing.T) {
+	result, _ := json.Marshal(100)
+	fmt.Printf("结果%s \n", string(result))
+}
+
+func Test_Redis_SetNX(t *testing.T) {
+	err := redis.OnInit(map[string]interface{}{
+		"Redis_Single_Addr":     "172.20.27.145:10001",
+		"RedisDB":               0,
+		"Redis_Single_Password": "li13451234",
+	})
+	if err != nil {
+		fmt.Printf("Redis:err:%v \n", err)
+		return
+	}
+
+	wg := new(sync.WaitGroup)
+	wg.Add(20)
+	for i := 0; i < 20; i++ {
+		go func(index int) {
+			result, err := redis.SetNX("liwei1dao", index)
+			fmt.Printf("Redis index:%d result:%d err:%v \n", index, result, err)
 			wg.Done()
-		}()
+		}(i)
 	}
 	wg.Wait()
-	t.Log("结束测试")
+	fmt.Printf("Redis:end \n")
 }
-
-func TestRedisList_Lock(t *testing.T) {
-	if err := OnInit(map[string]interface{}{
-		"RedisUrl": "redis://127.0.0.1:6379/1",
-	}); err != nil {
-		t.Errorf("初始化 redis 失败 err:%s", err.Error())
+func Test_Redis_Lock(t *testing.T) {
+	err := redis.OnInit(map[string]interface{}{
+		"Redis_Single_Addr":     "172.20.27.145:10001",
+		"Redis_Single_DB":       0,
+		"Redis_Single_Password": "li13451234",
+	})
+	if err != nil {
+		fmt.Printf("Redis:err:%v \n", err)
 		return
 	}
-	var item string
-	GetPool().SetListByLPush("TestList", []interface{}{"liwei1dao"})
-	GetPool().SetListByLPush("TestList", []interface{}{"liwei2dao"})
-	GetPool().SetListByLPush("TestList", []interface{}{"liwei3dao"})
-	GetPool().SetListByLPush("TestList", []interface{}{"liwei4dao"})
-	GetPool().SetListByLPush("TestList", []interface{}{"liwei5dao"})
-	data, err := GetPool().GetListByLrange("TestList", 0, 100, reflect.TypeOf(&item))
-	// GetPool().GetListByLPop("TestList", &item)
-	fmt.Printf("结束测试 data:%v err:%v", data, err)
+	result, err := redis.Lock("liwei2dao", 100000)
+	fmt.Printf("Redis result:%v err:%v  \n", result, err)
 }
 
-func Test_GetExKeyForValue(t *testing.T) {
-	sys, err := NewSys(SetRedisUrl("redis://127.0.0.1:6379/1"))
+func Test_Redis_Mutex(t *testing.T) {
+	err := redis.OnInit(map[string]interface{}{
+		"Redis_Single_Addr":     "172.20.27.145:10001",
+		"Redis_Single_DB":       0,
+		"Redis_Single_Password": "li13451234",
+	})
 	if err != nil {
-		fmt.Printf("初始化 sys err:%v", err)
+		fmt.Printf("Redis:err:%v \n", err)
+		return
 	}
-	data := "liwei1dao"
-	pool := sys.GetPool()
-	pool.SetExKeyForValue("test001", &data, 1)
-	err = pool.GetExKeyForValue("test001", &data, 30)
-	fmt.Printf("GetExKeyForValue err:%v", err)
+
+	wg := new(sync.WaitGroup)
+	wg.Add(20)
+	for i := 0; i < 20; i++ {
+		go func(index int) {
+			if lock, err := redis.NewRedisMutex("liwei1dao_lock"); err != nil {
+				fmt.Printf("NewRedisMutex index:%d err:%v\n", index, err)
+			} else {
+				fmt.Printf("Lock 0 index:%d time:%s\n", index, time.Now().Format("2006/01/02 15:04:05 000"))
+				err = lock.Lock()
+				fmt.Printf("Lock 1 index:%d time:%s err:%v \n", index, time.Now().Format("2006/01/02 15:04:05 000"), err)
+				value := 0
+				redis.Get("liwei1dao", &value)
+				redis.Set("liwei1dao", value+1, -1)
+				lock.Unlock()
+				fmt.Printf("Lock 2 index:%d time:%s\n", index, time.Now().Format("2006/01/02 15:04:05 000"))
+			}
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
+	fmt.Printf("Redis:end \n")
+}
+
+func Test_Redis_Type(t *testing.T) {
+	err := redis.OnInit(map[string]interface{}{
+		"Redis_Single_Addr":     "172.20.27.145:10001",
+		"Redis_Single_DB":       1,
+		"Redis_Single_Password": "li13451234",
+	})
+	if err != nil {
+		fmt.Printf("Redis:err:%v \n", err)
+		return
+	}
+	fmt.Printf("Redis:succ \n")
+
+	if ty, err := redis.Type("test_set"); err != nil {
+		fmt.Printf("Test_Redis_Type:err:%v \n", err)
+	} else {
+		fmt.Printf("Test_Redis_Type:%s \n", ty)
+	}
+
 }

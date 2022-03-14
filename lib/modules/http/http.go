@@ -2,16 +2,17 @@ package http
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"net/http"
 	"sync"
 	"time"
 
+	"github.com/liwei1dao/lego"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib/modules/http/render"
 	"github.com/liwei1dao/lego/sys/log"
-	"github.com/liwei1dao/lego/utils/ip"
 )
 
 type Http struct {
@@ -31,7 +32,6 @@ type Http struct {
 	HTMLRender         render.HTMLRender
 	pool               sync.Pool
 	trees              methodTrees
-	Ip                 string
 }
 
 func (this *Http) NewOptions() (options core.IModuleOptions) {
@@ -52,15 +52,16 @@ func (this *Http) Init(service core.IService, module core.IModule, options core.
 	this.pool.New = func() interface{} {
 		return this.allocateContext()
 	}
-
 	this.http = &http.Server{
-		Addr:    this.options.GetHttpAddr(),
+		Addr:    fmt.Sprintf("0.0.0.0:%d", this.options.GetListenPort()),
 		Handler: this,
+	}
+	if this.options.GetCors() { //配置跨域
+		this.Use(handlerCors())
 	}
 	if err = this.ModuleBase.Init(service, module, options); err != nil {
 		return
 	}
-	this.Ip = ip.GetEthernetInfo().IP
 	return
 }
 func (this *Http) Start() (err error) {
@@ -140,6 +141,7 @@ func (this *Http) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func (this *Http) handleHTTPRequest(c *Context) {
+	defer lego.Recover(fmt.Sprintf("http handleHTTPRequest:%s", c.Request.URL.Path))
 	httpMethod := c.Request.Method
 	rPath := c.Request.URL.Path
 	unescape := false
@@ -196,7 +198,4 @@ func (this *Http) LoadHTMLGlob(pattern string) {
 }
 func (this *Http) SetHTMLTemplate(templ *template.Template) {
 	this.HTMLRender = render.HTMLProduction{Template: templ.Funcs(this.FuncMap)}
-}
-func (this *Http) GetIp() string {
-	return this.Ip
 }

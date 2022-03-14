@@ -1,10 +1,12 @@
-package cron
+package cron_test
 
 import (
 	"fmt"
 	"testing"
-)
+	"time"
 
+	"github.com/liwei1dao/lego/sys/cron"
+)
 
 // 1. cron表达式格式：
 // {秒数} {分钟} {小时} {日期} {月份} {星期} {年份(可为空)}
@@ -74,7 +76,6 @@ import (
 // "0 15 10 ? * 5L" 每个月最后一个星期四的10点15分0秒触发任务
 // "0 15 10 ? * 5#3" 每个月第三周的星期四的10点15分0秒触发任务
 
-
 // 一些cron表达式案例
 // */5 * * * * ? 每隔5秒执行一次
 // 0 */1 * * * ? 每隔1分钟执行一次
@@ -98,24 +99,29 @@ import (
 // 0 15 10 ? * 6#3 每月的第三个星期五上午10:15触发
 
 func Test_sys(t *testing.T) {
-	if err := OnInit(nil); err == nil {
-		AddFunc("@every 1s", func() { //每一秒
-			fmt.Printf("@every 1s")
-		})
-		AddFunc("@every 1m", func() { //每一分
-			fmt.Printf("@every 1m")
-		})
-		AddFunc("@hourly", func() { //每一小时
-			fmt.Printf("@hourly")
-		})
-		AddFunc("@daily", func() { //每天凌晨
-			fmt.Printf("@daily")
-		})
-		AddFunc("@daily", func() { //每天凌晨
-			fmt.Printf("@daily")
-		})
-		AddFunc("*/5 * * * * ?", func() { //每天凌晨
+	if err := cron.OnInit(nil); err == nil {
+		// AddFunc("@every 1s", func() { //每一秒
+		// 	fmt.Printf("@every 1s")
+		// })
+		// AddFunc("@every 1m", func() { //每一分
+		// 	fmt.Printf("@every 1m")
+		// })
+		// AddFunc("@hourly", func() { //每一小时
+		// 	fmt.Printf("@hourly")
+		// })
+		// AddFunc("@daily", func() { //每天凌晨
+		// 	fmt.Printf("@daily")
+		// })
+		// AddFunc("@daily", func() { //每天凌晨
+		// 	fmt.Printf("@daily")
+		// })
+		// AddFunc("*/5 * * * * ?", func() { //每天凌晨
+		// 	fmt.Printf("*/5 * * * * ?")
+		// })
+		cron.AddFunc("30/59 0/2 * * * ?", func() { //每隔90秒
 			fmt.Printf("*/5 * * * * ?")
 		})
+
 	}
+	time.Sleep(time.Minute * 5)
 }

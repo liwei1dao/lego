@@ -10,6 +10,11 @@ type Redis_Key string  //Redis缓存
 type SqlTable string   //数据库表定义
 type CustomRoute uint8 //自定义网关
 
+const (
+	AutoIp = "0.0.0.0"
+	AllIp  = "255.255.255.255"
+)
+
 const ( //默认事件
 	Event_ServiceStartEnd  Event_Key = "ServiceStartEnd"  //服务完全启动完毕
 	Event_FindNewService   Event_Key = "FindNewService"   //发现新的服务
@@ -25,12 +30,12 @@ const (
 )
 
 type ServiceSttings struct {
-	Id       string                            //服务Id
-	Type     string                            //服务类型 (相同的服务可以启动多个)
-	Tag      string                            //服务集群标签 (相同标签的集群服务可以互相发现和发现)
-	Category S_Category                        //服务列表 (用于区分集群服务下相似业务功能的服务器 例如:游戏服务器)
-	Version  float32                           //服务版本
-	Settings map[string]interface{}            //服务扩展配置
+	Id       string     //服务Id
+	Type     string     //服务类型 (相同的服务可以启动多个)
+	Tag      string     //服务集群标签 (相同标签的集群服务可以互相发现和发现)
+	Category S_Category //服务列表 (用于区分集群服务下相似业务功能的服务器 例如:游戏服务器)
+	Ip       string
+	Comps    map[string]map[string]interface{} //服务组件配置
 	Sys      map[string]map[string]interface{} //服务系统配置
 	Modules  map[string]map[string]interface{} //服务模块配置
 }
@@ -38,7 +43,8 @@ type ServiceSttings struct {
 type IService interface {
 	GetId() string                                              //获取服务id
 	GetType() string                                            //获取服务类型
-	GetVersion() float32                                        //获取服务版本
+	GetVersion() string                                         //获取服务版本
+	GetIp() string                                              //获取服务器运ip
 	GetSettings() ServiceSttings                                //获取服务配置表信息
 	Init(service IService) (err error)                          //初始化接口
 	InitSys()                                                   //初始化系统
@@ -52,7 +58,8 @@ type IService interface {
 }
 type IServiceComp interface {
 	GetName() S_Comps
-	Init(service IService, comp IServiceComp) (err error)
+	NewOptions() (options ICompOptions)
+	Init(service IService, comp IServiceComp, options ICompOptions) (err error)
 	Start() (err error)
 	Destroy() (err error)
 }
@@ -66,6 +73,10 @@ type IModule interface {
 	Destroy() (err error)
 }
 
+type ICompOptions interface {
+	LoadConfig(settings map[string]interface{}) (err error)
+}
+
 type IModuleOptions interface {
 	LoadConfig(settings map[string]interface{}) (err error)
 }
@@ -77,10 +88,11 @@ type IModuleComp interface {
 }
 type IServiceSession interface {
 	GetId() string
+	GetIp() string
 	GetRpcId() string
 	GetType() string
-	GetVersion() float32
-	SetVersion(v float32)
+	GetVersion() string
+	SetVersion(v string)
 	GetPreWeight() float64
 	SetPreWeight(p float64)
 	Done()
@@ -96,7 +108,7 @@ type IUserSession interface {
 }
 type IServiceMonitor interface {
 	IModule
-	RegisterServiceSettingItem(name string, iswrite bool, value interface{}, f func(newvalue string) (err error))                  //注册服务级别的Setting
+	RegisterServiceSettingItem(comp S_Comps, name string, iswrite bool, value interface{}, f func(newvalue string) (err error))    //注册服务级别的Setting
 	RegisterModuleSettingItem(module M_Modules, name string, iswrite bool, value interface{}, f func(newvalue string) (err error)) //注册模块级别的Setting
 }
 
@@ -111,7 +123,7 @@ type (
 		ServiceId       string                       //服务Id
 		ServiceType     string                       //服务类型
 		ServiceCategory S_Category                   //服务列表
-		ServiceVersion  float32                      //服务版本
+		ServiceVersion  string                       //服务版本
 		ServiceTag      string                       //服务集群
 		Pid             int32                        //进程Id
 		Pname           string                       //进程名称
@@ -119,8 +131,17 @@ type (
 		CpuUsed         float64                      //Cpu使用量
 		TotalGoroutine  int                          //总的协程数
 		CurrPreWeight   float64                      //服务权重
-		Setting         map[string]*SettingItem      //服务器配置信息
+		CompsSetting    map[S_Comps]*CompsSetting    //服务器配置信息
+		SysSetting      map[string]*SysSetting       //服务器系统配置信息
 		ModuleMonitor   map[M_Modules]*ModuleMonitor //模块监听信息
+	}
+	CompsSetting struct { //模块监听
+		CompName string                  //系统名称
+		Setting  map[string]*SettingItem //系统配置信息
+	}
+	SysSetting struct { //模块监听
+		SysName string                  //系统名称
+		Setting map[string]*SettingItem //系统配置信息
 	}
 	ModuleMonitor struct { //模块监听
 		ModuleName M_Modules               //模块名称

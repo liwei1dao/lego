@@ -19,11 +19,16 @@ const ( //DB
 )
 
 const ( //Cache
-	Cache_ConsoleToken          core.Redis_Key = "console_token:%s"          //用户数据缓存
-	Cache_ConsoleUsers          core.Redis_Key = "console_users:%d"          //用户数据缓存
-	Cache_ConsoleClusterMonitor core.Redis_Key = "console_clustermonitor:%s" //集群监听数据
-	Cache_ConsoleHostMonitor    core.Redis_Key = "console_hostmonitor"       //主机监听数据
-	Cache_ConsoleCaptcha        core.Redis_Key = "console_captcha:%s-%d"     //验证码缓存
+	Cache_ConsoleToken          string = "Console_Token:%s"          //用户数据缓存
+	Cache_ConsoleUsers          string = "Console_Users:%d"          //用户数据缓存
+	Cache_ConsoleClusterMonitor string = "Console_Clustermonitor:%s" //集群监听数据
+	Cache_ConsoleHostMonitor    string = "Console_Hostmonitor"       //主机监听数据
+	Cache_ConsoleCaptcha        string = "Console_Captcha:%s-%d"     //验证码缓存
+)
+
+const ( //event
+	Event_Registered core.Event_Key = "Console_Registered" //用户注册
+	Event_Login      core.Event_Key = "Console_Login"      //用户登录
 )
 
 type (
@@ -43,7 +48,7 @@ type (
 	}
 	ICache interface {
 		core.IModuleComp
-		GetPool() *redis.RedisPool
+		GetRedis() redis.IRedis
 		QueryToken(token string) (uId uint32, err error)
 		WriteToken(token string, uId uint32) (err error)
 		CleanToken(token string) (err error)
@@ -51,9 +56,9 @@ type (
 		WriteUserData(data *Cache_UserData) (err error)
 		CleanUserData(uid uint32) (err error)
 		AddNewClusterMonitor(data map[string]*ClusterMonitor)
-		GetClusterMonitor(sIs string, timeleng int32) (result []*ClusterMonitor, err error)
+		GetClusterMonitor(sIs string, timeleng int) (result []*ClusterMonitor, err error)
 		AddNewHostMonitor(data *HostMonitor)
-		GetHostMonitor(timeleng int32) (result []*HostMonitor, err error)
+		GetHostMonitor(timeleng int) (result []*HostMonitor, err error)
 	}
 	IDB interface {
 		core.IModuleComp
