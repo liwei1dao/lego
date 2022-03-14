@@ -20,6 +20,32 @@ type Options struct {
 	Producer_Return_Errors bool            //是否接受错误信息
 }
 
+func SetStartType(v PulsarStartType) Option {
+	return func(o *Options) {
+		o.StartType = v
+	}
+}
+func SetPulsarUrl(v string) Option {
+	return func(o *Options) {
+		o.PulsarUrl = v
+	}
+}
+func SetTopics(v []string) Option {
+	return func(o *Options) {
+		o.Topics = v
+	}
+}
+func SetConsumerGroupId(v string) Option {
+	return func(o *Options) {
+		o.ConsumerGroupId = v
+	}
+}
+func SetProducer_Return_Errors(v bool) Option {
+	return func(o *Options) {
+		o.Producer_Return_Errors = v
+	}
+}
+
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
 		PulsarUrl: "pulsar://127.0.0.1:6550",
