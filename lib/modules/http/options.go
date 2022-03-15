@@ -12,12 +12,14 @@ type (
 		GettCertPath() string
 		GetKeyPath() string
 		GetCors() bool
+		GetSignKey() string
 	}
 	Options struct {
 		ListenPort int    `json:"-"`
 		CertPath   string `json:"-"`
 		KeyPath    string `json:"-"`
 		Cors       bool   `json:"-"` //是否跨域
+		SignKey    string `json:"-"` //签名密钥
 	}
 )
 
@@ -44,4 +46,7 @@ func (this *Options) GetKeyPath() string {
 }
 func (this *Options) GetCors() bool {
 	return this.Cors
+}
+func (this *Options) GetSignKey() string {
+	return this.SignKey
 }

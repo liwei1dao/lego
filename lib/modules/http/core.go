@@ -17,6 +17,7 @@ type (
 	IHttp interface {
 		core.IModule
 		IRoutes
+		ParamSign(param map[string]interface{}) (sign string)
 		addRoute(method, path string, handlers HandlersChain) (err error)
 		Group(relativePath string, handlers ...HandlerFunc) *RouterGroup
 	}

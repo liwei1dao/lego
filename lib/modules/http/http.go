@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"reflect"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -13,6 +16,7 @@ import (
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib/modules/http/render"
 	"github.com/liwei1dao/lego/sys/log"
+	"github.com/liwei1dao/lego/utils/crypto/md5"
 )
 
 type Http struct {
@@ -64,12 +68,14 @@ func (this *Http) Init(service core.IService, module core.IModule, options core.
 	}
 	return
 }
+
 func (this *Http) Start() (err error) {
 	err = this.ModuleBase.Start()
 	this.wg.Add(1)
 	go this.starthttp()
 	return
 }
+
 func (this *Http) Destroy() (err error) {
 	this.wg.Add(1)
 	go this.closehttp()
@@ -77,6 +83,7 @@ func (this *Http) Destroy() (err error) {
 	err = this.ModuleBase.Destroy()
 	return
 }
+
 func (this *Http) starthttp() {
 	var err error
 	if this.options.GettCertPath() != "" && this.options.GetKeyPath() != "" {
@@ -89,6 +96,7 @@ func (this *Http) starthttp() {
 	}
 	this.wg.Done()
 }
+
 func (this *Http) closehttp() {
 	//使用context控制srv.Shutdown的超时时间
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -131,6 +139,7 @@ func (this *Http) addRoute(method, path string, handlers HandlersChain) (err err
 func (this *Http) allocateContext() *Context {
 	return &Context{engine: this}
 }
+
 func (this *Http) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	c := this.pool.Get().(*Context)
 	c.writermem.reset(w)
@@ -198,4 +207,31 @@ func (this *Http) LoadHTMLGlob(pattern string) {
 }
 func (this *Http) SetHTMLTemplate(templ *template.Template) {
 	this.HTMLRender = render.HTMLProduction{Template: templ.Funcs(this.FuncMap)}
+}
+
+//签名接口
+func (this *Http) ParamSign(param map[string]interface{}) (sign string) {
+	var keys []string
+	for k, _ := range param {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	builder := strings.Builder{}
+	for _, v := range keys {
+		builder.WriteString(v)
+		builder.WriteString("=")
+		switch reflect.TypeOf(param[v]).Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64:
+			builder.WriteString(fmt.Sprintf("%d", param[v]))
+			break
+		default:
+			builder.WriteString(fmt.Sprintf("%s", param[v]))
+			break
+		}
+		builder.WriteString("&")
+	}
+	builder.WriteString("key=" + this.options.GetSignKey())
+	log.Infof("orsign:%s", builder.String())
+	sign = md5.MD5EncToLower(builder.String())
+	return
 }

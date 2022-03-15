@@ -3,8 +3,6 @@ package console
 import (
 	"fmt"
 	nethttp "net/http"
-	reflect "reflect"
-	"sort"
 	"strings"
 	"time"
 
@@ -13,7 +11,6 @@ import (
 	"github.com/liwei1dao/lego/lib/modules/http"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/crypto/aes"
-	"github.com/liwei1dao/lego/utils/crypto/md5"
 )
 
 type Console struct {
@@ -72,33 +69,6 @@ func (this *Console) Hostmonitorcomp() IHostmonitorcomp {
 
 func (this *Console) Clustermonitorcomp() IClustermonitorcomp {
 	return this.clustermonitorcomp
-}
-
-//签名接口
-func (this *Console) ParamSign(param map[string]interface{}) (sign string) {
-	var keys []string
-	for k, _ := range param {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	builder := strings.Builder{}
-	for _, v := range keys {
-		builder.WriteString(v)
-		builder.WriteString("=")
-		switch reflect.TypeOf(param[v]).Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64:
-			builder.WriteString(fmt.Sprintf("%d", param[v]))
-			break
-		default:
-			builder.WriteString(fmt.Sprintf("%s", param[v]))
-			break
-		}
-		builder.WriteString("&")
-	}
-	builder.WriteString("key=" + this.options.GetSignKey())
-	log.Infof("orsign:%s", builder.String())
-	sign = md5.MD5EncToLower(builder.String())
-	return
 }
 
 //token 验证中间键
