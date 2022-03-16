@@ -23,11 +23,18 @@ func SetConfPath(v string) Option {
 	}
 }
 
-func SetSetting(v core.ServiceSttings) Option {
+func SetVersion(v string) Option {
 	return func(o *Options) {
-		o.Setting = v
+		o.Version = v
 	}
 }
+
+// func SetSetting(v core.ServiceSttings) Option {
+// 	return func(o *Options) {
+// 		o.Setting = v
+// 	}
+// }
+
 func newOptions(option ...Option) *Options {
 	options := &Options{
 		ConfPath: "conf/cluster.toml",
