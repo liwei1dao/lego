@@ -6,23 +6,22 @@ import (
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
-	"github.com/liwei1dao/lego/sys/sdks/email"
+	"github.com/liwei1dao/lego/sys/email"
 )
 
 type CaptchaComp struct {
 	cbase.ModuleCompBase
 	module IConsole
-	email  email.IEmail
+	email  email.ISys
 }
 
 func (this *CaptchaComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
 	err = this.ModuleCompBase.Init(service, module, comp, options)
 	this.module = module.(IConsole)
 	this.email, err = email.NewSys(
-		email.SetServerhost(this.module.Options().GetMailServerhost()),
-		email.SetFromemail(this.module.Options().GetMailFromemail()),
-		email.SetFompasswd(this.module.Options().GetMailFompasswd()),
-		email.SetServerport(this.module.Options().GetMailServerport()))
+		email.Set_FromEmail(this.module.Options().GetMailFromemail()),
+		email.Set_Password(this.module.Options().GetMailFompasswd()),
+	)
 	return
 }
 

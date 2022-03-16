@@ -40,10 +40,8 @@ type Options struct {
 	MonitorTotalTime         int                    `json:"-"` //监控总时长 小时为单位
 	MongodbUrl               string                 `json:"-"` //数据库
 	MongodbDatabase          string                 `json:"-"` //数据集
-	MailServerhost           string                 `json:"-"` //邮件系统配置
 	MailFromemail            string                 `json:"-"` //邮件系统配置
 	MailFompasswd            string                 `json:"-"` //邮件系统配置
-	MailServerport           int                    `json:"-"` //邮件系统配置
 	CaptchaExpirationdate    int                    `json:"-"` //Captcha缓存过期时间 单位秒
 	SignKey                  string                 `json:"-"` //签名密钥
 	UserInitialPassword      string                 `json:"-"` //用户初始密码
@@ -95,17 +93,12 @@ func (this *Options) GetMongodbUrl() string {
 func (this *Options) GetMongodbDatabase() string {
 	return this.MongodbDatabase
 }
-func (this *Options) GetMailServerhost() string {
-	return this.MailServerhost
-}
+
 func (this *Options) GetMailFromemail() string {
 	return this.MailFromemail
 }
 func (this *Options) GetMailFompasswd() string {
 	return this.MailFompasswd
-}
-func (this *Options) GetMailServerport() int {
-	return this.MailServerport
 }
 
 func (this *Options) GetCaptchaExpirationdate() int {
