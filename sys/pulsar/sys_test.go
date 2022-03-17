@@ -9,10 +9,10 @@ import (
 	lgpulsar "github.com/liwei1dao/lego/sys/pulsar"
 )
 
-func Test_sys_init(t *testing.T) {
+func Test_Sys(t *testing.T) {
 	if err := lgpulsar.OnInit(map[string]interface{}{
 		"StartType": lgpulsar.Producer,
-		"PulsarUrl": "pulsar://172.20.27.174:6650",
+		"PulsarUrl": "pulsar://172.20.27.145:6650",
 		"Topics":    []string{"liwei1dao_test"},
 	}); err != nil {
 		fmt.Printf("start sys err:%v", err)

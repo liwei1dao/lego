@@ -15,7 +15,7 @@ import (
 func Test_sys(t *testing.T) {
 	if err := kafka.OnInit(map[string]interface{}{
 		"StartType":                 kafka.Asyncproducer,
-		"Hosts":                     []string{"sjzt-wuhan-13:9092"},
+		"Hosts":                     []string{"172.20.27.126:9092", "172.20.27.127:9092", "172.20.27.128:9092"},
 		"Topics":                    []string{"ETL-IN-CX20211013641233861142316500871138900239"},
 		"GroupId":                   "liwei3dao",
 		"ClientID":                  "test",

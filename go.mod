@@ -56,9 +56,7 @@ require (
 	gonum.org/v1/gonum v0.8.2
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c
 	google.golang.org/protobuf v1.26.0
-	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2
-	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v2 v2.4.0
 )
