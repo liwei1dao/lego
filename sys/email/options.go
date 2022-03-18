@@ -19,6 +19,12 @@ type Options struct {
 	Password  string
 }
 
+func Set_EmailType(v EmailType) Option {
+	return func(o *Options) {
+		o.EmailType = v
+	}
+}
+
 func Set_FromEmail(v string) Option {
 	return func(o *Options) {
 		o.FromEmail = v
