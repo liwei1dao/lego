@@ -42,7 +42,7 @@ func (this *Storage) init() (err error) {
 }
 
 ///上传文件
-func (this *Storage) UploadFile(r io.Reader, bucket, object string) (err error) {
+func (this *Storage) UploadFile(r io.Reader, object string) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*50)
 	defer cancel()
 
@@ -58,17 +58,20 @@ func (this *Storage) UploadFile(r io.Reader, bucket, object string) (err error) 
 }
 
 //下载文件
-func (this *Storage) DownloadFile(w io.Writer, bucket, object string, destFileName string) error {
+func (this *Storage) DownloadFile(w io.Writer, object string) (err error) {
+	var (
+		rc *storage.Reader
+	)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*50)
 	defer cancel()
 
-	rc, err := this.bucket.Object(object).NewReader(ctx)
+	rc, err = this.bucket.Object(object).NewReader(ctx)
 	if err != nil {
 		return fmt.Errorf("Object(%q).NewReader: %v", object, err)
 	}
 	defer rc.Close()
 
-	if _, err := io.Copy(w, rc); err != nil {
+	if _, err = io.Copy(w, rc); err != nil {
 		return fmt.Errorf("io.Copy: %v", err)
 	}
 	return nil
