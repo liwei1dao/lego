@@ -5,6 +5,7 @@ go 1.14
 require (
 	cloud.google.com/go v0.81.0
 	cloud.google.com/go/storage v1.10.0
+	firebase.google.com/go/v4 v4.7.1
 	gitee.com/chunanyong/dm v1.8.3
 	github.com/Shopify/sarama v1.30.1
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect

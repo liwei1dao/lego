@@ -14,6 +14,7 @@ import (
 
 func newSys(options Options) (sys *Storage, err error) {
 	sys = &Storage{options: options}
+	err = sys.init()
 	return
 }
 
@@ -72,4 +73,9 @@ func (this *Storage) DownloadFile(w io.Writer, bucket, object string, destFileNa
 	}
 	return nil
 
+}
+
+func (this *Storage) Close() (err error) {
+	err = this.client.Close()
+	return
 }
