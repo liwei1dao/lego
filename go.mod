@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	cloud.google.com/go v0.81.0
+	cloud.google.com/go/storage v1.10.0
 	gitee.com/chunanyong/dm v1.8.3
 	github.com/Shopify/sarama v1.30.1
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
@@ -51,9 +52,11 @@ require (
 	go.mongodb.org/mongo-driver v1.5.1
 	go.uber.org/zap v1.17.0
 	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
+	golang.org/x/oauth2 v0.0.0-20210402161424-2e8d93401602
 	golang.org/x/text v0.3.7
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324 // indirect
 	gonum.org/v1/gonum v0.8.2
+	google.golang.org/api v0.44.0
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c
 	google.golang.org/protobuf v1.26.0
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
