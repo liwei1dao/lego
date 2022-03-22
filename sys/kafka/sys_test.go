@@ -44,8 +44,8 @@ func Test_sys(t *testing.T) {
 
 func Test_ConsumerGroup(t *testing.T) {
 	if err := kafka.OnInit(map[string]interface{}{
-		"StartType":                 kafka.AsyncproducerAndConsumer,
-		"Hosts":                     []string{"172.20.27.126:9092", "172.20.27.127:9092", " 172.20.27.128:9092"},
+		"StartType":                 kafka.Consumer,
+		"Hosts":                     []string{"172.20.27.98:39201"},
 		"Topics":                    []string{"ETL-IN-CX20211013641233861142316500871138900249"},
 		"GroupId":                   "liwei4dao",
 		"ClientID":                  "test",

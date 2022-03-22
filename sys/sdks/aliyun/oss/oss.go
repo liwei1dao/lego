@@ -8,34 +8,35 @@ import (
 )
 
 func newSys(options Options) (sys *OSS, err error) {
-	sys = &OSS{Endpoint: options.Endpoint, AccessKeyId: options.AccessKeyId, AccessKeySecret: options.AccessKeySecret, BucketName: options.BucketName}
+	sys = &OSS{options: options}
 	err = sys.Init()
 	return
 }
 
 type OSS struct {
-	Endpoint        string
-	AccessKeyId     string
-	AccessKeySecret string
-	BucketName      string
-	client          *oss.Client
-	bucket          *oss.Bucket
+	options Options
+	client  *oss.Client
+	bucket  *oss.Bucket
 }
 
 func (this *OSS) Init() (err error) {
-	this.client, err = oss.New(this.Endpoint, this.AccessKeyId, this.AccessKeySecret)
+	if this.options.SecurityToken != "" {
+		this.client, err = oss.New(this.options.Endpoint, this.options.AccessKeyId, this.options.AccessKeySecret, oss.SecurityToken(this.options.SecurityToken))
+	} else {
+		this.client, err = oss.New(this.options.Endpoint, this.options.AccessKeyId, this.options.AccessKeySecret)
+	}
 	if err != nil {
 		return err
 	}
-	if ok, err := this.client.IsBucketExist(this.BucketName); !ok || err != nil {
-		if err = this.CreateBucket(this.BucketName); err == nil {
-			this.bucket, err = this.client.Bucket(this.BucketName)
+	if ok, err := this.client.IsBucketExist(this.options.BucketName); !ok || err != nil {
+		if err = this.CreateBucket(this.options.BucketName); err == nil {
+			this.bucket, err = this.client.Bucket(this.options.BucketName)
 			return err
 		} else {
 			return err
 		}
 	} else {
-		this.bucket, err = this.client.Bucket(this.BucketName)
+		this.bucket, err = this.client.Bucket(this.options.BucketName)
 		return err
 	}
 }
