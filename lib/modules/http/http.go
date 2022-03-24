@@ -224,8 +224,18 @@ func (this *Http) ParamSign(param map[string]interface{}) (sign string) {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64:
 			builder.WriteString(fmt.Sprintf("%d", param[v]))
 			break
-		default:
+		case reflect.String:
 			builder.WriteString(fmt.Sprintf("%s", param[v]))
+		case reflect.Slice:
+			s := reflect.ValueOf(param[v])
+			var temp = make([]string, s.Len())
+			for i := 0; i < s.Len(); i++ {
+				ele := s.Index(i)
+				temp[i] = fmt.Sprintf("%v", ele.Interface())
+			}
+			builder.WriteString(strings.Join(temp, ","))
+		default:
+			builder.WriteString(fmt.Sprintf("%+v", param[v]))
 			break
 		}
 		builder.WriteString("&")
