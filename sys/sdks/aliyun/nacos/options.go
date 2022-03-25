@@ -18,6 +18,8 @@ type Options struct {
 	NamespaceId     string
 	NacosAddr       string
 	Port            uint64
+	Username        string
+	Password        string
 	TimeoutMs       uint64
 }
 
@@ -40,6 +42,17 @@ func SetNacosAddr(v string) Option {
 func SetPort(v uint64) Option {
 	return func(o *Options) {
 		o.Port = v
+	}
+}
+
+func SetUsername(v string) Option {
+	return func(o *Options) {
+		o.Username = v
+	}
+}
+func SetPassword(v string) Option {
+	return func(o *Options) {
+		o.Password = v
 	}
 }
 

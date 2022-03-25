@@ -35,6 +35,8 @@ func newNacos(options Options) (sys *Nacos_Registry, err error) {
 		NamespaceId:          options.Nacos_NamespaceId,
 		TimeoutMs:            options.Nacos_TimeoutMs,
 		BeatInterval:         options.Nacos_BeatInterval,
+		Username:             options.Nacos_UserName,
+		Password:             options.Nacos_Password,
 		NotLoadCacheAtStart:  true,
 		UpdateCacheWhenEmpty: true,
 		LogDir:               "nacos/log",

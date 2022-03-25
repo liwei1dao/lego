@@ -24,6 +24,8 @@ type (
 		Nacos_NamespaceId       string
 		Nacos_NacosAddr         string
 		Nacos_Port              uint64
+		Nacos_UserName          string
+		Nacos_Password          string
 		Nacos_TimeoutMs         uint64 //连接超时 ms
 		Nacos_BeatInterval      int64  //心跳间隔 ms
 		Nacos_RegisterTTL       int
@@ -74,6 +76,18 @@ func SetNacos_NacosAddr(v string) Option {
 func SetNacos_Port(v uint64) Option {
 	return func(o *Options) {
 		o.Nacos_Port = v
+	}
+}
+
+func SetNacos_UserName(v string) Option {
+	return func(o *Options) {
+		o.Nacos_UserName = v
+	}
+}
+
+func SetNacos_Password(v string) Option {
+	return func(o *Options) {
+		o.Nacos_Password = v
 	}
 }
 

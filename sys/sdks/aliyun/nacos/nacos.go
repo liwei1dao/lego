@@ -18,6 +18,8 @@ func newSys(options Options) (sys *Nacos, err error) {
 		NamespaceId:         options.NamespaceId,
 		TimeoutMs:           options.TimeoutMs,
 		NotLoadCacheAtStart: true,
+		Username:            options.Username,
+		Password:            options.Password,
 		LogDir:              "./nacos/log",
 		CacheDir:            "./nacos/cache",
 		RotateTime:          "1h",
