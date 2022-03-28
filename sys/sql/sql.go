@@ -3,6 +3,7 @@ package sql
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	// 更具需要启动的数据库服务 自己在上层业务添加驱动代码
@@ -27,7 +28,7 @@ func (this *Sql) Close() error {
 }
 
 func (this *Sql) getContext() (ctx context.Context) {
-	ctx, _ = context.WithTimeout(context.Background(), this.options.TimeOut)
+	ctx, _ = context.WithTimeout(context.Background(), time.Second*time.Duration(this.options.TimeOut))
 	return
 }
 

@@ -24,6 +24,7 @@ require (
 	github.com/go-ole/go-ole v1.2.1 // indirect
 	github.com/go-redis/redis/v8 v8.8.0
 	github.com/go-sql-driver/mysql v1.5.0
+	github.com/go-zookeeper/zk v1.0.2
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/godror/godror v0.25.3
 	github.com/golang/protobuf v1.5.2

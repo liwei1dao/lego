@@ -1,8 +1,6 @@
 package sql
 
 import (
-	"time"
-
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
@@ -20,7 +18,7 @@ type Option func(*Options)
 type Options struct {
 	SqlType SqlType
 	SqlUrl  string
-	TimeOut time.Duration
+	TimeOut int
 }
 
 func SetSqlType(v SqlType) Option {
@@ -35,7 +33,7 @@ func SetSqlUrl(v string) Option {
 	}
 }
 
-func SetTimeOut(v time.Duration) Option {
+func SetTimeOut(v int) Option {
 	return func(o *Options) {
 		o.TimeOut = v
 	}
@@ -44,7 +42,7 @@ func SetTimeOut(v time.Duration) Option {
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
 		SqlType: MySql,
-		TimeOut: 3 * time.Second,
+		TimeOut: 3,
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
@@ -60,7 +58,7 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 
 func newOptionsByOption(opts ...Option) Options {
 	options := Options{
-		TimeOut: 3 * time.Second,
+		TimeOut: 3,
 	}
 	for _, o := range opts {
 		o(&options)
