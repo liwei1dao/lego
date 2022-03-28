@@ -11,6 +11,9 @@ type (
 		Consumer_Close() error
 	}
 	IKafka interface {
+		Topics() ([]string, error)
+		Partitions(topic string) ([]int32, error)
+		GetOffset(topic string, partitionID int32, time int64) (int64, error)
 		Syncproducer_SendMessage(msg *sarama.ProducerMessage) (partition int32, offset int64, err error)
 		Syncproducer_SendMessages(msgs []*sarama.ProducerMessage) error
 		Syncproducer_Close() error
@@ -40,6 +43,16 @@ func NewSys(option ...Option) (sys IKafka, err error) {
 	if sys, err = newSys(newOptionsByOption(option...)); err == nil {
 	}
 	return
+}
+
+func Topics() ([]string, error) {
+	return defsys.Topics()
+}
+func Partitions(topic string) ([]int32, error) {
+	return defsys.Partitions(topic)
+}
+func GetOffset(topic string, partitionID int32, time int64) (int64, error) {
+	return defsys.GetOffset(topic, partitionID, time)
 }
 
 func Syncproducer_SendMessage(msg *sarama.ProducerMessage) (partition int32, offset int64, err error) {

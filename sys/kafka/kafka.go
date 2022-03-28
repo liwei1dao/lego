@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 func newSys(options Options) (sys *Kafka, err error) {
@@ -15,6 +16,7 @@ func newSys(options Options) (sys *Kafka, err error) {
 
 type Kafka struct {
 	options       Options
+	client        sarama.Client
 	syncproducer  sarama.SyncProducer
 	asyncproducer sarama.AsyncProducer
 	consumer      IConsumer
@@ -60,6 +62,13 @@ func (this *Kafka) init() (err error) {
 		err = fmt.Errorf("Unrecognized consumer group partition assignor: %s", this.options.Consumer_Assignor)
 		return
 	}
+
+	if this.options.StartType == Client || this.options.StartType == All {
+		if this.client, err = sarama.NewClient(this.options.Hosts, config); err != nil {
+			return
+		}
+	}
+
 	if this.options.StartType == Syncproducer || this.options.StartType == All || this.options.StartType == SyncproducerAndConsumer {
 		if this.syncproducer, err = sarama.NewSyncProducer(this.options.Hosts, config); err != nil {
 			return
@@ -82,6 +91,65 @@ func (this *Kafka) init() (err error) {
 		}
 	}
 	return
+}
+
+func (this *Kafka) Controller() (*sarama.Broker, error) {
+	return this.client.Controller()
+}
+
+func (this *Kafka) RefreshController() (*sarama.Broker, error) {
+	return this.client.RefreshController()
+}
+
+func (this *Kafka) Brokers() []*sarama.Broker {
+	return this.client.Brokers()
+}
+
+func (this *Kafka) Broker(brokerID int32) (*sarama.Broker, error) {
+	return this.client.Broker(brokerID)
+}
+
+func (this *Kafka) Topics() ([]string, error) {
+	return this.client.Topics()
+}
+
+func (this *Kafka) Partitions(topic string) ([]int32, error) {
+	return this.client.Partitions(topic)
+}
+
+func (this *Kafka) WritablePartitions(topic string) ([]int32, error) {
+	return this.client.WritablePartitions(topic)
+}
+func (this *Kafka) Leader(topic string, partitionID int32) (*sarama.Broker, error) {
+	return this.client.Leader(topic, partitionID)
+}
+func (this *Kafka) Replicas(topic string, partitionID int32) ([]int32, error) {
+	return this.client.Replicas(topic, partitionID)
+}
+func (this *Kafka) InSyncReplicas(topic string, partitionID int32) ([]int32, error) {
+	return this.client.InSyncReplicas(topic, partitionID)
+}
+func (this *Kafka) OfflineReplicas(topic string, partitionID int32) ([]int32, error) {
+	return this.client.OfflineReplicas(topic, partitionID)
+}
+func (this *Kafka) RefreshBrokers(addrs []string) error {
+	return this.client.RefreshBrokers(addrs)
+}
+func (this *Kafka) RefreshMetadata(topics ...string) error {
+	return this.client.RefreshMetadata(topics...)
+}
+func (this *Kafka) GetOffset(topic string, partitionID int32, time int64) (int64, error) {
+	return this.client.GetOffset(topic, partitionID, time)
+}
+func (this *Kafka) Coordinator(consumerGroup string) (*sarama.Broker, error) {
+	return this.client.Coordinator(consumerGroup)
+}
+func (this *Kafka) RefreshCoordinator(consumerGroup string) error {
+	return this.client.RefreshCoordinator(consumerGroup)
+}
+
+func (this *Kafka) InitProducerID() (*sarama.InitProducerIDResponse, error) {
+	return this.client.InitProducerID()
 }
 
 func (this *Kafka) Syncproducer_SendMessage(msg *sarama.ProducerMessage) (partition int32, offset int64, err error) {
@@ -120,14 +188,25 @@ func (this *Kafka) Consumer_Close() (err error) {
 }
 
 func (this *Kafka) Close() (err error) {
+	if this.client != nil {
+		if err = this.client.Close(); err != nil {
+			log.Errorf("Sys Kafka client Close err:%v", err)
+		}
+	}
 	if this.syncproducer != nil {
-		err = this.syncproducer.Close()
+		if err = this.syncproducer.Close(); err != nil {
+			log.Errorf("Sys Kafka syncproducer Close err:%v", err)
+		}
 	}
 	if this.asyncproducer != nil {
-		err = this.asyncproducer.Close()
+		if err = this.asyncproducer.Close(); err != nil {
+			log.Errorf("Sys Kafka asyncproducer Close err:%v", err)
+		}
 	}
 	if this.consumer != nil {
-		err = this.consumer.Consumer_Close()
+		if err = this.consumer.Consumer_Close(); err != nil {
+			log.Errorf("Sys Kafka consumer Close err:%v", err)
+		}
 	}
 	return
 }

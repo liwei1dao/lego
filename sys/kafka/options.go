@@ -9,7 +9,8 @@ import (
 
 type KafkaStartType int8 //kafka启动类型
 const (
-	Syncproducer             KafkaStartType = iota ///同步生产者
+	Client                   KafkaStartType = iota //kafka客户端
+	Syncproducer                                   ///同步生产者
 	Asyncproducer                                  ///异步生产者
 	Consumer                                       ///消费者
 	SyncproducerAndConsumer                        ///同步生产者和消费
