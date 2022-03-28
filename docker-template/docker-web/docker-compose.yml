@@ -1,0 +1,37 @@
+version: "3.7"
+
+# 申明同一个网络
+networks:
+  net:
+    name: net
+# 服务
+services:
+  go_console:
+      image: centos:7
+      container_name: go_console
+      networks:
+        net:
+          aliases:
+            - go_console
+      ports:
+        - 9567:9567
+      volumes:
+        - ../:/usr/local/go_console
+      working_dir: /usr/local/go_console
+      entrypoint: ["./console", "-conf", "./conf/console.toml"]
+  web:
+      image: nginx:latest
+      container_name: web
+      restart: always
+      networks:
+        net:
+          aliases:
+            - web
+      ports:
+        - 9568:9568
+      volumes:
+        - ./nginx.conf:/etc/nginx/nginx.conf
+        - ../web:/usr/share/nginx/web
+        - ../log/:/var/log/nginx/:rw
+      depends_on:
+        - go_console
