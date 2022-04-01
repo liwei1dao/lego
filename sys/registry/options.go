@@ -10,6 +10,7 @@ type RegistryType uint8
 const (
 	Registry_Consul RegistryType = iota
 	Registry_Nacos
+	Registry_Zookeeper
 )
 
 type (

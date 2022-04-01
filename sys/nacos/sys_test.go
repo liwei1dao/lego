@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/liwei1dao/lego/sys/sdks/aliyun/nacos"
+	"github.com/liwei1dao/lego/sys/nacos"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 )
 
