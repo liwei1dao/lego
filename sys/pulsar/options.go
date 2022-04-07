@@ -81,7 +81,12 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 }
 
 func newOptionsByOption(opts ...Option) Options {
-	options := Options{}
+	options := Options{
+		PulsarUrl:                 "pulsar://127.0.0.1:6550",
+		Producer_BatchingMaxSize:  5 * 1024 * 1024,
+		Producer_CompressionType:  pulsar.ZLib,
+		Producer_CompressionLevel: pulsar.Default,
+	}
 	for _, o := range opts {
 		o(&options)
 	}
