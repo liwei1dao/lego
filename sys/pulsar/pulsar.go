@@ -9,7 +9,7 @@ import (
 )
 
 func newSys(options Options) (sys *Pulsar, err error) {
-	sys = &Pulsar{options: options}
+	sys = &Pulsar{options: options, ctx: context.Background()}
 	err = sys.init()
 	return
 }
