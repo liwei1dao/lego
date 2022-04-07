@@ -36,12 +36,10 @@ func (this *Pulsar) init() (err error) {
 	}
 	if this.options.StartType == Producer || this.options.StartType == All {
 		if this.producer, err = this.client.CreateProducer(pulsar.ProducerOptions{
-			Topic:                   this.options.Topics[0],
-			DisableBlockIfQueueFull: false,
-			BatchingMaxMessages:     10000,
-			BatchingMaxSize:         this.options.Producer_BatchingMaxSize,
-			CompressionType:         this.options.Producer_CompressionType,
-			CompressionLevel:        this.options.Producer_CompressionLevel,
+			Topic:            this.options.Topics[0],
+			BatchingMaxSize:  this.options.Producer_BatchingMaxSize,
+			CompressionType:  this.options.Producer_CompressionType,
+			CompressionLevel: this.options.Producer_CompressionLevel,
 		}); err != nil {
 			err = fmt.Errorf("Sys:Pulsar CreateProducer err:%v", err)
 			return
