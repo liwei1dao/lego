@@ -104,7 +104,7 @@ func (this *Pulsar) run() {
 }
 
 func (this *Pulsar) producer_SendAsync_Call(mi pulsar.MessageID, pm *pulsar.ProducerMessage, err error) {
-	if this.options.Producer_Return_Errors {
+	if this.options.Producer_Return_Errors && err != nil {
 		this.errors <- &ProducerError{Msg: pm, Err: err}
 	}
 }
