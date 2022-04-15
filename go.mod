@@ -6,7 +6,6 @@ require (
 	cloud.google.com/go v0.81.0
 	cloud.google.com/go/storage v1.10.0
 	firebase.google.com/go/v4 v4.7.1
-	gitee.com/chunanyong/dm v1.8.3
 	github.com/Shopify/sarama v1.30.1
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/ZZMarquis/gm v1.3.2
@@ -39,6 +38,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/lib/pq v1.9.0 // indirect
+	github.com/liwei1dao/dm v0.0.0-20211103094420-938edf103cf0
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/nacos-group/nacos-sdk-go v1.0.8
