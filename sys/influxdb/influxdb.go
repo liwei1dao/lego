@@ -1,9 +1,12 @@
 package influxdb
 
 import (
+	"context"
 	"time"
 
-	iclient "github.com/influxdata/influxdb1-client/v2"
+	iclient "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/influxdata/influxdb-client-go/v2/api"
+	"github.com/influxdata/influxdb-client-go/v2/domain"
 )
 
 func newSys(options Options) (sys *Influxdb, err error) {
@@ -18,41 +21,33 @@ type Influxdb struct {
 }
 
 func (this *Influxdb) init() (err error) {
-	this.client, err = iclient.NewHTTPClient(iclient.HTTPConfig{
-		Addr:     this.options.Addr,
-		Username: this.options.Username,
-		Password: this.options.Password,
-	})
+	this.client = iclient.NewClient(this.options.Addr, this.options.Token)
+	_, err = this.Ping(this.getContext())
 	return
 }
 
-func (this *Influxdb) Ping(timeout time.Duration) (time.Duration, string, error) {
-	return this.client.Ping(timeout)
+func (this *Influxdb) getContext() (ctx context.Context) {
+	ctx, _ = context.WithTimeout(context.Background(), time.Duration(this.options.TimeOut)*time.Second)
+	return
+}
+func (this *Influxdb) Setup(username, password, org, bucket string, timeout int) (*domain.OnboardingResponse, error) {
+	return this.client.Setup(context.Background(), username, password, org, bucket, timeout)
 }
 
-func (this *Influxdb) Write(bp iclient.BatchPoints) error {
-	return this.client.Write(bp)
+func (this *Influxdb) Ping(ctx context.Context) (bool, error) {
+	return this.client.Ping(ctx)
 }
 
-func (this *Influxdb) Query(q iclient.Query) (*iclient.Response, error) {
-	return this.client.Query(q)
+func (this *Influxdb) WriteAPI(org, bucket string) api.WriteAPI {
+	return this.client.WriteAPI(org, bucket)
+}
+func (this *Influxdb) WriteAPIBlocking(org, bucket string) api.WriteAPIBlocking {
+	return this.client.WriteAPIBlocking(org, bucket)
+}
+func (this *Influxdb) QueryAPI(org string) api.QueryAPI {
+	return this.client.QueryAPI(org)
 }
 
-func (this *Influxdb) QueryAsChunk(q iclient.Query) (*iclient.ChunkedResponse, error) {
-	return this.client.QueryAsChunk(q)
-}
-
-func (this *Influxdb) Close() error {
-	return this.client.Close()
-}
-
-func (this *Influxdb) NewPoint(name string,
-	tags map[string]string,
-	fields map[string]interface{},
-	t ...time.Time) (*iclient.Point, error) {
-	return iclient.NewPoint(name, tags, fields, t...)
-}
-
-func (this *Influxdb) NewBatchPoints(conf iclient.BatchPointsConfig) (iclient.BatchPoints, error) {
-	return iclient.NewBatchPoints(conf)
+func (this *Influxdb) Close() {
+	this.client.Close()
 }

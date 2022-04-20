@@ -4,9 +4,9 @@ import "github.com/liwei1dao/lego/utils/mapstructure"
 
 type Option func(*Options)
 type Options struct {
-	Addr     string
-	Username string
-	Password string
+	Addr    string
+	Token   string
+	TimeOut int
 }
 
 ///地址
@@ -16,18 +16,20 @@ func SetAddr(v string) Option {
 	}
 }
 
-func SetUsername(v string) Option {
+func SetToken(v string) Option {
 	return func(o *Options) {
-		o.Username = v
+		o.Token = v
 	}
 }
-func SetPassword(v string) Option {
+func SetTimeOut(v int) Option {
 	return func(o *Options) {
-		o.Password = v
+		o.TimeOut = v
 	}
 }
 func newOptions(config map[string]interface{}, opts ...Option) Options {
-	options := Options{}
+	options := Options{
+		TimeOut: 5,
+	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
 	}
@@ -38,7 +40,9 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 }
 
 func newOptionsByOption(opts ...Option) Options {
-	options := Options{}
+	options := Options{
+		TimeOut: 5,
+	}
 	for _, o := range opts {
 		o(&options)
 	}
