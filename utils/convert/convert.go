@@ -3,6 +3,7 @@ package convert
 import (
 	"encoding/binary"
 	"math"
+	"unsafe"
 )
 
 func ByteToBytes(v byte) []byte {
@@ -68,8 +69,13 @@ func Float64ToBytes(v float64) []byte {
 	binary.LittleEndian.PutUint64(bytes, bits)
 	return bytes
 }
-func StringToBytes(v string) []byte {
-	return []byte(v)
+func StringToBytes(s string) []byte {
+	return *(*[]byte)(unsafe.Pointer(
+		&struct {
+			string
+			Cap int
+		}{s, len(s)},
+	))
 }
 
 func BytesTobyte(buf []byte) byte {
@@ -113,7 +119,7 @@ func BytesToFloat64(buf []byte) float64 {
 	bits := binary.LittleEndian.Uint64(buf)
 	return math.Float64frombits(bits)
 }
-func BytesToString(buf []byte) string {
-	bits := string(buf)
-	return bits
+
+func BytesToString(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
 }
