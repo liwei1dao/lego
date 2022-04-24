@@ -36,8 +36,7 @@ var defaultTrustedCIDRs = []*net.IPNet{
 	},
 }
 
-func newSys(options Options) (sys ISys, err error) {
-
+func newSys(options Options) (sys *Engine, err error) {
 	sys = &Engine{
 		options: options,
 		RouterGroup: RouterGroup{
@@ -60,6 +59,15 @@ func newSys(options Options) (sys ISys, err error) {
 		secureJSONPrefix:       "while(1);",
 		trustedProxies:         []string{"0.0.0.0/0"},
 		trustedCIDRs:           defaultTrustedCIDRs,
+	}
+	sys.RouterGroup.engine = sys
+	sys.pool.New = func() interface{} {
+		return sys.allocateContext()
+	}
+	if options.CertFile != "" && options.KeyFile != "" {
+		sys.RunTLS()
+	} else {
+		sys.Run()
 	}
 	return
 }
@@ -190,9 +198,9 @@ func (this *Engine) Run() (err error) {
 	return
 }
 
-func (this *Engine) RunTLS(addr, certFile, keyFile string) (err error) {
+func (this *Engine) RunTLS() (err error) {
 	if this.options.Debug {
-		log.Debugf("[SYS-Gin] Listening and serving HTTPS on %s\n", addr)
+		log.Debugf("[SYS-Gin] Listening and serving HTTPS on :%d\n", this.options.ListenPort)
 	}
 	defer func() {
 		if err != nil {
@@ -553,13 +561,13 @@ func (this *Engine) parseTrustedProxies() error {
 	return err
 }
 
-func (engine *Engine) prepareTrustedCIDRs() ([]*net.IPNet, error) {
-	if engine.trustedProxies == nil {
+func (this *Engine) prepareTrustedCIDRs() ([]*net.IPNet, error) {
+	if this.trustedProxies == nil {
 		return nil, nil
 	}
 
-	cidr := make([]*net.IPNet, 0, len(engine.trustedProxies))
-	for _, trustedProxy := range engine.trustedProxies {
+	cidr := make([]*net.IPNet, 0, len(this.trustedProxies))
+	for _, trustedProxy := range this.trustedProxies {
 		if !strings.Contains(trustedProxy, "/") {
 			ip := parseIP(trustedProxy)
 			if ip == nil {
@@ -580,6 +588,12 @@ func (engine *Engine) prepareTrustedCIDRs() ([]*net.IPNet, error) {
 		cidr = append(cidr, cidrNet)
 	}
 	return cidr, nil
+}
+
+func (this *Engine) allocateContext() *Context {
+	v := make(Params, 0, this.maxParams)
+	skippedNodes := make([]skippedNode, 0, this.maxSections)
+	return &Context{engine: this, params: &v, skippedNodes: &skippedNodes}
 }
 
 //日志接口-------------------------------------------------------------

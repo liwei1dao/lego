@@ -1,0 +1,36 @@
+package gin_test
+
+import (
+	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"testing"
+
+	"github.com/liwei1dao/lego/sys/gin"
+)
+
+func Test_sys(t *testing.T) {
+	if sys, err := gin.NewSys(); err != nil {
+		fmt.Printf("sys init err:%v", err)
+	} else {
+		sys.GET("/test", func(c *gin.Context) {
+			c.JSON(http.StatusOK, "hello")
+		})
+	}
+
+	//监听外部关闭服务信号
+	c := make(chan os.Signal, 1)
+	//添加进程结束信号
+	signal.Notify(c,
+		os.Interrupt,    //退出信号 ctrl+c退出
+		syscall.SIGHUP,  //终端控制进程结束(终端连接断开)
+		syscall.SIGINT,  //用户发送INTR字符(Ctrl+C)触发
+		syscall.SIGTERM, //结束程序(可以被捕获、阻塞或忽略)
+		syscall.SIGQUIT) //用户发送QUIT字符(Ctrl+/)触发
+	select {
+	case sig := <-c:
+		fmt.Println("关闭 signal\n", sig)
+	}
+}

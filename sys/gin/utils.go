@@ -2,6 +2,7 @@ package gin
 
 import (
 	"bytes"
+	"encoding/xml"
 	"net"
 	"path"
 	"reflect"
@@ -17,6 +18,31 @@ var (
 	strStar  = []byte("*")
 	strSlash = []byte("/")
 )
+
+// H is a shortcut for map[string]interface{}
+type H map[string]interface{}
+
+// MarshalXML allows type H to be used with xml.Marshal.
+func (h H) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	start.Name = xml.Name{
+		Space: "",
+		Local: "map",
+	}
+	if err := e.EncodeToken(start); err != nil {
+		return err
+	}
+	for key, value := range h {
+		elem := xml.StartElement{
+			Name: xml.Name{Space: "", Local: key},
+			Attr: []xml.Attr{},
+		}
+		if err := e.EncodeElement(value, elem); err != nil {
+			return err
+		}
+	}
+
+	return e.EncodeToken(xml.EndElement{Name: start.Name})
+}
 
 /*
 	解析一个 IP 的字符串表示并返回一个 net.IP
