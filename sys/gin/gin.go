@@ -1,6 +1,8 @@
 package gin
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"html/template"
 	"net"
@@ -35,6 +37,7 @@ var defaultTrustedCIDRs = []*net.IPNet{
 }
 
 func newSys(options Options) (sys ISys, err error) {
+
 	sys = &Engine{
 		options: options,
 		RouterGroup: RouterGroup{
@@ -70,6 +73,7 @@ var mimePlain = []string{MIMEPlain}
 type Engine struct {
 	RouterGroup
 	options    Options
+	server     *http.Server
 	UseRawPath bool
 	/*
 		如果启用，路由器尝试修复当前请求路径，如果没有
@@ -173,7 +177,16 @@ func (this *Engine) Run() (err error) {
 	if this.options.Debug {
 		log.Debugf("[SYS-Gin] Listening and serving HTTP on :%s\n", this.options.ListenPort)
 	}
-	err = http.ListenAndServe(fmt.Sprintf(":%d", this.options.ListenPort), this.Handler())
+	this.server = &http.Server{
+		Addr:    fmt.Sprintf(":%d", this.options.ListenPort),
+		Handler: this.Handler(),
+	}
+	go func() {
+		if err := this.server.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
+			log.Errorf("[SYS-Gin] listen: %s\n", err)
+		}
+	}()
+	// err = http.ListenAndServe(fmt.Sprintf(":%d", this.options.ListenPort), this.Handler())
 	return
 }
 
@@ -193,8 +206,16 @@ func (this *Engine) RunTLS(addr, certFile, keyFile string) (err error) {
 				"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
 		}
 	}
-
-	err = http.ListenAndServeTLS(addr, certFile, keyFile, this.Handler())
+	this.server = &http.Server{
+		Addr:    fmt.Sprintf(":%d", this.options.ListenPort),
+		Handler: this.Handler(),
+	}
+	go func() {
+		if err := this.server.ListenAndServeTLS(this.options.CertFile, this.options.KeyFile); err != nil && errors.Is(err, http.ErrServerClosed) {
+			log.Errorf("[SYS-Gin] listen: %s\n", err)
+		}
+	}()
+	// err = http.ListenAndServeTLS(addr, certFile, keyFile, this.Handler())
 	return
 }
 
@@ -216,6 +237,14 @@ func (this *Engine) RunListener(listener net.Listener) (err error) {
 		}
 	}
 	err = http.Serve(listener, this.Handler())
+	return
+}
+
+func (this *Engine) Close() (err error) {
+	if err = this.server.Shutdown(context.Background()); err != nil {
+		log.Errorf("[SYS-Gin] Close err:%v", err)
+	}
+	this.server.Close()
 	return
 }
 

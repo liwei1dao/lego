@@ -5,6 +5,7 @@ import "net/http"
 type (
 	ISys interface {
 		IRoutes
+		Close() (err error)
 	}
 	IRoutes interface {
 		Use(...HandlerFunc) IRoutes
@@ -41,6 +42,10 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 func NewSys(option ...Option) (sys ISys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
+}
+
+func Close() (err error) {
+	return defsys.Close()
 }
 
 func Use(handlers ...HandlerFunc) IRoutes {
