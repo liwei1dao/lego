@@ -22,6 +22,13 @@ type (
 		Static(string, string) IRoutes
 		StaticFS(string, http.FileSystem) IRoutes
 	}
+	RouteInfo struct {
+		Method      string
+		Path        string
+		Handler     string
+		HandlerFunc HandlerFunc
+	}
+	RoutesInfo []RouteInfo
 )
 
 var defsys ISys

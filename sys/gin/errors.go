@@ -34,6 +34,11 @@ func (msg *Error) IsType(flags ErrorType) bool {
 
 type errorMsgs []*Error
 
+func (msg *Error) SetType(flags ErrorType) *Error {
+	msg.Type = flags
+	return msg
+}
+
 func (this errorMsgs) ByType(typ ErrorType) errorMsgs {
 	if len(this) == 0 {
 		return nil

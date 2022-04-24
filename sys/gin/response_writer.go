@@ -13,6 +13,8 @@ const (
 
 type ResponseWriter interface {
 	http.ResponseWriter
+	http.Flusher
+	http.CloseNotifier
 	/*
 		返回当前请求的 HTTP 响应状态码。
 	*/
@@ -21,6 +23,10 @@ type ResponseWriter interface {
 		大小返回已经写入响应 http 正文的字节数
 	*/
 	Size() int
+	/*
+		WriteHeaderNow 强制写入 http 标头（状态码 + 标头）。
+	*/
+	WriteHeaderNow()
 }
 type responseWriter struct {
 	http.ResponseWriter
@@ -52,6 +58,15 @@ func (w *responseWriter) Size() int {
 }
 func (w *responseWriter) Written() bool {
 	return w.size != noWritten
+}
+
+func (w *responseWriter) CloseNotify() <-chan bool {
+	return w.ResponseWriter.(http.CloseNotifier).CloseNotify()
+}
+
+func (w *responseWriter) Flush() {
+	w.WriteHeaderNow()
+	w.ResponseWriter.(http.Flusher).Flush()
 }
 
 func (this *responseWriter) WriteHeaderNow() {

@@ -154,27 +154,68 @@ type Engine struct {
 	trustedCIDRs     []*net.IPNet
 }
 
+func (this *Engine) IsDebug() bool {
+	return this.options.Debug
+}
+
 func (this *Engine) Run() (err error) {
-	defer func() { this.debugPrintError(err) }()
+	defer func() {
+		if err != nil {
+			log.Errorf("[SYS-Gin] err:%v", err)
+		}
+	}()
 	if this.isUnsafeTrustedProxies() {
-		this.warnfPrint("You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
-			"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
+		if this.options.Debug {
+			log.Warnf("[SYS-Gin] You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
+				"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
+		}
 	}
-	this.debugPrint("Listening and serving HTTP on :%s\n", this.options.ListenPort)
+	if this.options.Debug {
+		log.Debugf("[SYS-Gin] Listening and serving HTTP on :%s\n", this.options.ListenPort)
+	}
 	err = http.ListenAndServe(fmt.Sprintf(":%d", this.options.ListenPort), this.Handler())
 	return
 }
 
 func (this *Engine) RunTLS(addr, certFile, keyFile string) (err error) {
-	this.debugPrint("Listening and serving HTTPS on %s\n", addr)
-	defer func() { this.debugPrintError(err) }()
+	if this.options.Debug {
+		log.Debugf("[SYS-Gin] Listening and serving HTTPS on %s\n", addr)
+	}
+	defer func() {
+		if err != nil {
+			log.Errorf("[SYS-Gin] err:%v", err)
+		}
+	}()
 
 	if this.isUnsafeTrustedProxies() {
-		this.warnfPrint("You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
-			"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
+		if this.options.Debug {
+			log.Warnf("[SYS-Gin] You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
+				"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
+		}
 	}
 
 	err = http.ListenAndServeTLS(addr, certFile, keyFile, this.Handler())
+	return
+}
+
+func (this *Engine) RunListener(listener net.Listener) (err error) {
+	if this.options.Debug {
+		log.Debugf("[SYS-Gin] Listening and serving HTTP on listener what's bind with address@%s", listener.Addr())
+	}
+	defer func() {
+		if err != nil {
+			log.Errorf("[SYS-Gin] err:%v", err)
+		}
+
+	}()
+
+	if this.isUnsafeTrustedProxies() {
+		if this.options.Debug {
+			log.Warnf("[SYS-Gin] You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
+				"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
+		}
+	}
+	err = http.Serve(listener, this.Handler())
 	return
 }
 
@@ -194,6 +235,16 @@ func (this *Engine) Handler() http.Handler {
 
 	h2s := &http2.Server{}
 	return h2c.NewHandler(this, h2s)
+}
+
+/*
+	使用中间件
+*/
+func (this *Engine) Use(middleware ...HandlerFunc) IRoutes {
+	this.RouterGroup.Use(middleware...)
+	this.rebuild404Handlers()
+	this.rebuild405Handlers()
+	return this
 }
 
 /*
@@ -229,7 +280,13 @@ func (this *Engine) LoadHTMLFiles(files ...string) {
 
 func (this *Engine) SetHTMLTemplate(templ *template.Template) {
 	if len(this.trees) > 0 {
-		this.debugPrintWARNINGSetHTMLTemplate()
+		if this.options.Debug {
+			log.Warnf(`[SYS-Gin] Since SetHTMLTemplate() is NOT thread-safe. It should only be called
+			at initialization. ie. before any route is registered or the router is listening in a socket:
+				router := gin.Default()
+				router.SetHTMLTemplate(template) // << good place
+			`)
+		}
 	}
 	this.HTMLRender = render.HTMLProduction{Template: templ.Funcs(this.FuncMap)}
 }
@@ -257,6 +314,13 @@ func (this *Engine) NoMethod(handlers ...HandlerFunc) {
 	this.rebuild405Handlers()
 }
 
+func (engine *Engine) Routes() (routes RoutesInfo) {
+	for _, tree := range engine.trees {
+		routes = iterate("", tree.method, routes, tree.root)
+	}
+	return routes
+}
+
 /*
 	设置信任代理
 */
@@ -269,7 +333,11 @@ func (this *Engine) addRoute(method, path string, handlers HandlersChain) {
 	assert1(path[0] == '/', "path must begin with '/'")
 	assert1(method != "", "HTTP method can not be empty")
 	assert1(len(handlers) > 0, "there must be at least one handler")
-	this.debugPrintRoute(method, path, handlers)
+	if this.options.Debug {
+		nuHandlers := len(handlers)
+		handlerName := nameOfFunction(handlers.Last())
+		log.Debugf("%-6s %-25s --> %s (%d handlers)", method, path, handlerName, nuHandlers)
+	}
 	root := this.trees.get(method)
 	if root == nil {
 		root = new(node)
@@ -401,7 +469,7 @@ func (this *Engine) serveError(c *Context, code int, defaultMessage []byte) {
 		c.writermem.Header()["Content-Type"] = mimePlain
 		_, err := c.Writer.Write(defaultMessage)
 		if err != nil {
-			this.debugPrint("cannot write message to writer during serve error: %v", err)
+			log.Errorf("[SYS-Gin] cannot write message to writer during serve error: %v", err)
 		}
 		return
 	}
@@ -442,7 +510,10 @@ func (this *Engine) redirectRequest(c *Context) {
 	if req.Method != http.MethodGet {
 		code = http.StatusTemporaryRedirect
 	}
-	this.debugPrint("redirecting request %d: %s --> %s", code, rPath, rURL)
+	if this.options.Debug {
+		log.Debugf("[SYS-Gin] redirecting request %d: %s --> %s", code, rPath, rURL)
+	}
+
 	http.Redirect(c.Writer, req, rURL, code)
 	c.writermem.WriteHeaderNow()
 }
@@ -483,48 +554,6 @@ func (engine *Engine) prepareTrustedCIDRs() ([]*net.IPNet, error) {
 }
 
 //日志接口-------------------------------------------------------------
-func (this *Engine) debugPrintWARNINGSetHTMLTemplate() {
-	this.warnfPrint(`Since SetHTMLTemplate() is NOT thread-safe. It should only be called
-at initialization. ie. before any route is registered or the router is listening in a socket:
-
-	router := gin.Default()
-	router.SetHTMLTemplate(template) // << good place
-
-`)
-}
-
-func (this *Engine) debugPrintError(err error) {
-	if err != nil && this.options.Debug {
-		log.Errorf("[GIN-debug] [ERROR] %v", err)
-	}
-}
-
-func (this *Engine) debugPrintRoute(httpMethod, absolutePath string, handlers HandlersChain) {
-	if this.options.Debug {
-		nuHandlers := len(handlers)
-		handlerName := nameOfFunction(handlers.Last())
-		log.Debugf("%-6s %-25s --> %s (%d handlers)", httpMethod, absolutePath, handlerName, nuHandlers)
-	}
-}
-
-func (this *Engine) warnfPrint(format string, values ...interface{}) {
-	if this.options.Debug {
-		if !strings.HasSuffix(format, "\n") {
-			format += "\n"
-		}
-		log.Warnf("[GIN-debug]"+format, values...)
-	}
-}
-
-func (this *Engine) debugPrint(format string, values ...interface{}) {
-	if this.options.Debug {
-		if !strings.HasSuffix(format, "\n") {
-			format += "\n"
-		}
-		log.Debugf("[GIN-debug]"+format, values...)
-	}
-}
-
 func (this *Engine) debugPrintLoadTemplate(tmpl *template.Template) {
 	if this.options.Debug {
 		var buf strings.Builder
@@ -533,6 +562,10 @@ func (this *Engine) debugPrintLoadTemplate(tmpl *template.Template) {
 			buf.WriteString(tmpl.Name())
 			buf.WriteString("\n")
 		}
-		this.debugPrint("Loaded HTML Templates (%d): \n%s\n", len(tmpl.Templates()), buf.String())
+		format := "Loaded HTML Templates (%d): \n%s\n"
+		if !strings.HasSuffix(format, "\n") {
+			format += "\n"
+		}
+		log.Debugf("[SYS-Gin] "+format, len(tmpl.Templates()), buf.String())
 	}
 }

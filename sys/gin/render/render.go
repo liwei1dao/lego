@@ -1,6 +1,8 @@
 package render
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type Render interface {
 	// Render 使用自定义 ContentType 写入数据。

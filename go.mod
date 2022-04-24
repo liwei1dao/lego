@@ -21,6 +21,7 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.3.1
 	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
 	github.com/go-ole/go-ole v1.2.1 // indirect
+	github.com/go-playground/validator/v10 v10.10.1
 	github.com/go-redis/redis/v8 v8.8.0
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/go-zookeeper/zk v1.0.2
@@ -51,11 +52,12 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/shirou/gopsutil v3.20.12+incompatible
 	github.com/tjfoc/gmsm v1.4.1
+	github.com/ugorji/go/codec v1.2.7
 	github.com/wolfogre/go-pprof-practice v0.0.0-20190402114113-8ce266a210ee
 	go.mongodb.org/mongo-driver v1.5.1
 	go.uber.org/zap v1.17.0
-	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
-	golang.org/x/net v0.0.0-20210917221730-978cfadd31cf
+	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
+	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
 	golang.org/x/oauth2 v0.0.0-20210402161424-2e8d93401602
 	golang.org/x/text v0.3.7
 	gonum.org/v1/gonum v0.8.2

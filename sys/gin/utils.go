@@ -6,6 +6,8 @@ import (
 	"path"
 	"reflect"
 	"runtime"
+	"strings"
+	"unicode"
 
 	"github.com/liwei1dao/lego/utils/convert"
 )
@@ -62,6 +64,31 @@ func joinPaths(absolutePath, relativePath string) string {
 		return finalPath + "/"
 	}
 	return finalPath
+}
+
+func iterate(path, method string, routes RoutesInfo, root *node) RoutesInfo {
+	path += root.path
+	if len(root.handlers) > 0 {
+		handlerFunc := root.handlers.Last()
+		routes = append(routes, RouteInfo{
+			Method:      method,
+			Path:        path,
+			Handler:     nameOfFunction(handlerFunc),
+			HandlerFunc: handlerFunc,
+		})
+	}
+	for _, child := range root.children {
+		routes = iterate(path, method, routes, child)
+	}
+	return routes
+}
+func filterFlags(content string) string {
+	for i, char := range content {
+		if char == ' ' || char == ';' {
+			return content[:i]
+		}
+	}
+	return content
 }
 
 /*
@@ -217,4 +244,37 @@ func bufApp(buf *[]byte, s string, w int, c byte) {
 		copy(b, s[:w])
 	}
 	b[w] = c
+}
+
+func parseAccept(acceptHeader string) []string {
+	parts := strings.Split(acceptHeader, ",")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if i := strings.IndexByte(part, ';'); i > 0 {
+			part = part[:i]
+		}
+		if part = strings.TrimSpace(part); part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
+}
+
+func chooseData(custom, wildcard interface{}) interface{} {
+	if custom != nil {
+		return custom
+	}
+	if wildcard != nil {
+		return wildcard
+	}
+	panic("negotiation config is invalid")
+}
+
+func isASCII(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] > unicode.MaxASCII {
+			return false
+		}
+	}
+	return true
 }
