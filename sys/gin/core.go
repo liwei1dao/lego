@@ -42,3 +42,48 @@ func NewSys(option ...Option) (sys ISys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
 }
+
+func Use(handlers ...HandlerFunc) IRoutes {
+	return defsys.Use(handlers...)
+}
+func Handle(httpMethod string, relativePath string, handlers ...HandlerFunc) IRoutes {
+	return defsys.Handle(httpMethod, relativePath, handlers...)
+}
+func Any(relativePath string, handlers ...HandlerFunc) IRoutes {
+	return defsys.Any(relativePath, handlers...)
+}
+func GET(httpMethod string, handlers ...HandlerFunc) IRoutes {
+	return defsys.GET(httpMethod, handlers...)
+}
+func POST(httpMethod string, handlers ...HandlerFunc) IRoutes {
+	return defsys.POST(httpMethod, handlers...)
+}
+func DELETE(httpMethod string, handlers ...HandlerFunc) IRoutes {
+	return defsys.DELETE(httpMethod, handlers...)
+}
+func PATCH(httpMethod string, handlers ...HandlerFunc) IRoutes {
+	return defsys.PATCH(httpMethod, handlers...)
+}
+func PUT(httpMethod string, handlers ...HandlerFunc) IRoutes {
+	return defsys.PUT(httpMethod, handlers...)
+}
+func OPTIONS(httpMethod string, handlers ...HandlerFunc) IRoutes {
+	return defsys.OPTIONS(httpMethod, handlers...)
+}
+func HEAD(httpMethod string, handlers ...HandlerFunc) IRoutes {
+	return defsys.HEAD(httpMethod, handlers...)
+}
+func StaticFile(relativePath string, filepath string) IRoutes {
+	return defsys.StaticFile(relativePath, filepath)
+}
+func StaticFileFS(relativePath string, filepath string, fs http.FileSystem) IRoutes {
+	return defsys.StaticFileFS(relativePath, filepath, fs)
+}
+
+func Static(relativePath string, root string) IRoutes {
+	return defsys.Static(relativePath, root)
+}
+
+func StaticFS(relativePath string, fs http.FileSystem) IRoutes {
+	return defsys.StaticFS(relativePath, fs)
+}
