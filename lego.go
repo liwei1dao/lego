@@ -32,6 +32,6 @@ func Recover(tag string) {
 	if r := recover(); r != nil {
 		buf := make([]byte, 1024)
 		l := runtime.Stack(buf, false)
-		log.Panicf("%s - %v: %s", tag, r, buf[:l])
+		log.Errorf("%s - %v: %s", tag, r, buf[:l])
 	}
 }
