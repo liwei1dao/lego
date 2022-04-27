@@ -4,13 +4,9 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/liwei1dao/lego/sys/livego/packet"
 	"github.com/liwei1dao/lego/sys/livego/utils/pool"
 )
 
-/*
-切片流
-*/
 type ChunkStream struct {
 	Format    uint32
 	CSID      uint32
@@ -27,14 +23,15 @@ type ChunkStream struct {
 	Data      []byte
 }
 
-func (this *ChunkStream) full() bool {
-	return this.got
-}
 func (this *ChunkStream) new(pool *pool.Pool) {
 	this.got = false
 	this.index = 0
 	this.remain = this.Length
 	this.Data = pool.Get(int(this.Length))
+}
+
+func (this *ChunkStream) full() bool {
+	return this.got
 }
 
 func (this *ChunkStream) readChunk(r *ReadWriter, chunkSize uint32, pool *pool.Pool) error {
@@ -141,46 +138,6 @@ func (this *ChunkStream) readChunk(r *ReadWriter, chunkSize uint32, pool *pool.P
 	return r.readError
 }
 
-func (this *ChunkStream) writeChunk(w *ReadWriter, chunkSize int) error {
-	if this.TypeID == packet.TAG_AUDIO {
-		this.CSID = 4
-	} else if this.TypeID == packet.TAG_VIDEO ||
-		this.TypeID == packet.TAG_SCRIPTDATAAMF0 ||
-		this.TypeID == packet.TAG_SCRIPTDATAAMF3 {
-		this.CSID = 6
-	}
-
-	totalLen := uint32(0)
-	numChunks := (this.Length / uint32(chunkSize))
-	for i := uint32(0); i <= numChunks; i++ {
-		if totalLen == this.Length {
-			break
-		}
-		if i == 0 {
-			this.Format = uint32(0)
-		} else {
-			this.Format = uint32(3)
-		}
-		if err := this.writeHeader(w); err != nil {
-			return err
-		}
-		inc := uint32(chunkSize)
-		start := uint32(i) * uint32(chunkSize)
-		if uint32(len(this.Data))-start <= inc {
-			inc = uint32(len(this.Data)) - start
-		}
-		totalLen += inc
-		end := start + inc
-		buf := this.Data[start:end]
-		if _, err := w.Write(buf); err != nil {
-			return err
-		}
-	}
-
-	return nil
-
-}
-
 func (this *ChunkStream) writeHeader(w *ReadWriter) error {
 	//Chunk Basic Header
 	h := this.Format << 6
@@ -224,4 +181,41 @@ END:
 		w.WriteUintBE(this.Timestamp, 4)
 	}
 	return w.WriteError()
+}
+
+func (this *ChunkStream) writeChunk(w *ReadWriter, chunkSize int) error {
+	if this.TypeID == TAG_AUDIO {
+		this.CSID = 4
+	} else if this.TypeID == TAG_VIDEO ||
+		this.TypeID == TAG_SCRIPTDATAAMF0 ||
+		this.TypeID == TAG_SCRIPTDATAAMF3 {
+		this.CSID = 6
+	}
+	totalLen := uint32(0)
+	numChunks := (this.Length / uint32(chunkSize))
+	for i := uint32(0); i <= numChunks; i++ {
+		if totalLen == this.Length {
+			break
+		}
+		if i == 0 {
+			this.Format = uint32(0)
+		} else {
+			this.Format = uint32(3)
+		}
+		if err := this.writeHeader(w); err != nil {
+			return err
+		}
+		inc := uint32(chunkSize)
+		start := uint32(i) * uint32(chunkSize)
+		if uint32(len(this.Data))-start <= inc {
+			inc = uint32(len(this.Data)) - start
+		}
+		totalLen += inc
+		end := start + inc
+		buf := this.Data[start:end]
+		if _, err := w.Write(buf); err != nil {
+			return err
+		}
+	}
+	return nil
 }

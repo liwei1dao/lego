@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/liwei1dao/lego/lib/modules/live/amf"
 	"github.com/liwei1dao/lego/sys/livego/codec"
-	"github.com/liwei1dao/lego/sys/livego/packet"
-	"github.com/liwei1dao/lego/sys/log"
 )
 
+var (
+	publishLive   = "live"
+	publishRecord = "record"
+	publishAppend = "append"
+)
+
+/*协议*/
 var (
 	cmdConnect       = "connect"
 	cmdFcpublish     = "FCPublish"
@@ -22,20 +26,11 @@ var (
 	cmdPlay          = "play"
 )
 
-func NewConnServer(conn *Conn) *ConnServer {
-	return &ConnServer{
-		conn:     conn,
-		streamID: 1,
-		bytesw:   bytes.NewBuffer(nil),
-		decoder:  &codec.Decoder{},
-		encoder:  &codec.Encoder{},
-	}
-}
-
 var (
 	ErrReq = fmt.Errorf("req error")
 )
 
+/*连接信息*/
 type ConnectInfo struct {
 	App            string `amf:"app" json:"app"`
 	Flashver       string `amf:"flashVer" json:"flashVer"`
@@ -54,17 +49,38 @@ type PublishInfo struct {
 	Type string
 }
 
+func NewConnServer(conn *Conn) *ConnServer {
+	return &ConnServer{
+		conn:     conn,
+		streamID: 1,
+		bytesw:   bytes.NewBuffer(nil),
+		decoder:  &codec.Decoder{},
+		encoder:  &codec.Encoder{},
+	}
+}
+
 type ConnServer struct {
-	done          bool
-	streamID      int
-	isPublisher   bool
 	conn          *Conn
+	streamID      int
 	transactionID int
+	isPublisher   bool
 	ConnInfo      ConnectInfo
 	PublishInfo   PublishInfo
 	decoder       *codec.Decoder
 	encoder       *codec.Encoder
 	bytesw        *bytes.Buffer
+	done          bool
+}
+
+func (this *ConnServer) IsPublisher() bool {
+	return this.isPublisher
+}
+
+func (this *ConnServer) GetInfo() (app string, name string, url string) {
+	app = this.ConnInfo.App
+	name = this.PublishInfo.Name
+	url = this.ConnInfo.TcUrl + "/" + this.PublishInfo.Name
+	return
 }
 
 func (this *ConnServer) handleCmdMsg(c *ChunkStream) error {
@@ -104,7 +120,7 @@ func (this *ConnServer) handleCmdMsg(c *ChunkStream) error {
 			}
 			this.done = true
 			this.isPublisher = true
-			log.Debug("handle publish req done")
+			this.conn.Server().Debugf("handle publish req done")
 		case cmdPlay:
 			if err = this.publishOrPlay(vs[1:]); err != nil {
 				return err
@@ -114,7 +130,7 @@ func (this *ConnServer) handleCmdMsg(c *ChunkStream) error {
 			}
 			this.done = true
 			this.isPublisher = false
-			log.Debug("handle play req done")
+			this.conn.Server().Debugf("handle play req done")
 		case cmdFcpublish:
 			this.fcPublish(vs)
 		case cmdReleaseStream:
@@ -122,7 +138,7 @@ func (this *ConnServer) handleCmdMsg(c *ChunkStream) error {
 		case cmdFCUnpublish:
 		case cmdDeleteStream:
 		default:
-			log.Debugf("no support command=", vs[0].(string))
+			this.conn.Server().Debugf("no support command=", vs[0].(string))
 		}
 	}
 
@@ -148,35 +164,20 @@ func (this *ConnServer) ReadMsg() error {
 	return nil
 }
 
-func (this *ConnServer) IsPublisher() bool {
-	return this.isPublisher
-}
-
 func (this *ConnServer) Read(c *ChunkStream) (err error) {
 	return this.conn.Read(c)
 }
 
 func (this *ConnServer) Write(c ChunkStream) error {
-	if c.TypeID == packet.TAG_SCRIPTDATAAMF0 ||
-		c.TypeID == packet.TAG_SCRIPTDATAAMF3 {
+	if c.TypeID == TAG_SCRIPTDATAAMF0 ||
+		c.TypeID == TAG_SCRIPTDATAAMF3 {
 		var err error
-		if c.Data, err = amf.MetaDataReform(c.Data, amf.DEL); err != nil {
+		if c.Data, err = codec.MetaDataReform(c.Data, codec.DEL); err != nil {
 			return err
 		}
 		c.Length = uint32(len(c.Data))
 	}
 	return this.conn.Write(&c)
-}
-
-func (this *ConnServer) Flush() error {
-	return this.conn.Flush()
-}
-
-func (this *ConnServer) GetInfo() (app string, name string, url string) {
-	app = this.ConnInfo.App
-	name = this.PublishInfo.Name
-	url = this.ConnInfo.TcUrl + "/" + this.PublishInfo.Name
-	return
 }
 
 func (this *ConnServer) Close(err error) {
@@ -186,7 +187,7 @@ func (this *ConnServer) Close(err error) {
 func (this *ConnServer) writeMsg(csid, streamID uint32, args ...interface{}) error {
 	this.bytesw.Reset()
 	for _, v := range args {
-		if _, err := this.encoder.Encode(this.bytesw, v, amf.AMF0); err != nil {
+		if _, err := this.encoder.Encode(this.bytesw, v, codec.AMF0); err != nil {
 			return err
 		}
 	}
@@ -204,6 +205,7 @@ func (this *ConnServer) writeMsg(csid, streamID uint32, args ...interface{}) err
 	return this.conn.Flush()
 }
 
+/*连接*/
 func (this *ConnServer) connect(vs []interface{}) error {
 	for _, v := range vs {
 		switch v.(type) {
@@ -233,6 +235,7 @@ func (this *ConnServer) connect(vs []interface{}) error {
 	return nil
 }
 
+/*连接响应*/
 func (this *ConnServer) connectResp(cur *ChunkStream) error {
 	c := this.conn.NewWindowAckSize(2500000)
 	this.conn.Write(&c)
@@ -241,11 +244,11 @@ func (this *ConnServer) connectResp(cur *ChunkStream) error {
 	c = this.conn.NewSetChunkSize(uint32(1024))
 	this.conn.Write(&c)
 
-	resp := make(amf.Object)
+	resp := make(codec.Object)
 	resp["fmsVer"] = "FMS/3,0,1,123"
 	resp["capabilities"] = 31
 
-	event := make(amf.Object)
+	event := make(codec.Object)
 	event["level"] = "status"
 	event["code"] = "NetConnection.Connect.Success"
 	event["description"] = "Connection succeeded."
@@ -253,22 +256,25 @@ func (this *ConnServer) connectResp(cur *ChunkStream) error {
 	return this.writeMsg(cur.CSID, cur.StreamID, "_result", this.transactionID, resp, event)
 }
 
+/*创建流*/
 func (this *ConnServer) createStream(vs []interface{}) error {
 	for _, v := range vs {
 		switch v.(type) {
 		case string:
 		case float64:
 			this.transactionID = int(v.(float64))
-		case amf.Object:
+		case codec.Object:
 		}
 	}
 	return nil
 }
 
+/*创建流回应*/
 func (this *ConnServer) createStreamResp(cur *ChunkStream) error {
 	return this.writeMsg(cur.CSID, cur.StreamID, "_result", this.transactionID, nil, this.streamID)
 }
 
+/*发布或播放*/
 func (this *ConnServer) publishOrPlay(vs []interface{}) error {
 	for k, v := range vs {
 		switch v.(type) {
@@ -281,26 +287,28 @@ func (this *ConnServer) publishOrPlay(vs []interface{}) error {
 		case float64:
 			id := int(v.(float64))
 			this.transactionID = id
-		case amf.Object:
+		case codec.Object:
 		}
 	}
 
 	return nil
 }
 
+/*发布响应*/
 func (this *ConnServer) publishResp(cur *ChunkStream) error {
-	event := make(amf.Object)
+	event := make(codec.Object)
 	event["level"] = "status"
 	event["code"] = "NetStream.Publish.Start"
 	event["description"] = "Start publishing."
 	return this.writeMsg(cur.CSID, cur.StreamID, "onStatus", 0, nil, event)
 }
 
+/*播放响应*/
 func (this *ConnServer) playResp(cur *ChunkStream) error {
 	this.conn.SetRecorded()
 	this.conn.SetBegin()
 
-	event := make(amf.Object)
+	event := make(codec.Object)
 	event["level"] = "status"
 	event["code"] = "NetStream.Play.Reset"
 	event["description"] = "Playing and resetting stream."
@@ -331,10 +339,10 @@ func (this *ConnServer) playResp(cur *ChunkStream) error {
 	return this.conn.Flush()
 }
 
-func (this *ConnServer) fcPublish(vs []interface{}) error {
+func (this *ConnServer) releaseStream(vs []interface{}) error {
 	return nil
 }
 
-func (this *ConnServer) releaseStream(vs []interface{}) error {
+func (this *ConnServer) fcPublish(vs []interface{}) error {
 	return nil
 }

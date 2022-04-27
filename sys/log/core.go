@@ -16,19 +16,23 @@ type (
 		Key   string
 		Value interface{}
 	}
-	ILog interface {
-		Debug(msg string, fields ...Field)
-		Info(msg string, fields ...Field)
-		Warn(msg string, fields ...Field)
-		Error(msg string, fields ...Field)
-		Panic(msg string, fields ...Field)
-		Fatal(msg string, fields ...Field)
+	Ilogf interface {
 		Debugf(format string, a ...interface{})
 		Infof(format string, a ...interface{})
 		Warnf(format string, a ...interface{})
 		Errorf(format string, a ...interface{})
 		Panicf(format string, a ...interface{})
 		Fatalf(format string, a ...interface{})
+	}
+	ILog interface {
+		Clone(option ...Option) ILog
+		Debug(msg string, fields ...Field)
+		Info(msg string, fields ...Field)
+		Warn(msg string, fields ...Field)
+		Error(msg string, fields ...Field)
+		Panic(msg string, fields ...Field)
+		Fatal(msg string, fields ...Field)
+		Ilogf
 	}
 )
 
@@ -43,6 +47,10 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 func NewSys(option ...Option) (sys ILog, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
+}
+
+func Clone(option ...Option) ILog {
+	return defsys.Clone(option...)
 }
 
 func Debug(msg string, fields ...Field)      { defsys.Debug(msg, fields...) }

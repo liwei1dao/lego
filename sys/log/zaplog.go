@@ -64,6 +64,7 @@ func newSys(options Options) (sys *Logger, err error) {
 	core := zapcore.NewTee(allCore...)
 	tlog := zap.New(core).WithOptions(zap.AddCaller(), zap.AddCallerSkip(options.Loglayer))
 	sys = &Logger{
+		core: core,
 		tlog: tlog,
 		log:  tlog.Sugar(),
 	}
@@ -71,6 +72,7 @@ func newSys(options Options) (sys *Logger, err error) {
 }
 
 type Logger struct {
+	core zapcore.Core
 	tlog *zap.Logger
 	log  *zap.SugaredLogger
 }
@@ -135,6 +137,17 @@ func FieldTozapField(fields ...Field) (fds []zap.Field) {
 			field.Interface = v.Value
 		}
 		fds = append(fds, field)
+	}
+	return
+}
+
+func (this *Logger) Clone(option ...Option) (sys ILog) {
+	options := newOptionsByOption(option...)
+	tlog := zap.New(this.core).WithOptions(zap.AddCaller(), zap.AddCallerSkip(options.Loglayer))
+	sys = &Logger{
+		core: this.core,
+		tlog: tlog,
+		log:  tlog.Sugar(),
 	}
 	return
 }

@@ -13,10 +13,6 @@ import (
 )
 
 var (
-	timeout = 5 * time.Second
-)
-
-var (
 	hsClientFullKey = []byte{
 		'G', 'e', 'n', 'u', 'i', 'n', 'e', ' ', 'A', 'd', 'o', 'b', 'e', ' ',
 		'F', 'l', 'a', 's', 'h', ' ', 'P', 'l', 'a', 'y', 'e', 'r', ' ',
@@ -41,7 +37,7 @@ var (
 /*
 	握手
 */
-func (conn *Conn) HandshakeServer() (err error) {
+func (this *Conn) HandshakeServer() (err error) {
 	var random [(1 + 1536*2) * 2]byte
 
 	C0C1C2 := random[:1536*2+1]
@@ -57,11 +53,11 @@ func (conn *Conn) HandshakeServer() (err error) {
 	S2 := S0S1S2[1536+1:]
 
 	// < C0C1
-	conn.Conn.SetDeadline(time.Now().Add(timeout))
-	if _, err = io.ReadFull(conn.rw, C0C1); err != nil {
+	this.Conn.SetDeadline(time.Now().Add(this.timeout))
+	if _, err = io.ReadFull(this.rw, C0C1); err != nil {
 		return
 	}
-	conn.Conn.SetDeadline(time.Now().Add(timeout))
+	this.Conn.SetDeadline(time.Now().Add(this.timeout))
 	if C0[0] != 3 {
 		err = fmt.Errorf("rtmp: handshake version=%d invalid", C0[0])
 		return
@@ -89,40 +85,64 @@ func (conn *Conn) HandshakeServer() (err error) {
 	}
 
 	// > S0S1S2
-	conn.Conn.SetDeadline(time.Now().Add(timeout))
-	if _, err = conn.rw.Write(S0S1S2); err != nil {
+	this.Conn.SetDeadline(time.Now().Add(this.timeout))
+	if _, err = this.rw.Write(S0S1S2); err != nil {
 		return
 	}
-	conn.Conn.SetDeadline(time.Now().Add(timeout))
-	if err = conn.rw.Flush(); err != nil {
+	this.Conn.SetDeadline(time.Now().Add(this.timeout))
+	if err = this.rw.Flush(); err != nil {
 		return
 	}
 
 	// < C2
-	conn.Conn.SetDeadline(time.Now().Add(timeout))
-	if _, err = io.ReadFull(conn.rw, C2); err != nil {
+	this.Conn.SetDeadline(time.Now().Add(this.timeout))
+	if _, err = io.ReadFull(this.rw, C2); err != nil {
 		return
 	}
-	conn.Conn.SetDeadline(time.Time{})
+	this.Conn.SetDeadline(time.Time{})
 	return
 }
 
-func hsCreate01(p []byte, time uint32, ver uint32, key []byte) {
-	p[0] = 3
-	p1 := p[1:]
-	rand.Read(p1[8:])
-	pio.PutU32BE(p1[0:4], time)
-	pio.PutU32BE(p1[4:8], ver)
-	gap := hsCalcDigestPos(p1, 8)
-	digest := hsMakeDigest(key, p1, gap)
-	copy(p1[gap:], digest)
-}
+func (this *Conn) HandshakeClient() (err error) {
+	var random [(1 + 1536*2) * 2]byte
 
-func hsCalcDigestPos(p []byte, base int) (pos int) {
-	for i := 0; i < 4; i++ {
-		pos += int(p[base+i])
+	C0C1C2 := random[:1536*2+1]
+	C0 := C0C1C2[:1]
+	C0C1 := C0C1C2[:1536+1]
+	C2 := C0C1C2[1536+1:]
+
+	S0S1S2 := random[1536*2+1:]
+
+	C0[0] = 3
+	// > C0C1
+	this.Conn.SetDeadline(time.Now().Add(this.timeout))
+	if _, err = this.rw.Write(C0C1); err != nil {
+		return
 	}
-	pos = (pos % 728) + base + 4
+	this.Conn.SetDeadline(time.Now().Add(this.timeout))
+	if err = this.rw.Flush(); err != nil {
+		return
+	}
+
+	// < S0S1S2
+	this.Conn.SetDeadline(time.Now().Add(this.timeout))
+	if _, err = io.ReadFull(this.rw, S0S1S2); err != nil {
+		return
+	}
+
+	S1 := S0S1S2[1 : 1536+1]
+	if ver := pio.U32BE(S1[4:8]); ver != 0 {
+		C2 = S1
+	} else {
+		C2 = S1
+	}
+
+	// > C2
+	this.Conn.SetDeadline(time.Now().Add(this.timeout))
+	if _, err = this.rw.Write(C2); err != nil {
+		return
+	}
+	this.Conn.SetDeadline(time.Time{})
 	return
 }
 
@@ -137,6 +157,23 @@ func hsMakeDigest(key []byte, src []byte, gap int) (dst []byte) {
 	return h.Sum(nil)
 }
 
+func hsCalcDigestPos(p []byte, base int) (pos int) {
+	for i := 0; i < 4; i++ {
+		pos += int(p[base+i])
+	}
+	pos = (pos % 728) + base + 4
+	return
+}
+
+func hsFindDigest(p []byte, key []byte, base int) int {
+	gap := hsCalcDigestPos(p, base)
+	digest := hsMakeDigest(key, p, gap)
+	if bytes.Compare(p[gap:gap+32], digest) != 0 {
+		return -1
+	}
+	return gap
+}
+
 func hsParse1(p []byte, peerkey []byte, key []byte) (ok bool, digest []byte) {
 	var pos int
 	if pos = hsFindDigest(p, peerkey, 772); pos == -1 {
@@ -149,13 +186,15 @@ func hsParse1(p []byte, peerkey []byte, key []byte) (ok bool, digest []byte) {
 	return
 }
 
-func hsFindDigest(p []byte, key []byte, base int) int {
-	gap := hsCalcDigestPos(p, base)
-	digest := hsMakeDigest(key, p, gap)
-	if bytes.Compare(p[gap:gap+32], digest) != 0 {
-		return -1
-	}
-	return gap
+func hsCreate01(p []byte, time uint32, ver uint32, key []byte) {
+	p[0] = 3
+	p1 := p[1:]
+	rand.Read(p1[8:])
+	pio.PutU32BE(p1[0:4], time)
+	pio.PutU32BE(p1[4:8], ver)
+	gap := hsCalcDigestPos(p1, 8)
+	digest := hsMakeDigest(key, p1, gap)
+	copy(p1[gap:], digest)
 }
 
 func hsCreate2(p []byte, key []byte) {

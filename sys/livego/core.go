@@ -1,20 +1,19 @@
 package livego
 
-type (
-	ISys interface {
-	}
-)
+import "github.com/liwei1dao/lego/sys/livego/core"
 
 var (
-	defsys ISys
+	EmptyID = ""
 )
 
-func OnInit(config map[string]interface{}, option ...Option) (err error) {
-	defsys, err = newSys(newOptions(config, option...))
-	return
-}
-
-func NewSys(option ...Option) (sys ISys, err error) {
-	sys, err = newSys(newOptionsByOption(option...))
-	return
-}
+type (
+	GetInFo interface {
+		GetInfo() (string, string, string)
+	}
+	StreamReadWriteCloser interface {
+		GetInFo
+		Close(error)
+		Write(core.ChunkStream) error
+		Read(c *core.ChunkStream) error
+	}
+)
