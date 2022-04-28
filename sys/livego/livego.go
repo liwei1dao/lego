@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/sys/livego/core"
-	"github.com/liwei1dao/lego/sys/livego/stream"
 	"github.com/liwei1dao/lego/sys/log"
 )
 
@@ -72,13 +71,13 @@ func (this *LiveGo) handleConn(conn *core.Conn) (err error) {
 		if this.options.StaticPush != nil && len(this.options.StaticPush) > 0 {
 			this.Debugf("GetStaticPushUrlList: %v", this.options.StaticPush)
 		}
-		reader := stream.NewReader(connServer)
-		this.handler.HandleReader(reader)
+		reader := NewReader(connServer)
+		this.HandleReader(reader)
 		this.Debugf("new publisher: %+v", reader.Info())
 	} else {
-		writer := stream.NewWriter(connServer)
+		writer := NewWriter(connServer)
 		this.Debugf("new player: %+v", writer.Info())
-		this.handler.HandleWriter(writer)
+		this.HandleWriter(writer)
 	}
 	return
 }
@@ -119,6 +118,24 @@ func (this *LiveGo) HandleReader(r core.ReadCloser) {
 		stm.info = info
 	}
 	stm.AddReader(r)
+}
+
+//写处理
+func (this *LiveGo) HandleWriter(w core.WriteCloser) {
+	info := w.Info()
+	this.Debugf("HandleWriter: info[%v]", info)
+
+	var s *Stream
+	item, ok := this.streams.Load(info.Key)
+	if !ok {
+		this.Debugf("HandleWriter: not found create new info[%v]", info)
+		s = NewStream()
+		this.streams.Store(info.Key, s)
+		s.info = info
+	} else {
+		s = item.(*Stream)
+		s.AddWriter(w)
+	}
 }
 
 ///参数列表***********************************************************************

@@ -205,7 +205,6 @@ func (this *ConnClient) readRespMsg() error {
 		case 20, 17:
 			r := bytes.NewReader(rc.Data)
 			vs, _ := this.decoder.DecodeBatch(r, codec.AMF0)
-
 			this.server.Debugf("readRespMsg: vs=%v", vs)
 			for k, v := range vs {
 				switch v.(type) {
@@ -254,7 +253,6 @@ func (this *ConnClient) readRespMsg() error {
 					}
 				}
 			}
-
 			return nil
 		}
 	}

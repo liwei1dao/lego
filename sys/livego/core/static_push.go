@@ -66,6 +66,16 @@ func (this *StaticPush) HandleAvPacket() {
 	}
 }
 
+func (this *StaticPush) Stop() {
+	if !this.startflag {
+		return
+	}
+
+	this.server.Debugf("StaticPush Stop: %s", this.RtmpUrl)
+	this.sndctrl_chan <- STATIC_RELAY_STOP_CTRL
+	this.startflag = false
+}
+
 func (this *StaticPush) sendPacket(p *Packet) {
 	if !this.startflag {
 		return
@@ -76,10 +86,6 @@ func (this *StaticPush) sendPacket(p *Packet) {
 	cs.Length = uint32(len(p.Data))
 	cs.StreamID = this.connectClient.GetStreamId()
 	cs.Timestamp = p.TimeStamp
-	//cs.Timestamp += v.BaseTimeStamp()
-
-	//log.Printf("Static sendPacket: rtmpurl=%s, length=%d, streamid=%d",
-	//	self.RtmpUrl, len(p.Data), cs.StreamID)
 	if p.IsVideo {
 		cs.TypeID = TAG_VIDEO
 	} else {
@@ -89,6 +95,12 @@ func (this *StaticPush) sendPacket(p *Packet) {
 			cs.TypeID = TAG_AUDIO
 		}
 	}
-
 	this.connectClient.Write(cs)
+}
+
+func (this *StaticPush) WriteAvPacket(packet *Packet) {
+	if !this.startflag {
+		return
+	}
+	this.packet_chan <- packet
 }

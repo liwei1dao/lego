@@ -6,12 +6,19 @@ import (
 )
 
 type RWBaser struct {
-	lock    sync.Mutex
-	PreTime time.Time
-
+	lock               sync.Mutex
+	PreTime            time.Time
+	timeout            time.Duration
 	BaseTimestamp      uint32
 	LastVideoTimestamp uint32
 	LastAudioTimestamp uint32
+}
+
+func (this *RWBaser) Alive() bool {
+	this.lock.Lock()
+	b := !(time.Now().Sub(this.PreTime) >= this.timeout)
+	this.lock.Unlock()
+	return b
 }
 
 func (this *RWBaser) BaseTimeStamp() uint32 {
@@ -24,10 +31,18 @@ func (this *RWBaser) SetPreTime() {
 	this.lock.Unlock()
 }
 
-func (rw *RWBaser) RecTimeStamp(timestamp, typeID uint32) {
+func (this *RWBaser) RecTimeStamp(timestamp, typeID uint32) {
 	if typeID == TAG_VIDEO {
-		rw.LastVideoTimestamp = timestamp
+		this.LastVideoTimestamp = timestamp
 	} else if typeID == TAG_AUDIO {
-		rw.LastAudioTimestamp = timestamp
+		this.LastAudioTimestamp = timestamp
+	}
+}
+
+func (this *RWBaser) CalcBaseTimestamp() {
+	if this.LastAudioTimestamp > this.LastVideoTimestamp {
+		this.BaseTimestamp = this.LastAudioTimestamp
+	} else {
+		this.BaseTimestamp = this.LastVideoTimestamp
 	}
 }

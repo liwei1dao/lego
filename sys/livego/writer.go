@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/liwei1dao/lego/lib/modules/live/av"
 	"github.com/liwei1dao/lego/sys/livego/core"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/container/id"
@@ -55,13 +56,13 @@ type Writer struct {
 	closed      bool
 }
 
-func (v *Writer) Info() (ret core.Info) {
-	ret.UID = v.Uid
-	_, _, URL := v.conn.GetInfo()
+func (this *Writer) Info() (ret core.Info) {
+	ret.UID = this.Uid
+	_, _, URL := this.conn.GetInfo()
 	ret.URL = URL
 	_url, err := url.Parse(URL)
 	if err != nil {
-		log.Warnf("[SYS LiveGo] err:%v", err)
+		this.conn.Server().Warnf("[SYS LiveGo] err:%v", err)
 	}
 	ret.Key = strings.TrimLeft(_url.Path, "/")
 	ret.Inter = true
@@ -139,8 +140,60 @@ func (this *Writer) SaveStatics(streamid uint32, length uint64, isVideoFlag bool
 	}
 }
 
+func (this *Writer) Write(p *core.Packet) (err error) {
+	err = nil
+
+	if this.closed {
+		err = fmt.Errorf("VirWriter closed")
+		return
+	}
+	defer func() {
+		if e := recover(); e != nil {
+			err = fmt.Errorf("VirWriter has already been closed:%v", e)
+		}
+	}()
+	if len(this.packetQueue) >= maxQueueNum-24 {
+		this.DropPacket(this.packetQueue, this.Info())
+	} else {
+		this.packetQueue <- p
+	}
+
+	return
+}
+
+func (this *Writer) DropPacket(pktQue chan *core.Packet, info core.Info) {
+	this.conn.Server().Debugf("[%v] packet queue max!!!", info)
+	for i := 0; i < maxQueueNum-84; i++ {
+		tmpPkt, ok := <-pktQue
+		// try to don't drop audio
+		if ok && tmpPkt.IsAudio {
+			if len(pktQue) > maxQueueNum-2 {
+				this.conn.Server().Debugf("drop audio pkt")
+				<-pktQue
+			} else {
+				pktQue <- tmpPkt
+			}
+
+		}
+
+		if ok && tmpPkt.IsVideo {
+			videoPkt, ok := tmpPkt.Header.(av.VideoPacketHeader)
+			// dont't drop sps config and dont't drop key frame
+			if ok && (videoPkt.IsSeq() || videoPkt.IsKeyFrame()) {
+				pktQue <- tmpPkt
+			}
+			if len(pktQue) > maxQueueNum-10 {
+				this.conn.Server().Debugf("drop video pkt")
+				<-pktQue
+			}
+		}
+
+	}
+	this.conn.Server().Debugf("packet queue len: ", len(pktQue))
+}
+
 func (this *Writer) Close(err error) {
-	log.Debugf("[SYS LiveGo] player ", this.Info(), "closed: "+err.Error())
+	this.conn.Server().Debugf("player ", this.Info(), "closed: "+err.Error())
 	if !this.closed {
 		close(this.packetQueue)
 	}

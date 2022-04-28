@@ -48,6 +48,18 @@ const (
 	AAC_RAW    = 1
 )
 
+//Tag 类型
+const (
+	AVC_SEQHDR = 0
+	AVC_NALU   = 1
+	AVC_EOS    = 2
+
+	FRAME_KEY   = 1
+	FRAME_INTER = 2
+
+	VIDEO_H264 = 7
+)
+
 type PacketHeader interface {
 }
 

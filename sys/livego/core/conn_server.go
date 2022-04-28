@@ -75,6 +75,9 @@ type ConnServer struct {
 func (this *ConnServer) IsPublisher() bool {
 	return this.isPublisher
 }
+func (this *ConnServer) Server() IServer {
+	return this.conn.Server()
+}
 
 func (this *ConnServer) GetInfo() (app string, name string, url string) {
 	app = this.ConnInfo.App
