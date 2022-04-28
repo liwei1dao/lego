@@ -2,6 +2,8 @@ package flv
 
 import (
 	"fmt"
+
+	"github.com/liwei1dao/lego/sys/livego/core"
 )
 
 type flvTag struct {

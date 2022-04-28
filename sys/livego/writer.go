@@ -7,9 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/liwei1dao/lego/lib/modules/live/av"
 	"github.com/liwei1dao/lego/sys/livego/core"
-	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/container/id"
 )
 
@@ -28,7 +26,7 @@ func NewWriter(conn core.StreamReadWriteCloser) *Writer {
 	go func() {
 		err := ret.SendPacket()
 		if err != nil {
-			log.Warnf("%v", err)
+			ret.conn.Server().Warnf("err:%v", err)
 		}
 	}()
 	return ret
@@ -177,7 +175,7 @@ func (this *Writer) DropPacket(pktQue chan *core.Packet, info core.Info) {
 		}
 
 		if ok && tmpPkt.IsVideo {
-			videoPkt, ok := tmpPkt.Header.(av.VideoPacketHeader)
+			videoPkt, ok := tmpPkt.Header.(core.VideoPacketHeader)
 			// dont't drop sps config and dont't drop key frame
 			if ok && (videoPkt.IsSeq() || videoPkt.IsKeyFrame()) {
 				pktQue <- tmpPkt

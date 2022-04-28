@@ -79,6 +79,7 @@ func SetLogMaxAge(v int) Option {
 
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
+		FileName:      "./lego.log",
 		Loglevel:      WarnLevel,
 		Debugmode:     false,
 		Encoder:       Console,
@@ -98,6 +99,7 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 
 func newOptionsByOption(opts ...Option) Options {
 	options := Options{
+		FileName:      "./lego.log",
 		Loglevel:      WarnLevel,
 		Debugmode:     false,
 		Loglayer:      2,

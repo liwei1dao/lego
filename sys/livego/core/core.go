@@ -137,6 +137,8 @@ type IServerOptions interface {
 	GetApi() bool
 	GetStaticPush() []string
 	GetRTMPNoAuth() bool
+	GetFLVDir() string
+	GetFLVArchive() bool
 	GetEnableTLSVerify() bool //是否开启TLS验证
 	GetTimeout() int          //单位秒
 	GetConnBuffSzie() int     //连接对象读写缓存

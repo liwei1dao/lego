@@ -81,6 +81,7 @@ var mimePlain = []string{MIMEPlain}
 type Engine struct {
 	RouterGroup
 	options    Options
+	log        log.ILog
 	server     *http.Server
 	UseRawPath bool
 	/*
@@ -173,25 +174,22 @@ func (this *Engine) IsDebug() bool {
 func (this *Engine) Run() (err error) {
 	defer func() {
 		if err != nil {
-			log.Errorf("[SYS-Gin] err:%v", err)
+			this.Errorf("err:%v", err)
 		}
 	}()
 	if this.isUnsafeTrustedProxies() {
-		if this.options.Debug {
-			log.Warnf("[SYS-Gin] You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
-				"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
-		}
+		this.Warnf("You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
+			"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
+
 	}
-	if this.options.Debug {
-		log.Debugf("[SYS-Gin] Listening and serving HTTP on :%s\n", this.options.ListenPort)
-	}
+	this.Debugf("Listening and serving HTTP on :%s\n", this.options.ListenPort)
 	this.server = &http.Server{
 		Addr:    fmt.Sprintf(":%d", this.options.ListenPort),
 		Handler: this.Handler(),
 	}
 	go func() {
 		if err := this.server.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
-			log.Errorf("[SYS-Gin] listen: %s\n", err)
+			this.Errorf("[SYS-Gin] listen: %s\n", err)
 		}
 	}()
 	// err = http.ListenAndServe(fmt.Sprintf(":%d", this.options.ListenPort), this.Handler())
@@ -199,20 +197,16 @@ func (this *Engine) Run() (err error) {
 }
 
 func (this *Engine) RunTLS() (err error) {
-	if this.options.Debug {
-		log.Debugf("[SYS-Gin] Listening and serving HTTPS on :%d\n", this.options.ListenPort)
-	}
+	this.Debugf("[SYS-Gin] Listening and serving HTTPS on :%d\n", this.options.ListenPort)
 	defer func() {
 		if err != nil {
-			log.Errorf("[SYS-Gin] err:%v", err)
+			this.Errorf("[SYS-Gin] err:%v", err)
 		}
 	}()
 
 	if this.isUnsafeTrustedProxies() {
-		if this.options.Debug {
-			log.Warnf("[SYS-Gin] You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
-				"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
-		}
+		this.Warnf("[SYS-Gin] You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
+			"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
 	}
 	this.server = &http.Server{
 		Addr:    fmt.Sprintf(":%d", this.options.ListenPort),
@@ -220,7 +214,7 @@ func (this *Engine) RunTLS() (err error) {
 	}
 	go func() {
 		if err := this.server.ListenAndServeTLS(this.options.CertFile, this.options.KeyFile); err != nil && errors.Is(err, http.ErrServerClosed) {
-			log.Errorf("[SYS-Gin] listen: %s\n", err)
+			this.Errorf("[SYS-Gin] listen: %s\n", err)
 		}
 	}()
 	// err = http.ListenAndServeTLS(addr, certFile, keyFile, this.Handler())
@@ -228,21 +222,18 @@ func (this *Engine) RunTLS() (err error) {
 }
 
 func (this *Engine) RunListener(listener net.Listener) (err error) {
-	if this.options.Debug {
-		log.Debugf("[SYS-Gin] Listening and serving HTTP on listener what's bind with address@%s", listener.Addr())
-	}
+	this.Debugf("Listening and serving HTTP on listener what's bind with address@%s", listener.Addr())
 	defer func() {
 		if err != nil {
-			log.Errorf("[SYS-Gin] err:%v", err)
+			this.Errorf("[SYS-Gin] err:%v", err)
 		}
 
 	}()
 
 	if this.isUnsafeTrustedProxies() {
-		if this.options.Debug {
-			log.Warnf("[SYS-Gin] You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
-				"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
-		}
+		this.Warnf("[SYS-Gin] You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
+			"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
+
 	}
 	err = http.Serve(listener, this.Handler())
 	return
@@ -250,7 +241,7 @@ func (this *Engine) RunListener(listener net.Listener) (err error) {
 
 func (this *Engine) Close() (err error) {
 	if err = this.server.Shutdown(context.Background()); err != nil {
-		log.Errorf("[SYS-Gin] Close err:%v", err)
+		this.Errorf("[SYS-Gin] Close err:%v", err)
 	}
 	this.server.Close()
 	return
@@ -317,13 +308,12 @@ func (this *Engine) LoadHTMLFiles(files ...string) {
 
 func (this *Engine) SetHTMLTemplate(templ *template.Template) {
 	if len(this.trees) > 0 {
-		if this.options.Debug {
-			log.Warnf(`[SYS-Gin] Since SetHTMLTemplate() is NOT thread-safe. It should only be called
+		this.Warnf(`Since SetHTMLTemplate() is NOT thread-safe. It should only be called
 			at initialization. ie. before any route is registered or the router is listening in a socket:
 				router := gin.Default()
 				router.SetHTMLTemplate(template) // << good place
 			`)
-		}
+
 	}
 	this.HTMLRender = render.HTMLProduction{Template: templ.Funcs(this.FuncMap)}
 }
@@ -373,7 +363,7 @@ func (this *Engine) addRoute(method, path string, handlers HandlersChain) {
 	if this.options.Debug {
 		nuHandlers := len(handlers)
 		handlerName := nameOfFunction(handlers.Last())
-		log.Debugf("%-6s %-25s --> %s (%d handlers)", method, path, handlerName, nuHandlers)
+		this.Debugf("%-6s %-25s --> %s (%d handlers)", method, path, handlerName, nuHandlers)
 	}
 	root := this.trees.get(method)
 	if root == nil {
@@ -506,7 +496,7 @@ func (this *Engine) serveError(c *Context, code int, defaultMessage []byte) {
 		c.writermem.Header()["Content-Type"] = mimePlain
 		_, err := c.Writer.Write(defaultMessage)
 		if err != nil {
-			log.Errorf("[SYS-Gin] cannot write message to writer during serve error: %v", err)
+			this.Errorf("[SYS-Gin] cannot write message to writer during serve error: %v", err)
 		}
 		return
 	}
@@ -547,10 +537,7 @@ func (this *Engine) redirectRequest(c *Context) {
 	if req.Method != http.MethodGet {
 		code = http.StatusTemporaryRedirect
 	}
-	if this.options.Debug {
-		log.Debugf("[SYS-Gin] redirecting request %d: %s --> %s", code, rPath, rURL)
-	}
-
+	this.Debugf("redirecting request %d: %s --> %s", code, rPath, rURL)
 	http.Redirect(c.Writer, req, rURL, code)
 	c.writermem.WriteHeaderNow()
 }
@@ -609,6 +596,38 @@ func (this *Engine) debugPrintLoadTemplate(tmpl *template.Template) {
 		if !strings.HasSuffix(format, "\n") {
 			format += "\n"
 		}
-		log.Debugf("[SYS-Gin] "+format, len(tmpl.Templates()), buf.String())
+		this.Debugf(format, len(tmpl.Templates()), buf.String())
+	}
+}
+
+///日志***********************************************************************
+func (this *Engine) Debugf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.log.Debugf("[SYS Gin] "+format, a)
+	}
+}
+func (this *Engine) Infof(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.log.Infof("[SYS Gin] "+format, a)
+	}
+}
+func (this *Engine) Warnf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.log.Warnf("[SYS Gin] "+format, a)
+	}
+}
+func (this *Engine) Errorf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.log.Errorf("[SYS Gin] "+format, a)
+	}
+}
+func (this *Engine) Panicf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.log.Panicf("[SYS Gin] "+format, a)
+	}
+}
+func (this *Engine) Fatalf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.log.Fatalf("[SYS Gin] "+format, a)
 	}
 }

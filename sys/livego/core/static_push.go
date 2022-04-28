@@ -10,6 +10,16 @@ var (
 	STATIC_RELAY_STOP_CTRL = "STATIC_RTMPRELAY_STOP"
 )
 
+func NewStaticPush(rtmpurl string) *StaticPush {
+	return &StaticPush{
+		RtmpUrl:       rtmpurl,
+		packet_chan:   make(chan *Packet, 500),
+		sndctrl_chan:  make(chan string),
+		connectClient: nil,
+		startflag:     false,
+	}
+}
+
 type StaticPush struct {
 	server        IServer
 	RtmpUrl       string

@@ -122,7 +122,7 @@ type GopCache struct {
 func (this *GopCache) Write(p *core.Packet) {
 	var ok bool
 	if p.IsVideo {
-		vh := p.Header.(VideoPacketHeader)
+		vh := p.Header.(core.VideoPacketHeader)
 		if vh.IsKeyFrame() && !vh.IsSeq() {
 			ok = true
 		}
@@ -175,7 +175,7 @@ func (this *GopCache) sendTo(w core.WriteCloser) error {
 
 type SpecialCache struct {
 	full bool
-	p    *Packet
+	p    *core.Packet
 }
 
 func (this *SpecialCache) Write(p *core.Packet) {

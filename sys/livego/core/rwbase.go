@@ -5,6 +5,13 @@ import (
 	"time"
 )
 
+func NewRWBaser(duration time.Duration) RWBaser {
+	return RWBaser{
+		timeout: duration,
+		PreTime: time.Now(),
+	}
+}
+
 type RWBaser struct {
 	lock               sync.Mutex
 	PreTime            time.Time

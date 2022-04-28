@@ -6,14 +6,44 @@ import (
 	"sync"
 	"time"
 
+	"github.com/liwei1dao/lego/sys/livego/container/flv"
 	"github.com/liwei1dao/lego/sys/livego/core"
-	"github.com/liwei1dao/lego/sys/log"
+	"github.com/liwei1dao/lego/utils/container/id"
 )
+
+func newSys(options Options) (sys *LiveGo, err error) {
+	sys = &LiveGo{
+		options: options,
+	}
+	err = sys.init()
+	return
+}
 
 type LiveGo struct {
 	options Options
-	log     log.ILog
-	streams *sync.Map //流管理
+	///流频道管理
+	keyLock     *sync.RWMutex
+	keys        map[string]string
+	channelLock *sync.RWMutex
+	channels    map[string]string
+	///流管理
+	streams *sync.Map
+	///静态推送管理
+	mapLock       *sync.RWMutex
+	staticPushMap map[string](*core.StaticPush)
+}
+
+func (this *LiveGo) init() (err error) {
+	var (
+		rtmpListen net.Listener
+	)
+	if rtmpListen, err = net.Listen("tcp", this.options.RTMPAddr); err != nil {
+		this.Errorf("init err:%v", err)
+		return
+	}
+	this.Infof("RTMP Listen On:%s", this.options.RTMPAddr)
+	go this.Serve(rtmpListen)
+	return
 }
 
 func (this *LiveGo) Serve(listener net.Listener) (err error) {
@@ -74,6 +104,10 @@ func (this *LiveGo) handleConn(conn *core.Conn) (err error) {
 		reader := NewReader(connServer)
 		this.HandleReader(reader)
 		this.Debugf("new publisher: %+v", reader.Info())
+		if this.GetFLVArchive() {
+			flvWriter := flv.NewFlvDvr(this)
+			this.HandleWriter(flvWriter.GetWriter(reader.Info()))
+		}
 	} else {
 		writer := NewWriter(connServer)
 		this.Debugf("new player: %+v", writer.Info())
@@ -157,6 +191,12 @@ func (this *LiveGo) GetStaticPush() []string {
 func (this *LiveGo) GetRTMPNoAuth() bool {
 	return this.options.RTMPNoAuth
 }
+func (this *LiveGo) GetFLVDir() string {
+	return this.options.FLVDir
+}
+func (this *LiveGo) GetFLVArchive() bool {
+	return this.options.FLVArchive
+}
 func (this *LiveGo) GetEnableTLSVerify() bool {
 	return this.options.EnableTLSVerify
 }
@@ -173,61 +213,118 @@ func (this *LiveGo) GetDebug() bool {
 ///日志***********************************************************************
 func (this *LiveGo) Debugf(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.log.Debugf("[SYS LiveGo] "+format, a)
+		this.options.Log.Debugf("[SYS LiveGo] "+format, a)
 	}
 }
 func (this *LiveGo) Infof(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.log.Infof("[SYS LiveGo] "+format, a)
+		this.options.Log.Infof("[SYS LiveGo] "+format, a)
 	}
 }
 func (this *LiveGo) Warnf(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.log.Warnf("[SYS LiveGo] "+format, a)
+		this.options.Log.Warnf("[SYS LiveGo] "+format, a)
 	}
 }
 func (this *LiveGo) Errorf(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.log.Errorf("[SYS LiveGo] "+format, a)
+		this.options.Log.Errorf("[SYS LiveGo] "+format, a)
 	}
 }
 func (this *LiveGo) Panicf(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.log.Panicf("[SYS LiveGo] "+format, a)
+		this.options.Log.Panicf("[SYS LiveGo] "+format, a)
 	}
 }
 func (this *LiveGo) Fatalf(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.log.Fatalf("[SYS LiveGo] "+format, a)
+		this.options.Log.Fatalf("[SYS LiveGo] "+format, a)
 	}
 }
 
 ///房间***********************************************************************
 func (this *LiveGo) SetKey(channel string) (key string, err error) {
+	key = id.NewXId()
+	this.keyLock.Lock()
+	this.keys[key] = channel
+	this.keyLock.Unlock()
+	this.channelLock.Lock()
+	this.channels[channel] = key
+	this.channelLock.Unlock()
 	return
 }
 func (this *LiveGo) GetKey(channel string) (newKey string, err error) {
+	var ok bool
+	this.channelLock.RLock()
+	newKey, ok = this.channels[channel]
+	this.channelLock.RUnlock()
+	if !ok {
+		err = fmt.Errorf("no channel:%s", channel)
+	}
 	return
 }
 func (this *LiveGo) GetChannel(key string) (channel string, err error) {
+	var ok bool
+	this.channelLock.RLock()
+	channel, ok = this.keys[channel]
+	this.channelLock.RUnlock()
+	if !ok {
+		err = fmt.Errorf("no key:%s", channel)
+	}
 	return
 }
 func (this *LiveGo) DeleteChannel(channel string) (ok bool) {
+	this.channelLock.Lock()
+	delete(this.channels, channel)
+	this.channelLock.Unlock()
 	return
 }
 func (this *LiveGo) DeleteKey(key string) (ok bool) {
+	this.keyLock.Lock()
+	delete(this.keys, key)
+	this.keyLock.Unlock()
 	return
 }
 
 ///静态推送管理***********************************************************************
 func (this *LiveGo) GetAndCreateStaticPushObject(rtmpurl string) (pushobj *core.StaticPush) {
-	return
+	this.mapLock.RLock()
+	staticpush, ok := this.staticPushMap[rtmpurl]
+	this.Debugf("GetAndCreateStaticPushObject: %s, return %v", rtmpurl, ok)
+	if !ok {
+		this.mapLock.RUnlock()
+		newStaticpush := core.NewStaticPush(rtmpurl)
+		this.mapLock.Lock()
+		this.staticPushMap[rtmpurl] = newStaticpush
+		this.mapLock.Unlock()
+		return newStaticpush
+	}
+	this.mapLock.RUnlock()
+	return staticpush
 }
 
 func (this *LiveGo) GetStaticPushObject(rtmpurl string) (pushobj *core.StaticPush, err error) {
-	return
+	this.mapLock.RLock()
+	if staticpush, ok := this.staticPushMap[rtmpurl]; ok {
+		this.mapLock.RUnlock()
+		return staticpush, nil
+	}
+	this.mapLock.RUnlock()
+
+	return nil, fmt.Errorf("G_StaticPushMap[%s] not exist....", rtmpurl)
 }
 
 func (this *LiveGo) ReleaseStaticPushObject(rtmpurl string) {
+	this.mapLock.RLock()
+	if _, ok := this.staticPushMap[rtmpurl]; ok {
+		this.mapLock.RUnlock()
+		this.Debugf("ReleaseStaticPushObject %s ok", rtmpurl)
+		this.mapLock.Lock()
+		delete(this.staticPushMap, rtmpurl)
+		this.mapLock.Unlock()
+	} else {
+		this.mapLock.RUnlock()
+		this.Debugf("ReleaseStaticPushObject: not find %s", rtmpurl)
+	}
 	return
 }

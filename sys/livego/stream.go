@@ -132,6 +132,7 @@ func (this *Stream) TransStart() {
 		})
 	}
 }
+
 func (this *Stream) TransStop() {
 	this.server.Debugf("[SYS LiveGo] TransStop: %s", this.info.Key)
 
