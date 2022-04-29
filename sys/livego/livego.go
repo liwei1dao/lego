@@ -13,7 +13,14 @@ import (
 
 func newSys(options Options) (sys *LiveGo, err error) {
 	sys = &LiveGo{
-		options: options,
+		options:       options,
+		keyLock:       new(sync.RWMutex),
+		keys:          make(map[string]string),
+		channelLock:   new(sync.RWMutex),
+		channels:      make(map[string]string),
+		streams:       new(sync.Map),
+		mapLock:       new(sync.RWMutex),
+		staticPushMap: make(map[string]*core.StaticPush),
 	}
 	err = sys.init()
 	return
@@ -117,6 +124,10 @@ func (this *LiveGo) handleConn(conn *core.Conn) (err error) {
 }
 
 ///流管理***********************************************************************
+func (this *LiveGo) GetStreams() *sync.Map {
+	return this.streams
+}
+
 //监测存活
 func (this *LiveGo) CheckAlive() {
 	for {
@@ -185,9 +196,23 @@ func (this *LiveGo) GetFlv() bool {
 func (this *LiveGo) GetApi() bool {
 	return this.options.Api
 }
+func (this *LiveGo) GetApiAddr() string {
+	return this.options.APIAddr
+}
+func (this *LiveGo) GetJWTSecret() string {
+	return this.options.JWTSecret
+}
+
+func (this *LiveGo) GetJWTAlgorithm() string {
+	return this.options.JWTAlgorithm
+}
 func (this *LiveGo) GetStaticPush() []string {
 	return this.options.StaticPush
 }
+func (this *LiveGo) GetRTMPAddr() string {
+	return this.options.RTMPAddr
+}
+
 func (this *LiveGo) GetRTMPNoAuth() bool {
 	return this.options.RTMPNoAuth
 }
@@ -253,10 +278,10 @@ func (this *LiveGo) SetKey(channel string) (key string, err error) {
 	this.channelLock.Unlock()
 	return
 }
-func (this *LiveGo) GetKey(channel string) (newKey string, err error) {
+func (this *LiveGo) GetKey(channel string) (key string, err error) {
 	var ok bool
 	this.channelLock.RLock()
-	newKey, ok = this.channels[channel]
+	key, ok = this.channels[channel]
 	this.channelLock.RUnlock()
 	if !ok {
 		err = fmt.Errorf("no channel:%s", channel)
@@ -266,7 +291,7 @@ func (this *LiveGo) GetKey(channel string) (newKey string, err error) {
 func (this *LiveGo) GetChannel(key string) (channel string, err error) {
 	var ok bool
 	this.channelLock.RLock()
-	channel, ok = this.keys[channel]
+	channel, ok = this.keys[key]
 	this.channelLock.RUnlock()
 	if !ok {
 		err = fmt.Errorf("no key:%s", channel)
@@ -277,12 +302,14 @@ func (this *LiveGo) DeleteChannel(channel string) (ok bool) {
 	this.channelLock.Lock()
 	delete(this.channels, channel)
 	this.channelLock.Unlock()
+	ok = true
 	return
 }
 func (this *LiveGo) DeleteKey(key string) (ok bool) {
 	this.keyLock.Lock()
 	delete(this.keys, key)
 	this.keyLock.Unlock()
+	ok = true
 	return
 }
 

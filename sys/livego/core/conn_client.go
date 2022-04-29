@@ -174,6 +174,13 @@ func (this *ConnClient) Start(url string, method string) error {
 
 	return nil
 }
+func (this *ConnClient) DecodeBatch(r io.Reader, ver codec.Version) (ret []interface{}, err error) {
+	vs, err := this.decoder.DecodeBatch(r, ver)
+	return vs, err
+}
+func (this *ConnClient) Read(c *ChunkStream) (err error) {
+	return this.conn.Read(c)
+}
 
 func (this *ConnClient) Write(c ChunkStream) error {
 	if c.TypeID == TAG_SCRIPTDATAAMF0 ||

@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"net"
+	"sync"
 
 	"github.com/liwei1dao/lego/sys/log"
 )
@@ -127,7 +128,9 @@ type IServer interface {
 	IServerOptions
 	IStaticPushMnager
 	IRoomsManager
+	Handler
 	Serve(listener net.Listener) (err error)
+	GetStreams() *sync.Map
 }
 
 type IServerOptions interface {
@@ -135,7 +138,11 @@ type IServerOptions interface {
 	GetHls() bool
 	GetFlv() bool
 	GetApi() bool
+	GetApiAddr() string
+	GetJWTSecret() string
+	GetJWTAlgorithm() string
 	GetStaticPush() []string
+	GetRTMPAddr() string
 	GetRTMPNoAuth() bool
 	GetFLVDir() string
 	GetFLVArchive() bool

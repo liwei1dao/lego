@@ -11,6 +11,9 @@ type Options struct {
 	Hls             bool     `mapstructure:"hls"`
 	Flv             bool     `mapstructure:"flv"`
 	Api             bool     `mapstructure:"api"`
+	APIAddr         string   `mapstructure:"api_addr"`
+	JWTSecret       string   `mapstructure:"jwt_secret"`
+	JWTAlgorithm    string   `mapstructure:"jwt_algorithm"`
 	StaticPush      []string `mapstructure:"static_push"`
 	RTMPAddr        string   `mapstructure:"rtmp_addr"`
 	RTMPNoAuth      bool     `mapstructure:"rtmp_noauth"`
