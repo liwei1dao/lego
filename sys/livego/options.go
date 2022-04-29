@@ -9,6 +9,9 @@ type Option func(*Options)
 type Options struct {
 	Appname         string   `mapstructure:"appname"`
 	Hls             bool     `mapstructure:"hls"`
+	UseHlsHttps     bool     `mapstructure:"use_hls_https"`
+	HlsServerCrt    string   `mapstructure:"hls_server_crt"`
+	HlsServerKey    string   `mapstructure:"hls_server_key"`
 	Flv             bool     `mapstructure:"flv"`
 	Api             bool     `mapstructure:"api"`
 	APIAddr         string   `mapstructure:"api_addr"`

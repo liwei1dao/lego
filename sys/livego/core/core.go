@@ -136,6 +136,9 @@ type IServer interface {
 type IServerOptions interface {
 	GetAppname() string
 	GetHls() bool
+	GetUseHlsHttps() bool
+	GetHlsServerCrt() string
+	GetHlsServerKey() string
 	GetFlv() bool
 	GetApi() bool
 	GetApiAddr() string

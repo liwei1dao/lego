@@ -190,6 +190,15 @@ func (this *LiveGo) GetAppname() string {
 func (this *LiveGo) GetHls() bool {
 	return this.options.Hls
 }
+func (this *LiveGo) GetUseHlsHttps() bool {
+	return this.options.UseHlsHttps
+}
+func (this *LiveGo) GetHlsServerCrt() string {
+	return this.options.HlsServerCrt
+}
+func (this *LiveGo) GetHlsServerKey() string {
+	return this.options.HlsServerKey
+}
 func (this *LiveGo) GetFlv() bool {
 	return this.options.Flv
 }
@@ -202,7 +211,6 @@ func (this *LiveGo) GetApiAddr() string {
 func (this *LiveGo) GetJWTSecret() string {
 	return this.options.JWTSecret
 }
-
 func (this *LiveGo) GetJWTAlgorithm() string {
 	return this.options.JWTAlgorithm
 }
