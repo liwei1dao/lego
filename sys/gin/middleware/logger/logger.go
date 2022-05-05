@@ -1,11 +1,11 @@
-package gin
+package logger
 
 import (
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/liwei1dao/lego/sys/log"
+	"github.com/liwei1dao/lego/sys/gin/engine"
 )
 
 type LogFormatterParams struct {
@@ -32,7 +32,7 @@ type LogFormatterParams struct {
 	Keys map[string]interface{}
 }
 
-func Logger(SkipPaths []string) HandlerFunc {
+func Logger(SkipPaths []string) engine.HandlerFunc {
 	var skip map[string]struct{}
 	if length := len(SkipPaths); length > 0 {
 		skip = make(map[string]struct{}, length)
@@ -41,7 +41,7 @@ func Logger(SkipPaths []string) HandlerFunc {
 			skip[path] = struct{}{}
 		}
 	}
-	return func(c *Context) {
+	return func(c *engine.Context) {
 		// Start timer
 		start := time.Now()
 		path := c.Request.URL.Path
@@ -63,7 +63,7 @@ func Logger(SkipPaths []string) HandlerFunc {
 			param.ClientIP = c.ClientIP()
 			param.Method = c.Request.Method
 			param.StatusCode = c.Writer.Status()
-			param.ErrorMessage = c.Errors.ByType(ErrorTypePrivate).String()
+			param.ErrorMessage = c.Errors.ByType(engine.ErrorTypePrivate).String()
 
 			param.BodySize = c.Writer.Size()
 
@@ -71,7 +71,7 @@ func Logger(SkipPaths []string) HandlerFunc {
 				path = path + "?" + raw
 			}
 			param.Path = path
-			log.Debugf(fmt.Sprintf("[FORMATTER TEST] %v | %3d | %13v | %15s | %-7s %s\n%s",
+			c.Sys.Debugf(fmt.Sprintf("[FORMATTER TEST] %v | %3d | %13v | %15s | %-7s %s\n%s",
 				param.TimeStamp.Format("2006/01/02 - 15:04:05"),
 				param.StatusCode,
 				param.Latency,

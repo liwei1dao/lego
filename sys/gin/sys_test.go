@@ -9,13 +9,19 @@ import (
 	"testing"
 
 	"github.com/liwei1dao/lego/sys/gin"
+	"github.com/liwei1dao/lego/sys/gin/engine"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 func Test_sys(t *testing.T) {
+	if err := log.OnInit(nil); err != nil {
+		fmt.Printf("log init err:%v", err)
+		return
+	}
 	if sys, err := gin.NewSys(); err != nil {
-		fmt.Printf("sys init err:%v", err)
+		fmt.Printf("gin init err:%v", err)
 	} else {
-		sys.GET("/test", func(c *gin.Context) {
+		sys.GET("/test", func(c *engine.Context) {
 			c.JSON(http.StatusOK, "hello")
 		})
 	}

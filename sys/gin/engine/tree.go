@@ -1,12 +1,19 @@
-package gin
+package engine
 
 import (
+	"bytes"
 	"net/url"
 	"strings"
 	"unicode"
 	"unicode/utf8"
 
 	"github.com/liwei1dao/lego/utils/convert"
+)
+
+var (
+	strColon = []byte(":")
+	strStar  = []byte("*")
+	strSlash = []byte("/")
 )
 
 type Param struct {
@@ -759,4 +766,73 @@ func (trees methodTrees) get(method string) *node {
 		}
 	}
 	return nil
+}
+
+/*
+将数组中的字节向左移动 n 个字节
+*/
+func shiftNRuneBytes(rb [4]byte, n int) [4]byte {
+	switch n {
+	case 0:
+		return rb
+	case 1:
+		return [4]byte{rb[1], rb[2], rb[3], 0}
+	case 2:
+		return [4]byte{rb[2], rb[3]}
+	case 3:
+		return [4]byte{rb[3]}
+	default:
+		return [4]byte{}
+	}
+}
+
+func longestCommonPrefix(a, b string) int {
+	i := 0
+	max := min(len(a), len(b))
+	for i < max && a[i] == b[i] {
+		i++
+	}
+	return i
+}
+
+func findWildcard(path string) (wildcard string, i int, valid bool) {
+	// Find start
+	for start, c := range []byte(path) {
+		// A wildcard starts with ':' (param) or '*' (catch-all)
+		if c != ':' && c != '*' {
+			continue
+		}
+
+		// Find end and check for invalid characters
+		valid = true
+		for end, c := range []byte(path[start+1:]) {
+			switch c {
+			case '/':
+				return path[start : start+1+end], start, valid
+			case ':', '*':
+				valid = false
+			}
+		}
+		return path[start:], start, valid
+	}
+	return "", -1, false
+}
+
+func countParams(path string) uint16 {
+	var n uint16
+	s := convert.StringToBytes(path)
+	n += uint16(bytes.Count(s, strColon))
+	n += uint16(bytes.Count(s, strStar))
+	return n
+}
+
+func countSections(path string) uint16 {
+	s := convert.StringToBytes(path)
+	return uint16(bytes.Count(s, strSlash))
+}
+func min(a, b int) int {
+	if a <= b {
+		return a
+	}
+	return b
 }

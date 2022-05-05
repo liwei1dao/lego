@@ -1,36 +1,15 @@
 package gin
 
-import "net/http"
+import (
+	"net/http"
 
-type (
-	ISys interface {
-		IRoutes
-		Close() (err error)
-	}
-	IRoutes interface {
-		Use(...HandlerFunc) IRoutes
-		Handle(string, string, ...HandlerFunc) IRoutes
-		Any(string, ...HandlerFunc) IRoutes
-		GET(string, ...HandlerFunc) IRoutes
-		POST(string, ...HandlerFunc) IRoutes
-		DELETE(string, ...HandlerFunc) IRoutes
-		PATCH(string, ...HandlerFunc) IRoutes
-		PUT(string, ...HandlerFunc) IRoutes
-		OPTIONS(string, ...HandlerFunc) IRoutes
-		HEAD(string, ...HandlerFunc) IRoutes
-		StaticFile(string, string) IRoutes
-		StaticFileFS(string, string, http.FileSystem) IRoutes
-		Static(string, string) IRoutes
-		StaticFS(string, http.FileSystem) IRoutes
-	}
-	RouteInfo struct {
-		Method      string
-		Path        string
-		Handler     string
-		HandlerFunc HandlerFunc
-	}
-	RoutesInfo []RouteInfo
+	"github.com/liwei1dao/lego/sys/gin/engine"
 )
+
+type ISys interface {
+	engine.IRoutes
+	Close() (err error)
+}
 
 var defsys ISys
 
@@ -48,47 +27,47 @@ func Close() (err error) {
 	return defsys.Close()
 }
 
-func Use(handlers ...HandlerFunc) IRoutes {
+func Use(handlers ...engine.HandlerFunc) engine.IRoutes {
 	return defsys.Use(handlers...)
 }
-func Handle(httpMethod string, relativePath string, handlers ...HandlerFunc) IRoutes {
+func Handle(httpMethod string, relativePath string, handlers ...engine.HandlerFunc) engine.IRoutes {
 	return defsys.Handle(httpMethod, relativePath, handlers...)
 }
-func Any(relativePath string, handlers ...HandlerFunc) IRoutes {
+func Any(relativePath string, handlers ...engine.HandlerFunc) engine.IRoutes {
 	return defsys.Any(relativePath, handlers...)
 }
-func GET(httpMethod string, handlers ...HandlerFunc) IRoutes {
+func GET(httpMethod string, handlers ...engine.HandlerFunc) engine.IRoutes {
 	return defsys.GET(httpMethod, handlers...)
 }
-func POST(httpMethod string, handlers ...HandlerFunc) IRoutes {
+func POST(httpMethod string, handlers ...engine.HandlerFunc) engine.IRoutes {
 	return defsys.POST(httpMethod, handlers...)
 }
-func DELETE(httpMethod string, handlers ...HandlerFunc) IRoutes {
+func DELETE(httpMethod string, handlers ...engine.HandlerFunc) engine.IRoutes {
 	return defsys.DELETE(httpMethod, handlers...)
 }
-func PATCH(httpMethod string, handlers ...HandlerFunc) IRoutes {
+func PATCH(httpMethod string, handlers ...engine.HandlerFunc) engine.IRoutes {
 	return defsys.PATCH(httpMethod, handlers...)
 }
-func PUT(httpMethod string, handlers ...HandlerFunc) IRoutes {
+func PUT(httpMethod string, handlers ...engine.HandlerFunc) engine.IRoutes {
 	return defsys.PUT(httpMethod, handlers...)
 }
-func OPTIONS(httpMethod string, handlers ...HandlerFunc) IRoutes {
+func OPTIONS(httpMethod string, handlers ...engine.HandlerFunc) engine.IRoutes {
 	return defsys.OPTIONS(httpMethod, handlers...)
 }
-func HEAD(httpMethod string, handlers ...HandlerFunc) IRoutes {
+func HEAD(httpMethod string, handlers ...engine.HandlerFunc) engine.IRoutes {
 	return defsys.HEAD(httpMethod, handlers...)
 }
-func StaticFile(relativePath string, filepath string) IRoutes {
+func StaticFile(relativePath string, filepath string) engine.IRoutes {
 	return defsys.StaticFile(relativePath, filepath)
 }
-func StaticFileFS(relativePath string, filepath string, fs http.FileSystem) IRoutes {
+func StaticFileFS(relativePath string, filepath string, fs http.FileSystem) engine.IRoutes {
 	return defsys.StaticFileFS(relativePath, filepath, fs)
 }
 
-func Static(relativePath string, root string) IRoutes {
+func Static(relativePath string, root string) engine.IRoutes {
 	return defsys.Static(relativePath, root)
 }
 
-func StaticFS(relativePath string, fs http.FileSystem) IRoutes {
+func StaticFS(relativePath string, fs http.FileSystem) engine.IRoutes {
 	return defsys.StaticFS(relativePath, fs)
 }

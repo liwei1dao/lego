@@ -1,4 +1,4 @@
-package gin
+package engine
 
 import (
 	"errors"
@@ -16,7 +16,6 @@ import (
 
 	"github.com/liwei1dao/lego/sys/gin/binding"
 	"github.com/liwei1dao/lego/sys/gin/render"
-	"github.com/liwei1dao/lego/sys/log"
 )
 
 const (
@@ -31,15 +30,25 @@ const (
 )
 const abortIndex int8 = math.MaxInt8 >> 1
 
+func newContext(sys ISys, engine *Engine, params *Params, skippedNodes *[]skippedNode) *Context {
+	return &Context{
+		engine:       engine,
+		params:       params,
+		skippedNodes: skippedNodes,
+		writermem:    ResponseWriter{log: sys},
+	}
+}
+
 type Context struct {
-	writermem    responseWriter
+	Sys          ISys
+	engine       *Engine
+	writermem    ResponseWriter
 	Request      *http.Request
-	Writer       ResponseWriter
+	Writer       IResponseWriter
 	Params       Params
 	handlers     HandlersChain
 	index        int8
 	fullPath     string
-	engine       *Engine
 	params       *Params
 	skippedNodes *[]skippedNode
 	mu           sync.RWMutex
@@ -250,6 +259,14 @@ func (this *Context) GetStringMapStringSlice(key string) (smss map[string][]stri
 	return
 }
 
+func (this *Context) Header(key, value string) {
+	if value == "" {
+		this.Writer.Header().Del(key)
+		return
+	}
+	this.Writer.Header().Set(key, value)
+}
+
 // Status sets the HTTP response code.
 func (this *Context) Status(code int) {
 	this.Writer.WriteHeader(code)
@@ -326,7 +343,7 @@ func (this *Context) initFormCache() {
 		req := this.Request
 		if err := req.ParseMultipartForm(this.engine.MaxMultipartMemory); err != nil {
 			if !errors.Is(err, http.ErrNotMultipart) {
-				log.Errorf("error on parse multipart form array: %v", err)
+				this.Sys.Errorf("error on parse multipart form array: %v", err)
 			}
 		}
 		this.formCache = req.PostForm

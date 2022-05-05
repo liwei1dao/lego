@@ -1,4 +1,4 @@
-package gin
+package engine
 
 import (
 	"net/http"
@@ -15,16 +15,6 @@ var (
 		http.MethodTrace,
 	}
 )
-
-type HandlerFunc func(*Context)
-type HandlersChain []HandlerFunc
-
-func (c HandlersChain) Last() HandlerFunc {
-	if length := len(c); length > 0 {
-		return c[length-1]
-	}
-	return nil
-}
 
 type RouterGroup struct {
 	Handlers HandlersChain
