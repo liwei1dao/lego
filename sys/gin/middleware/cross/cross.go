@@ -6,11 +6,11 @@ package cross
 import (
 	"net/http"
 
-	"github.com/liwei1dao/lego/sys/gin"
+	"github.com/liwei1dao/lego/sys/gin/engine"
 )
 
-func handlerCors() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func handlerCors() engine.HandlerFunc {
+	return func(c *engine.Context) {
 		method := c.Request.Method
 		origin := c.Request.Header.Get("Origin") //请求头部
 		if origin != "" {

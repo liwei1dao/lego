@@ -27,6 +27,7 @@ require (
 	github.com/go-zookeeper/zk v1.0.2
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/godror/godror v0.25.3
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/websocket v1.4.2
 	github.com/gwuhaolin/livego v0.0.0-20220331071126-0e247e157de9
