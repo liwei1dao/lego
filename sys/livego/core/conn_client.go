@@ -11,9 +11,7 @@ import (
 	neturl "net/url"
 	"strings"
 
-	"github.com/liwei1dao/lego/lib/modules/live/amf"
 	"github.com/liwei1dao/lego/sys/livego/codec"
-	"github.com/liwei1dao/lego/sys/log"
 )
 
 var (
@@ -158,7 +156,7 @@ func (this *ConnClient) Start(url string, method string) error {
 	}
 	this.server.Debugf(" writeCreateStreamMsg....")
 	if err := this.writeCreateStreamMsg(); err != nil {
-		log.Errorf(" writeCreateStreamMsg error", err)
+		this.server.Errorf(" writeCreateStreamMsg error", err)
 		return err
 	}
 	this.server.Debugf(" method control:", method, PUBLISH, PLAY)
@@ -186,7 +184,7 @@ func (this *ConnClient) Write(c ChunkStream) error {
 	if c.TypeID == TAG_SCRIPTDATAAMF0 ||
 		c.TypeID == TAG_SCRIPTDATAAMF3 {
 		var err error
-		if c.Data, err = amf.MetaDataReform(c.Data, amf.ADD); err != nil {
+		if c.Data, err = codec.MetaDataReform(c.Data, codec.ADD); err != nil {
 			return err
 		}
 		c.Length = uint32(len(c.Data))
@@ -244,8 +242,8 @@ func (this *ConnClient) readRespMsg() error {
 							return ErrFail
 						}
 					}
-				case amf.Object:
-					objmap := v.(amf.Object)
+				case codec.Object:
+					objmap := v.(codec.Object)
 					switch this.curcmdName {
 					case cmdConnect:
 						code, ok := objmap["code"]
@@ -314,7 +312,7 @@ func (this *ConnClient) writeCreateStreamMsg() error {
 			return err
 		}
 		if err == ErrFail {
-			log.Errorf(" writeCreateStreamMsg readRespMsg err=%v", err)
+			this.server.Errorf(" writeCreateStreamMsg readRespMsg err=%v", err)
 			return err
 		}
 	}

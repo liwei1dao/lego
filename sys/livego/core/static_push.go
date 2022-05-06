@@ -2,8 +2,6 @@ package core
 
 import (
 	"fmt"
-
-	"github.com/liwei1dao/lego/sys/log"
 )
 
 var (
@@ -40,15 +38,15 @@ func (this *StaticPush) Start() error {
 
 	this.connectClient = NewConnClient(this.server)
 	if this.server.GetDebug() {
-		log.Debugf("[SYS LiveGo] static publish server addr:%v starting....", this.RtmpUrl)
+		this.server.Debugf("[SYS LiveGo] static publish server addr:%v starting....", this.RtmpUrl)
 	}
 	err := this.connectClient.Start(this.RtmpUrl, "publish")
 	if err != nil {
-		log.Debugf("connectClient.Start url=%v error", this.RtmpUrl)
+		this.server.Debugf("connectClient.Start url=%v error", this.RtmpUrl)
 		return err
 	}
 	if this.server.GetDebug() {
-		log.Debugf("[SYS LiveGo] static publish server addr:%v started, streamid=%d", this.RtmpUrl, this.connectClient.GetStreamId())
+		this.server.Debugf("[SYS LiveGo] static publish server addr:%v started, streamid=%d", this.RtmpUrl, this.connectClient.GetStreamId())
 	}
 	go this.HandleAvPacket()
 
@@ -58,7 +56,7 @@ func (this *StaticPush) Start() error {
 
 func (this *StaticPush) HandleAvPacket() {
 	if !this.IsStart() {
-		log.Debugf("static push %s not started", this.RtmpUrl)
+		this.server.Debugf("static push %s not started", this.RtmpUrl)
 		return
 	}
 
@@ -69,7 +67,7 @@ func (this *StaticPush) HandleAvPacket() {
 		case ctrlcmd := <-this.sndctrl_chan:
 			if ctrlcmd == STATIC_RELAY_STOP_CTRL {
 				this.connectClient.Close(nil)
-				log.Debugf("Static HandleAvPacket close: publishurl=%s", this.RtmpUrl)
+				this.server.Debugf("Static HandleAvPacket close: publishurl=%s", this.RtmpUrl)
 				return
 			}
 		}
