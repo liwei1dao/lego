@@ -12,9 +12,9 @@ var (
 	STOP_CTRL = "RTMPRELAY_STOP"
 )
 
-func NewRtmpRelay(server IServer, playurl string, publishurl string) *RtmpRelay {
+func NewRtmpRelay(sys ISys, playurl string, publishurl string) *RtmpRelay {
 	return &RtmpRelay{
-		server:               server,
+		sys:                  sys,
 		PlayUrl:              playurl,
 		PublishUrl:           publishurl,
 		cs_chan:              make(chan ChunkStream, 500),
@@ -26,7 +26,7 @@ func NewRtmpRelay(server IServer, playurl string, publishurl string) *RtmpRelay 
 }
 
 type RtmpRelay struct {
-	server               IServer
+	sys                  ISys
 	PlayUrl              string
 	PublishUrl           string
 	cs_chan              chan ChunkStream
@@ -41,20 +41,20 @@ func (this *RtmpRelay) Start() error {
 		return fmt.Errorf("The rtmprelay already started, playurl=%s, publishurl=%s\n", this.PlayUrl, this.PublishUrl)
 	}
 
-	this.connectPlayClient = NewConnClient(this.server)
-	this.connectPublishClient = NewConnClient(this.server)
+	this.connectPlayClient = NewConnClient(this.sys)
+	this.connectPublishClient = NewConnClient(this.sys)
 
-	this.server.Debugf("play server addr:%v starting....", this.PlayUrl)
+	this.sys.Debugf("play server addr:%v starting....", this.PlayUrl)
 	err := this.connectPlayClient.Start(this.PlayUrl, PLAY)
 	if err != nil {
-		this.server.Debugf("connectPlayClient.Start url=%v error", this.PlayUrl)
+		this.sys.Debugf("connectPlayClient.Start url=%v error", this.PlayUrl)
 		return err
 	}
 
-	this.server.Debugf("publish server addr:%v starting....", this.PublishUrl)
+	this.sys.Debugf("publish server addr:%v starting....", this.PublishUrl)
 	err = this.connectPublishClient.Start(this.PublishUrl, PUBLISH)
 	if err != nil {
-		this.server.Debugf("connectPublishClient.Start url=%v error", this.PublishUrl)
+		this.sys.Debugf("connectPublishClient.Start url=%v error", this.PublishUrl)
 		this.connectPlayClient.Close(nil)
 		return err
 	}
@@ -68,7 +68,7 @@ func (this *RtmpRelay) Start() error {
 
 func (this *RtmpRelay) Stop() {
 	if !this.startflag {
-		this.server.Debugf("The rtmprelay already stoped, playurl=%s, publishurl=%s", this.PlayUrl, this.PublishUrl)
+		this.sys.Debugf("The rtmprelay already stoped, playurl=%s, publishurl=%s", this.PlayUrl, this.PublishUrl)
 		return
 	}
 	this.startflag = false
@@ -76,13 +76,13 @@ func (this *RtmpRelay) Stop() {
 }
 
 func (this *RtmpRelay) rcvPlayChunkStream() {
-	this.server.Debugf("rcvPlayRtmpMediaPacket connectClient.Read...")
+	this.sys.Debugf("rcvPlayRtmpMediaPacket connectClient.Read...")
 	for {
 		var rc ChunkStream
 
 		if this.startflag == false {
 			this.connectPlayClient.Close(nil)
-			this.server.Debugf("rcvPlayChunkStream close: playurl=%s, publishurl=%s", this.PlayUrl, this.PublishUrl)
+			this.sys.Debugf("rcvPlayChunkStream close: playurl=%s, publishurl=%s", this.PlayUrl, this.PublishUrl)
 			break
 		}
 		err := this.connectPlayClient.Read(&rc)
@@ -96,9 +96,9 @@ func (this *RtmpRelay) rcvPlayChunkStream() {
 			r := bytes.NewReader(rc.Data)
 			vs, err := this.connectPlayClient.DecodeBatch(r, codec.AMF0)
 
-			this.server.Debugf("rcvPlayRtmpMediaPacket: vs=%v, err=%v", vs, err)
+			this.sys.Debugf("rcvPlayRtmpMediaPacket: vs=%v, err=%v", vs, err)
 		case 18:
-			this.server.Debugf("rcvPlayRtmpMediaPacket: metadata....")
+			this.sys.Debugf("rcvPlayRtmpMediaPacket: metadata....")
 			this.cs_chan <- rc
 		case 8, 9:
 			this.cs_chan <- rc
@@ -115,7 +115,7 @@ func (this *RtmpRelay) sendPublishChunkStream() {
 		case ctrlcmd := <-this.sndctrl_chan:
 			if ctrlcmd == STOP_CTRL {
 				this.connectPublishClient.Close(nil)
-				this.server.Debugf("sendPublishChunkStream close: playurl=%s, publishurl=%s", this.PlayUrl, this.PublishUrl)
+				this.sys.Debugf("sendPublishChunkStream close: playurl=%s, publishurl=%s", this.PlayUrl, this.PublishUrl)
 				return
 			}
 		}

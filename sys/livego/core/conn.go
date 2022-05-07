@@ -29,21 +29,21 @@ const (
 	pingResponse     uint32 = 7
 )
 
-func NewConn(c net.Conn, server IServer) *Conn {
+func NewConn(c net.Conn, sys ISys) *Conn {
 	return &Conn{
-		server:          server,
+		sys:             sys,
 		Conn:            c,
-		timeout:         time.Second * time.Duration(server.GetTimeout()),
+		timeout:         time.Second * time.Duration(sys.GetTimeout()),
 		chunkSize:       128,
 		remoteChunkSize: 128,
 		pool:            pool.NewPool(),
-		rw:              NewReadWriter(c, server.GetConnBuffSzie()),
+		rw:              NewReadWriter(c, sys.GetConnBuffSzie()),
 	}
 }
 
 type Conn struct {
 	net.Conn
-	server              IServer
+	sys                 ISys
 	rw                  *ReadWriter
 	timeout             time.Duration
 	chunkSize           uint32
@@ -55,8 +55,8 @@ type Conn struct {
 	chunks              map[uint32]ChunkStream
 }
 
-func (this *Conn) Server() IServer {
-	return this.server
+func (this *Conn) Sys() ISys {
+	return this.sys
 }
 
 func (conn *Conn) NewAck(size uint32) ChunkStream {

@@ -2,15 +2,13 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
 
-	jwtmiddleware "github.com/auth0/go-jwt-middleware"
-	"github.com/form3tech-oss/jwt-go"
-	"github.com/gwuhaolin/livego/configure"
-	"github.com/gwuhaolin/livego/protocol/rtmp"
 	"github.com/liwei1dao/lego/sys/livego/core"
+	"github.com/liwei1dao/lego/sys/livego/serves/rtmp"
 )
 
 type Response struct {
@@ -26,15 +24,42 @@ func (this *Response) SendJson() (int, error) {
 	return this.w.Write(resp)
 }
 
-func NewServer(server core.IServer) *Server {
-	return &Server{
-		server: server,
+func NewServer(sys core.ISys) (server *Server, err error) {
+	server = &Server{
+		sys: sys,
 	}
+	err = server.init()
+	return
 }
 
 type Server struct {
-	server  core.IServer
+	sys     core.ISys
 	session map[string]*core.RtmpRelay
+}
+
+func (this *Server) init() (err error) {
+	var (
+		opListen net.Listener
+	)
+	if this.sys.GetApiAddr() != "" {
+		opListen, err = net.Listen("tcp", this.sys.GetApiAddr())
+		if err != nil {
+			this.sys.Errorf("init ApiServer err:%v", err)
+			return
+		}
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					this.sys.Errorf("HTTP-API server panic: ", r)
+				}
+			}()
+			this.sys.Infof("HTTP-API listen On ", this.sys.GetApiAddr())
+			this.Serve(opListen)
+		}()
+	} else {
+		err = errors.New("HTTP-API ApiAddr is null")
+	}
+	return
 }
 
 func (this *Server) Serve(l net.Listener) (err error) {
@@ -58,46 +83,8 @@ func (this *Server) Serve(l net.Listener) (err error) {
 	mux.HandleFunc("/stat/livestat", func(w http.ResponseWriter, r *http.Request) {
 		this.GetLiveStatics(w, r)
 	})
-	http.Serve(l, JWTMiddleware(this.server, mux))
+	http.Serve(l, mux)
 	return
-}
-
-func JWTMiddleware(server core.IServer, next http.Handler) http.Handler {
-	isJWT := len(server.GetJWTSecret()) > 0
-	if !isJWT {
-		return next
-	}
-
-	server.Infof("Using JWT middleware")
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var algorithm jwt.SigningMethod
-		if len(configure.Config.GetString("jwt.algorithm")) > 0 {
-			algorithm = jwt.GetSigningMethod(configure.Config.GetString("jwt.algorithm"))
-		}
-
-		if algorithm == nil {
-			algorithm = jwt.SigningMethodHS256
-		}
-
-		jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
-			Extractor: jwtmiddleware.FromFirst(jwtmiddleware.FromAuthHeader, jwtmiddleware.FromParameter("jwt")),
-			ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
-				return []byte(server.GetJWTAlgorithm()), nil
-			},
-			SigningMethod: algorithm,
-			ErrorHandler: func(w http.ResponseWriter, r *http.Request, err string) {
-				res := &Response{
-					w:      w,
-					Status: 403,
-					Data:   err,
-				}
-				res.SendJson()
-			},
-		})
-
-		jwtMiddleware.HandlerWithNext(w, r, next.ServeHTTP)
-	})
 }
 
 //http://127.0.0.1:8090/control/push?&oper=start&app=live&name=123456&url=rtmp://192.168.16.136/live/123456
@@ -123,13 +110,13 @@ func (this *Server) handlePush(w http.ResponseWriter, req *http.Request) {
 	name := req.Form.Get("name")
 	url := req.Form.Get("url")
 
-	this.server.Debugf("control push: oper=%v, app=%v, name=%v, url=%v", oper, app, name, url)
+	this.sys.Debugf("control push: oper=%v, app=%v, name=%v, url=%v", oper, app, name, url)
 	if (len(app) <= 0) || (len(name) <= 0) || (len(url) <= 0) {
 		res.Data = "control push parameter error, please check them."
 		return
 	}
 
-	localurl := "rtmp://127.0.0.1" + this.server.GetRTMPAddr() + "/" + app + "/" + name
+	localurl := "rtmp://127.0.0.1" + this.sys.GetRTMPAddr() + "/" + app + "/" + name
 	remoteurl := url
 
 	keyString := "push:" + app + "/" + name
@@ -140,16 +127,16 @@ func (this *Server) handlePush(w http.ResponseWriter, req *http.Request) {
 			res.Data = retString
 			return
 		}
-		this.server.Debugf("rtmprelay stop push %s from %s", remoteurl, localurl)
+		this.sys.Debugf("rtmprelay stop push %s from %s", remoteurl, localurl)
 		pushRtmprelay.Stop()
 
 		delete(this.session, keyString)
 		retString = fmt.Sprintf("<h1>push url stop %s ok</h1></br>", url)
 		res.Data = retString
-		this.server.Debugf("push stop return %s", retString)
+		this.sys.Debugf("push stop return %s", retString)
 	} else {
-		pushRtmprelay := core.NewRtmpRelay(this.server, localurl, remoteurl)
-		this.server.Debugf("rtmprelay start push %s from %s", remoteurl, localurl)
+		pushRtmprelay := core.NewRtmpRelay(this.sys, localurl, remoteurl)
+		this.sys.Debugf("rtmprelay start push %s from %s", remoteurl, localurl)
 		err = pushRtmprelay.Start()
 		if err != nil {
 			retString = fmt.Sprintf("push error=%v", err)
@@ -159,7 +146,7 @@ func (this *Server) handlePush(w http.ResponseWriter, req *http.Request) {
 		}
 
 		res.Data = retString
-		this.server.Debugf("push start return %s", retString)
+		this.sys.Debugf("push start return %s", retString)
 	}
 }
 
@@ -187,14 +174,14 @@ func (this *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 	name := req.Form.Get("name")
 	url := req.Form.Get("url")
 
-	this.server.Debugf("control pull: oper=%v, app=%v, name=%v, url=%v", oper, app, name, url)
+	this.sys.Debugf("control pull: oper=%v, app=%v, name=%v, url=%v", oper, app, name, url)
 	if (len(app) <= 0) || (len(name) <= 0) || (len(url) <= 0) {
 		res.Status = 400
 		res.Data = "control push parameter error, please check them."
 		return
 	}
 
-	remoteurl := "rtmp://127.0.0.1" + this.server.GetRTMPAddr() + "/" + app + "/" + name
+	remoteurl := "rtmp://127.0.0.1" + this.sys.GetRTMPAddr() + "/" + app + "/" + name
 	localurl := url
 
 	keyString := "pull:" + app + "/" + name
@@ -207,17 +194,17 @@ func (this *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 			res.Data = retString
 			return
 		}
-		this.server.Debugf("rtmprelay stop push %s from %s", remoteurl, localurl)
+		this.sys.Debugf("rtmprelay stop push %s from %s", remoteurl, localurl)
 		pullRtmprelay.Stop()
 
 		delete(this.session, keyString)
 		retString = fmt.Sprintf("<h1>push url stop %s ok</h1></br>", url)
 		res.Status = 400
 		res.Data = retString
-		this.server.Debugf("pull stop return %s", retString)
+		this.sys.Debugf("pull stop return %s", retString)
 	} else {
-		pullRtmprelay := core.NewRtmpRelay(this.server, localurl, remoteurl)
-		this.server.Debugf("rtmprelay start push %s from %s", remoteurl, localurl)
+		pullRtmprelay := core.NewRtmpRelay(this.sys, localurl, remoteurl)
+		this.sys.Debugf("rtmprelay start push %s from %s", remoteurl, localurl)
 		err = pullRtmprelay.Start()
 		if err != nil {
 			res.Status = 400
@@ -228,7 +215,7 @@ func (this *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 		}
 
 		res.Data = retString
-		this.server.Debugf("pull start return %s", retString)
+		this.sys.Debugf("pull start return %s", retString)
 	}
 }
 
@@ -255,7 +242,7 @@ func (this *Server) handleGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, err := this.server.GetKey(room)
+	msg, err := this.sys.GetKey(room)
 	if err != nil {
 		msg = err.Error()
 		res.Status = 400
@@ -285,7 +272,7 @@ func (this *Server) handleReset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, err := this.server.SetKey(room)
+	msg, err := this.sys.SetKey(room)
 
 	if err != nil {
 		msg = err.Error()
@@ -318,7 +305,7 @@ func (this *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if this.server.DeleteChannel(room) {
+	if this.sys.DeleteChannel(room) {
 		res.Data = "Ok"
 		return
 	}
@@ -343,12 +330,12 @@ func (this *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 
 	msgs := new(streams)
 	if room == "" {
-		this.server.GetStreams().Range(func(key, val interface{}) bool {
-			if s, ok := val.(*rtmp.Stream); ok {
+		this.sys.GetRtmpServer().GetStreams().Range(func(key, val interface{}) bool {
+			if s, ok := val.(*core.Stream); ok {
 				if s.GetReader() != nil {
 					switch s.GetReader().(type) {
-					case *rtmp.VirReader:
-						v := s.GetReader().(*rtmp.VirReader)
+					case *rtmp.Reader:
+						v := s.GetReader().(*rtmp.Reader)
 						msg := stream{key.(string), v.Info().URL, v.ReadBWInfo.StreamId, v.ReadBWInfo.VideoDatainBytes, v.ReadBWInfo.VideoSpeedInBytesperMS,
 							v.ReadBWInfo.AudioDatainBytes, v.ReadBWInfo.AudioSpeedInBytesperMS}
 						msgs.Publishers = append(msgs.Publishers, msg)
@@ -357,14 +344,14 @@ func (this *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 			}
 			return true
 		})
-		this.server.GetStreams().Range(func(key, val interface{}) bool {
-			ws := val.(*rtmp.Stream).GetWs()
+		this.sys.GetRtmpServer().GetStreams().Range(func(key, val interface{}) bool {
+			ws := val.(*core.Stream).GetWs()
 			ws.Range(func(k, v interface{}) bool {
-				if pw, ok := v.(*rtmp.PackWriterCloser); ok {
+				if pw, ok := v.(*core.PackWriterCloser); ok {
 					if pw.GetWriter() != nil {
 						switch pw.GetWriter().(type) {
-						case *rtmp.VirWriter:
-							v := pw.GetWriter().(*rtmp.VirWriter)
+						case *rtmp.Writer:
+							v := pw.GetWriter().(*rtmp.Writer)
 							msg := stream{key.(string), v.Info().URL, v.WriteBWInfo.StreamId, v.WriteBWInfo.VideoDatainBytes, v.WriteBWInfo.VideoSpeedInBytesperMS,
 								v.WriteBWInfo.AudioDatainBytes, v.WriteBWInfo.AudioSpeedInBytesperMS}
 							msgs.Players = append(msgs.Players, msg)
@@ -377,18 +364,18 @@ func (this *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 		})
 	} else {
 		// Warning: The room should be in the "live/stream" format!
-		roomInfo, exists := (this.server.GetStreams()).Load(room)
+		roomInfo, exists := (this.sys.GetRtmpServer().GetStreams()).Load(room)
 		if exists == false {
 			res.Status = 404
 			res.Data = "room not found or inactive"
 			return
 		}
 
-		if s, ok := roomInfo.(*rtmp.Stream); ok {
+		if s, ok := roomInfo.(*core.Stream); ok {
 			if s.GetReader() != nil {
 				switch s.GetReader().(type) {
-				case *rtmp.VirReader:
-					v := s.GetReader().(*rtmp.VirReader)
+				case *rtmp.Reader:
+					v := s.GetReader().(*rtmp.Reader)
 					msg := stream{room, v.Info().URL, v.ReadBWInfo.StreamId, v.ReadBWInfo.VideoDatainBytes, v.ReadBWInfo.VideoSpeedInBytesperMS,
 						v.ReadBWInfo.AudioDatainBytes, v.ReadBWInfo.AudioSpeedInBytesperMS}
 					msgs.Publishers = append(msgs.Publishers, msg)
@@ -396,11 +383,11 @@ func (this *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 			}
 
 			s.GetWs().Range(func(k, v interface{}) bool {
-				if pw, ok := v.(*rtmp.PackWriterCloser); ok {
+				if pw, ok := v.(*core.PackWriterCloser); ok {
 					if pw.GetWriter() != nil {
 						switch pw.GetWriter().(type) {
-						case *rtmp.VirWriter:
-							v := pw.GetWriter().(*rtmp.VirWriter)
+						case *rtmp.Writer:
+							v := pw.GetWriter().(*rtmp.Writer)
 							msg := stream{room, v.Info().URL, v.WriteBWInfo.StreamId, v.WriteBWInfo.VideoDatainBytes, v.WriteBWInfo.VideoSpeedInBytesperMS,
 								v.WriteBWInfo.AudioDatainBytes, v.WriteBWInfo.AudioSpeedInBytesperMS}
 							msgs.Players = append(msgs.Players, msg)

@@ -1,4 +1,4 @@
-package livego
+package rtmp
 
 import (
 	"fmt"
@@ -26,7 +26,7 @@ func NewWriter(conn core.StreamReadWriteCloser) *Writer {
 	go func() {
 		err := ret.SendPacket()
 		if err != nil {
-			ret.conn.Server().Warnf("err:%v", err)
+			ret.conn.Sys().Warnf("err:%v", err)
 		}
 	}()
 	return ret
@@ -60,7 +60,7 @@ func (this *Writer) Info() (ret core.Info) {
 	ret.URL = URL
 	_url, err := url.Parse(URL)
 	if err != nil {
-		this.conn.Server().Warnf("[SYS LiveGo] err:%v", err)
+		this.conn.Sys().Warnf("[SYS LiveGo] err:%v", err)
 	}
 	ret.Key = strings.TrimLeft(_url.Path, "/")
 	ret.Inter = true
@@ -160,13 +160,13 @@ func (this *Writer) Write(p *core.Packet) (err error) {
 }
 
 func (this *Writer) DropPacket(pktQue chan *core.Packet, info core.Info) {
-	this.conn.Server().Debugf("[%v] packet queue max!!!", info)
+	this.conn.Sys().Debugf("[%v] packet queue max!!!", info)
 	for i := 0; i < maxQueueNum-84; i++ {
 		tmpPkt, ok := <-pktQue
 		// try to don't drop audio
 		if ok && tmpPkt.IsAudio {
 			if len(pktQue) > maxQueueNum-2 {
-				this.conn.Server().Debugf("drop audio pkt")
+				this.conn.Sys().Debugf("drop audio pkt")
 				<-pktQue
 			} else {
 				pktQue <- tmpPkt
@@ -181,17 +181,17 @@ func (this *Writer) DropPacket(pktQue chan *core.Packet, info core.Info) {
 				pktQue <- tmpPkt
 			}
 			if len(pktQue) > maxQueueNum-10 {
-				this.conn.Server().Debugf("drop video pkt")
+				this.conn.Sys().Debugf("drop video pkt")
 				<-pktQue
 			}
 		}
 
 	}
-	this.conn.Server().Debugf("packet queue len: ", len(pktQue))
+	this.conn.Sys().Debugf("packet queue len: ", len(pktQue))
 }
 
 func (this *Writer) Close(err error) {
-	this.conn.Server().Debugf("player ", this.Info(), "closed: "+err.Error())
+	this.conn.Sys().Debugf("player ", this.Info(), "closed: "+err.Error())
 	if !this.closed {
 		close(this.packetQueue)
 	}

@@ -28,14 +28,14 @@ var (
 	ErrFail = fmt.Errorf("respone err")
 )
 
-func NewConnClient(server IServer) *ConnClient {
+func NewConnClient(sys ISys) *ConnClient {
 	return &ConnClient{
-		server: server,
+		sys: sys,
 	}
 }
 
 type ConnClient struct {
-	server     IServer
+	sys        ISys
 	transID    int
 	streamid   uint32
 	url        string
@@ -92,9 +92,9 @@ func (this *ConnClient) Start(url string, method string) error {
 		port = ":" + port
 	}
 	ips, err := net.LookupIP(host)
-	this.server.Debugf("ips: %v, host: %v", ips, host)
+	this.sys.Debugf("ips: %v, host: %v", ips, host)
 	if err != nil {
-		this.server.Errorf("err:%v", err)
+		this.sys.Errorf("err:%v", err)
 		return err
 	}
 	remoteIP = ips[rand.Intn(len(ips))].String()
@@ -104,25 +104,25 @@ func (this *ConnClient) Start(url string, method string) error {
 
 	local, err := net.ResolveTCPAddr("tcp", localIP)
 	if err != nil {
-		this.server.Errorf("err:%v", err)
+		this.sys.Errorf("err:%v", err)
 		return err
 	}
-	if this.server.GetDebug() {
-		this.server.Debugf("remoteIP:%v", remoteIP)
+	if this.sys.GetDebug() {
+		this.sys.Debugf("remoteIP:%v", remoteIP)
 	}
 	remote, err := net.ResolveTCPAddr("tcp", remoteIP)
 	if err != nil {
-		this.server.Errorf("err:%v", err)
+		this.sys.Errorf("err:%v", err)
 		return err
 	}
 
 	var conn net.Conn
 	if this.isRTMPS {
 		var config tls.Config
-		if this.server.GetEnableTLSVerify() {
+		if this.sys.GetEnableTLSVerify() {
 			roots, err := x509.SystemCertPool()
 			if err != nil {
-				this.server.Errorf("err:%v", err)
+				this.sys.Errorf("err:%v", err)
 				return err
 			}
 			config.RootCAs = roots
@@ -132,34 +132,34 @@ func (this *ConnClient) Start(url string, method string) error {
 
 		conn, err = tls.Dial("tcp", remoteIP, &config)
 		if err != nil {
-			this.server.Errorf("err:%v", err)
+			this.sys.Errorf("err:%v", err)
 			return err
 		}
 	} else {
 		conn, err = net.DialTCP("tcp", local, remote)
 		if err != nil {
-			this.server.Errorf(" err:%v", err)
+			this.sys.Errorf(" err:%v", err)
 			return err
 		}
 	}
 
-	this.server.Debugf(" connection:", "local:", conn.LocalAddr(), "remote:", conn.RemoteAddr())
-	this.conn = NewConn(conn, this.server)
-	this.server.Debugf(" HandshakeClient....")
+	this.sys.Debugf(" connection:", "local:", conn.LocalAddr(), "remote:", conn.RemoteAddr())
+	this.conn = NewConn(conn, this.sys)
+	this.sys.Debugf(" HandshakeClient....")
 	if err := this.conn.HandshakeClient(); err != nil {
 		return err
 	}
 
-	this.server.Debugf(" writeConnectMsg....")
+	this.sys.Debugf(" writeConnectMsg....")
 	if err := this.writeConnectMsg(); err != nil {
 		return err
 	}
-	this.server.Debugf(" writeCreateStreamMsg....")
+	this.sys.Debugf(" writeCreateStreamMsg....")
 	if err := this.writeCreateStreamMsg(); err != nil {
-		this.server.Errorf(" writeCreateStreamMsg error", err)
+		this.sys.Errorf(" writeCreateStreamMsg error", err)
 		return err
 	}
-	this.server.Debugf(" method control:", method, PUBLISH, PLAY)
+	this.sys.Debugf(" method control:", method, PUBLISH, PLAY)
 	if method == PUBLISH {
 		if err := this.writePublishMsg(); err != nil {
 			return err
@@ -210,7 +210,7 @@ func (this *ConnClient) readRespMsg() error {
 		case 20, 17:
 			r := bytes.NewReader(rc.Data)
 			vs, _ := this.decoder.DecodeBatch(r, codec.AMF0)
-			this.server.Debugf("readRespMsg: vs=%v", vs)
+			this.sys.Debugf("readRespMsg: vs=%v", vs)
 			for k, v := range vs {
 				switch v.(type) {
 				case string:
@@ -291,7 +291,7 @@ func (this *ConnClient) writeConnectMsg() error {
 	event["flashVer"] = "FMS.3.1"
 	event["tcUrl"] = this.tcurl
 	this.curcmdName = cmdConnect
-	this.server.Debugf(" writeConnectMsg: connClient.transID=%d, event=%v", this.transID, event)
+	this.sys.Debugf(" writeConnectMsg: connClient.transID=%d, event=%v", this.transID, event)
 	if err := this.writeMsg(cmdConnect, this.transID, event); err != nil {
 		return err
 	}
@@ -301,7 +301,7 @@ func (this *ConnClient) writeConnectMsg() error {
 func (this *ConnClient) writeCreateStreamMsg() error {
 	this.transID++
 	this.curcmdName = cmdCreateStream
-	this.server.Debugf(" writeCreateStreamMsg: this.transID=%d", this.transID)
+	this.sys.Debugf(" writeCreateStreamMsg: this.transID=%d", this.transID)
 	if err := this.writeMsg(cmdCreateStream, this.transID, nil); err != nil {
 		return err
 	}
@@ -312,7 +312,7 @@ func (this *ConnClient) writeCreateStreamMsg() error {
 			return err
 		}
 		if err == ErrFail {
-			this.server.Errorf(" writeCreateStreamMsg readRespMsg err=%v", err)
+			this.sys.Errorf(" writeCreateStreamMsg readRespMsg err=%v", err)
 			return err
 		}
 	}
@@ -330,7 +330,7 @@ func (this *ConnClient) writePublishMsg() error {
 func (this *ConnClient) writePlayMsg() error {
 	this.transID++
 	this.curcmdName = cmdPlay
-	this.server.Debugf("writePlayMsg: connClient.transID=%d, cmdPlay=%v, connClient.title=%v",
+	this.sys.Debugf("writePlayMsg: connClient.transID=%d, cmdPlay=%v, connClient.title=%v",
 		this.transID, cmdPlay, this.title)
 	if err := this.writeMsg(cmdPlay, 0, nil, this.title); err != nil {
 		return err

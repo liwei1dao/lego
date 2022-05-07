@@ -75,8 +75,8 @@ type ConnServer struct {
 func (this *ConnServer) IsPublisher() bool {
 	return this.isPublisher
 }
-func (this *ConnServer) Server() IServer {
-	return this.conn.Server()
+func (this *ConnServer) Sys() ISys {
+	return this.conn.Sys()
 }
 
 func (this *ConnServer) GetInfo() (app string, name string, url string) {
@@ -123,7 +123,7 @@ func (this *ConnServer) handleCmdMsg(c *ChunkStream) error {
 			}
 			this.done = true
 			this.isPublisher = true
-			this.conn.Server().Debugf("handle publish req done")
+			this.conn.Sys().Debugf("handle publish req done")
 		case cmdPlay:
 			if err = this.publishOrPlay(vs[1:]); err != nil {
 				return err
@@ -133,7 +133,7 @@ func (this *ConnServer) handleCmdMsg(c *ChunkStream) error {
 			}
 			this.done = true
 			this.isPublisher = false
-			this.conn.Server().Debugf("handle play req done")
+			this.conn.Sys().Debugf("handle play req done")
 		case cmdFcpublish:
 			this.fcPublish(vs)
 		case cmdReleaseStream:
@@ -141,7 +141,7 @@ func (this *ConnServer) handleCmdMsg(c *ChunkStream) error {
 		case cmdFCUnpublish:
 		case cmdDeleteStream:
 		default:
-			this.conn.Server().Debugf("no support command=", vs[0].(string))
+			this.conn.Sys().Debugf("no support command=", vs[0].(string))
 		}
 	}
 

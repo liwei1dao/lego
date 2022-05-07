@@ -21,41 +21,41 @@ const (
 	headerLen = 11
 )
 
-func NewFlvDvr(server core.IServer) *FlvDvr {
+func NewFlvDvr(sys core.ISys) *FlvDvr {
 	return &FlvDvr{
-		server: server,
+		sys: sys,
 	}
 }
 
 type FlvDvr struct {
-	server core.IServer
+	sys core.ISys
 }
 
 func (this *FlvDvr) GetWriter(info core.Info) core.WriteCloser {
 	paths := strings.SplitN(info.Key, "/", 2)
 	if len(paths) != 2 {
-		this.server.Warnf("invalid info")
+		this.sys.Warnf("invalid info")
 		return nil
 	}
 
-	flvDir := this.server.GetFLVDir()
+	flvDir := this.sys.GetFLVDir()
 
 	err := os.MkdirAll(path.Join(flvDir, paths[0]), 0755)
 	if err != nil {
-		this.server.Errorf("mkdir error: ", err)
+		this.sys.Errorf("mkdir error: ", err)
 		return nil
 	}
 
 	fileName := fmt.Sprintf("%s_%d.%s", path.Join(flvDir, info.Key), time.Now().Unix(), "flv")
-	this.server.Debugf("flv dvr save stream to: ", fileName)
+	this.sys.Debugf("flv dvr save stream to: ", fileName)
 	w, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0755)
 	if err != nil {
-		this.server.Errorf("open file error: ", err)
+		this.sys.Errorf("open file error: ", err)
 		return nil
 	}
 
 	writer := NewFLVWriter(paths[0], paths[1], info.URL, w)
-	this.server.Debugf("new flv dvr: ", writer.Info())
+	this.sys.Debugf("new flv dvr: ", writer.Info())
 	return writer
 }
 

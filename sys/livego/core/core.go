@@ -9,6 +9,10 @@ import (
 )
 
 var (
+	EmptyID = ""
+)
+
+var (
 	PUBLISH = "publish"
 	PLAY    = "play"
 )
@@ -108,32 +112,30 @@ type Handler interface {
 	HandleWriter(WriteCloser)
 }
 
-type GetServer interface {
-	Server() IServer
+type GetSys interface {
+	Sys() ISys
 }
 
 type GetInFo interface {
 	GetInfo() (string, string, string)
 }
 type StreamReadWriteCloser interface {
-	GetServer
+	GetSys
 	GetInFo
 	Close(error)
 	Write(ChunkStream) error
 	Read(c *ChunkStream) error
 }
 
-type IServer interface {
+type ISys interface {
 	log.Ilogf
-	IServerOptions
+	ISysOptions
 	IStaticPushMnager
 	IRoomsManager
-	Handler
-	Serve(listener net.Listener) (err error)
-	GetStreams() *sync.Map
+	GetRtmpServer() IRtmpServer
 }
 
-type IServerOptions interface {
+type ISysOptions interface {
 	GetAppname() string
 	GetHls() bool
 	GetUseHlsHttps() bool
@@ -154,7 +156,6 @@ type IServerOptions interface {
 	GetConnBuffSzie() int     //连接对象读写缓存
 	GetDebug() bool           //日志是否开启
 }
-
 type IRoomsManager interface {
 	SetKey(channel string) (key string, err error)
 	GetKey(channel string) (newKey string, err error)
@@ -167,6 +168,13 @@ type IStaticPushMnager interface {
 	GetAndCreateStaticPushObject(rtmpurl string) *StaticPush
 	GetStaticPushObject(rtmpurl string) (*StaticPush, error)
 	ReleaseStaticPushObject(rtmpurl string)
+}
+type IRtmpServer interface {
+	Handler
+	Serve(listener net.Listener) (err error)
+	GetStreams() *sync.Map
+}
+type IApiServer interface {
 }
 
 type Packet struct {

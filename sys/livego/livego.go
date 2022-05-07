@@ -2,12 +2,11 @@ package livego
 
 import (
 	"fmt"
-	"net"
 	"sync"
-	"time"
 
-	"github.com/liwei1dao/lego/sys/livego/container/flv"
 	"github.com/liwei1dao/lego/sys/livego/core"
+	"github.com/liwei1dao/lego/sys/livego/serves/api"
+	"github.com/liwei1dao/lego/sys/livego/serves/rtmp"
 	"github.com/liwei1dao/lego/utils/container/id"
 )
 
@@ -18,7 +17,6 @@ func newSys(options Options) (sys *LiveGo, err error) {
 		keys:          make(map[string]string),
 		channelLock:   new(sync.RWMutex),
 		channels:      make(map[string]string),
-		streams:       new(sync.Map),
 		mapLock:       new(sync.RWMutex),
 		staticPushMap: make(map[string]*core.StaticPush),
 	}
@@ -33,154 +31,29 @@ type LiveGo struct {
 	keys        map[string]string
 	channelLock *sync.RWMutex
 	channels    map[string]string
-	///流管理
-	streams *sync.Map
+
 	///静态推送管理
 	mapLock       *sync.RWMutex
 	staticPushMap map[string](*core.StaticPush)
+
+	rtmpServer core.IRtmpServer
+	apiServer  core.IApiServer
 }
 
 func (this *LiveGo) init() (err error) {
-	var (
-		rtmpListen net.Listener
-	)
-	if rtmpListen, err = net.Listen("tcp", this.options.RTMPAddr); err != nil {
-		this.Errorf("init err:%v", err)
+	if this.rtmpServer, err = rtmp.NewServer(this); err != nil {
 		return
 	}
-	this.Infof("RTMP Listen On:%s", this.options.RTMPAddr)
-	go this.Serve(rtmpListen)
-	return
-}
-
-func (this *LiveGo) Serve(listener net.Listener) (err error) {
-	for {
-		var netconn net.Conn
-		if netconn, err = listener.Accept(); err != nil {
-			this.Errorf("Serve err: ", err)
+	if this.options.Api {
+		if this.apiServer, err = api.NewServer(this); err != nil {
 			return
 		}
-		conn := core.NewConn(netconn, this)
-		this.Debugf("new client, connect remote: ", conn.RemoteAddr().String(),
-			"local:", conn.LocalAddr().String())
-		go this.handleConn(conn)
-	}
-}
-
-func (this *LiveGo) handleConn(conn *core.Conn) (err error) {
-	if err := conn.HandshakeServer(); err != nil {
-		conn.Close()
-		this.Errorf("handleConn HandshakeServer err: ", err)
-		return err
-	}
-	connServer := core.NewConnServer(conn)
-	if err := connServer.ReadMsg(); err != nil {
-		conn.Close()
-		this.Errorf("handleConn read msg err:%v", err)
-		return err
-	}
-	appname, name, _ := connServer.GetInfo()
-	if appname != this.options.Appname {
-		err := fmt.Errorf("application name=%s is not configured", appname)
-		conn.Close()
-		this.Errorf("CheckAppName err: ", err)
-	}
-	this.Debugf("handleConn: IsPublisher=%v", connServer.IsPublisher())
-	if connServer.IsPublisher() {
-		if this.options.RTMPNoAuth {
-			key, err := this.GetKey(name)
-			if err != nil {
-				err := fmt.Errorf("Cannot create err=%s", err.Error())
-				conn.Close()
-				this.Errorf("GetKey err:%v", err)
-				return err
-			}
-			name = key
-		}
-		channel, err := this.GetChannel(name)
-		if err != nil {
-			err := fmt.Errorf("invalid key err=%s", err.Error())
-			conn.Close()
-			this.Errorf("CheckKey err:%v", err)
-			return err
-		}
-		connServer.PublishInfo.Name = channel
-		if this.options.StaticPush != nil && len(this.options.StaticPush) > 0 {
-			this.Debugf("GetStaticPushUrlList: %v", this.options.StaticPush)
-		}
-		reader := NewReader(connServer)
-		this.HandleReader(reader)
-		this.Debugf("new publisher: %+v", reader.Info())
-		if this.GetFLVArchive() {
-			flvWriter := flv.NewFlvDvr(this)
-			this.HandleWriter(flvWriter.GetWriter(reader.Info()))
-		}
-	} else {
-		writer := NewWriter(connServer)
-		this.Debugf("new player: %+v", writer.Info())
-		this.HandleWriter(writer)
 	}
 	return
 }
 
-///流管理***********************************************************************
-func (this *LiveGo) GetStreams() *sync.Map {
-	return this.streams
-}
-
-//监测存活
-func (this *LiveGo) CheckAlive() {
-	for {
-		<-time.After(5 * time.Second)
-		this.streams.Range(func(key, val interface{}) bool {
-			v := val.(*Stream)
-			if v.CheckAlive() == 0 {
-				this.streams.Delete(key)
-			}
-			return true
-		})
-	}
-}
-
-//读处理
-func (this *LiveGo) HandleReader(r core.ReadCloser) {
-	info := r.Info()
-	this.Debugf("HandleReader: info[%v]", info)
-	var stm *Stream
-	i, ok := this.streams.Load(info.Key)
-	if stm, ok = i.(*Stream); ok {
-		stm.TransStop()
-		id := stm.ID()
-		if id != EmptyID && id != info.UID {
-			ns := NewStream()
-			stm.Copy(ns)
-			stm = ns
-			this.streams.Store(info.Key, ns)
-		}
-	} else {
-		stm = NewStream()
-		this.streams.Store(info.Key, stm)
-		stm.info = info
-	}
-	stm.AddReader(r)
-}
-
-//写处理
-func (this *LiveGo) HandleWriter(w core.WriteCloser) {
-	info := w.Info()
-	this.Debugf("HandleWriter: info[%v]", info)
-
-	var s *Stream
-	item, ok := this.streams.Load(info.Key)
-	if !ok {
-		this.Debugf("HandleWriter: not found create new info[%v]", info)
-		s = NewStream()
-		this.streams.Store(info.Key, s)
-		s.info = info
-	} else {
-		s = item.(*Stream)
-		s.AddWriter(w)
-	}
+func (this *LiveGo) GetRtmpServer() core.IRtmpServer {
+	return this.rtmpServer
 }
 
 ///参数列表***********************************************************************

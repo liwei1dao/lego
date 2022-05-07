@@ -19,7 +19,7 @@ func NewStaticPush(rtmpurl string) *StaticPush {
 }
 
 type StaticPush struct {
-	server        IServer
+	sys           ISys
 	RtmpUrl       string
 	packet_chan   chan *Packet
 	sndctrl_chan  chan string
@@ -36,17 +36,17 @@ func (this *StaticPush) Start() error {
 		return fmt.Errorf("StaticPush already start %s", this.RtmpUrl)
 	}
 
-	this.connectClient = NewConnClient(this.server)
-	if this.server.GetDebug() {
-		this.server.Debugf("[SYS LiveGo] static publish server addr:%v starting....", this.RtmpUrl)
+	this.connectClient = NewConnClient(this.sys)
+	if this.sys.GetDebug() {
+		this.sys.Debugf("[SYS LiveGo] static publish server addr:%v starting....", this.RtmpUrl)
 	}
 	err := this.connectClient.Start(this.RtmpUrl, "publish")
 	if err != nil {
-		this.server.Debugf("connectClient.Start url=%v error", this.RtmpUrl)
+		this.sys.Debugf("connectClient.Start url=%v error", this.RtmpUrl)
 		return err
 	}
-	if this.server.GetDebug() {
-		this.server.Debugf("[SYS LiveGo] static publish server addr:%v started, streamid=%d", this.RtmpUrl, this.connectClient.GetStreamId())
+	if this.sys.GetDebug() {
+		this.sys.Debugf("[SYS LiveGo] static publish server addr:%v started, streamid=%d", this.RtmpUrl, this.connectClient.GetStreamId())
 	}
 	go this.HandleAvPacket()
 
@@ -56,7 +56,7 @@ func (this *StaticPush) Start() error {
 
 func (this *StaticPush) HandleAvPacket() {
 	if !this.IsStart() {
-		this.server.Debugf("static push %s not started", this.RtmpUrl)
+		this.sys.Debugf("static push %s not started", this.RtmpUrl)
 		return
 	}
 
@@ -67,7 +67,7 @@ func (this *StaticPush) HandleAvPacket() {
 		case ctrlcmd := <-this.sndctrl_chan:
 			if ctrlcmd == STATIC_RELAY_STOP_CTRL {
 				this.connectClient.Close(nil)
-				this.server.Debugf("Static HandleAvPacket close: publishurl=%s", this.RtmpUrl)
+				this.sys.Debugf("Static HandleAvPacket close: publishurl=%s", this.RtmpUrl)
 				return
 			}
 		}
@@ -79,7 +79,7 @@ func (this *StaticPush) Stop() {
 		return
 	}
 
-	this.server.Debugf("StaticPush Stop: %s", this.RtmpUrl)
+	this.sys.Debugf("StaticPush Stop: %s", this.RtmpUrl)
 	this.sndctrl_chan <- STATIC_RELAY_STOP_CTRL
 	this.startflag = false
 }

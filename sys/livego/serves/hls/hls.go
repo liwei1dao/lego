@@ -8,7 +8,7 @@ import (
 )
 
 type Server struct {
-	server   core.IServer
+	sys      core.ISys
 	listener net.Listener
 	conns    *sync.Map
 }
