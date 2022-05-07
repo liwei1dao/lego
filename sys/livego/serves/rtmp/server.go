@@ -3,6 +3,7 @@ package rtmp
 import (
 	"fmt"
 	"net"
+	"reflect"
 	"sync"
 	"time"
 
@@ -10,9 +11,10 @@ import (
 	"github.com/liwei1dao/lego/sys/livego/core"
 )
 
-func NewServer(sys core.ISys) (server *Server, err error) {
+func NewServer(sys core.ISys, getter core.GetWriter) (server *Server, err error) {
 	server = &Server{
 		sys:     sys,
+		getter:  getter,
 		streams: new(sync.Map),
 	}
 	err = server.init()
@@ -20,7 +22,8 @@ func NewServer(sys core.ISys) (server *Server, err error) {
 }
 
 type Server struct {
-	sys core.ISys
+	sys    core.ISys
+	getter core.GetWriter
 	///流管理
 	streams *sync.Map
 }
@@ -96,6 +99,12 @@ func (this *Server) handleConn(conn *core.Conn) (err error) {
 		reader := NewReader(connServer)
 		this.HandleReader(reader)
 		this.sys.Debugf("new publisher: %+v", reader.Info())
+		if this.getter != nil {
+			writeType := reflect.TypeOf(this.getter)
+			this.sys.Debugf("handleConn:writeType=%v", writeType)
+			writer := this.getter.GetWriter(reader.Info())
+			this.HandleWriter(writer)
+		}
 		if this.sys.GetFLVArchive() {
 			flvWriter := flv.NewFlvDvr(this.sys)
 			this.HandleWriter(flvWriter.GetWriter(reader.Info()))

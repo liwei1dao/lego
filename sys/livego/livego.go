@@ -6,6 +6,7 @@ import (
 
 	"github.com/liwei1dao/lego/sys/livego/core"
 	"github.com/liwei1dao/lego/sys/livego/serves/api"
+	"github.com/liwei1dao/lego/sys/livego/serves/hls"
 	"github.com/liwei1dao/lego/sys/livego/serves/rtmp"
 	"github.com/liwei1dao/lego/utils/container/id"
 )
@@ -38,16 +39,22 @@ type LiveGo struct {
 
 	rtmpServer core.IRtmpServer
 	apiServer  core.IApiServer
+	hlsServer  core.IHlsServer
 }
 
 func (this *LiveGo) init() (err error) {
-	if this.rtmpServer, err = rtmp.NewServer(this); err != nil {
-		return
-	}
 	if this.options.Api {
 		if this.apiServer, err = api.NewServer(this); err != nil {
 			return
 		}
+	}
+	if this.options.Hls {
+		if this.hlsServer, err = hls.NewServer(this); err != nil {
+			return
+		}
+	}
+	if this.rtmpServer, err = rtmp.NewServer(this, this.hlsServer); err != nil {
+		return
 	}
 	return
 }
@@ -62,6 +69,9 @@ func (this *LiveGo) GetAppname() string {
 }
 func (this *LiveGo) GetHls() bool {
 	return this.options.Hls
+}
+func (this *LiveGo) GetHLSAddr() string {
+	return this.options.HLSAddr
 }
 func (this *LiveGo) GetUseHlsHttps() bool {
 	return this.options.UseHlsHttps

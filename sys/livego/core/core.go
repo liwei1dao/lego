@@ -119,6 +119,11 @@ type GetSys interface {
 type GetInFo interface {
 	GetInfo() (string, string, string)
 }
+
+type GetWriter interface {
+	GetWriter(Info) WriteCloser
+}
+
 type StreamReadWriteCloser interface {
 	GetSys
 	GetInFo
@@ -138,6 +143,7 @@ type ISys interface {
 type ISysOptions interface {
 	GetAppname() string
 	GetHls() bool
+	GetHLSAddr() string
 	GetUseHlsHttps() bool
 	GetHlsServerCrt() string
 	GetHlsServerKey() string
@@ -175,6 +181,10 @@ type IRtmpServer interface {
 	GetStreams() *sync.Map
 }
 type IApiServer interface {
+}
+
+type IHlsServer interface {
+	GetWriter
 }
 
 type Packet struct {
