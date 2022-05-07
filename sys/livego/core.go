@@ -1,8 +1,6 @@
 package livego
 
-var (
-	EmptyID = ""
-)
+
 
 type (
 	ISys interface {
