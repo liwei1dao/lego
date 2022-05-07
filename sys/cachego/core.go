@@ -1,5 +1,8 @@
 package cachego
 
+/*
+本地缓存系统
+*/
 import (
 	"io"
 	"time"
