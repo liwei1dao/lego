@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gwuhaolin/livego/configure"
-	"github.com/liwei1dao/lego/lib/modules/live/av"
 	"github.com/liwei1dao/lego/sys/livego/container/flv"
 	"github.com/liwei1dao/lego/sys/livego/container/ts"
 	"github.com/liwei1dao/lego/sys/livego/core"
@@ -83,7 +81,7 @@ func (this *Source) DropPacket(pktQue chan *core.Packet, info core.Info) {
 		}
 
 		if ok && tmpPkt.IsVideo {
-			videoPkt, ok := tmpPkt.Header.(av.VideoPacketHeader)
+			videoPkt, ok := tmpPkt.Header.(core.VideoPacketHeader)
 			// dont't drop sps config and dont't drop key frame
 			if ok && (videoPkt.IsSeq() || videoPkt.IsKeyFrame()) {
 				pktQue <- tmpPkt
@@ -122,7 +120,7 @@ func (this *Source) Info() (ret core.Info) {
 }
 func (this *Source) Close(err error) {
 	this.sys.Debugf("hls source closed:%v", this.info)
-	if !this.closed && !configure.Config.GetBool("hls_keep_after_end") {
+	if !this.closed && !this.sys.GetHLSKeepAfterEnd() {
 		this.cleanup()
 	}
 	this.closed = true

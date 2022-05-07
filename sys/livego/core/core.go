@@ -147,6 +147,7 @@ type ISysOptions interface {
 	GetAppname() string
 	GetHls() bool
 	GetHLSAddr() string
+	GetHLSKeepAfterEnd() bool
 	GetUseHlsHttps() bool
 	GetHlsServerCrt() string
 	GetHlsServerKey() string

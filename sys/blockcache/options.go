@@ -7,15 +7,33 @@ import (
 
 type Option func(*Options)
 type Options struct {
-	CacheMaxSzie uint64
+	CacheMaxSzie int64
 	Debug        bool //日志是否开启
 	Log          log.ILog
 }
 
+func SetCacheMaxSzie(v int64) Option {
+	return func(o *Options) {
+		o.CacheMaxSzie = v
+	}
+}
+
+func SetDebug(v bool) Option {
+	return func(o *Options) {
+		o.Debug = v
+	}
+}
+func SetLog(v log.ILog) Option {
+	return func(o *Options) {
+		o.Log = v
+	}
+}
+
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
-		Debug: true,
-		Log:   log.Clone(log.SetLoglayer(2)),
+		CacheMaxSzie: 1024 * 1024 * 100,
+		Debug:        true,
+		Log:          log.Clone(log.SetLoglayer(2)),
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
@@ -28,8 +46,9 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 
 func newOptionsByOption(opts ...Option) Options {
 	options := Options{
-		Debug: true,
-		Log:   log.Clone(log.SetLoglayer(2)),
+		CacheMaxSzie: 1024 * 1024 * 100,
+		Debug:        true,
+		Log:          log.Clone(log.SetLoglayer(2)),
 	}
 	for _, o := range opts {
 		o(&options)

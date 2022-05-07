@@ -3,28 +3,37 @@ package blockcache
 import (
 	"sync/atomic"
 	"unsafe"
+
+	"github.com/liwei1dao/lego/utils/container"
 )
 
 func newSys(options Options) (sys *Cache, err error) {
-	sys = &Cache{options: options}
+	sys = &Cache{
+		options:  options,
+		inpip:    make(chan interface{}),
+		outpip:   make(chan interface{}),
+		outnotic: make(chan struct{}),
+		element:  container.NewLKQueue(),
+		free:     options.CacheMaxSzie,
+	}
+	go sys.run()
 	return
 }
 
 type Item struct {
-	Size  uint64
+	Size  int64
 	Value interface{}
 }
 
 type Cache struct {
-	options  Options
-	inpip    chan interface{}
-	outpip   chan interface{}
-	head     uint64
-	tail     uint64
-	element  []*Item
-	capacity uint64
-	size     uint64
-	free     uint64
+	options   Options
+	inpip     chan interface{}
+	outpip    chan interface{}
+	outnotic  chan struct{}
+	instate   int32
+	outruning int32
+	element   *container.LKQueue
+	free      int64
 }
 
 func (this *Cache) In() chan<- interface{} {
@@ -34,46 +43,49 @@ func (this *Cache) In() chan<- interface{} {
 func (this *Cache) Out() <-chan interface{} {
 	return this.outpip
 }
-func (this *Cache) Run() {
+
+func (this *Cache) run() {
 	for v := range this.inpip {
-		siez := uint64(unsafe.Sizeof(v))
+		siez := int64(unsafe.Sizeof(v))
 		if siez > this.options.CacheMaxSzie { //异常数据
 			this.Errorf("item size:%d large CacheMaxSzie:%d", siez, this.options.CacheMaxSzie)
-		} else if siez > this.free {
-
+			continue
+		} else if siez > atomic.LoadInt64(&this.free) {
+			atomic.StoreInt32(&this.instate, 1)
+		locp:
+			for _ = range this.outnotic {
+				if siez > atomic.LoadInt64(&this.free) {
+					atomic.StoreInt32(&this.instate, 1)
+				} else {
+					this.element.Enqueue(&Item{Size: siez, Value: v})
+					atomic.AddInt64(&this.free, -1*siez)
+					break locp
+				}
+			}
 		} else {
-
+			this.element.Enqueue(&Item{Size: siez, Value: v})
+			atomic.AddInt64(&this.free, -1*siez)
+		}
+		if atomic.CompareAndSwapInt32(&this.outruning, 0, 1) {
+			go func() {
+			locp:
+				for {
+					v := this.element.Dequeue()
+					if v != nil {
+						item := v.(*Item)
+						atomic.AddInt64(&this.free, item.Size)
+						if atomic.CompareAndSwapInt32(&this.instate, 1, 0) {
+							this.outnotic <- struct{}{}
+						}
+						this.outpip <- item.Value
+					} else {
+						break locp
+					}
+				}
+				atomic.StoreInt32(&this.outruning, 0)
+			}()
 		}
 	}
-
-}
-
-func (this *Cache) Push(v interface{}) bool {
-	oldTail := atomic.LoadUint64(&this.tail)
-	oldHead := atomic.LoadUint64(&this.head)
-	if this.isFull(oldTail, oldHead) {
-		return false
-	}
-
-	newTail := (oldTail + 1) & this.mask
-	// ----------- BEGIN --------------
-	tailNode := atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&this.element[newTail])))
-	if tailNode != nil {
-		return false
-	}
-	// ----------- END --------------
-	if !atomic.CompareAndSwapUint64(&this.tail, oldTail, newTail) {
-		return false
-	}
-
-	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(&this.element[newTail])), unsafe.Pointer(&v))
-	return true
-}
-func (this *Cache) isEmpty(tail uint64, head uint64) bool {
-	return tail-head == 0
-}
-func (this *Cache) isFull(tail uint64, head uint64) bool {
-	return tail-head == this.capacity-1
 }
 
 ///日志***********************************************************************

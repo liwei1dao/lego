@@ -1,7 +1,8 @@
 package blockcache
 
 /*
-堵塞缓存系统 缓存区写满后自动堵塞 读取是无数据自动堵塞
+限容堵塞缓冲池系统
+设置最大内存大小 当缓存区为存满是直接写入 写满后进入堵塞状态 等待缓存区释放
 */
 
 type (
@@ -36,5 +37,3 @@ func In() chan<- interface{} {
 func Out() <-chan interface{} {
 	return defsys.Out()
 }
-
-

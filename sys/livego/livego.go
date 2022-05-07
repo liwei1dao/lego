@@ -144,8 +144,12 @@ func (this *LiveGo) GetHLSAddr() string {
 func (this *LiveGo) GetUseHlsHttps() bool {
 	return this.options.UseHlsHttps
 }
+
+func (this *LiveGo) GetHLSKeepAfterEnd() bool {
+	return this.options.UseHlsHttps
+}
 func (this *LiveGo) GetHlsServerCrt() string {
-	return this.options.HlsServerCrt
+	return this.options.HLSKeepAfterEnd
 }
 func (this *LiveGo) GetHlsServerKey() string {
 	return this.options.HlsServerKey

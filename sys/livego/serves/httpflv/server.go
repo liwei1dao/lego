@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gwuhaolin/livego/protocol/rtmp"
 	"github.com/liwei1dao/lego/sys/livego/core"
 )
 
@@ -126,7 +125,7 @@ func (this *Server) getStream(w http.ResponseWriter, r *http.Request) {
 func (this *Server) getStreams(w http.ResponseWriter, r *http.Request) *streams {
 	msgs := new(streams)
 	this.sys.GetStreams().Range(func(key, val interface{}) bool {
-		if s, ok := val.(*rtmp.Stream); ok {
+		if s, ok := val.(*core.Stream); ok {
 			if s.GetReader() != nil {
 				msg := stream{key.(string), s.GetReader().Info().UID}
 				msgs.Publishers = append(msgs.Publishers, msg)
@@ -136,10 +135,10 @@ func (this *Server) getStreams(w http.ResponseWriter, r *http.Request) *streams 
 	})
 
 	this.sys.GetStreams().Range(func(key, val interface{}) bool {
-		ws := val.(*rtmp.Stream).GetWs()
+		ws := val.(*core.Stream).GetWs()
 
 		ws.Range(func(k, v interface{}) bool {
-			if pw, ok := v.(*rtmp.PackWriterCloser); ok {
+			if pw, ok := v.(*core.PackWriterCloser); ok {
 				if pw.GetWriter() != nil {
 					msg := stream{key.(string), pw.GetWriter().Info().UID}
 					msgs.Players = append(msgs.Players, msg)
