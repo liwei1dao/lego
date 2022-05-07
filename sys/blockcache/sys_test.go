@@ -22,19 +22,31 @@ func Test_sys(t *testing.T) {
 		log.Debugf("livego init err:%v", err)
 		return
 	} else {
+		closeSignal := make(chan struct{})
 		go func() {
+		locp:
 			for {
-				sys.In() <- "liwei1dao"
-				log.Debugf("In:liwei1dao")
-			}
-		}()
-		go func() {
-			for {
-				for v := range sys.Out() {
-					log.Debugf("Out:%v", v)
-					time.Sleep(time.Second)
+				select {
+				case <-closeSignal:
+					break locp
+				default:
+					sys.In() <- "liwei1dao"
+					log.Debugf("In:liwei1dao")
 				}
 			}
+			log.Debugf("In:End")
+		}()
+		go func() {
+			for v := range sys.Out() {
+				log.Debugf("Out:%v", v)
+				time.Sleep(time.Second)
+			}
+			log.Debugf("Out:End")
+		}()
+		go func() {
+			time.Sleep(time.Second * 3)
+			closeSignal <- struct{}{}
+			sys.Close()
 		}()
 	}
 	sigterm := make(chan os.Signal, 1)

@@ -9,6 +9,7 @@ type (
 	ISys interface {
 		In() chan<- interface{}
 		Out() <-chan interface{}
+		Close()
 	}
 )
 
@@ -36,4 +37,8 @@ func In() chan<- interface{} {
 
 func Out() <-chan interface{} {
 	return defsys.Out()
+}
+
+func Close() {
+	defsys.Close()
 }

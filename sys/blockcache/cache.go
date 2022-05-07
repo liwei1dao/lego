@@ -1,6 +1,7 @@
 package blockcache
 
 import (
+	"sync"
 	"sync/atomic"
 	"unsafe"
 
@@ -34,6 +35,8 @@ type Cache struct {
 	outruning int32
 	element   *container.LKQueue
 	free      int64
+	close     int32
+	wg        sync.WaitGroup
 }
 
 func (this *Cache) In() chan<- interface{} {
@@ -44,13 +47,21 @@ func (this *Cache) Out() <-chan interface{} {
 	return this.outpip
 }
 
+func (this *Cache) Close() {
+	atomic.StoreInt32(&this.close, 1)
+	close(this.inpip)
+	close(this.outnotic)
+	this.wg.Wait()
+	close(this.outpip)
+}
+
 func (this *Cache) run() {
 	for v := range this.inpip {
 		siez := int64(unsafe.Sizeof(v))
 		if siez > this.options.CacheMaxSzie { //异常数据
 			this.Errorf("item size:%d large CacheMaxSzie:%d", siez, this.options.CacheMaxSzie)
 			continue
-		} else if siez > atomic.LoadInt64(&this.free) {
+		} else if siez > atomic.LoadInt64(&this.free) { //空间不足
 			atomic.StoreInt32(&this.instate, 1)
 		locp:
 			for _ = range this.outnotic {
@@ -67,11 +78,12 @@ func (this *Cache) run() {
 			atomic.AddInt64(&this.free, -1*siez)
 		}
 		if atomic.CompareAndSwapInt32(&this.outruning, 0, 1) {
+			this.wg.Add(1)
 			go func() {
 			locp:
 				for {
 					v := this.element.Dequeue()
-					if v != nil {
+					if v != nil && atomic.LoadInt32(&this.close) == 0 {
 						item := v.(*Item)
 						atomic.AddInt64(&this.free, item.Size)
 						if atomic.CompareAndSwapInt32(&this.instate, 1, 0) {
@@ -83,6 +95,7 @@ func (this *Cache) run() {
 					}
 				}
 				atomic.StoreInt32(&this.outruning, 0)
+				this.wg.Done()
 			}()
 		}
 	}
