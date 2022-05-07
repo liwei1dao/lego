@@ -14,6 +14,7 @@ type Options struct {
 	HlsServerCrt    string   `mapstructure:"hls_server_crt"`
 	HlsServerKey    string   `mapstructure:"hls_server_key"`
 	Flv             bool     `mapstructure:"flv"`
+	HTTPFLVAddr     string   `mapstructure:"httpflv_addr"`
 	Api             bool     `mapstructure:"api"`
 	APIAddr         string   `mapstructure:"api_addr"`
 	JWTSecret       string   `mapstructure:"jwt_secret"`

@@ -3,10 +3,12 @@ package livego
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/liwei1dao/lego/sys/livego/core"
 	"github.com/liwei1dao/lego/sys/livego/serves/api"
 	"github.com/liwei1dao/lego/sys/livego/serves/hls"
+	"github.com/liwei1dao/lego/sys/livego/serves/httpflv"
 	"github.com/liwei1dao/lego/sys/livego/serves/rtmp"
 	"github.com/liwei1dao/lego/utils/container/id"
 )
@@ -27,29 +29,35 @@ func newSys(options Options) (sys *LiveGo, err error) {
 
 type LiveGo struct {
 	options Options
+	///流管理
+	streams *sync.Map
 	///流频道管理
 	keyLock     *sync.RWMutex
 	keys        map[string]string
 	channelLock *sync.RWMutex
 	channels    map[string]string
-
 	///静态推送管理
 	mapLock       *sync.RWMutex
 	staticPushMap map[string](*core.StaticPush)
-
-	rtmpServer core.IRtmpServer
-	apiServer  core.IApiServer
-	hlsServer  core.IHlsServer
+	rtmpServer    core.IRtmpServer
+	apiServer     core.IApiServer
+	hlsServer     core.IHlsServer
+	httpflvServer core.IHttpFlvServer
 }
 
 func (this *LiveGo) init() (err error) {
-	if this.options.Api {
-		if this.apiServer, err = api.NewServer(this); err != nil {
+	if this.options.Hls {
+		if this.hlsServer, err = hls.NewServer(this); err != nil {
 			return
 		}
 	}
-	if this.options.Hls {
-		if this.hlsServer, err = hls.NewServer(this); err != nil {
+	if this.options.Flv {
+		if this.httpflvServer, err = httpflv.NewServer(this); err != nil {
+			return
+		}
+	}
+	if this.options.Api {
+		if this.apiServer, err = api.NewServer(this); err != nil {
 			return
 		}
 	}
@@ -61,6 +69,66 @@ func (this *LiveGo) init() (err error) {
 
 func (this *LiveGo) GetRtmpServer() core.IRtmpServer {
 	return this.rtmpServer
+}
+
+///流管理***********************************************************************
+func (this *LiveGo) GetStreams() *sync.Map {
+	return this.streams
+}
+
+//监测存活
+func (this *LiveGo) CheckAlive() {
+	for {
+		<-time.After(5 * time.Second)
+		this.streams.Range(func(key, val interface{}) bool {
+			v := val.(*core.Stream)
+			if v.CheckAlive() == 0 {
+				this.streams.Delete(key)
+			}
+			return true
+		})
+	}
+}
+
+//读处理
+func (this *LiveGo) HandleReader(r core.ReadCloser) {
+	info := r.Info()
+	this.Debugf("HandleReader: info[%v]", info)
+	var stm *core.Stream
+	i, ok := this.streams.Load(info.Key)
+	if stm, ok = i.(*core.Stream); ok {
+		stm.TransStop()
+		id := stm.ID()
+		if id != core.EmptyID && id != info.UID {
+			ns := core.NewStream()
+			stm.Copy(ns)
+			stm = ns
+			this.streams.Store(info.Key, ns)
+		}
+	} else {
+		stm = core.NewStream()
+		this.streams.Store(info.Key, stm)
+		stm.SetInfo(info)
+	}
+	stm.AddReader(r)
+}
+
+//写处理
+func (this *LiveGo) HandleWriter(w core.WriteCloser) {
+	info := w.Info()
+	this.Debugf("HandleWriter: info[%v]", info)
+
+	var s *core.Stream
+	item, ok := this.streams.Load(info.Key)
+	if !ok {
+		this.Debugf("HandleWriter: not found create new info[%v]", info)
+		s = core.NewStream()
+		this.streams.Store(info.Key, s)
+		s.SetInfo(info)
+	} else {
+		s = item.(*core.Stream)
+		s.AddWriter(w)
+	}
 }
 
 ///参数列表***********************************************************************
@@ -85,6 +153,11 @@ func (this *LiveGo) GetHlsServerKey() string {
 func (this *LiveGo) GetFlv() bool {
 	return this.options.Flv
 }
+
+func (this *LiveGo) GetHTTPFLVAddr() string {
+	return this.options.HTTPFLVAddr
+}
+
 func (this *LiveGo) GetApi() bool {
 	return this.options.Api
 }

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net"
 	"reflect"
-	"sync"
-	"time"
 
 	"github.com/liwei1dao/lego/sys/livego/container/flv"
 	"github.com/liwei1dao/lego/sys/livego/core"
@@ -13,9 +11,8 @@ import (
 
 func NewServer(sys core.ISys, getter core.GetWriter) (server *Server, err error) {
 	server = &Server{
-		sys:     sys,
-		getter:  getter,
-		streams: new(sync.Map),
+		sys:    sys,
+		getter: getter,
 	}
 	err = server.init()
 	return
@@ -24,8 +21,6 @@ func NewServer(sys core.ISys, getter core.GetWriter) (server *Server, err error)
 type Server struct {
 	sys    core.ISys
 	getter core.GetWriter
-	///流管理
-	streams *sync.Map
 }
 
 func (this *Server) init() (err error) {
@@ -97,82 +92,22 @@ func (this *Server) handleConn(conn *core.Conn) (err error) {
 			this.sys.Debugf("GetStaticPushUrlList: %v", this.sys.GetStaticPush())
 		}
 		reader := NewReader(connServer)
-		this.HandleReader(reader)
+		this.sys.HandleReader(reader)
 		this.sys.Debugf("new publisher: %+v", reader.Info())
 		if this.getter != nil {
 			writeType := reflect.TypeOf(this.getter)
 			this.sys.Debugf("handleConn:writeType=%v", writeType)
 			writer := this.getter.GetWriter(reader.Info())
-			this.HandleWriter(writer)
+			this.sys.HandleWriter(writer)
 		}
 		if this.sys.GetFLVArchive() {
 			flvWriter := flv.NewFlvDvr(this.sys)
-			this.HandleWriter(flvWriter.GetWriter(reader.Info()))
+			this.sys.HandleWriter(flvWriter.GetWriter(reader.Info()))
 		}
 	} else {
 		writer := NewWriter(connServer)
 		this.sys.Debugf("new player: %+v", writer.Info())
-		this.HandleWriter(writer)
+		this.sys.HandleWriter(writer)
 	}
 	return
-}
-
-///流管理***********************************************************************
-func (this *Server) GetStreams() *sync.Map {
-	return this.streams
-}
-
-//监测存活
-func (this *Server) CheckAlive() {
-	for {
-		<-time.After(5 * time.Second)
-		this.streams.Range(func(key, val interface{}) bool {
-			v := val.(*core.Stream)
-			if v.CheckAlive() == 0 {
-				this.streams.Delete(key)
-			}
-			return true
-		})
-	}
-}
-
-//读处理
-func (this *Server) HandleReader(r core.ReadCloser) {
-	info := r.Info()
-	this.sys.Debugf("HandleReader: info[%v]", info)
-	var stm *core.Stream
-	i, ok := this.streams.Load(info.Key)
-	if stm, ok = i.(*core.Stream); ok {
-		stm.TransStop()
-		id := stm.ID()
-		if id != core.EmptyID && id != info.UID {
-			ns := core.NewStream()
-			stm.Copy(ns)
-			stm = ns
-			this.streams.Store(info.Key, ns)
-		}
-	} else {
-		stm = core.NewStream()
-		this.streams.Store(info.Key, stm)
-		stm.SetInfo(info)
-	}
-	stm.AddReader(r)
-}
-
-//写处理
-func (this *Server) HandleWriter(w core.WriteCloser) {
-	info := w.Info()
-	this.sys.Debugf("HandleWriter: info[%v]", info)
-
-	var s *core.Stream
-	item, ok := this.streams.Load(info.Key)
-	if !ok {
-		this.sys.Debugf("HandleWriter: not found create new info[%v]", info)
-		s = core.NewStream()
-		this.streams.Store(info.Key, s)
-		s.SetInfo(info)
-	} else {
-		s = item.(*core.Stream)
-		s.AddWriter(w)
-	}
 }

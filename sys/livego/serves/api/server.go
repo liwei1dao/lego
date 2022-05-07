@@ -330,7 +330,7 @@ func (this *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 
 	msgs := new(streams)
 	if room == "" {
-		this.sys.GetRtmpServer().GetStreams().Range(func(key, val interface{}) bool {
+		this.sys.GetStreams().Range(func(key, val interface{}) bool {
 			if s, ok := val.(*core.Stream); ok {
 				if s.GetReader() != nil {
 					switch s.GetReader().(type) {
@@ -344,7 +344,7 @@ func (this *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 			}
 			return true
 		})
-		this.sys.GetRtmpServer().GetStreams().Range(func(key, val interface{}) bool {
+		this.sys.GetStreams().Range(func(key, val interface{}) bool {
 			ws := val.(*core.Stream).GetWs()
 			ws.Range(func(k, v interface{}) bool {
 				if pw, ok := v.(*core.PackWriterCloser); ok {
@@ -364,7 +364,7 @@ func (this *Server) GetLiveStatics(w http.ResponseWriter, req *http.Request) {
 		})
 	} else {
 		// Warning: The room should be in the "live/stream" format!
-		roomInfo, exists := (this.sys.GetRtmpServer().GetStreams()).Load(room)
+		roomInfo, exists := (this.sys.GetStreams()).Load(room)
 		if exists == false {
 			res.Status = 404
 			res.Data = "room not found or inactive"

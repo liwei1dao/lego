@@ -108,6 +108,8 @@ type WriteCloser interface {
 }
 
 type Handler interface {
+	GetStreams() *sync.Map
+	CheckAlive()
 	HandleReader(ReadCloser)
 	HandleWriter(WriteCloser)
 }
@@ -135,6 +137,7 @@ type StreamReadWriteCloser interface {
 type ISys interface {
 	log.Ilogf
 	ISysOptions
+	Handler
 	IStaticPushMnager
 	IRoomsManager
 	GetRtmpServer() IRtmpServer
@@ -148,6 +151,7 @@ type ISysOptions interface {
 	GetHlsServerCrt() string
 	GetHlsServerKey() string
 	GetFlv() bool
+	GetHTTPFLVAddr() string
 	GetApi() bool
 	GetApiAddr() string
 	GetJWTSecret() string
@@ -176,15 +180,15 @@ type IStaticPushMnager interface {
 	ReleaseStaticPushObject(rtmpurl string)
 }
 type IRtmpServer interface {
-	Handler
 	Serve(listener net.Listener) (err error)
-	GetStreams() *sync.Map
 }
 type IApiServer interface {
 }
 
 type IHlsServer interface {
 	GetWriter
+}
+type IHttpFlvServer interface {
 }
 
 type Packet struct {
