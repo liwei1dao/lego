@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/liwei1dao/lego/lib/modules/live/av"
 	"github.com/liwei1dao/lego/sys/livego/core"
 	"github.com/liwei1dao/lego/sys/livego/parser/aac"
 	"github.com/liwei1dao/lego/sys/livego/parser/h264"
@@ -39,7 +38,7 @@ func (this *CodecParser) Parse(p *core.Packet, w io.Writer) (err error) {
 
 	switch p.IsVideo {
 	case true:
-		f, ok := p.Header.(av.VideoPacketHeader)
+		f, ok := p.Header.(core.VideoPacketHeader)
 		if ok {
 			if f.CodecID() == core.VIDEO_H264 {
 				if this.h264 == nil {

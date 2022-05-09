@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/liwei1dao/lego/lib/modules/live/av"
 	"github.com/liwei1dao/lego/sys/livego/core"
 )
 
@@ -58,7 +57,7 @@ func (this *Parser) Parse(b []byte, packetType uint8, w io.Writer) (err error) {
 	switch packetType {
 	case core.AAC_SEQHDR:
 		err = this.specificInfo(b)
-	case av.AAC_RAW:
+	case core.AAC_RAW:
 		err = this.adts(b, w)
 	}
 	return
