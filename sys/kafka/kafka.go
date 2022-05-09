@@ -26,6 +26,9 @@ func (this *Kafka) init() (err error) {
 	var (
 		version sarama.KafkaVersion
 	)
+	if this.options.Debug {
+		sarama.Logger = this
+	}
 	config := sarama.NewConfig()
 	version, err = sarama.ParseKafkaVersion(this.options.Version)
 	if err != nil {
@@ -209,4 +212,46 @@ func (this *Kafka) Close() (err error) {
 		}
 	}
 	return
+}
+
+///日志***********************************************************************
+func (this *Kafka) Debugf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Debugf("[SYS Kafka] "+format, a...)
+	}
+}
+func (this *Kafka) Infof(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Infof("[SYS Kafka] "+format, a...)
+	}
+}
+func (this *Kafka) Warnf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Warnf("[SYS Kafka] "+format, a...)
+	}
+}
+func (this *Kafka) Errorf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Errorf("[SYS Kafka] "+format, a...)
+	}
+}
+func (this *Kafka) Panicf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Panicf("[SYS Kafka] "+format, a...)
+	}
+}
+func (this *Kafka) Fatalf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Fatalf("[SYS Kafka] "+format, a...)
+	}
+}
+
+func (this *Kafka) Print(v ...interface{}) {
+	this.options.Log.Warnf("[SYS Kafka] ", v...)
+}
+func (this *Kafka) Printf(format string, v ...interface{}) {
+	this.options.Log.Warnf("[SYS Kafka] "+format, v...)
+}
+func (this *Kafka) Println(v ...interface{}) {
+	this.options.Log.Warnf("[SYS Kafka] ", v...)
 }
