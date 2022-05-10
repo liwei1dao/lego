@@ -1,12 +1,12 @@
 package pprof
 
 type (
-	Ipprof interface {
+	ISys interface {
 	}
 )
 
 var (
-	defsys Ipprof
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -15,7 +15,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys Ipprof, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	if sys, err = newSys(newOptionsByOption(option...)); err == nil {
 	}
 	return

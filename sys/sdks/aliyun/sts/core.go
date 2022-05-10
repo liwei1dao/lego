@@ -7,14 +7,14 @@ type (
 		AccessKeySecret string
 		SecurityToken   string
 	}
-	ISTS interface {
+	ISys interface {
 		//roleArn:角色ARN。
 		AssumeRole(roleArn, roleSessionName string) (auth *Authorization, err error)
 	}
 )
 
 var (
-	defsys ISTS
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -22,7 +22,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys ISTS, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
 }

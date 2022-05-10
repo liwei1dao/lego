@@ -12,7 +12,7 @@ type (
 		Function  reflect.Value
 		Goroutine bool
 	}
-	IEventSys interface {
+	ISys interface {
 		Register(eId core.Event_Key, f interface{}) (err error)
 		RegisterGO(eId core.Event_Key, f interface{}) (err error)
 		RemoveEvent(eId core.Event_Key, f interface{}) (err error)
@@ -21,7 +21,7 @@ type (
 )
 
 var (
-	defsys IEventSys
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -29,8 +29,8 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (err error) {
-	defsys, err = newSys(newOptionsByOption(option...))
+func NewSys(option ...Option) (sys ISys, err error) {
+	sys, err = newSys(newOptionsByOption(option...))
 	return
 }
 

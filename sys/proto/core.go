@@ -22,7 +22,7 @@ type (
 		RpcEncodeMessage(d interface{}) ([]byte, error)
 		RpcDecodeMessage(dataType reflect.Type, d []byte) (interface{}, error)
 	}
-	IProto interface {
+	ISys interface {
 		DecodeMessageBybufio(r *bufio.Reader) (message IMessage, err error)
 		DecodeMessageBybytes(buffer []byte) (message IMessage, err error)
 		EncodeToMesage(comId uint16, msgId uint16, msg interface{}) (message IMessage)
@@ -32,7 +32,7 @@ type (
 )
 
 var (
-	defsys IProto
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -40,7 +40,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys IProto, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
 }

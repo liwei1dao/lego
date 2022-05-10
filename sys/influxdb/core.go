@@ -6,7 +6,7 @@ import (
 )
 
 type (
-	IInfluxdb interface {
+	ISys interface {
 		Setup(username, password, org, bucket string, timeout int) (*domain.OnboardingResponse, error)
 		QueryAPI(org string) api.QueryAPI
 		WriteAPI(org, bucket string) api.WriteAPI
@@ -16,7 +16,7 @@ type (
 )
 
 var (
-	defsys IInfluxdb
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -24,7 +24,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys IInfluxdb, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
 }

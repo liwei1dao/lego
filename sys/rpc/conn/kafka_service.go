@@ -11,7 +11,7 @@ import (
 
 func NewKafkaService(sys core.ISys, serviceId string, kafkaversion string, kafkahost []string, rpcId string) (kafkaService *KafkaService, err error) {
 	var (
-		kfk kafka.IKafka
+		kfk kafka.ISys
 	)
 	if kfk, err = kafka.NewSys(
 		kafka.SetVersion(kafkaversion),
@@ -34,7 +34,7 @@ func NewKafkaService(sys core.ISys, serviceId string, kafkaversion string, kafka
 type KafkaService struct {
 	sys     core.ISys
 	service core.IRpcServer
-	kafka   kafka.IKafka
+	kafka   kafka.ISys
 }
 
 func (this *KafkaService) Start(service core.IRpcServer) (err error) {

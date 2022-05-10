@@ -17,7 +17,7 @@ import (
 type DBComp struct {
 	cbase.ModuleCompBase
 	module IConsole
-	mgo    mgo.IMongodb
+	mgo    mgo.ISys
 }
 
 func (this *DBComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
@@ -51,7 +51,7 @@ func (this DBComp) checkDbInit() (err error) {
 	return
 }
 
-func (this *DBComp) GetMgo() mgo.IMongodb {
+func (this *DBComp) GetMgo() mgo.ISys {
 	return this.mgo
 }
 

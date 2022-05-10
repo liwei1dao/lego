@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
+	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
 
@@ -44,6 +45,8 @@ type Options struct {
 	Sasl_Enable               bool                    //开启认证
 	Sasl_Mechanism            sarama.SASLMechanism    //认证方法
 	Sasl_GSSAPI               sarama.GSSAPIConfig     //认证配置
+	Debug                     bool                    //日志是否开启
+	Log                       log.ILog
 }
 
 ///kafka启动类型
@@ -231,6 +234,8 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 		Consumer_Assignor:         "range",
 		Consumer_Offsets_Initial:  sarama.OffsetOldest,
 		Sasl_Enable:               false,
+		Debug:                     true,
+		Log:                       log.Clone(log.SetLoglayer(2)),
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
@@ -258,6 +263,8 @@ func newOptionsByOption(opts ...Option) Options {
 		Consumer_Assignor:         "range",
 		Consumer_Offsets_Initial:  sarama.OffsetOldest,
 		Sasl_Enable:               false,
+		Debug:                     true,
+		Log:                       log.Clone(log.SetLoglayer(2)),
 	}
 	for _, o := range opts {
 		o(&options)

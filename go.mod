@@ -13,13 +13,11 @@ require (
 	github.com/aliyun/aliyun-oss-go-sdk v2.1.6+incompatible
 	github.com/apache/pulsar-client-go v0.8.0
 	github.com/armon/go-metrics v0.3.6 // indirect
-	github.com/auth0/go-jwt-middleware v1.0.0
 	github.com/axgle/mahonia v0.0.0-20180208002826-3358181d7394
 	github.com/baiyubin/aliyun-sts-go-sdk v0.0.0-20180326062324-cfa1a18b161f // indirect
 	github.com/denisenkom/go-mssqldb v0.9.0
 	github.com/disintegration/imaging v1.6.2
 	github.com/eclipse/paho.mqtt.golang v1.3.1
-	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
 	github.com/go-ole/go-ole v1.2.1 // indirect
 	github.com/go-playground/validator/v10 v10.10.1
 	github.com/go-redis/redis/v8 v8.8.0
@@ -29,6 +27,7 @@ require (
 	github.com/godror/godror v0.25.3
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/protobuf v1.5.2
+	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/consul/api v1.8.1
 	github.com/hashicorp/go-immutable-radix v1.3.0 // indirect
@@ -50,8 +49,9 @@ require (
 	github.com/pkg/sftp v1.10.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/xid v1.3.0
-	github.com/satori/go.uuid v1.2.0
+	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/shirou/gopsutil v3.20.12+incompatible
+	github.com/smartystreets/assertions v1.1.0 // indirect
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/ugorji/go/codec v1.2.7
 	github.com/wolfogre/go-pprof-practice v0.0.0-20190402114113-8ce266a210ee

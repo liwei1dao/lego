@@ -11,6 +11,11 @@ import (
 	"github.com/liwei1dao/lego/utils/container/id"
 )
 
+func newSys(options Options) (sys *Doris, err error) {
+	sys = &Doris{options: options}
+	return
+}
+
 type Doris struct {
 	options Options
 }
