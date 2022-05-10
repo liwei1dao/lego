@@ -84,11 +84,11 @@ func (this *Kafka) init() (err error) {
 	}
 	if this.options.StartType == Consumer || this.options.StartType == All || this.options.StartType == SyncproducerAndConsumer || this.options.StartType == AsyncproducerAndConsumer {
 		if this.options.GroupId != "" {
-			if this.consumer, err = newConsumerGroup(this.options.Hosts, this.options.GroupId, this.options.Topics, config); err != nil {
+			if this.consumer, err = newConsumerGroup(this, this.options.Hosts, this.options.GroupId, this.options.Topics, config); err != nil {
 				return
 			}
 		} else {
-			if this.consumer, err = newConsumer(this.options.Hosts, this.options.Topics[0], config); err != nil {
+			if this.consumer, err = newConsumer(this, this.options.Hosts, this.options.Topics[0], config); err != nil {
 				return
 			}
 		}

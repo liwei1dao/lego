@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"github.com/Shopify/sarama"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 type (
@@ -10,7 +11,8 @@ type (
 		Consumer_Errors() <-chan error
 		Consumer_Close() error
 	}
-	IKafka interface {
+	ISys interface {
+		log.Ilogf
 		Topics() ([]string, error)
 		Partitions(topic string) ([]int32, error)
 		GetOffset(topic string, partitionID int32, time int64) (int64, error)
@@ -30,7 +32,7 @@ type (
 )
 
 var (
-	defsys IKafka
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -39,7 +41,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys IKafka, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	if sys, err = newSys(newOptionsByOption(option...)); err == nil {
 	}
 	return
