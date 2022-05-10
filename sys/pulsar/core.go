@@ -11,7 +11,7 @@ type (
 		Msg *pulsar.ProducerMessage
 		Err error
 	}
-	IPulsar interface {
+	ISys interface {
 		Producer_Errors() <-chan *ProducerError
 		Producer_SendAsync() chan<- *pulsar.ProducerMessage
 		Producer_Send(msg *pulsar.ProducerMessage) (pulsar.MessageID, error)
@@ -22,7 +22,7 @@ type (
 )
 
 var (
-	defsys IPulsar
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -31,7 +31,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys IPulsar, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	if sys, err = newSys(newOptionsByOption(option...)); err == nil {
 	}
 	return

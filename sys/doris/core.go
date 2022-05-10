@@ -1,5 +1,7 @@
 package doris
 
+import "io"
+
 type (
 	//Stream load返回消息结构体
 	ResponseBody struct {
@@ -20,6 +22,25 @@ type (
 		CommitAndPublishTimeMs int    `json:"CommitAndPublishTimeMs"`
 		ErrorURL               string `json:"ErrorURL"`
 	}
-	IDoris interface {
+	ISys interface {
+		Write(tName string, body io.Reader) (err error)
 	}
 )
+
+var (
+	defsys ISys
+)
+
+func OnInit(config map[string]interface{}, option ...Option) (err error) {
+	defsys, err = newSys(newOptions(config, option...))
+	return
+}
+
+func NewSys(option ...Option) (sys ISys, err error) {
+	sys, err = newSys(newOptionsByOption(option...))
+	return
+}
+
+func Write(tName string, body io.Reader) (err error) {
+	return defsys.Write(tName, body)
+}

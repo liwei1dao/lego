@@ -7,7 +7,7 @@ import (
 )
 
 type (
-	IOSS interface {
+	ISys interface {
 		CreateBucket(bucketName string) (err error)
 		UploadObject(objectKey string, reader io.Reader, options ...oss.Option) (err error)
 		UploadFile(objectName string, localFileName string) (err error)
@@ -18,7 +18,7 @@ type (
 )
 
 var (
-	defsys IOSS
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -26,7 +26,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys IOSS, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
 }

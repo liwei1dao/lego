@@ -5,7 +5,7 @@ import (
 )
 
 type (
-	Icron interface {
+	ISys interface {
 		Start()
 		Stop()
 		AddFunc(spec string, cmd func()) (tcron.EntryID, error)
@@ -14,7 +14,7 @@ type (
 )
 
 var (
-	defsys Icron
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -24,7 +24,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys Icron, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	if sys, err = newSys(newOptionsByOption(option...)); err == nil {
 		Start()
 	}

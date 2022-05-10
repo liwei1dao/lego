@@ -113,7 +113,7 @@ type (
 		ZScan(key string, _cursor uint64, match string, count int64) (keys []string, cursor uint64, err error)
 	}
 
-	IRedisSys interface {
+	ISys interface {
 		IRedis
 		Encode(value interface{}) (result []byte, err error)
 		Decode(value []byte, result interface{}) (err error)
@@ -127,14 +127,14 @@ const (
 	TxFailedErr = redis.TxFailedErr
 )
 
-var defsys IRedisSys
+var defsys ISys
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	defsys, err = newSys(newOptions(config, option...))
 	return
 }
 
-func NewSys(option ...Option) (sys IRedisSys, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
 }

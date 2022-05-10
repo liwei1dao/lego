@@ -14,7 +14,7 @@ import (
 
 func NewKafkaClient(serviceId string, kafkaversion string, kafkahost []string, pushrpcId, receiveId string) (kafkaClient *KafkaClient, err error) {
 	var (
-		kfk kafka.IKafka
+		kfk kafka.ISys
 	)
 	if kfk, err = kafka.NewSys(
 		kafka.SetVersion(kafkaversion),
@@ -41,7 +41,7 @@ type KafkaClient struct {
 	callinfos         *container.BeeMap
 	callbackqueueName string
 	rpcId             string
-	kafka             kafka.IKafka
+	kafka             kafka.ISys
 }
 
 func (this *KafkaClient) Stop() (err error) {
