@@ -36,7 +36,6 @@ func newConsumerGroup(sys ISys, brokers []string, group string, topics []string,
 	case <-kcgroup.ctx.Done():
 		err = kcgroup.ctx.Err()
 	}
-	// Await till the consumer has been set up
 	return
 }
 
