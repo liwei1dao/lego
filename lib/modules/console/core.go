@@ -62,7 +62,7 @@ type (
 	}
 	IDB interface {
 		core.IModuleComp
-		GetMgo() mgo.IMongodb
+		GetMgo() mgo.ISys
 		QueryUserDataById(uid uint32) (result *DB_UserData, err error)
 		QueryUserDataByPhonOrEmail(phonoremail string) (result *DB_UserData, err error)
 		LoginUserDataByPhonOrEmail(data *DB_UserData) (result *DB_UserData, err error)

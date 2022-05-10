@@ -56,7 +56,7 @@ type MComp_GateComp struct {
 	ComId      uint16 //协议分类Id
 	IsLog      bool   //是否输出消息日志
 	Msghandles map[uint16]*msgRecep
-	Workerpool workerpools.IWorkerPool
+	Workerpool workerpools.ISys
 }
 
 type msgRecep struct {
