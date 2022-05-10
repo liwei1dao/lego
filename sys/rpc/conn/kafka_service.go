@@ -5,13 +5,11 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/golang/protobuf/proto"
-	"github.com/liwei1dao/lego"
 	"github.com/liwei1dao/lego/sys/kafka"
-	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/rpc/core"
 )
 
-func NewKafkaService(serviceId string, kafkaversion string, kafkahost []string, rpcId string) (kafkaService *KafkaService, err error) {
+func NewKafkaService(sys core.ISys, serviceId string, kafkaversion string, kafkahost []string, rpcId string) (kafkaService *KafkaService, err error) {
 	var (
 		kfk kafka.IKafka
 	)
@@ -27,12 +25,14 @@ func NewKafkaService(serviceId string, kafkaversion string, kafkahost []string, 
 		return
 	}
 	kafkaService = &KafkaService{
+		sys:   sys,
 		kafka: kfk,
 	}
 	return
 }
 
 type KafkaService struct {
+	sys     core.ISys
 	service core.IRpcServer
 	kafka   kafka.IKafka
 }
@@ -49,7 +49,6 @@ func (this *KafkaService) Stop() (err error) {
 }
 
 func (this *KafkaService) Callback(callinfo core.CallInfo) error {
-	defer lego.Recover("RPC KafkaService")
 	body, _ := this.MarshalResult(callinfo.Result)
 	reply_to := callinfo.Props["reply_to"].(string)
 	// log.Debugf("RPC KafkaService Callback reply_to:%v", reply_to)
@@ -61,7 +60,11 @@ func (this *KafkaService) Callback(callinfo core.CallInfo) error {
 }
 
 func (this *KafkaService) on_request_handle() {
-	defer lego.Recover("RPC KafkaService")
+	defer func() {
+		if r := recover(); r != nil {
+			this.sys.Errorf("KafkaService panic:", r)
+		}
+	}()
 	for v := range this.kafka.Consumer_Messages() {
 		// log.Debugf("RPC KafkaService Receive: %+v", v)
 		rpcInfo, err := this.Unmarshal(v.Value)
@@ -78,7 +81,7 @@ func (this *KafkaService) on_request_handle() {
 			fmt.Println("error ", err)
 		}
 	}
-	log.Debugf("RPC KafkaService on_request_handle exit")
+	this.sys.Debugf("RPC KafkaService on_request_handle exit")
 }
 
 func (s *KafkaService) Unmarshal(data []byte) (*core.RPCInfo, error) {

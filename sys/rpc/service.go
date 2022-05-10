@@ -9,12 +9,12 @@ import (
 	"time"
 
 	lgcore "github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/rpc/core"
 	"github.com/liwei1dao/lego/sys/rpc/serialize"
 )
 
 type RPCService struct {
+	sys          core.ISys
 	rpcId        string
 	maxCoroutine int
 	wg           sync.WaitGroup //任务阻塞
@@ -80,7 +80,7 @@ func (this *RPCService) UnRegister(id lgcore.Rpc_Key, f interface{}) {
 
 func (this *RPCService) Wait() {
 	if len(this.runch) >= this.maxCoroutine {
-		log.Warnf("RPCService Run Coroutine Reach the Upper limit")
+		this.sys.Warnf("RPCService Run Coroutine Reach the Upper limit")
 	}
 	this.runch <- 1
 	return
@@ -114,7 +114,7 @@ func (this *RPCService) runFunc(callInfo core.CallInfo) {
 			case error:
 				rn = r.(error).Error()
 			}
-			log.Errorf("recover", rn)
+			this.sys.Errorf("recover", rn)
 			_errorCallback(callInfo.RpcInfo.Cid, rn)
 		}
 	}()
@@ -155,7 +155,7 @@ func (this *RPCService) runFunc(callInfo core.CallInfo) {
 					l := runtime.Stack(buf, false)
 					errstr := string(buf[:l])
 					allError := fmt.Sprintf("rpc func(%s) error %s ----Stack----%s", callInfo.RpcInfo.Fn, rn, errstr)
-					log.Errorf(allError)
+					this.sys.Errorf(allError)
 					_errorCallback(callInfo.RpcInfo.Cid, allError)
 				}
 			}()
@@ -176,7 +176,7 @@ func (this *RPCService) runFunc(callInfo core.CallInfo) {
 							elemp := reflect.New(f.Type().In(k))
 							err := json.Unmarshal(v2, elemp.Interface())
 							if err != nil {
-								log.Errorf("%v []uint8--> %v error with='%v'", callInfo.RpcInfo.Fn, f.Type().In(k), err)
+								this.sys.Errorf("%v []uint8--> %v error with='%v'", callInfo.RpcInfo.Fn, f.Type().In(k), err)
 								in[k] = reflect.ValueOf(ty)
 							} else {
 								in[k] = elemp.Elem()
@@ -244,12 +244,12 @@ func (this *RPCService) doCallback(callInfo core.CallInfo) {
 		//需要回复的才回复
 		err := callInfo.Agent.Callback(callInfo)
 		if err != nil {
-			log.Warnf("rpc callback erro :%s", err.Error())
+			this.sys.Warnf("rpc callback erro :%s", err.Error())
 		}
 	} else {
 		//对于不需要回复的消息,可以判断一下是否出现错误，打印一些警告
 		if callInfo.Result.Error != "" {
-			log.Warnf("rpc callback erro :%s", callInfo.Result.Error)
+			this.sys.Warnf("rpc callback erro :%s", callInfo.Result.Error)
 		}
 	}
 }

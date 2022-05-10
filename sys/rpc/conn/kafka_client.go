@@ -5,14 +5,12 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/golang/protobuf/proto"
-	"github.com/liwei1dao/lego"
 	"github.com/liwei1dao/lego/sys/kafka"
-	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/rpc/core"
 	"github.com/liwei1dao/lego/utils/container"
 )
 
-func NewKafkaClient(serviceId string, kafkaversion string, kafkahost []string, pushrpcId, receiveId string) (kafkaClient *KafkaClient, err error) {
+func NewKafkaClient(sys core.ISys, serviceId string, kafkaversion string, kafkahost []string, pushrpcId, receiveId string) (kafkaClient *KafkaClient, err error) {
 	var (
 		kfk kafka.IKafka
 	)
@@ -28,6 +26,7 @@ func NewKafkaClient(serviceId string, kafkaversion string, kafkahost []string, p
 		return
 	}
 	kafkaClient = &KafkaClient{
+		sys:               sys,
 		callinfos:         container.NewBeeMap(),
 		callbackqueueName: receiveId,
 		rpcId:             pushrpcId,
@@ -38,6 +37,7 @@ func NewKafkaClient(serviceId string, kafkaversion string, kafkahost []string, p
 }
 
 type KafkaClient struct {
+	sys               core.ISys
 	callinfos         *container.BeeMap
 	callbackqueueName string
 	rpcId             string
@@ -58,7 +58,7 @@ func (this *KafkaClient) Stop() (err error) {
 		}
 		this.callinfos = nil
 	} else {
-		log.Errorf("RCP NatsClient callinfos 异常为空")
+		this.sys.Errorf("RCP NatsClient callinfos 异常为空")
 	}
 	return
 }
@@ -102,7 +102,6 @@ func (this *KafkaClient) Call(callInfo core.CallInfo, callback chan core.ResultI
 消息请求 不需要回复
 */
 func (this *KafkaClient) CallNR(callInfo core.CallInfo) (err error) {
-	defer lego.Recover("RPC KafkaClient")
 	var (
 		body []byte
 	)
@@ -118,12 +117,16 @@ func (this *KafkaClient) CallNR(callInfo core.CallInfo) (err error) {
 }
 
 func (this *KafkaClient) on_request_handle() {
-	defer lego.Recover("RPC KafkaClient")
+	defer func() {
+		if r := recover(); r != nil {
+			this.sys.Errorf("KafkaClient panic:", r)
+		}
+	}()
 	for v := range this.kafka.Consumer_Messages() {
 		// log.Debugf("RPC KafkaClient Receive: %+v", v)
 		resultInfo, err := this.UnmarshalResult(v.Value)
 		if err != nil {
-			log.Errorf("RPC NatsClient Unmarshal faild", err)
+			this.sys.Errorf("RPC NatsClient Unmarshal faild", err)
 		} else {
 			correlation_id := resultInfo.Cid
 			clinetCallInfo := this.callinfos.Get(correlation_id)
@@ -134,11 +137,11 @@ func (this *KafkaClient) on_request_handle() {
 				close(clinetCallInfo.(core.ClinetCallInfo).Call)
 			} else {
 				//可能客户端已超时了，但服务端处理完还给回调了
-				log.Warnf("rpc callback no found : [%s]", correlation_id)
+				this.sys.Warnf("rpc callback no found : [%s]", correlation_id)
 			}
 		}
 	}
-	log.Debugf("RPC KafkaClient on_request_handle exit")
+	this.sys.Debugf("RPC KafkaClient on_request_handle exit")
 }
 
 func (this *KafkaClient) UnmarshalResult(data []byte) (*core.ResultInfo, error) {

@@ -5,27 +5,26 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/liwei1dao/lego"
-	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/rpc/core"
 	"github.com/nats-io/nats.go"
 )
 
-func NewNatsService(natsaddr string, rpcId string) (natsService *NatsService, err error) {
+func NewNatsService(sys core.ISys, natsaddr string, rpcId string) (natsService *NatsService, err error) {
 	var (
 		conn *nats.Conn
 		subs *nats.Subscription
 	)
 	conn, err = nats.Connect(natsaddr)
 	if err != nil {
-		err = fmt.Errorf("RPC NewNatsService nats.Connect err:%v", err)
+		err = fmt.Errorf("NewNatsService nats.Connect err:%v", err)
 		return
 	}
 	if subs, err = conn.SubscribeSync(rpcId); err != nil {
-		err = fmt.Errorf("RPC NatsServer conn.SubscribeSync err:%v", err)
+		err = fmt.Errorf("NewNatsService conn.SubscribeSync err:%v", err)
 		return
 	}
 	natsService = &NatsService{
+		sys:  sys,
 		conn: conn,
 		subs: subs,
 	}
@@ -33,6 +32,7 @@ func NewNatsService(natsaddr string, rpcId string) (natsService *NatsService, er
 }
 
 type NatsService struct {
+	sys     core.ISys
 	conn    *nats.Conn
 	subs    *nats.Subscription
 	service core.IRpcServer
@@ -55,7 +55,11 @@ func (this *NatsService) Stop() (err error) {
 	return
 }
 func (this *NatsService) on_request_handle() {
-	defer lego.Recover("RPC NatsService")
+	defer func() {
+		if r := recover(); r != nil {
+			this.sys.Errorf("NatsService panic:", r)
+		}
+	}()
 locp:
 	for {
 		m, err := this.subs.NextMsg(time.Minute)
@@ -75,10 +79,10 @@ locp:
 			callInfo.Agent = this //设置代理为NatsServer
 			this.service.Call(*callInfo)
 		} else {
-			fmt.Println("error ", err)
+			this.sys.Errorf("error:%v", err)
 		}
 	}
-	log.Debugf("RPC NatsService on_request_handle exit")
+	this.sys.Debugf("RPC NatsService on_request_handle exit")
 }
 func (s *NatsService) Unmarshal(data []byte) (*core.RPCInfo, error) {
 	var rpcInfo core.RPCInfo

@@ -39,11 +39,11 @@ func (this *Gin) Run(listenPort int) (err error) {
 			this.Errorf("Run err:%v", err)
 		}
 	}()
-	if this.engine.IsUnsafeTrustedProxies() {
-		this.Warnf("You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
-			"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
+	// if this.engine.IsUnsafeTrustedProxies() {
+	// 	this.Warnf("You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
+	// 		"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
 
-	}
+	// }
 	this.Debugf("Listening and serving HTTP on :%s\n", listenPort)
 	this.server = &http.Server{
 		Addr:    fmt.Sprintf(":%d", listenPort),
@@ -66,10 +66,10 @@ func (this *Gin) RunTLS(listenPort int, certFile, keyFile string) (err error) {
 		}
 	}()
 
-	if this.engine.IsUnsafeTrustedProxies() {
-		this.Warnf("You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
-			"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
-	}
+	// if this.engine.IsUnsafeTrustedProxies() {
+	// 	this.Warnf("You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
+	// 		"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
+	// }
 	this.server = &http.Server{
 		Addr:    fmt.Sprintf(":%d", listenPort),
 		Handler: this.engine.Handler(),
@@ -92,11 +92,11 @@ func (this *Gin) RunListener(listener net.Listener) (err error) {
 
 	}()
 
-	if this.engine.IsUnsafeTrustedProxies() {
-		this.Warnf("You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
-			"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
+	// if this.engine.IsUnsafeTrustedProxies() {
+	// 	this.Warnf("You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
+	// 		"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
 
-	}
+	// }
 	err = http.Serve(listener, this.engine.Handler())
 	return
 }

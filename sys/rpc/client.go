@@ -12,6 +12,7 @@ import (
 )
 
 type RPCClient struct {
+	sys        core.ISys
 	ServiceId  string
 	rpcExpired time.Duration
 	conn       IRPCConnClient

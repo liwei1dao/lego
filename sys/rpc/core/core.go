@@ -2,9 +2,14 @@ package core
 
 import (
 	"reflect"
+
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 type (
+	ISys interface {
+		log.Ilogf
+	}
 	IRpcServer interface {
 		Call(callInfo CallInfo) error
 	}

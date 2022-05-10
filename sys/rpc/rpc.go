@@ -17,17 +17,11 @@ func newSys(options Options) (sys *RPC, err error) {
 		service *RPCService
 		c       IRPCConnServer
 	)
-	rpcId = fmt.Sprintf("%s-%s", options.ClusterTag, options.ServiceId)
-	if options.RPCConnType == Nats {
-		if c, err = conn.NewNatsService(options.Nats_Addr, rpcId); err != nil {
-			return
-		}
-	} else if options.RPCConnType == Kafka {
-		if c, err = conn.NewKafkaService(options.ServiceId, options.Kafka_Version, options.Kafka_Host, rpcId); err != nil {
-			return
-		}
+	sys = &RPC{
+		options: options,
 	}
 	service = &RPCService{
+		sys:          sys,
 		rpcId:        rpcId,
 		listener:     options.Listener,
 		maxCoroutine: options.MaxCoroutine,
@@ -35,9 +29,16 @@ func newSys(options Options) (sys *RPC, err error) {
 		functions:    make(map[lgcore.Rpc_Key][]*core.FunctionInfo),
 		runch:        make(chan int, options.MaxCoroutine),
 	}
-	sys = &RPC{
-		options: options,
-		service: service,
+	sys.service = service
+	rpcId = fmt.Sprintf("%s-%s", options.ClusterTag, options.ServiceId)
+	if options.RPCConnType == Nats {
+		if c, err = conn.NewNatsService(sys, options.Nats_Addr, rpcId); err != nil {
+			return
+		}
+	} else if options.RPCConnType == Kafka {
+		if c, err = conn.NewKafkaService(sys, options.ServiceId, options.Kafka_Version, options.Kafka_Host, rpcId); err != nil {
+			return
+		}
 	}
 	return
 }
@@ -54,15 +55,16 @@ func (this *RPC) NewRpcClient(sId, rId string) (clent IRpcClient, err error) {
 	)
 	receiveId = fmt.Sprintf("%s-%s-%s", this.options.ClusterTag, this.options.ServiceId, sId)
 	if this.options.RPCConnType == Nats {
-		if c, err = conn.NewNatsClient(this.options.Nats_Addr, rId, receiveId); err != nil {
+		if c, err = conn.NewNatsClient(this, this.options.Nats_Addr, rId, receiveId); err != nil {
 			return
 		}
 	} else if this.options.RPCConnType == Kafka {
-		if c, err = conn.NewKafkaClient(this.options.ServiceId, this.options.Kafka_Version, this.options.Kafka_Host, rId, receiveId); err != nil {
+		if c, err = conn.NewKafkaClient(this, this.options.ServiceId, this.options.Kafka_Version, this.options.Kafka_Host, rId, receiveId); err != nil {
 			return
 		}
 	}
 	clent = &RPCClient{
+		sys:        this,
 		ServiceId:  sId,
 		rpcExpired: time.Second * time.Duration(this.options.RpcExpired),
 		conn:       c,
@@ -73,6 +75,7 @@ func (this *RPC) NewRpcClient(sId, rId string) (clent IRpcClient, err error) {
 func (this *RPC) Start() (err error) {
 	return this.service.Start()
 }
+
 func (this *RPC) Stop() (err error) {
 	return this.service.Stop()
 }
@@ -106,4 +109,40 @@ func (this *RPC) OnRegisterJsonRpcData(d interface{}) {
 }
 func (this *RPC) OnRegisterProtoDataData(d interface{}) {
 	serialize.OnRegisterProtoData(d)
+}
+
+///日志***********************************************************************
+func (this *RPC) Debug() bool {
+	return this.options.Debug
+}
+
+func (this *RPC) Debugf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Debugf("[SYS RPC] "+format, a)
+	}
+}
+func (this *RPC) Infof(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Infof("[SYS RPC] "+format, a)
+	}
+}
+func (this *RPC) Warnf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Warnf("[SYS RPC] "+format, a)
+	}
+}
+func (this *RPC) Errorf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Errorf("[SYS RPC] "+format, a)
+	}
+}
+func (this *RPC) Panicf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Panicf("[SYS RPC] "+format, a)
+	}
+}
+func (this *RPC) Fatalf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Fatalf("[SYS RPC] "+format, a)
+	}
 }

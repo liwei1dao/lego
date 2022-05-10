@@ -5,14 +5,12 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/liwei1dao/lego"
-	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/rpc/core"
 	"github.com/liwei1dao/lego/utils/container"
 	"github.com/nats-io/nats.go"
 )
 
-func NewNatsClient(natsaddr string, pushrpcId, receiveId string) (natsClient *NatsClient, err error) {
+func NewNatsClient(sys core.ISys, natsaddr string, pushrpcId, receiveId string) (natsClient *NatsClient, err error) {
 	var (
 		conn *nats.Conn
 		subs *nats.Subscription
@@ -26,6 +24,7 @@ func NewNatsClient(natsaddr string, pushrpcId, receiveId string) (natsClient *Na
 		return nil, fmt.Errorf("rpc NatsClient 连接错误 err:%s", err.Error())
 	}
 	natsClient = &NatsClient{
+		sys:               sys,
 		rpcId:             pushrpcId,
 		callinfos:         container.NewBeeMap(),
 		callbackqueueName: receiveId,
@@ -37,6 +36,7 @@ func NewNatsClient(natsaddr string, pushrpcId, receiveId string) (natsClient *Na
 }
 
 type NatsClient struct {
+	sys               core.ISys
 	callinfos         *container.BeeMap
 	callbackqueueName string
 	rpcId             string
@@ -57,7 +57,7 @@ func (this *NatsClient) Stop() (err error) {
 		}
 		this.callinfos = nil
 	} else {
-		log.Errorf("RCP NatsClient callinfos 异常为空")
+		this.sys.Errorf("RCP NatsClient callinfos 异常为空")
 	}
 	err = this.subs.Unsubscribe()
 	return
@@ -104,7 +104,11 @@ func (this *NatsClient) CallNR(callInfo core.CallInfo) error {
 }
 
 func (this *NatsClient) on_request_handle() {
-	defer lego.Recover("RPC NatsClient")
+	defer func() {
+		if r := recover(); r != nil {
+			this.sys.Errorf("NatsClient panic:", r)
+		}
+	}()
 locp:
 	for {
 		m, err := this.subs.NextMsg(time.Minute)
@@ -116,7 +120,7 @@ locp:
 
 		resultInfo, err := this.UnmarshalResult(m.Data)
 		if err != nil {
-			log.Errorf("RPC NatsClient Unmarshal faild", err)
+			this.sys.Errorf("RPC NatsClient Unmarshal faild", err)
 		} else {
 			correlation_id := resultInfo.Cid
 			clinetCallInfo := this.callinfos.Get(correlation_id)
@@ -127,11 +131,11 @@ locp:
 				close(clinetCallInfo.(core.ClinetCallInfo).Call)
 			} else {
 				//可能客户端已超时了，但服务端处理完还给回调了
-				log.Warnf("rpc callback no found : [%s]", correlation_id)
+				this.sys.Warnf("rpc callback no found : [%s]", correlation_id)
 			}
 		}
 	}
-	log.Debugf("RPC NatsClient on_request_handle exit")
+	this.sys.Debugf("RPC NatsClient on_request_handle exit")
 }
 
 func (this *NatsClient) UnmarshalResult(data []byte) (*core.ResultInfo, error) {
