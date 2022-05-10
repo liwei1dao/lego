@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/lib/modules/http"
+	"github.com/liwei1dao/lego/sys/gin/engine"
 	"github.com/liwei1dao/lego/sys/mgo"
 	"github.com/liwei1dao/lego/sys/redis"
 )
@@ -33,7 +33,7 @@ const ( //event
 
 type (
 	IConsole interface {
-		http.IHttp
+		core.IModule
 		Options() IOptions
 		Cache() ICache
 		DB() IDB
@@ -41,8 +41,8 @@ type (
 		Hostmonitorcomp() IHostmonitorcomp
 		Clustermonitorcomp() IClustermonitorcomp
 		ParamSign(param map[string]interface{}) (sign string)
-		CheckToken(c *http.Context)
-		HttpStatusOK(c *http.Context, code core.ErrorCode, data interface{})
+		CheckToken(c *engine.Context)
+		HttpStatusOK(c *engine.Context, code core.ErrorCode, data interface{})
 		CreateToken(uId uint32) (token string)
 		checkToken(token string, uId uint32) (check bool)
 	}

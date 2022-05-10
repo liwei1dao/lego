@@ -209,6 +209,14 @@ func (this *Context) GetUint(key string) (ui uint) {
 	}
 	return
 }
+
+func (c *Context) GetUInt32(key string) (i uint32) {
+	if val, ok := c.Get(key); ok && val != nil {
+		i, _ = val.(uint32)
+	}
+	return
+}
+
 func (this *Context) GetUint64(key string) (ui64 uint64) {
 	if val, ok := this.Get(key); ok && val != nil {
 		ui64, _ = val.(uint64)
@@ -418,6 +426,10 @@ func (this *Context) Bind(obj interface{}) error {
 	return this.MustBindWith(obj, b)
 }
 
+func (this *Context) ShouldBindJSON(obj interface{}) error {
+	return this.ShouldBindWith(obj, binding.JSON)
+}
+
 func (this *Context) MustBindWith(obj interface{}, b binding.Binding) error {
 	if err := this.ShouldBindWith(obj, b); err != nil {
 		this.AbortWithError(http.StatusBadRequest, err).SetType(ErrorTypeBind) // nolint: errcheck
@@ -429,7 +441,6 @@ func (this *Context) MustBindWith(obj interface{}, b binding.Binding) error {
 func (this *Context) ShouldBindWith(obj interface{}, b binding.Binding) error {
 	return b.Bind(this.Request, obj)
 }
-
 func (this *Context) ShouldBindUri(obj interface{}) error {
 	m := make(map[string][]string)
 	for _, v := range this.Params {

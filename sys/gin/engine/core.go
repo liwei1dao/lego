@@ -31,6 +31,7 @@ type ISys interface {
 }
 
 type IRoutes interface {
+	Group(relativePath string, handlers ...HandlerFunc) IRoutes
 	Use(...HandlerFunc) IRoutes
 	Handle(string, string, ...HandlerFunc) IRoutes
 	Any(string, ...HandlerFunc) IRoutes

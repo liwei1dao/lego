@@ -108,7 +108,9 @@ func (this *Gin) Close() (err error) {
 	this.server.Close()
 	return
 }
-
+func (this *Gin) Group(relativePath string, handlers ...engine.HandlerFunc) engine.IRoutes {
+	return this.engine.Group(relativePath, handlers...)
+}
 func (this *Gin) Use(handlers ...engine.HandlerFunc) engine.IRoutes {
 	return this.engine.Use(handlers...)
 }

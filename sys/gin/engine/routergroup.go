@@ -32,7 +32,7 @@ func (this *RouterGroup) Use(middleware ...HandlerFunc) IRoutes {
 	return this.returnObj()
 }
 
-func (this *RouterGroup) Group(relativePath string, handlers ...HandlerFunc) *RouterGroup {
+func (this *RouterGroup) Group(relativePath string, handlers ...HandlerFunc) IRoutes {
 	return &RouterGroup{
 		Handlers: this.combineHandlers(handlers),
 		basePath: this.calculateAbsolutePath(relativePath),

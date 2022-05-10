@@ -7,23 +7,27 @@ import (
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
-	"github.com/liwei1dao/lego/lib/modules/http"
 	"github.com/liwei1dao/lego/sys/event"
+	"github.com/liwei1dao/lego/sys/gin"
+	"github.com/liwei1dao/lego/sys/gin/engine"
 	"github.com/liwei1dao/lego/sys/log"
 )
 
 type ApiComp struct {
 	cbase.ModuleCompBase
 	module IConsole
+	gin    gin.ISys
 }
 
 func (this *ApiComp) Init(service core.IService, module core.IModule, comp core.IModuleComp, options core.IModuleOptions) (err error) {
 	err = this.ModuleCompBase.Init(service, module, comp, options)
 	this.module = module.(IConsole)
-	api := this.module.Group("/lego/api")
+	if this.gin, err = gin.NewSys(gin.SetListenPort(this.module.Options().GetListenPort())); err != nil {
+		return
+	}
+	api := this.gin.Group("/lego/api")
 	api.POST("/sendemailcaptcha", this.SendEmailCaptchaReq)
-
-	console := this.module.Group("/lego/console")
+	console := this.gin.Group("/lego/console")
 	console.POST("/getprojectinfo", this.module.CheckToken, this.GetProjectInfo)
 	console.POST("/gethostinfo", this.module.CheckToken, this.GetHostInfo)
 	console.POST("/getcpuinfo", this.module.CheckToken, this.GetCpuInfo)
@@ -31,7 +35,7 @@ func (this *ApiComp) Init(service core.IService, module core.IModule, comp core.
 	console.POST("/gethostmonitordata", this.module.CheckToken, this.GetHostMonitorData)
 	console.POST("/getconsolecluster", this.module.CheckToken, this.GetClusterMonitorData)
 
-	user := this.module.Group("/lego/user")
+	user := this.gin.Group("/lego/user")
 	user.POST("/registerbycaptcha", this.RegisterByCaptchaReq)
 	user.POST("/loginbycaptcha", this.LoginByCaptchaReq)
 	user.POST("/loginbypassword", this.LoginByPasswordReq)
@@ -68,7 +72,7 @@ func (this *ApiComp) Init(service core.IService, module core.IModule, comp core.
  */
 
 //获取验证码
-func (this *ApiComp) SendEmailCaptchaReq(c *http.Context) {
+func (this *ApiComp) SendEmailCaptchaReq(c *engine.Context) {
 	req := &SendEmailCaptchaReq{}
 	c.ShouldBindJSON(req)
 	defer log.Debugf("SendEmailCaptchaReq:%+v", req)
@@ -118,7 +122,7 @@ func (this *ApiComp) SendEmailCaptchaReq(c *http.Context) {
  */
 
 //获取集群信息
-func (this *ApiComp) GetProjectInfo(c *http.Context) {
+func (this *ApiComp) GetProjectInfo(c *engine.Context) {
 	uId := c.GetUInt32(UserKey)
 	defer log.Debugf("GetClusterInfo:%d", uId)
 	var (
@@ -135,7 +139,7 @@ func (this *ApiComp) GetProjectInfo(c *http.Context) {
 }
 
 //获取控制台信息
-func (this *ApiComp) GetHostInfo(c *http.Context) {
+func (this *ApiComp) GetHostInfo(c *engine.Context) {
 	uId := c.GetUInt32(UserKey)
 	defer log.Debugf("GetHostInfo:%d", uId)
 	var (
@@ -153,7 +157,7 @@ func (this *ApiComp) GetHostInfo(c *http.Context) {
 }
 
 //获取控制台信息
-func (this *ApiComp) GetCpuInfo(c *http.Context) {
+func (this *ApiComp) GetCpuInfo(c *engine.Context) {
 	uId := c.GetUInt32(UserKey)
 	defer log.Debugf("GetHostInfo:%d", uId)
 	var (
@@ -171,7 +175,7 @@ func (this *ApiComp) GetCpuInfo(c *http.Context) {
 }
 
 //获取控制台信息
-func (this *ApiComp) GetMemoryInfo(c *http.Context) {
+func (this *ApiComp) GetMemoryInfo(c *engine.Context) {
 	uId := c.GetUInt32(UserKey)
 	defer log.Debugf("GetconSoleinfo:%d", uId)
 	var (
@@ -189,7 +193,7 @@ func (this *ApiComp) GetMemoryInfo(c *http.Context) {
 }
 
 //获取主机监控信息
-func (this *ApiComp) GetHostMonitorData(c *http.Context) {
+func (this *ApiComp) GetHostMonitorData(c *engine.Context) {
 	req := &QueryHostMonitorDataReq{}
 	c.ShouldBindJSON(req)
 	uId := c.GetUInt32(UserKey)
@@ -209,7 +213,7 @@ func (this *ApiComp) GetHostMonitorData(c *http.Context) {
 }
 
 //获取控制台信息
-func (this *ApiComp) GetClusterMonitorData(c *http.Context) {
+func (this *ApiComp) GetClusterMonitorData(c *engine.Context) {
 	req := &QueryClusterMonitorDataReq{}
 	c.ShouldBindJSON(req)
 	uId := c.GetUInt32(UserKey)
@@ -255,7 +259,7 @@ func (this *ApiComp) GetClusterMonitorData(c *http.Context) {
  */
 
 //注册请求 验证码
-func (this *ApiComp) RegisterByCaptchaReq(c *http.Context) {
+func (this *ApiComp) RegisterByCaptchaReq(c *engine.Context) {
 	req := &RegisterByCaptchaReq{}
 	c.ShouldBindJSON(req)
 	defer log.Debugf("RegisterByCaptchaReq:%+v", req)
@@ -294,7 +298,7 @@ func (this *ApiComp) RegisterByCaptchaReq(c *http.Context) {
 }
 
 //登录请求 验证码
-func (this *ApiComp) LoginByCaptchaReq(c *http.Context) {
+func (this *ApiComp) LoginByCaptchaReq(c *engine.Context) {
 	req := &LoginByCaptchaReq{}
 	c.ShouldBindJSON(req)
 	defer log.Debugf("LoginByCaptchaReq:%+v", req)
@@ -334,7 +338,7 @@ func (this *ApiComp) LoginByCaptchaReq(c *http.Context) {
 }
 
 //登录请求 密码
-func (this *ApiComp) LoginByPasswordReq(c *http.Context) {
+func (this *ApiComp) LoginByPasswordReq(c *engine.Context) {
 	req := &LoginByPasswordReq{}
 	c.ShouldBindJSON(req)
 	defer log.Debugf("LoginByPasswordReq:%+v", req)
@@ -368,7 +372,7 @@ func (this *ApiComp) LoginByPasswordReq(c *http.Context) {
 }
 
 //登录请求 Token
-func (this *ApiComp) GetUserinfoReq(c *http.Context) {
+func (this *ApiComp) GetUserinfoReq(c *engine.Context) {
 	uId := c.GetUInt32(UserKey)
 	defer log.Debugf("GetUserinfoReq:%d", uId)
 	var (
@@ -388,7 +392,7 @@ func (this *ApiComp) GetUserinfoReq(c *http.Context) {
 }
 
 //登出
-func (this *ApiComp) LoginOutReq(c *http.Context) {
+func (this *ApiComp) LoginOutReq(c *engine.Context) {
 	req := &LoginOutReq{}
 	c.ShouldBindJSON(req)
 	uId := c.GetUInt32(UserKey)

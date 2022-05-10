@@ -3,12 +3,15 @@ package console
 import (
 	"encoding/json"
 
-	"github.com/liwei1dao/lego/lib/modules/http"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
 
 type IOptions interface {
-	http.IOptions
+	GetListenPort() int
+	GetCertPath() string
+	GetKeyPath() string
+	GetCors() bool
+	GetSignKey() string
 	GetRedisUrl() string
 	GetRedisDB() int
 	GetRedisPassword() string
@@ -23,14 +26,17 @@ type IOptions interface {
 	GetMailFompasswd() string
 	GetMailServerport() int
 	GetCaptchaExpirationdate() int
-	GetSignKey() string
 	GetUserInitialPassword() string
 	GetProjectName() string
 	ToString() string
 }
 
 type Options struct {
-	http.Options
+	ListenPort               int                    `json:"-"`
+	CertPath                 string                 `json:"-"`
+	KeyPath                  string                 `json:"-"`
+	Cors                     bool                   `json:"-"` //是否跨域
+	SignKey                  string                 `json:"-"` //签名密钥
 	RedisUrl                 string                 `json:"-"` //缓存地址 不显示控制台配置信息中
 	RedisDB                  int                    `json:"-"` //缓存DB
 	RedisPassword            string                 `json:"-"` //缓存密码
@@ -43,7 +49,6 @@ type Options struct {
 	MailFromemail            string                 `json:"-"` //邮件系统配置
 	MailFompasswd            string                 `json:"-"` //邮件系统配置
 	CaptchaExpirationdate    int                    `json:"-"` //Captcha缓存过期时间 单位秒
-	SignKey                  string                 `json:"-"` //签名密钥
 	UserInitialPassword      string                 `json:"-"` //用户初始密码
 	ProjectName              string                 //项目名称
 	ProjectDes               string                 //项目描述
@@ -57,14 +62,26 @@ func (this *Options) LoadConfig(settings map[string]interface{}) (err error) {
 	this.TokenCacheExpirationDate = 3600
 	this.CaptchaExpirationdate = 60
 	this.InitUserIdNum = 100000
-	if err = this.Options.LoadConfig(settings); err == nil {
-		if settings != nil {
-			err = mapstructure.Decode(settings, this)
-		}
+	if settings != nil {
+		err = mapstructure.Decode(settings, this)
 	}
 	return
 }
-
+func (this *Options) GetListenPort() int {
+	return this.ListenPort
+}
+func (this *Options) GetCertPath() string {
+	return this.CertPath
+}
+func (this *Options) GetKeyPath() string {
+	return this.KeyPath
+}
+func (this *Options) GetCors() bool {
+	return this.Cors
+}
+func (this *Options) GetSignKey() string {
+	return this.SignKey
+}
 func (this *Options) GetRedisUrl() string {
 	return this.RedisUrl
 }
@@ -103,9 +120,6 @@ func (this *Options) GetMailFompasswd() string {
 
 func (this *Options) GetCaptchaExpirationdate() int {
 	return this.CaptchaExpirationdate
-}
-func (this *Options) GetSignKey() string {
-	return this.SignKey
 }
 func (this *Options) GetUserInitialPassword() string {
 	return this.UserInitialPassword
