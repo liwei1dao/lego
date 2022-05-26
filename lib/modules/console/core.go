@@ -88,6 +88,11 @@ type (
 	ConsoleUserId struct {
 		Id uint32 `bson:"_id"`
 	}
+	OutJson struct {
+		ErrorCode core.ErrorCode `json:"code"`
+		Message   string         `json:"msg"`
+		Data      interface{}    `json:"data"`
+	}
 )
 
 const (

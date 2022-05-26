@@ -7,14 +7,15 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/lib"
-	"github.com/liwei1dao/lego/lib/modules/http"
+	"github.com/liwei1dao/lego/sys/gin/engine"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/crypto/aes"
 )
 
 type Console struct {
-	http.Http
+	cbase.ModuleBase
 	options            IOptions
 	db                 *DBComp
 	cache              *CacheComp
@@ -34,7 +35,7 @@ func (this *Console) NewOptions() (options core.IModuleOptions) {
 
 func (this *Console) Init(service core.IService, module core.IModule, options core.IModuleOptions) (err error) {
 	this.options = options.(IOptions)
-	err = this.Http.Init(service, module, options)
+	err = this.ModuleBase.Init(service, module, options)
 	return
 }
 
@@ -72,7 +73,7 @@ func (this *Console) Clustermonitorcomp() IClustermonitorcomp {
 }
 
 //token 验证中间键
-func (this *Console) CheckToken(c *http.Context) {
+func (this *Console) CheckToken(c *engine.Context) {
 	token := c.Request.Header.Get("X-Token")
 	if token == "" {
 		this.HttpStatusOK(c, ErrorCode_NoLOgin, nil)
@@ -90,9 +91,9 @@ func (this *Console) CheckToken(c *http.Context) {
 }
 
 //统一输出接口
-func (this *Console) HttpStatusOK(c *http.Context, code core.ErrorCode, data interface{}) {
+func (this *Console) HttpStatusOK(c *engine.Context, code core.ErrorCode, data interface{}) {
 	defer log.Debugf("%s resp: code:%d data:%+v", c.Request.RequestURI, code, data)
-	c.JSON(nethttp.StatusOK, http.OutJson{ErrorCode: code, Message: GetErrorCodeMsg(code), Data: data})
+	c.JSON(nethttp.StatusOK, OutJson{ErrorCode: code, Message: GetErrorCodeMsg(code), Data: data})
 }
 
 //创建token
