@@ -37,7 +37,7 @@ func SetVersion(v string) Option {
 
 func newOptions(option ...Option) *Options {
 	options := &Options{
-		ConfPath: "conf/cluster.toml",
+		ConfPath: "conf/cluster.yaml",
 	}
 	for _, o := range option {
 		o(options)
