@@ -35,6 +35,7 @@ type ServiceSttings struct {
 	Tag      string     //服务集群标签 (相同标签的集群服务可以互相发现和发现)
 	Category S_Category //服务列表 (用于区分集群服务下相似业务功能的服务器 例如:游戏服务器)
 	Ip       string
+	Port     int
 	Comps    map[string]map[string]interface{} //服务组件配置
 	Sys      map[string]map[string]interface{} //服务系统配置
 	Modules  map[string]map[string]interface{} //服务模块配置

@@ -17,7 +17,7 @@ type (
 	Option  func(*Options)
 	Options struct {
 		RegistryType            RegistryType
-		Service                 base.IClusterService
+		Service                 base.IClusterServiceBase
 		Listener                IListener
 		Consul_Addr             string
 		Consul_RegisterInterval int //定期注册
@@ -38,7 +38,7 @@ func SetRegistryType(v RegistryType) Option {
 		o.RegistryType = v
 	}
 }
-func SetService(v base.IClusterService) Option {
+func SetService(v base.IClusterServiceBase) Option {
 	return func(o *Options) {
 		o.Service = v
 	}

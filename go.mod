@@ -12,7 +12,6 @@ require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.885
 	github.com/aliyun/aliyun-oss-go-sdk v2.1.6+incompatible
 	github.com/apache/pulsar-client-go v0.8.0
-	github.com/armon/go-metrics v0.3.6 // indirect
 	github.com/axgle/mahonia v0.0.0-20180208002826-3358181d7394
 	github.com/baiyubin/aliyun-sts-go-sdk v0.0.0-20180326062324-cfa1a18b161f // indirect
 	github.com/denisenkom/go-mssqldb v0.9.0
@@ -20,7 +19,7 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.3.1
 	github.com/go-ole/go-ole v1.2.1 // indirect
 	github.com/go-playground/validator/v10 v10.10.1
-	github.com/go-redis/redis/v8 v8.8.0
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/go-zookeeper/zk v1.0.2
 	github.com/gocolly/colly/v2 v2.1.0
@@ -29,11 +28,9 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/websocket v1.4.2
-	github.com/hashicorp/consul/api v1.8.1
-	github.com/hashicorp/go-immutable-radix v1.3.0 // indirect
+	github.com/hashicorp/consul/api v1.12.0
 	github.com/hashicorp/go-msgpack v1.1.5 // indirect
 	github.com/hashicorp/go-sockaddr v1.0.2 // indirect
-	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/influxdata/influxdb-client-go/v2 v2.8.2
 	github.com/jlaffaye/ftp v0.0.0-20220309012535-813c8a838452
 	github.com/jmoiron/sqlx v1.3.1
@@ -47,23 +44,26 @@ require (
 	github.com/nats-io/nats-server/v2 v2.1.9 // indirect
 	github.com/nats-io/nats.go v1.10.0
 	github.com/pkg/sftp v1.10.1
+	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 	github.com/robfig/cron/v3 v3.0.1
+	github.com/rpcxio/rpcx-examples v1.1.6
 	github.com/rs/xid v1.3.0
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/shirou/gopsutil v3.20.12+incompatible
+	github.com/smallnest/rpcx v1.7.4
 	github.com/smartystreets/assertions v1.1.0 // indirect
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/ugorji/go/codec v1.2.7
 	github.com/wolfogre/go-pprof-practice v0.0.0-20190402114113-8ce266a210ee
 	go.mongodb.org/mongo-driver v1.5.1
 	go.uber.org/zap v1.21.0
-	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
-	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
+	golang.org/x/crypto v0.0.0-20220408190544-5352b0902921
+	golang.org/x/net v0.0.0-20220407224826-aac1ed45d8e3
 	golang.org/x/oauth2 v0.0.0-20210402161424-2e8d93401602
 	golang.org/x/text v0.3.7
 	gonum.org/v1/gonum v0.8.2
 	google.golang.org/api v0.44.0
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c
-	google.golang.org/protobuf v1.26.0
+	google.golang.org/protobuf v1.28.0
 	gopkg.in/yaml.v2 v2.4.0
 )

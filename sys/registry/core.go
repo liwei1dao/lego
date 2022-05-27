@@ -15,6 +15,7 @@ type (
 		Id           string          `json:"Id"`           //服务Id
 		Version      string          `json:"Version"`      //服务版本
 		IP           string          `json:"Ip"`           //服务Ip
+		Port         int             `json:"Port"`         //端口
 		RpcId        string          `json:"RpcId"`        //服务通信Id
 		PreWeight    float64         `json:"PreWeight"`    //服务负载权重
 		RpcSubscribe []core.Rpc_Key  `json:"RpcSubscribe"` //服务开放接口

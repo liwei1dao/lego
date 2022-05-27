@@ -1,22 +1,27 @@
-package cbase
+package rpcxcluster
 
 import (
+	"context"
+	"fmt"
+
+	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/registry"
-	"github.com/liwei1dao/lego/sys/rpc"
+	"github.com/liwei1dao/lego/sys/rpcx"
+	"github.com/smallnest/rpcx/client"
 )
 
-func NewServiceSession(node *registry.ServiceNode) (ss core.IServiceSession, err error) {
+func NewServiceSession(node *registry.ServiceNode) (ss base.IRPCXServiceSession, err error) {
 	session := new(ServiceSession)
 	session.node = node
-	session.rpc, err = rpc.NewRpcClient(node.Id, node.RpcId)
+	session.client, err = rpcx.NewRpcClient(fmt.Sprintf("%s:%d", node.IP, node.PreWeight))
 	ss = session
 	return
 }
 
 type ServiceSession struct {
-	node *registry.ServiceNode
-	rpc  rpc.IRpcClient
+	node   *registry.ServiceNode
+	client rpcx.IRPCXClient
 }
 
 func (this *ServiceSession) GetId() string {
@@ -46,11 +51,11 @@ func (this *ServiceSession) SetPreWeight(p float64) {
 	this.node.PreWeight = p
 }
 func (this *ServiceSession) Done() {
-	this.rpc.Stop()
+	this.client.Stop()
 }
-func (this *ServiceSession) Call(f core.Rpc_Key, params ...interface{}) (interface{}, error) {
-	return this.rpc.Call(string(f), params...)
+func (this *ServiceSession) Call(ctx context.Context, serviceMethod core.Rpc_Key, args interface{}, reply interface{}) error {
+	return this.client.Call(ctx, serviceMethod, args, reply)
 }
-func (this *ServiceSession) CallNR(f core.Rpc_Key, params ...interface{}) (err error) {
-	return this.rpc.CallNR(string(f), params...)
+func (this *ServiceSession) CallNR(ctx context.Context, serviceMethod core.Rpc_Key, args interface{}, reply interface{}) (*client.Call, error) {
+	return this.client.Go(ctx, serviceMethod, args, reply, nil)
 }
