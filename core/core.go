@@ -87,19 +87,7 @@ type IModuleComp interface {
 	Start() (err error)
 	Destroy() (err error)
 }
-type IServiceSession interface {
-	GetId() string
-	GetIp() string
-	GetRpcId() string
-	GetType() string
-	GetVersion() string
-	SetVersion(v string)
-	GetPreWeight() float64
-	SetPreWeight(p float64)
-	Done()
-	CallNR(_func Rpc_Key, params ...interface{}) (err error)
-	Call(_func Rpc_Key, params ...interface{}) (interface{}, error)
-}
+
 type IUserSession interface {
 	GetSessionId() string
 	GetIP() string
