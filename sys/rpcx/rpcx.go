@@ -1,9 +1,5 @@
 package rpcx
 
-import (
-	lgcore "github.com/liwei1dao/lego/core"
-)
-
 func newSys(options Options) (sys *RPCX, err error) {
 	var (
 		service *Service
@@ -22,23 +18,34 @@ type RPCX struct {
 }
 
 func (this *RPCX) Start() (err error) {
+	this.service.Start()
 	return
 }
 
 func (this *RPCX) Stop() (err error) {
+	err = this.service.Stop()
 	return
 }
 
-func (this *RPCX) NewRpcClient(addr string) (clent IRPCXClient, err error) {
-	clent, err = newClient(addr)
+func (this *RPCX) Register(rcvr interface{}) (err error) {
+	err = this.service.Register(rcvr)
 	return
 }
 
-func (this *RPCX) Register(id lgcore.Rpc_Key, fn interface{}) (err error) {
-	err = this.service.Register(id, fn)
+func (this *RPCX) RegisterFunction(fn interface{}) (err error) {
+	err = this.service.RegisterFunction(fn)
 	return
 }
 
-func (this *RPCX) UnRegister(id lgcore.Rpc_Key) (err error) {
-	return this.service.UnRegister(id)
+func (this *RPCX) RegisterFunctionName(name string, fn interface{}) (err error) {
+	err = this.service.RegisterFunctionName(name, fn)
+	return
+}
+
+func (this *RPCX) UnregisterAll() (err error) {
+	return this.service.UnregisterAll()
+}
+
+func (this *RPCX) NewRpcClient(addr, sId string) (clent IRPCXClient, err error) {
+	return newClient(addr, sId)
 }

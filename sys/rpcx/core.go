@@ -3,27 +3,28 @@ package rpcx
 import (
 	"context"
 
-	lgcore "github.com/liwei1dao/lego/core"
 	"github.com/smallnest/rpcx/client"
 )
 
 type (
 	ISys interface {
 		IRPCXServer
-		NewRpcClient(addr string) (clent IRPCXClient, err error)
+		NewRpcClient(addr, sId string) (clent IRPCXClient, err error)
 	}
 
 	IRPCXServer interface {
 		Start() (err error)
 		Stop() (err error)
-		Register(id lgcore.Rpc_Key, f interface{}) (err error)
-		UnRegister(id lgcore.Rpc_Key) (err error)
+		Register(rcvr interface{}) (err error)
+		RegisterFunction(fn interface{}) (err error)
+		RegisterFunctionName(name string, fn interface{}) (err error)
+		UnregisterAll() (err error)
 	}
 
 	IRPCXClient interface {
 		Stop() (err error)
-		Call(ctx context.Context, serviceMethod lgcore.Rpc_Key, args interface{}, reply interface{}) error
-		Go(ctx context.Context, serviceMethod lgcore.Rpc_Key, args interface{}, reply interface{}, done chan *client.Call) (*client.Call, error)
+		Call(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) error
+		Go(ctx context.Context, serviceMethod string, args interface{}, reply interface{}, done chan *client.Call) (*client.Call, error)
 	}
 )
 
@@ -49,13 +50,20 @@ func Stop() (err error) {
 	return defsys.Stop()
 }
 
-func Register(id lgcore.Rpc_Key, f interface{}) (err error) {
-	return defsys.Register(id, f)
+func Register(rcvr interface{}) (err error) {
+	return defsys.Register(rcvr)
 }
-func UnRegister(id lgcore.Rpc_Key) (err error) {
-	return defsys.UnRegister(id)
+func RegisterFunction(fn interface{}) (err error) {
+	return defsys.RegisterFunction(fn)
+}
+func RegisterFunctionName(name string, fn interface{}) (err error) {
+	return defsys.RegisterFunctionName(name, fn)
 }
 
-func NewRpcClient(addr string) (clent IRPCXClient, err error) {
-	return defsys.NewRpcClient(addr)
+func UnregisterAll() (err error) {
+	return defsys.UnregisterAll()
+}
+
+func NewRpcClient(addr, sId string) (clent IRPCXClient, err error) {
+	return defsys.NewRpcClient(addr, sId)
 }

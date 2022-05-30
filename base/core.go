@@ -67,19 +67,18 @@ type IRPCXServiceSession interface {
 	GetPreWeight() float64
 	SetPreWeight(p float64)
 	Done()
-	Call(ctx context.Context, serviceMethod core.Rpc_Key, args interface{}, reply interface{}) error
-	CallNR(ctx context.Context, serviceMethod core.Rpc_Key, args interface{}, reply interface{}) (*client.Call, error)
+	Call(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) error
+	Go(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) (*client.Call, error)
 }
+
 type IRPCXService interface {
 	IClusterServiceBase
-	GetSessionsByCategory(category core.S_Category) (ss []IRPCXServiceSession)         //按服务类别获取服务列表
 	DefauleRpcRouteRules(stype string, sip string) (ss IRPCXServiceSession, err error) //默认rpc路由规则
-	RpcInvokeById(sId string, rkey core.Rpc_Key, iscall bool, args interface{}, reply interface{}) (err error)
-	RpcInvokeByType(sType string, rkey core.Rpc_Key, iscall bool, args interface{}, reply interface{}) (result interface{}, err error)    //根据路由规则执行远程方法
-	RpcInvokeByIp(sIp, sType string, rkey core.Rpc_Key, iscall bool, args interface{}, reply interface{}) (result interface{}, err error) //根据目标IP和类型执行远程方法
-	ReleaseRpc(rkey core.Rpc_Key, args interface{})                                                                                       //发布Rpc
-	Register(id core.Rpc_Key, f interface{})                                                                                              //注册RPC远程方法
-	RegisterGO(id core.Rpc_Key, f interface{})                                                                                            //注册RPC远程方法
-	Subscribe(id core.Rpc_Key, f interface{}) (err error)                                                                                 //订阅Rpc
-	UnSubscribe(id core.Rpc_Key, f interface{}) (err error)
+	Register(rcvr interface{}) (err error)
+	RegisterFunction(fn interface{}) (err error)
+	RegisterFunctionName(name string, fn interface{}) (err error)
+	RpcCallById(sId string, serviceMethod string, ctx context.Context, args interface{}, reply interface{}) (err error)
+	RpcGoById(sId string, serviceMethod string, ctx context.Context, args interface{}, reply interface{}) (call *client.Call, err error)
+	RpcCallByType(sType string, serviceMethod string, ctx context.Context, args interface{}, reply interface{}) (err error)
+	RpcGoByType(sType string, serviceMethod string, ctx context.Context, args interface{}, reply interface{}) (call *client.Call, err error)
 }

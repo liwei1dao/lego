@@ -41,6 +41,9 @@ func (this *ClusterService) GetType() string {
 func (this *ClusterService) GetIp() string {
 	return this.opts.Setting.Ip
 }
+func (this *ClusterService) GetPort() int {
+	return this.opts.Setting.Port
+}
 func (this *ClusterService) GetCategory() core.S_Category {
 	return this.opts.Setting.Category
 }
@@ -239,6 +242,7 @@ func (this *ClusterService) getServiceSessionByType(sType string, sIp string) (s
 	}
 	return
 }
+
 func (this *ClusterService) getServiceSessionByIds(Ids []string) (result []base.IClusterServiceSession, err error) {
 
 	var (
@@ -272,6 +276,7 @@ func (this *ClusterService) getServiceSessionByIds(Ids []string) (result []base.
 	}
 	return
 }
+
 func (this *ClusterService) getServiceSessionByIps(sType string, sIps []string) (result []base.IClusterServiceSession, err error) {
 	var (
 		ss    map[string]base.IClusterServiceSession = make(map[string]base.IClusterServiceSession)
@@ -401,6 +406,7 @@ func (this *ClusterService) DefauleRpcRouteRules(stype string, sip string) (ss b
 		}
 	}
 }
+
 func (this *ClusterService) RpcInvokeById(sId string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error) {
 	defer lego.Recover(fmt.Sprintf("RpcInvokeById sId:%s rkey:%v iscall %v arg %v", sId, rkey, iscall, arg))
 	this.lock.RLock()
@@ -481,6 +487,7 @@ func (this *ClusterService) RpcInvokeByType(sType string, rkey core.Rpc_Key, isc
 	}
 	return
 }
+
 func (this *ClusterService) RpcInvokeByIp(sIp, sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error) {
 	defer lego.Recover(fmt.Sprintf("RpcInvokeByIp sIp:%s sType:%s rkey:%v iscall %v arg %v", sIp, sType, rkey, iscall, arg))
 	this.lock.RLock()
@@ -547,17 +554,21 @@ func (this *ClusterService) ReleaseRpc(rkey core.Rpc_Key, arg ...interface{}) {
 		this.RpcInvokeById(v.Id, rkey, false, arg...)
 	}
 }
+
 func (this *ClusterService) Register(id core.Rpc_Key, f interface{}) {
 	rpc.Register(id, f)
 }
+
 func (this *ClusterService) RegisterGO(id core.Rpc_Key, f interface{}) {
 	rpc.RegisterGO(id, f)
 }
+
 func (this *ClusterService) Subscribe(id core.Rpc_Key, f interface{}) (err error) {
 	rpc.RegisterGO(id, f)
 	err = registry.PushServiceInfo()
 	return
 }
+
 func (this *ClusterService) UnSubscribe(id core.Rpc_Key, f interface{}) (err error) {
 	rpc.UnRegister(id, this.GetId())
 	err = registry.PushServiceInfo()

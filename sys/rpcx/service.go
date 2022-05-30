@@ -1,7 +1,8 @@
 package rpcx
 
 import (
-	lgcore "github.com/liwei1dao/lego/core"
+	"fmt"
+
 	"github.com/smallnest/rpcx/server"
 )
 
@@ -19,7 +20,7 @@ type Service struct {
 }
 
 func (this *Service) Start() (err error) {
-	err = this.server.Serve("tcp", this.options.Addr)
+	err = this.server.Serve("tcp", fmt.Sprintf(":%d", this.options.Port))
 	return
 }
 
@@ -28,11 +29,19 @@ func (this *Service) Stop() (err error) {
 	return
 }
 
-func (this *Service) Register(id lgcore.Rpc_Key, fn interface{}) (err error) {
-	err = this.server.RegisterFunction(string(id), fn, "")
+func (this *Service) Register(rcvr interface{}) (err error) {
+	err = this.server.RegisterName(this.options.ServiceId, rcvr, "")
 	return
 }
-func (this *Service) UnRegister(id lgcore.Rpc_Key) (err error) {
-	err = this.server.Plugins.DoUnregister(string(id))
+func (this *Service) RegisterFunction(fn interface{}) (err error) {
+	err = this.server.RegisterFunction(this.options.ServiceId, fn, "")
+	return
+}
+func (this *Service) RegisterFunctionName(name string, fn interface{}) (err error) {
+	err = this.server.RegisterFunctionName(this.options.ServiceId, name, fn, "")
+	return
+}
+func (this *Service) UnregisterAll() (err error) {
+	err = this.server.UnregisterAll()
 	return
 }

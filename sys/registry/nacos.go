@@ -87,6 +87,7 @@ func (this *Nacos_Registry) Start() (err error) {
 		Tag:          this.options.Service.GetTag(),
 		Id:           this.options.Service.GetId(),
 		IP:           this.options.Service.GetIp(),
+		Port:         this.options.Service.GetPort(),
 		Type:         this.options.Service.GetType(),
 		Category:     this.options.Service.GetCategory(),
 		Version:      this.options.Service.GetVersion(),
@@ -116,6 +117,7 @@ func (this *Nacos_Registry) PushServiceInfo() (err error) {
 			Tag:          this.options.Service.GetTag(),
 			Id:           this.options.Service.GetId(),
 			IP:           this.options.Service.GetIp(),
+			Port:         this.options.Service.GetPort(),
 			Type:         this.options.Service.GetType(),
 			Category:     this.options.Service.GetCategory(),
 			Version:      this.options.Service.GetVersion(),
@@ -295,7 +297,7 @@ func (this *Nacos_Registry) registerSNode(snode *ServiceNode) (err error) {
 	this.deregisterSNode()
 	_, err = this.client.RegisterInstance(vo.RegisterInstanceParam{
 		Ip:          snode.IP,
-		Port:        8848,
+		Port:        uint64(snode.Port),
 		Weight:      snode.PreWeight,
 		GroupName:   snode.Tag,
 		ServiceName: snode.Id,
@@ -338,6 +340,7 @@ func (this *Nacos_Registry) addandupdataServiceNode(as model.Instance) (sn *Serv
 		Category:     core.S_Category(as.Metadata["category"]),
 		Id:           as.Metadata["id"],
 		IP:           as.Ip,
+		Port:         int(as.Port),
 		Version:      version,
 		RpcId:        rpcid,
 		PreWeight:    as.Weight,

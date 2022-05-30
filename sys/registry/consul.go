@@ -64,6 +64,7 @@ func (this *Consul_Registry) Start() (err error) {
 		Tag:          this.options.Service.GetTag(),
 		Id:           this.options.Service.GetId(),
 		IP:           this.options.Service.GetIp(),
+		Port:         this.options.Service.GetPort(),
 		Type:         this.options.Service.GetType(),
 		Category:     this.options.Service.GetCategory(),
 		Version:      this.options.Service.GetVersion(),
@@ -91,6 +92,7 @@ func (this *Consul_Registry) PushServiceInfo() (err error) {
 			Tag:          this.options.Service.GetTag(),
 			Id:           this.options.Service.GetId(),
 			IP:           this.options.Service.GetIp(),
+			Port:         this.options.Service.GetPort(),
 			Type:         this.options.Service.GetType(),
 			Category:     this.options.Service.GetCategory(),
 			Version:      this.options.Service.GetVersion(),
@@ -206,8 +208,9 @@ func (this *Consul_Registry) registerSNode(snode *ServiceNode) (err error) {
 		Meta: map[string]string{
 			"tag":          snode.Tag,
 			"ip":           snode.IP,
+			"port":         fmt.Sprintf("%d", snode.Port),
 			"category":     string(snode.Category),
-			"version":      fmt.Sprintf("%f", snode.Version),
+			"version":      snode.Version,
 			"rpcid":        snode.RpcId,
 			"preweight":    fmt.Sprintf("%f", snode.PreWeight),
 			"rpcsubscribe": string(rpcsubscribe),
@@ -238,6 +241,11 @@ func (this *Consul_Registry) addandupdataServiceNode(as *api.AgentService) (sn *
 
 	tag := as.Meta["tag"]
 	ip := as.Meta["ip"]
+	port, err := strconv.ParseInt(as.Meta["port"], 10, 64)
+	if err != nil {
+		log.Errorf("port 读取服务节点异常:%s err:%v", as.Meta["port"], err)
+		return
+	}
 	category := as.Meta["category"]
 	version := as.Meta["version"]
 	rpcid := as.Meta["rpcid"]
@@ -253,6 +261,7 @@ func (this *Consul_Registry) addandupdataServiceNode(as *api.AgentService) (sn *
 		Category:     core.S_Category(category),
 		Id:           as.ID,
 		IP:           ip,
+		Port:         int(port),
 		Version:      version,
 		RpcId:        rpcid,
 		PreWeight:    preweight,

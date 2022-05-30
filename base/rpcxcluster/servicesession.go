@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/liwei1dao/lego/base"
-	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/registry"
 	"github.com/liwei1dao/lego/sys/rpcx"
 	"github.com/smallnest/rpcx/client"
@@ -14,7 +13,7 @@ import (
 func NewServiceSession(node *registry.ServiceNode) (ss base.IRPCXServiceSession, err error) {
 	session := new(ServiceSession)
 	session.node = node
-	session.client, err = rpcx.NewRpcClient(fmt.Sprintf("%s:%d", node.IP, node.PreWeight))
+	session.client, err = rpcx.NewRpcClient(fmt.Sprintf("%s:%d", node.IP, node.Port), node.Id)
 	ss = session
 	return
 }
@@ -30,6 +29,7 @@ func (this *ServiceSession) GetId() string {
 func (this *ServiceSession) GetIp() string {
 	return this.node.IP
 }
+
 func (this *ServiceSession) GetRpcId() string {
 	return this.node.RpcId
 }
@@ -47,15 +47,17 @@ func (this *ServiceSession) SetVersion(v string) {
 func (this *ServiceSession) GetPreWeight() float64 {
 	return this.node.PreWeight
 }
+
 func (this *ServiceSession) SetPreWeight(p float64) {
 	this.node.PreWeight = p
 }
 func (this *ServiceSession) Done() {
 	this.client.Stop()
 }
-func (this *ServiceSession) Call(ctx context.Context, serviceMethod core.Rpc_Key, args interface{}, reply interface{}) error {
+func (this *ServiceSession) Call(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) error {
 	return this.client.Call(ctx, serviceMethod, args, reply)
 }
-func (this *ServiceSession) CallNR(ctx context.Context, serviceMethod core.Rpc_Key, args interface{}, reply interface{}) (*client.Call, error) {
+
+func (this *ServiceSession) Go(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) (*client.Call, error) {
 	return this.client.Go(ctx, serviceMethod, args, reply, nil)
 }
