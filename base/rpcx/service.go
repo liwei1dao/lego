@@ -10,7 +10,6 @@ import (
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
-	"github.com/liwei1dao/lego/lib/modules/monitor"
 	"github.com/liwei1dao/lego/sys/cron"
 	"github.com/liwei1dao/lego/sys/event"
 	"github.com/liwei1dao/lego/sys/log"
@@ -95,11 +94,6 @@ func (this *RPCXService) InitSys() {
 	} else {
 		log.Infof("Sys event Init success !")
 	}
-	if err := cron.OnInit(this.opts.Setting.Sys["cron"]); err != nil {
-		log.Panicf(fmt.Sprintf("Sys cron Init err:%v", err))
-	} else {
-		log.Infof("Sys cron Init success !")
-	}
 	if err := registry.OnInit(this.opts.Setting.Sys["registry"], registry.SetService(this.RPCXService), registry.SetListener(this.RPCXService.(registry.IListener))); err != nil {
 		log.Panicf(fmt.Sprintf("Sys registry Init err:%v", err))
 	} else {
@@ -128,9 +122,7 @@ func (this *RPCXService) Start() (err error) {
 }
 
 func (this *RPCXService) Run(mod ...core.IModule) {
-	this.ServiceMonitor = monitor.NewModule()
 	modules := make([]core.IModule, 0)
-	modules = append(modules, this.ServiceMonitor)
 	modules = append(modules, mod...)
 	this.ServiceBase.Run(modules...)
 }
@@ -203,8 +195,8 @@ func (this *RPCXService) LoseServiceHandlefunc(sId string) {
 	event.TriggerEvent(core.Event_LoseService, sId) //触发发现新的服务事件
 }
 
-func (this *RPCXService) getServiceSessionByType(sType string, sIp string) (ss []base.IClusterServiceSession, err error) {
-	ss = make([]base.IClusterServiceSession, 0)
+func (this *RPCXService) getServiceSessionByType(sType string, sIp string) (ss []base.IRPCXServiceSession, err error) {
+	ss = make([]base.IRPCXServiceSession, 0)
 	if nodes := registry.GetServiceByType(sType); nodes == nil {
 		log.Errorf("获取目标类型 type【%s】ip [%s] 服务集失败", sType, sIp)
 		return nil, err
@@ -212,7 +204,7 @@ func (this *RPCXService) getServiceSessionByType(sType string, sIp string) (ss [
 		if sIp == core.AutoIp {
 			for _, v := range nodes {
 				if s, ok := this.serverList.Load(v.Id); ok {
-					ss = append(ss, s.(base.IClusterServiceSession))
+					ss = append(ss, s.(base.IRPCXServiceSession))
 				} else {
 					s, err = NewServiceSession(v)
 					if err != nil {
@@ -220,7 +212,7 @@ func (this *RPCXService) getServiceSessionByType(sType string, sIp string) (ss [
 						continue
 					} else {
 						this.serverList.Store(v.Id, s)
-						ss = append(ss, s.(base.IClusterServiceSession))
+						ss = append(ss, s.(base.IRPCXServiceSession))
 					}
 				}
 			}
@@ -228,7 +220,7 @@ func (this *RPCXService) getServiceSessionByType(sType string, sIp string) (ss [
 			for _, v := range nodes {
 				if v.IP == sIp {
 					if s, ok := this.serverList.Load(v.Id); ok {
-						ss = append(ss, s.(base.IClusterServiceSession))
+						ss = append(ss, s.(base.IRPCXServiceSession))
 					} else {
 						s, err = NewServiceSession(v)
 						if err != nil {
@@ -236,7 +228,7 @@ func (this *RPCXService) getServiceSessionByType(sType string, sIp string) (ss [
 							continue
 						} else {
 							this.serverList.Store(v.Id, s)
-							ss = append(ss, s.(base.IClusterServiceSession))
+							ss = append(ss, s.(base.IRPCXServiceSession))
 						}
 					}
 				}
@@ -247,7 +239,7 @@ func (this *RPCXService) getServiceSessionByType(sType string, sIp string) (ss [
 }
 
 //默认路由规则
-func (this *RPCXService) DefauleRpcRouteRules(stype string, sip string) (ss base.IClusterServiceSession, err error) {
+func (this *RPCXService) DefauleRpcRouteRules(stype string, sip string) (ss base.IRPCXServiceSession, err error) {
 	if s, e := this.getServiceSessionByType(stype, sip); e != nil {
 		return nil, e
 	} else {
@@ -272,7 +264,7 @@ func (this *RPCXService) DefauleRpcRouteRules(stype string, sip string) (ss base
 					}
 				}
 			})
-			return ss[0].(base.IClusterServiceSession), nil
+			return ss[0].(base.IRPCXServiceSession), nil
 		} else {
 			return nil, fmt.Errorf("未找到IP[%s]类型%s】的服务信息", sip, stype)
 		}

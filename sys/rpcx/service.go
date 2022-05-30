@@ -20,7 +20,7 @@ type Service struct {
 }
 
 func (this *Service) Start() (err error) {
-	err = this.server.Serve("tcp", fmt.Sprintf(":%d", this.options.Port))
+	go this.server.Serve("tcp", fmt.Sprintf(":%d", this.options.Port))
 	return
 }
 

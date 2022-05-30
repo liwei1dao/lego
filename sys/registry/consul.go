@@ -1,9 +1,7 @@
 package registry
 
 import (
-	"encoding/json"
 	"fmt"
-	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -14,7 +12,6 @@ import (
 	"github.com/hashicorp/consul/api/watch"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
-	"github.com/liwei1dao/lego/sys/rpc"
 )
 
 func newConsul(options Options) (sys *Consul_Registry, err error) {
@@ -61,16 +58,15 @@ func (this *Consul_Registry) Start() (err error) {
 		return
 	}
 	if err = this.registerSNode(&ServiceNode{
-		Tag:          this.options.Service.GetTag(),
-		Id:           this.options.Service.GetId(),
-		IP:           this.options.Service.GetIp(),
-		Port:         this.options.Service.GetPort(),
-		Type:         this.options.Service.GetType(),
-		Category:     this.options.Service.GetCategory(),
-		Version:      this.options.Service.GetVersion(),
-		RpcId:        this.options.Service.GetRpcId(),
-		PreWeight:    this.options.Service.GetPreWeight(),
-		RpcSubscribe: this.getRpcInfo(),
+		Tag:       this.options.Service.GetTag(),
+		Id:        this.options.Service.GetId(),
+		IP:        this.options.Service.GetIp(),
+		Port:      this.options.Service.GetPort(),
+		Type:      this.options.Service.GetType(),
+		Category:  this.options.Service.GetCategory(),
+		Version:   this.options.Service.GetVersion(),
+		RpcId:     this.options.Service.GetRpcId(),
+		PreWeight: this.options.Service.GetPreWeight(),
 	}); err != nil {
 		return
 	}
@@ -89,16 +85,15 @@ func (this *Consul_Registry) Stop() (err error) {
 func (this *Consul_Registry) PushServiceInfo() (err error) {
 	if this.isstart {
 		err = this.registerSNode(&ServiceNode{
-			Tag:          this.options.Service.GetTag(),
-			Id:           this.options.Service.GetId(),
-			IP:           this.options.Service.GetIp(),
-			Port:         this.options.Service.GetPort(),
-			Type:         this.options.Service.GetType(),
-			Category:     this.options.Service.GetCategory(),
-			Version:      this.options.Service.GetVersion(),
-			RpcId:        this.options.Service.GetRpcId(),
-			PreWeight:    this.options.Service.GetPreWeight(),
-			RpcSubscribe: this.getRpcInfo(),
+			Tag:       this.options.Service.GetTag(),
+			Id:        this.options.Service.GetId(),
+			IP:        this.options.Service.GetIp(),
+			Port:      this.options.Service.GetPort(),
+			Type:      this.options.Service.GetType(),
+			Category:  this.options.Service.GetCategory(),
+			Version:   this.options.Service.GetVersion(),
+			RpcId:     this.options.Service.GetRpcId(),
+			PreWeight: this.options.Service.GetPreWeight(),
 		})
 	}
 	return
@@ -199,21 +194,19 @@ func (this *Consul_Registry) registerSNode(snode *ServiceNode) (err error) {
 		TTL:                            fmt.Sprintf("%v", time.Second*time.Duration(this.options.Consul_RegisterTTL)),
 		DeregisterCriticalServiceAfter: fmt.Sprintf("%v", deregTTL),
 	}
-	rpcsubscribe, _ := json.Marshal(snode.RpcSubscribe)
 	asr := &api.AgentServiceRegistration{
 		ID:    snode.Id,
 		Name:  snode.Type,
 		Tags:  []string{this.options.Service.GetTag()},
 		Check: check,
 		Meta: map[string]string{
-			"tag":          snode.Tag,
-			"ip":           snode.IP,
-			"port":         fmt.Sprintf("%d", snode.Port),
-			"category":     string(snode.Category),
-			"version":      snode.Version,
-			"rpcid":        snode.RpcId,
-			"preweight":    fmt.Sprintf("%f", snode.PreWeight),
-			"rpcsubscribe": string(rpcsubscribe),
+			"tag":       snode.Tag,
+			"ip":        snode.IP,
+			"port":      fmt.Sprintf("%d", snode.Port),
+			"category":  string(snode.Category),
+			"version":   snode.Version,
+			"rpcid":     snode.RpcId,
+			"preweight": fmt.Sprintf("%f", snode.PreWeight),
 		},
 	}
 	if err := this.client.Agent().ServiceRegister(asr); err != nil {
@@ -224,19 +217,7 @@ func (this *Consul_Registry) registerSNode(snode *ServiceNode) (err error) {
 func (this *Consul_Registry) deregisterSNode() (err error) {
 	return this.client.Agent().ServiceDeregister(this.options.Service.GetId())
 }
-func (this *Consul_Registry) getRpcInfo() (rfs []core.Rpc_Key) {
-	rpcSubscribe := rpc.GetRpcInfo()
-	a := sort.StringSlice{}
-	for _, v := range rpcSubscribe {
-		a = append(a, string(v))
-	}
-	sort.Sort(a)
-	rfs = make([]core.Rpc_Key, len(a))
-	for i, k := range a {
-		rfs[i] = core.Rpc_Key(k)
-	}
-	return
-}
+
 func (this *Consul_Registry) addandupdataServiceNode(as *api.AgentService) (sn *ServiceNode, err error) {
 
 	tag := as.Meta["tag"]
@@ -256,18 +237,16 @@ func (this *Consul_Registry) addandupdataServiceNode(as *api.AgentService) (sn *
 	}
 
 	snode := &ServiceNode{
-		Tag:          tag,
-		Type:         as.Service,
-		Category:     core.S_Category(category),
-		Id:           as.ID,
-		IP:           ip,
-		Port:         int(port),
-		Version:      version,
-		RpcId:        rpcid,
-		PreWeight:    preweight,
-		RpcSubscribe: make([]core.Rpc_Key, 0),
+		Tag:       tag,
+		Type:      as.Service,
+		Category:  core.S_Category(category),
+		Id:        as.ID,
+		IP:        ip,
+		Port:      int(port),
+		Version:   version,
+		RpcId:     rpcid,
+		PreWeight: preweight,
 	}
-	json.Unmarshal([]byte(as.Meta["rpcsubscribe"]), &snode.RpcSubscribe)
 	if h, err := hash.Hash(snode, nil); err == nil {
 		_, ok := this.services[snode.Id]
 		if !ok {
@@ -297,7 +276,6 @@ func (this *Consul_Registry) addandupdataServiceNode(as *api.AgentService) (sn *
 	} else {
 		log.Errorf("registry 校验服务 hash 值异常:%s", err.Error())
 	}
-	this.syncRpcInfo()
 	return
 }
 func (this *Consul_Registry) removeServiceNode(sId string) {
@@ -312,22 +290,8 @@ func (this *Consul_Registry) removeServiceNode(sId string) {
 	delete(this.shash, sId)
 	delete(this.services, sId)
 	this.rlock.Unlock()
-	this.syncRpcInfo()
 	if this.options.Listener != nil { //异步通知
 		go this.options.Listener.LoseServiceHandlefunc(sId)
-	}
-}
-func (this *Consul_Registry) syncRpcInfo() {
-	this.rlock.Lock()
-	defer this.rlock.Unlock()
-	this.rpcsubs = make(map[core.Rpc_Key][]*ServiceNode)
-	for _, v := range this.services {
-		for _, v1 := range v.RpcSubscribe {
-			if _, ok := this.rpcsubs[v1]; !ok {
-				this.rpcsubs[v1] = make([]*ServiceNode, 0)
-			}
-			this.rpcsubs[v1] = append(this.rpcsubs[v1], v)
-		}
 	}
 }
 

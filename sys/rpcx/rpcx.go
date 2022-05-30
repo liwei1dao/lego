@@ -1,14 +1,10 @@
 package rpcx
 
 func newSys(options Options) (sys *RPCX, err error) {
-	var (
-		service *Service
-	)
 	sys = &RPCX{
 		options: options,
+		service: newService(options),
 	}
-	service = &Service{}
-	sys.service = service
 	return
 }
 

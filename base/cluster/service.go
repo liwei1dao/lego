@@ -547,14 +547,6 @@ func (this *ClusterService) RpcInvokeByIps(sIp []string, sType string, rkey core
 	return
 }
 
-func (this *ClusterService) ReleaseRpc(rkey core.Rpc_Key, arg ...interface{}) {
-	defer lego.Recover(fmt.Sprintf("ReleaseRpc rkey:%v arg %v", rkey, arg))
-	rpcf := registry.GetRpcSubById(rkey)
-	for _, v := range rpcf {
-		this.RpcInvokeById(v.Id, rkey, false, arg...)
-	}
-}
-
 func (this *ClusterService) Register(id core.Rpc_Key, f interface{}) {
 	rpc.Register(id, f)
 }
@@ -563,14 +555,22 @@ func (this *ClusterService) RegisterGO(id core.Rpc_Key, f interface{}) {
 	rpc.RegisterGO(id, f)
 }
 
+func (this *ClusterService) ReleaseRpc(rkey core.Rpc_Key, arg ...interface{}) {
+	defer lego.Recover(fmt.Sprintf("ReleaseRpc rkey:%v arg %v", rkey, arg))
+	rpcf := registry.GetRpcSubById(rkey)
+	for _, v := range rpcf {
+		this.RpcInvokeById(v.Id, rkey, false, arg...)
+	}
+}
+
 func (this *ClusterService) Subscribe(id core.Rpc_Key, f interface{}) (err error) {
 	rpc.RegisterGO(id, f)
-	err = registry.PushServiceInfo()
+	// err = registry.PushServiceInfo()
 	return
 }
 
 func (this *ClusterService) UnSubscribe(id core.Rpc_Key, f interface{}) (err error) {
 	rpc.UnRegister(id, this.GetId())
-	err = registry.PushServiceInfo()
+	// err = registry.PushServiceInfo()
 	return
 }

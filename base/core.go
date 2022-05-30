@@ -53,8 +53,9 @@ type IClusterService interface {
 	ReleaseRpc(rkey core.Rpc_Key, arg ...interface{})                                                                                      //发布Rpc
 	Register(id core.Rpc_Key, f interface{})                                                                                               //注册RPC远程方法
 	RegisterGO(id core.Rpc_Key, f interface{})                                                                                             //注册RPC远程方法
-	Subscribe(id core.Rpc_Key, f interface{}) (err error)                                                                                  //订阅Rpc
-	UnSubscribe(id core.Rpc_Key, f interface{}) (err error)                                                                                //订阅Rpc
+	//废弃此方法
+	Subscribe(id core.Rpc_Key, f interface{}) (err error)   //订阅Rpc
+	UnSubscribe(id core.Rpc_Key, f interface{}) (err error) //订阅Rpc
 }
 
 type IRPCXServiceSession interface {

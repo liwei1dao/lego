@@ -9,16 +9,15 @@ type (
 		LoseServiceHandlefunc(sId string)
 	}
 	ServiceNode struct {
-		Tag          string          `json:"Tag"`          //服务集群标签
-		Type         string          `json:"Type"`         //服务类型
-		Category     core.S_Category `json:"Category"`     //服务列别
-		Id           string          `json:"Id"`           //服务Id
-		Version      string          `json:"Version"`      //服务版本
-		IP           string          `json:"Ip"`           //服务Ip
-		Port         int             `json:"Port"`         //端口
-		RpcId        string          `json:"RpcId"`        //服务通信Id
-		PreWeight    float64         `json:"PreWeight"`    //服务负载权重
-		RpcSubscribe []core.Rpc_Key  `json:"RpcSubscribe"` //服务开放接口
+		Tag       string          `json:"Tag"`       //服务集群标签
+		Type      string          `json:"Type"`      //服务类型
+		Category  core.S_Category `json:"Category"`  //服务列别
+		Id        string          `json:"Id"`        //服务Id
+		Version   string          `json:"Version"`   //服务版本
+		IP        string          `json:"Ip"`        //服务Ip
+		Port      int             `json:"Port"`      //端口
+		RpcId     string          `json:"RpcId"`     //服务通信Id
+		PreWeight float64         `json:"PreWeight"` //服务负载权重
 	}
 
 	ISys interface {
@@ -75,4 +74,8 @@ func GetServiceByCategory(category core.S_Category) (n []*ServiceNode) {
 
 func GetRpcSubById(rId core.Rpc_Key) (n []*ServiceNode) {
 	return defsys.GetRpcSubById(rId)
+}
+
+func SubscribeRpc(rpc core.Rpc_Key) {
+
 }

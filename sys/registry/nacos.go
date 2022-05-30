@@ -2,15 +2,12 @@ package registry
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"sort"
 	"sync"
 	"time"
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
-	"github.com/liwei1dao/lego/sys/rpc"
 	hash "github.com/mitchellh/hashstructure"
 	"github.com/nacos-group/nacos-sdk-go/clients"
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
@@ -84,16 +81,15 @@ func (this *Nacos_Registry) Start() (err error) {
 		return
 	}
 	if err = this.registerSNode(&ServiceNode{
-		Tag:          this.options.Service.GetTag(),
-		Id:           this.options.Service.GetId(),
-		IP:           this.options.Service.GetIp(),
-		Port:         this.options.Service.GetPort(),
-		Type:         this.options.Service.GetType(),
-		Category:     this.options.Service.GetCategory(),
-		Version:      this.options.Service.GetVersion(),
-		RpcId:        this.options.Service.GetRpcId(),
-		PreWeight:    this.options.Service.GetPreWeight(),
-		RpcSubscribe: this.getRpcInfo(),
+		Tag:       this.options.Service.GetTag(),
+		Id:        this.options.Service.GetId(),
+		IP:        this.options.Service.GetIp(),
+		Port:      this.options.Service.GetPort(),
+		Type:      this.options.Service.GetType(),
+		Category:  this.options.Service.GetCategory(),
+		Version:   this.options.Service.GetVersion(),
+		RpcId:     this.options.Service.GetRpcId(),
+		PreWeight: this.options.Service.GetPreWeight(),
 	}); err != nil {
 		return
 	}
@@ -114,16 +110,15 @@ func (this *Nacos_Registry) Stop() (err error) {
 func (this *Nacos_Registry) PushServiceInfo() (err error) {
 	if this.isstart {
 		err = this.registerSNode(&ServiceNode{
-			Tag:          this.options.Service.GetTag(),
-			Id:           this.options.Service.GetId(),
-			IP:           this.options.Service.GetIp(),
-			Port:         this.options.Service.GetPort(),
-			Type:         this.options.Service.GetType(),
-			Category:     this.options.Service.GetCategory(),
-			Version:      this.options.Service.GetVersion(),
-			RpcId:        this.options.Service.GetRpcId(),
-			PreWeight:    this.options.Service.GetPreWeight(),
-			RpcSubscribe: this.getRpcInfo(),
+			Tag:       this.options.Service.GetTag(),
+			Id:        this.options.Service.GetId(),
+			IP:        this.options.Service.GetIp(),
+			Port:      this.options.Service.GetPort(),
+			Type:      this.options.Service.GetType(),
+			Category:  this.options.Service.GetCategory(),
+			Version:   this.options.Service.GetVersion(),
+			RpcId:     this.options.Service.GetRpcId(),
+			PreWeight: this.options.Service.GetPreWeight(),
 		})
 	}
 	return
@@ -293,7 +288,6 @@ func (this *Nacos_Registry) registerSNode(snode *ServiceNode) (err error) {
 	var (
 	// success bool
 	)
-	rpcsubscribe, _ := json.Marshal(snode.RpcSubscribe)
 	this.deregisterSNode()
 	_, err = this.client.RegisterInstance(vo.RegisterInstanceParam{
 		Ip:          snode.IP,
@@ -305,13 +299,12 @@ func (this *Nacos_Registry) registerSNode(snode *ServiceNode) (err error) {
 		Healthy:     true,
 		Ephemeral:   true,
 		Metadata: map[string]string{
-			"id":           snode.Id,
-			"tag":          snode.Tag,
-			"type":         string(snode.Type),
-			"category":     string(snode.Category),
-			"version":      fmt.Sprintf("%v", snode.Version),
-			"rpcid":        snode.RpcId,
-			"rpcsubscribe": string(rpcsubscribe),
+			"id":       snode.Id,
+			"tag":      snode.Tag,
+			"type":     string(snode.Type),
+			"category": string(snode.Category),
+			"version":  fmt.Sprintf("%v", snode.Version),
+			"rpcid":    snode.RpcId,
 		},
 	})
 	return
@@ -335,18 +328,16 @@ func (this *Nacos_Registry) addandupdataServiceNode(as model.Instance) (sn *Serv
 	version = as.Metadata["version"]
 	rpcid = as.Metadata["rpcid"]
 	snode = &ServiceNode{
-		Tag:          as.Metadata["tag"],
-		Type:         as.Metadata["type"],
-		Category:     core.S_Category(as.Metadata["category"]),
-		Id:           as.Metadata["id"],
-		IP:           as.Ip,
-		Port:         int(as.Port),
-		Version:      version,
-		RpcId:        rpcid,
-		PreWeight:    as.Weight,
-		RpcSubscribe: make([]core.Rpc_Key, 0),
+		Tag:       as.Metadata["tag"],
+		Type:      as.Metadata["type"],
+		Category:  core.S_Category(as.Metadata["category"]),
+		Id:        as.Metadata["id"],
+		IP:        as.Ip,
+		Port:      int(as.Port),
+		Version:   version,
+		RpcId:     rpcid,
+		PreWeight: as.Weight,
 	}
-	json.Unmarshal([]byte(as.Metadata["rpcsubscribe"]), &snode.RpcSubscribe)
 	if h, err = hash.Hash(snode, nil); err == nil {
 		_, ok := this.services[snode.Id]
 		if !ok {
@@ -383,7 +374,6 @@ func (this *Nacos_Registry) addandupdataServiceNode(as model.Instance) (sn *Serv
 	} else {
 		log.Errorf("registry 校验服务 hash 值异常:%s", err.Error())
 	}
-	this.syncRpcInfo()
 	return
 }
 func (this *Nacos_Registry) removeServiceNode(sId string) {
@@ -400,37 +390,10 @@ func (this *Nacos_Registry) removeServiceNode(sId string) {
 	delete(this.subscribe, sId)
 	delete(this.shash, sId)
 	this.rlock.Unlock()
-	this.syncRpcInfo()
 	this.client.Unsubscribe(sub)
 	if this.options.Listener != nil { //异步通知
 		go this.options.Listener.LoseServiceHandlefunc(sId)
 	}
-}
-func (this *Nacos_Registry) syncRpcInfo() {
-	this.rlock.Lock()
-	defer this.rlock.Unlock()
-	this.rpcsubs = make(map[core.Rpc_Key][]*ServiceNode)
-	for _, v := range this.services {
-		for _, v1 := range v.RpcSubscribe {
-			if _, ok := this.rpcsubs[v1]; !ok {
-				this.rpcsubs[v1] = make([]*ServiceNode, 0)
-			}
-			this.rpcsubs[v1] = append(this.rpcsubs[v1], v)
-		}
-	}
-}
-func (this *Nacos_Registry) getRpcInfo() (rfs []core.Rpc_Key) {
-	rpcSubscribe := rpc.GetRpcInfo()
-	a := sort.StringSlice{}
-	for _, v := range rpcSubscribe {
-		a = append(a, string(v))
-	}
-	sort.Sort(a)
-	rfs = make([]core.Rpc_Key, len(a))
-	for i, k := range a {
-		rfs[i] = core.Rpc_Key(k)
-	}
-	return
 }
 
 func (this *Nacos_Registry) subscribecallback(services []model.SubscribeService, err error) {
