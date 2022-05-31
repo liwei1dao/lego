@@ -22,12 +22,11 @@ import (
 
 type RPCXService struct {
 	cbase.ServiceBase
-	opts           *Options
-	serverList     sync.Map
-	RPCXService    base.IRPCXService
-	ServiceMonitor core.IServiceMonitor
-	IsInClustered  bool
-	lock           sync.RWMutex //服务锁
+	opts          *Options
+	serverList    sync.Map
+	rpcxService   base.IRPCXService
+	IsInClustered bool
+	lock          sync.RWMutex //服务锁
 }
 
 func (this *RPCXService) GetTag() string {
@@ -67,10 +66,6 @@ func (this *RPCXService) SetPreWeight(weight int32) {
 
 }
 
-func (this *RPCXService) GetServiceMonitor() core.IServiceMonitor {
-	return this.ServiceMonitor
-}
-
 func (this *RPCXService) Options() *Options {
 	return this.opts
 }
@@ -79,7 +74,7 @@ func (this *RPCXService) Configure(opts ...Option) {
 }
 
 func (this *RPCXService) Init(service core.IService) (err error) {
-	this.RPCXService = service.(base.IRPCXService)
+	this.rpcxService = service.(base.IRPCXService)
 	return this.ServiceBase.Init(service)
 }
 
@@ -94,7 +89,7 @@ func (this *RPCXService) InitSys() {
 	} else {
 		log.Infof("Sys event Init success !")
 	}
-	if err := registry.OnInit(this.opts.Setting.Sys["registry"], registry.SetService(this.RPCXService), registry.SetListener(this.RPCXService.(registry.IListener))); err != nil {
+	if err := registry.OnInit(this.opts.Setting.Sys["registry"], registry.SetService(this.rpcxService), registry.SetListener(this.rpcxService.(registry.IListener))); err != nil {
 		log.Panicf(fmt.Sprintf("Sys registry Init err:%v", err))
 	} else {
 		log.Infof("Sys registry Init success !")
@@ -339,7 +334,7 @@ func (this *RPCXService) RpcCallByType(sType string, serviceMethod string, ctx c
 	defer lego.Recover(fmt.Sprintf("RpcCallByType sType:%s rkey:%s arg %v", sType, serviceMethod, args))
 	this.lock.RLock()
 	defer this.lock.RUnlock()
-	ss, err := this.RPCXService.DefauleRpcRouteRules(sType, core.AutoIp)
+	ss, err := this.rpcxService.DefauleRpcRouteRules(sType, core.AutoIp)
 	if err != nil {
 		log.Errorf("未找到目标服务【%s】节点 err:%v", sType, err)
 		return err
@@ -352,7 +347,7 @@ func (this *RPCXService) RpcGoByType(sType string, serviceMethod string, ctx con
 	defer lego.Recover(fmt.Sprintf("RpcCallByType sType:%s rkey:%s arg %v", sType, serviceMethod, args))
 	this.lock.RLock()
 	defer this.lock.RUnlock()
-	ss, err := this.RPCXService.DefauleRpcRouteRules(sType, core.AutoIp)
+	ss, err := this.rpcxService.DefauleRpcRouteRules(sType, core.AutoIp)
 	if err != nil {
 		log.Errorf("未找到目标服务【%s】节点 err:%v", sType, err)
 		return nil, err

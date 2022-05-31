@@ -46,7 +46,7 @@ require (
 	github.com/pkg/sftp v1.10.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/xid v1.3.0
-	github.com/satori/go.uuid v1.2.0 // indirect
+	github.com/satori/go.uuid v1.2.0
 	github.com/shirou/gopsutil v3.20.12+incompatible
 	github.com/smallnest/rpcx v1.7.4
 	github.com/smartystreets/assertions v1.1.0 // indirect

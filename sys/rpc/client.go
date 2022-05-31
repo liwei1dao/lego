@@ -71,7 +71,7 @@ func (this *RPCClient) CallNR(_func string, params ...interface{}) (err error) {
 }
 
 func (this *RPCClient) CallArgs(_func string, ArgsType []string, args [][]byte) (interface{}, string) {
-	var correlation_id = id.Rand().Hex()
+	var correlation_id = id.NewUUId()
 	rpcInfo := &core.RPCInfo{
 		Fn:       *proto.String(_func),
 		Reply:    *proto.Bool(true),
@@ -112,7 +112,7 @@ func (this *RPCClient) CallArgs(_func string, ArgsType []string, args [][]byte) 
 }
 
 func (this *RPCClient) CallNRArgs(_func string, ArgsType []string, args [][]byte) (err error) {
-	var correlation_id = id.Rand().Hex()
+	var correlation_id = id.NewUUId()
 	rpcInfo := &core.RPCInfo{
 		Fn:       *proto.String(_func),
 		Reply:    *proto.Bool(false),
