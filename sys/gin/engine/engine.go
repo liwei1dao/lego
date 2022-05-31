@@ -272,7 +272,7 @@ func (this *Engine) addRoute(method, path string, handlers HandlersChain) {
 	if this.sys.Debug() {
 		nuHandlers := len(handlers)
 		handlerName := nameOfFunction(handlers.Last())
-		this.sys.Debugf("%-6s %-25s --> %s (%d handlers)", method, path, handlerName, nuHandlers)
+		this.sys.Debugf("%s:%s --> %s handlers:%d", method, path, handlerName, nuHandlers)
 	}
 	root := this.trees.get(method)
 	if root == nil {

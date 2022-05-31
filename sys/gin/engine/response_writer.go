@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"bufio"
+	"net"
 	"net/http"
 
 	"github.com/liwei1dao/lego/sys/log"
@@ -13,6 +15,7 @@ const (
 
 type IResponseWriter interface {
 	http.ResponseWriter
+	http.Hijacker
 	http.Flusher
 	http.CloseNotifier
 	/*
@@ -61,6 +64,14 @@ func (this *ResponseWriter) Written() bool {
 	return this.size != noWritten
 }
 
+// Hijack implements the http.Hijacker interface.
+func (this *ResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if this.size < 0 {
+		this.size = 0
+	}
+	return this.ResponseWriter.(http.Hijacker).Hijack()
+}
+
 func (this *ResponseWriter) CloseNotify() <-chan bool {
 	return this.ResponseWriter.(http.CloseNotifier).CloseNotify()
 }
@@ -75,4 +86,10 @@ func (this *ResponseWriter) WriteHeaderNow() {
 		this.size = 0
 		this.ResponseWriter.WriteHeader(this.status)
 	}
+}
+func (this *ResponseWriter) Pusher() (pusher http.Pusher) {
+	if pusher, ok := this.ResponseWriter.(http.Pusher); ok {
+		return pusher
+	}
+	return nil
 }

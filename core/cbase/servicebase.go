@@ -172,6 +172,6 @@ func (this *ServiceBase) GetComp(CompName core.S_Comps) (comp core.IServiceComp,
 	if v, ok := this.comps[CompName]; ok {
 		return v, nil
 	} else {
-		return nil, fmt.Errorf("未装配组件【%s】", CompName)
+		return nil, fmt.Errorf("Service 未装配组件【%s】", CompName)
 	}
 }

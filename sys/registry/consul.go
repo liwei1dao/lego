@@ -75,6 +75,7 @@ func (this *Consul_Registry) Start() (err error) {
 	this.isstart = true
 	return
 }
+
 func (this *Consul_Registry) Stop() (err error) {
 	this.closeSig <- true
 	this.isstart = false
@@ -278,6 +279,7 @@ func (this *Consul_Registry) addandupdataServiceNode(as *api.AgentService) (sn *
 	}
 	return
 }
+
 func (this *Consul_Registry) removeServiceNode(sId string) {
 	this.rlock.RLock()
 	_, ok := this.services[sId]
@@ -329,7 +331,6 @@ func (this *Consul_Registry) shandler(idx uint64, data interface{}) {
 		if _, ok := services[k]; !ok { //不存在了
 			v.Stop()
 			delete(this.watchers, k)
-
 			for k1, v1 := range temp {
 				if v1.Type == k {
 					this.removeServiceNode(k1)
