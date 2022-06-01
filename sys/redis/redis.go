@@ -2,10 +2,11 @@ package redis
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"time"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/liwei1dao/lego/sys/redis/cluster"
@@ -74,12 +75,12 @@ func (this *Redis) UnLock(key string) (err error) {
 ///数据编码
 func (this *Redis) Encode(value interface{}) (result []byte, err error) {
 	if this.options.RedisStorageType == JsonData {
-		result, err = json.Marshal(value)
+		result, err = jsoniter.Marshal(value)
 	} else {
 		if _, ok := value.(proto.Message); ok {
 			result, err = proto.Marshal(value.(proto.Message))
 		} else {
-			result, err = json.Marshal(value)
+			result, err = jsoniter.Marshal(value)
 		}
 	}
 	return
@@ -87,12 +88,12 @@ func (this *Redis) Encode(value interface{}) (result []byte, err error) {
 
 func (this *Redis) Decode(value []byte, result interface{}) (err error) {
 	if this.options.RedisStorageType == JsonData {
-		err = json.Unmarshal(value, result)
+		err = jsoniter.Unmarshal(value, result)
 	} else {
 		if _, ok := result.(proto.Message); ok {
 			err = proto.Unmarshal(value, result.(proto.Message))
 		} else {
-			err = json.Unmarshal(value, result)
+			err = jsoniter.Unmarshal(value, result)
 		}
 	}
 	return

@@ -35,6 +35,7 @@ require (
 	github.com/jlaffaye/ftp v0.0.0-20220309012535-813c8a838452
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
+	github.com/json-iterator/go v1.1.12
 	github.com/lib/pq v1.9.0 // indirect
 	github.com/liwei1dao/dm v0.0.0-20211103094420-938edf103cf0
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
