@@ -206,32 +206,32 @@ func (this *LiveGo) GetDebug() bool {
 ///日志***********************************************************************
 func (this *LiveGo) Debugf(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.options.Log.Debugf("[SYS LiveGo] "+format, a)
+		this.options.Log.Debugf("[SYS LiveGo] "+format, a...)
 	}
 }
 func (this *LiveGo) Infof(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.options.Log.Infof("[SYS LiveGo] "+format, a)
+		this.options.Log.Infof("[SYS LiveGo] "+format, a...)
 	}
 }
 func (this *LiveGo) Warnf(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.options.Log.Warnf("[SYS LiveGo] "+format, a)
+		this.options.Log.Warnf("[SYS LiveGo] "+format, a...)
 	}
 }
 func (this *LiveGo) Errorf(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.options.Log.Errorf("[SYS LiveGo] "+format, a)
+		this.options.Log.Errorf("[SYS LiveGo] "+format, a...)
 	}
 }
 func (this *LiveGo) Panicf(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.options.Log.Panicf("[SYS LiveGo] "+format, a)
+		this.options.Log.Panicf("[SYS LiveGo] "+format, a...)
 	}
 }
 func (this *LiveGo) Fatalf(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.options.Log.Fatalf("[SYS LiveGo] "+format, a)
+		this.options.Log.Fatalf("[SYS LiveGo] "+format, a...)
 	}
 }
 

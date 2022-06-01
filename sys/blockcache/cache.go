@@ -104,31 +104,31 @@ func (this *Cache) run() {
 ///日志***********************************************************************
 func (this *Cache) Debugf(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.options.Log.Debugf("[SYS BlockCache] "+format, a)
+		this.options.Log.Debugf("[SYS BlockCache] "+format, a...)
 	}
 }
 func (this *Cache) Infof(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.options.Log.Infof("[SYS BlockCache] "+format, a)
+		this.options.Log.Infof("[SYS BlockCache] "+format, a...)
 	}
 }
 func (this *Cache) Warnf(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.options.Log.Warnf("[SYS BlockCache] "+format, a)
+		this.options.Log.Warnf("[SYS BlockCache] "+format, a...)
 	}
 }
 func (this *Cache) Errorf(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.options.Log.Errorf("[SYS BlockCache] "+format, a)
+		this.options.Log.Errorf("[SYS BlockCache] "+format, a...)
 	}
 }
 func (this *Cache) Panicf(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.options.Log.Panicf("[SYS BlockCache] "+format, a)
+		this.options.Log.Panicf("[SYS BlockCache] "+format, a...)
 	}
 }
 func (this *Cache) Fatalf(format string, a ...interface{}) {
 	if this.options.Debug {
-		this.options.Log.Fatalf("[SYS BlockCache] "+format, a)
+		this.options.Log.Fatalf("[SYS BlockCache] "+format, a...)
 	}
 }

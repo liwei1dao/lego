@@ -37,7 +37,7 @@ func (this *DefMessage) GetBuffer() []byte {
 }
 
 func (this *DefMessage) ToStriing() string {
-	return fmt.Sprintf("ComId：%d MsgId:%d MsgLen:%d", this.ComId, this.MsgId, this.MsgLen)
+	return fmt.Sprintf("ComId:%d MsgId:%d MsgLen:%d", this.ComId, this.MsgId, this.MsgLen)
 }
 
 //默认消息工厂
