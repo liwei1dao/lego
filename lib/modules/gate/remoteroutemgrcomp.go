@@ -8,7 +8,6 @@ import (
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/sys/proto"
-	"github.com/liwei1dao/lego/sys/registry"
 )
 
 type RemoteRouteMgrComp struct {
@@ -49,7 +48,7 @@ func (this *RemoteRouteMgrComp) RegisterRoute(comId uint16, sId, sType string) (
 	// if e != nil {
 	// 	return "", fmt.Sprintf("未发现目标服务【%s】", sId)
 	// }
-	snode := &registry.ServiceNode{
+	snode := &core.ServiceNode{
 		Id:   sId,
 		Type: sType,
 	}

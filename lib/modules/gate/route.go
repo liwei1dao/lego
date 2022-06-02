@@ -8,10 +8,9 @@ import (
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/proto"
-	"github.com/liwei1dao/lego/sys/registry"
 )
 
-func NewRemoteRoute(service base.IClusterService, comId uint16, f func(service base.IClusterService, data map[string]interface{}) (s core.IUserSession, err error), sNode registry.ServiceNode) *RemoteRoute {
+func NewRemoteRoute(service base.IClusterService, comId uint16, f func(service base.IClusterService, data map[string]interface{}) (s core.IUserSession, err error), sNode core.ServiceNode) *RemoteRoute {
 	r := &RemoteRoute{
 		Service:     service,
 		ComId:       comId,
@@ -45,7 +44,7 @@ func (this *RemoteRoute) Count() int32 {
 }
 
 //注册远程路由
-func (this *RemoteRoute) RegisterRoute(sNode registry.ServiceNode) (err error) {
+func (this *RemoteRoute) RegisterRoute(sNode core.ServiceNode) (err error) {
 	defer this.slock.Unlock()
 	this.slock.Lock()
 	if this.ServiceType != sNode.Type {

@@ -179,7 +179,7 @@ func (this *Consul_Registry) getServices() (err error) {
 	}
 	return err
 }
-func (this *Consul_Registry) registerSNode(snode *ServiceNode) (err error) {
+func (this *Consul_Registry) registerSNode(snode *core.ServiceNode) (err error) {
 	h, err := hash.Hash(snode, nil)
 	if err != nil {
 		return err
@@ -219,7 +219,7 @@ func (this *Consul_Registry) deregisterSNode() (err error) {
 	return this.client.Agent().ServiceDeregister(this.options.Service.GetId())
 }
 
-func (this *Consul_Registry) addandupdataServiceNode(as *api.AgentService) (sn *ServiceNode, err error) {
+func (this *Consul_Registry) addandupdataServiceNode(as *api.AgentService) (sn *core.ServiceNode, err error) {
 
 	tag := as.Meta["tag"]
 	ip := as.Meta["ip"]
@@ -237,7 +237,7 @@ func (this *Consul_Registry) addandupdataServiceNode(as *api.AgentService) (sn *
 		return
 	}
 
-	snode := &ServiceNode{
+	snode := &core.ServiceNode{
 		Tag:       tag,
 		Type:      as.Service,
 		Category:  core.S_Category(category),
@@ -321,7 +321,7 @@ func (this *Consul_Registry) shandler(idx uint64, data interface{}) {
 			}
 		}
 	}
-	temp := make(map[string]*ServiceNode)
+	temp := make(map[string]*core.ServiceNode)
 	this.rlock.RLock()
 	for k, v := range this.services {
 		temp[k] = v

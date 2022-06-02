@@ -11,7 +11,6 @@ import (
 	"github.com/liwei1dao/lego/sys/event"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/proto"
-	"github.com/liwei1dao/lego/sys/registry"
 )
 
 type SComp_GateRouteComp struct {
@@ -58,7 +57,7 @@ func (this *SComp_GateRouteComp) registergateroute() {
 注意
 ”GateService“ 这里是判断发现的服务是否是提供网关注册服务的服务
 */
-func (this *SComp_GateRouteComp) findnewservice(node registry.ServiceNode) {
+func (this *SComp_GateRouteComp) findnewservice(node core.ServiceNode) {
 	if len(this.Routes) > 0 && node.Category == core.S_Category_GateService {
 		for k, _ := range this.Routes {
 			log.Debugf("向网关【%s】服务器注册服务comId:%d", node.Id, k)

@@ -17,6 +17,18 @@ type ISingleService interface {
 	core.IService
 }
 
+type IServiceSession interface {
+	GetId() string
+	GetIp() string
+	GetRpcId() string
+	GetType() string
+	GetVersion() string
+	SetVersion(v string)
+	GetPreWeight() float64
+	SetPreWeight(p float64)
+	Done()
+}
+
 type IClusterServiceBase interface {
 	core.IService
 	GetTag() string               //获取集群标签
@@ -27,15 +39,7 @@ type IClusterServiceBase interface {
 }
 
 type IClusterServiceSession interface {
-	GetId() string
-	GetIp() string
-	GetRpcId() string
-	GetType() string
-	GetVersion() string
-	SetVersion(v string)
-	GetPreWeight() float64
-	SetPreWeight(p float64)
-	Done()
+	IServiceSession
 	CallNR(_func core.Rpc_Key, params ...interface{}) (err error)
 	Call(_func core.Rpc_Key, params ...interface{}) (interface{}, error)
 }
@@ -58,15 +62,7 @@ type IClusterService interface {
 }
 
 type IRPCXServiceSession interface {
-	GetId() string
-	GetIp() string
-	GetRpcId() string
-	GetType() string
-	GetVersion() string
-	SetVersion(v string)
-	GetPreWeight() float64
-	SetPreWeight(p float64)
-	Done()
+	IServiceSession
 	Call(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) error
 	Go(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) (*client.Call, error)
 }

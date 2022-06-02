@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/liwei1dao/lego/base"
-	"github.com/liwei1dao/lego/sys/registry"
+	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/rpcx"
 	"github.com/smallnest/rpcx/client"
 )
 
-func NewServiceSession(node *registry.ServiceNode) (ss base.IRPCXServiceSession, err error) {
+func NewServiceSession(node *core.ServiceNode) (ss base.IRPCXServiceSession, err error) {
 	session := new(ServiceSession)
 	session.node = node
 	session.client, err = rpcx.NewRpcClient(fmt.Sprintf("%s:%d", node.IP, node.Port), node.Id)
@@ -19,7 +19,7 @@ func NewServiceSession(node *registry.ServiceNode) (ss base.IRPCXServiceSession,
 }
 
 type ServiceSession struct {
-	node   *registry.ServiceNode
+	node   *core.ServiceNode
 	client rpcx.IRPCXClient
 }
 

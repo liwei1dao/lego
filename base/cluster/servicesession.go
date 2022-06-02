@@ -3,11 +3,10 @@ package cluster
 import (
 	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/sys/registry"
 	"github.com/liwei1dao/lego/sys/rpc"
 )
 
-func NewServiceSession(node *registry.ServiceNode) (ss base.IClusterServiceSession, err error) {
+func NewServiceSession(node *core.ServiceNode) (ss base.IClusterServiceSession, err error) {
 	session := new(ServiceSession)
 	session.node = node
 	session.client, err = rpc.NewRpcClient(node.Id, node.RpcId)
@@ -16,7 +15,7 @@ func NewServiceSession(node *registry.ServiceNode) (ss base.IClusterServiceSessi
 }
 
 type ServiceSession struct {
-	node   *registry.ServiceNode
+	node   *core.ServiceNode
 	client rpc.IRpcClient
 }
 
