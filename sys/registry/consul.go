@@ -31,8 +31,8 @@ func newConsul(options Options) (sys *Consul_Registry, err error) {
 	sys.snodeWP.Handler = sys.shandler
 	sys.options.Consul_Addr = config.Address
 	sys.shash = make(map[string]uint64)
-	sys.services = make(map[string]*ServiceNode)
-	sys.rpcsubs = make(map[core.Rpc_Key][]*ServiceNode)
+	sys.services = make(map[string]*core.ServiceNode)
+	sys.rpcsubs = make(map[core.Rpc_Key][]*core.ServiceNode)
 	sys.watchers = make(map[string]*watch.Plan)
 	sys.closeSig = make(chan bool)
 	sys.isstart = false
@@ -47,9 +47,9 @@ type Consul_Registry struct {
 	closeSig chan bool
 	shash    map[string]uint64
 	slock    sync.RWMutex
-	services map[string]*ServiceNode
+	services map[string]*core.ServiceNode
 	rlock    sync.RWMutex
-	rpcsubs  map[core.Rpc_Key][]*ServiceNode
+	rpcsubs  map[core.Rpc_Key][]*core.ServiceNode
 	watchers map[string]*watch.Plan
 }
 
@@ -57,7 +57,7 @@ func (this *Consul_Registry) Start() (err error) {
 	if err = this.getServices(); err != nil {
 		return
 	}
-	if err = this.registerSNode(&ServiceNode{
+	if err = this.registerSNode(&core.ServiceNode{
 		Tag:       this.options.Service.GetTag(),
 		Id:        this.options.Service.GetId(),
 		IP:        this.options.Service.GetIp(),
@@ -85,7 +85,7 @@ func (this *Consul_Registry) Stop() (err error) {
 }
 func (this *Consul_Registry) PushServiceInfo() (err error) {
 	if this.isstart {
-		err = this.registerSNode(&ServiceNode{
+		err = this.registerSNode(&core.ServiceNode{
 			Tag:       this.options.Service.GetTag(),
 			Id:        this.options.Service.GetId(),
 			IP:        this.options.Service.GetIp(),
@@ -99,7 +99,7 @@ func (this *Consul_Registry) PushServiceInfo() (err error) {
 	}
 	return
 }
-func (this *Consul_Registry) GetServiceById(sId string) (n *ServiceNode, err error) {
+func (this *Consul_Registry) GetServiceById(sId string) (n *core.ServiceNode, err error) {
 	this.slock.RLock()
 	n, ok := this.services[sId]
 	this.slock.RUnlock()
@@ -108,10 +108,10 @@ func (this *Consul_Registry) GetServiceById(sId string) (n *ServiceNode, err err
 	}
 	return
 }
-func (this *Consul_Registry) GetServiceByType(sType string) (n []*ServiceNode) {
+func (this *Consul_Registry) GetServiceByType(sType string) (n []*core.ServiceNode) {
 	this.slock.RLock()
 	defer this.slock.RUnlock()
-	n = make([]*ServiceNode, 0)
+	n = make([]*core.ServiceNode, 0)
 	for _, v := range this.services {
 		if v.Type == sType {
 			n = append(n, v)
@@ -119,19 +119,19 @@ func (this *Consul_Registry) GetServiceByType(sType string) (n []*ServiceNode) {
 	}
 	return
 }
-func (this *Consul_Registry) GetAllServices() (n []*ServiceNode) {
+func (this *Consul_Registry) GetAllServices() (n []*core.ServiceNode) {
 	this.slock.RLock()
 	defer this.slock.RUnlock()
-	n = make([]*ServiceNode, 0)
+	n = make([]*core.ServiceNode, 0)
 	for _, v := range this.services {
 		n = append(n, v)
 	}
 	return
 }
-func (this *Consul_Registry) GetServiceByCategory(category core.S_Category) (n []*ServiceNode) {
+func (this *Consul_Registry) GetServiceByCategory(category core.S_Category) (n []*core.ServiceNode) {
 	this.slock.RLock()
 	defer this.slock.RUnlock()
-	n = make([]*ServiceNode, 0)
+	n = make([]*core.ServiceNode, 0)
 	for _, v := range this.services {
 		if v.Category == category {
 			n = append(n, v)
@@ -139,8 +139,8 @@ func (this *Consul_Registry) GetServiceByCategory(category core.S_Category) (n [
 	}
 	return
 }
-func (this *Consul_Registry) GetRpcSubById(rId core.Rpc_Key) (n []*ServiceNode) {
-	n = make([]*ServiceNode, 0)
+func (this *Consul_Registry) GetRpcSubById(rId core.Rpc_Key) (n []*core.ServiceNode) {
+	n = make([]*core.ServiceNode, 0)
 	this.rlock.RLock()
 	d, ok := this.rpcsubs[rId]
 	this.rlock.RUnlock()
@@ -363,7 +363,7 @@ func (this *Consul_Registry) snodehandler(idx uint64, data interface{}) {
 		}
 	}
 
-	temp := make(map[string]*ServiceNode)
+	temp := make(map[string]*core.ServiceNode)
 	this.rlock.RLock()
 	for k, v := range this.services {
 		temp[k] = v

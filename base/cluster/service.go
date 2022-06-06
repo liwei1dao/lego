@@ -23,10 +23,9 @@ type ClusterService struct {
 	cbase.ServiceBase
 	opts           *Options
 	serverList     sync.Map
-	ClusterService base.IClusterService
-	ServiceMonitor core.IServiceMonitor
-	IsInClustered  bool
-	lock           sync.RWMutex //服务锁
+	clusterService base.IClusterService
+	serviceMonitor core.IServiceMonitor
+	isInClustered  bool
 }
 
 func (this *ClusterService) GetTag() string {
@@ -66,7 +65,7 @@ func (this *ClusterService) SetPreWeight(weight int32) {
 }
 
 func (this *ClusterService) GetServiceMonitor() core.IServiceMonitor {
-	return this.ServiceMonitor
+	return this.serviceMonitor
 }
 
 func (this *ClusterService) Options() *Options {
@@ -77,7 +76,7 @@ func (this *ClusterService) Configure(opts ...Option) {
 }
 
 func (this *ClusterService) Init(service core.IService) (err error) {
-	this.ClusterService = service.(base.IClusterService)
+	this.clusterService = service.(base.IClusterService)
 	return this.ServiceBase.Init(service)
 }
 
@@ -97,7 +96,7 @@ func (this *ClusterService) InitSys() {
 	} else {
 		log.Infof("Sys cron Init success !")
 	}
-	if err := registry.OnInit(this.opts.Setting.Sys["registry"], registry.SetService(this.ClusterService), registry.SetListener(this.ClusterService.(registry.IListener))); err != nil {
+	if err := registry.OnInit(this.opts.Setting.Sys["registry"], registry.SetService(this.clusterService), registry.SetListener(this.clusterService.(registry.IListener))); err != nil {
 		log.Panicf(fmt.Sprintf("初始化registry系统失败 err:%v", err))
 	} else {
 		log.Infof("Sys registry Init success !")
@@ -125,9 +124,9 @@ func (this *ClusterService) Start() (err error) {
 }
 
 func (this *ClusterService) Run(mod ...core.IModule) {
-	this.ServiceMonitor = monitor.NewModule()
+	this.serviceMonitor = monitor.NewModule()
 	modules := make([]core.IModule, 0)
-	modules = append(modules, this.ServiceMonitor)
+	modules = append(modules, this.serviceMonitor)
 	modules = append(modules, mod...)
 	this.ServiceBase.Run(modules...)
 }
@@ -145,8 +144,7 @@ func (this *ClusterService) Destroy() (err error) {
 }
 
 //注册服务会话 当有新的服务加入时
-func (this *ClusterService) FindServiceHandlefunc(node registry.ServiceNode) {
-	this.lock.Lock()
+func (this *ClusterService) FindServiceHandlefunc(node core.ServiceNode) {
 	if _, ok := this.serverList.Load(node.Id); !ok {
 		if s, err := NewServiceSession(&node); err != nil {
 			log.Errorf("创建服务会话失败【%s】 err:%v", node.Id, err)
@@ -154,19 +152,18 @@ func (this *ClusterService) FindServiceHandlefunc(node registry.ServiceNode) {
 			this.serverList.Store(node.Id, s)
 		}
 	}
-	this.lock.Unlock()
-	if this.IsInClustered {
+	if this.isInClustered {
 		event.TriggerEvent(core.Event_FindNewService, node) //触发发现新的服务事件
 	} else {
 		if node.Id == this.opts.Setting.Id { //发现自己 加入集群成功
-			this.IsInClustered = true
+			this.isInClustered = true
 			event.TriggerEvent(core.Event_RegistryStart)
 		}
 	}
 }
 
 //更新服务会话 当有新的服务加入时
-func (this *ClusterService) UpDataServiceHandlefunc(node registry.ServiceNode) {
+func (this *ClusterService) UpDataServiceHandlefunc(node core.ServiceNode) {
 	if ss, ok := this.serverList.Load(node.Id); ok { //已经在缓存中 需要更新节点信息
 		session := ss.(base.IClusterServiceSession)
 		if session.GetRpcId() != node.RpcId {
@@ -190,13 +187,11 @@ func (this *ClusterService) UpDataServiceHandlefunc(node registry.ServiceNode) {
 
 //注销服务会话
 func (this *ClusterService) LoseServiceHandlefunc(sId string) {
-	this.lock.Lock()
 	session, ok := this.serverList.Load(sId)
 	if ok && session != nil {
 		session.(base.IClusterServiceSession).Done()
 		this.serverList.Delete(sId)
 	}
-	this.lock.Unlock()
 	event.TriggerEvent(core.Event_LoseService, sId) //触发发现新的服务事件
 }
 
@@ -244,10 +239,9 @@ func (this *ClusterService) getServiceSessionByType(sType string, sIp string) (s
 }
 
 func (this *ClusterService) getServiceSessionByIds(Ids []string) (result []base.IClusterServiceSession, err error) {
-
 	var (
 		ss    = make(map[string]base.IClusterServiceSession)
-		nodes *registry.ServiceNode
+		nodes *core.ServiceNode
 	)
 	for _, v := range Ids {
 		if nodes, err = registry.GetServiceById(v); err != nil {
@@ -285,7 +279,7 @@ func (this *ClusterService) getServiceSessionByIps(sType string, sIps []string) 
 	)
 	//容错处理
 	if len(sIps) == 1 && sIps[0] == core.AutoIp {
-		s, err = this.ClusterService.DefauleRpcRouteRules(sType, core.AutoIp)
+		s, err = this.clusterService.DefauleRpcRouteRules(sType, core.AutoIp)
 		if err == nil {
 			result = []base.IClusterServiceSession{s}
 		} else {
@@ -409,8 +403,6 @@ func (this *ClusterService) DefauleRpcRouteRules(stype string, sip string) (ss b
 
 func (this *ClusterService) RpcInvokeById(sId string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error) {
 	defer lego.Recover(fmt.Sprintf("RpcInvokeById sId:%s rkey:%v iscall %v arg %v", sId, rkey, iscall, arg))
-	this.lock.RLock()
-	defer this.lock.RUnlock()
 	ss, ok := this.serverList.Load(sId)
 	if !ok {
 		if node, err := registry.GetServiceById(sId); err != nil {
@@ -440,8 +432,6 @@ func (this *ClusterService) RpcInvokeByIds(sId []string, rkey core.Rpc_Key, isca
 		wg   *sync.WaitGroup
 	)
 	defer lego.Recover(fmt.Sprintf("RpcInvokeByIds sId:%v rkey:%v iscall %v arg %v", sId, rkey, iscall, arg))
-	this.lock.RLock()
-	defer this.lock.RUnlock()
 	if ss, err = this.getServiceSessionByIds(sId); err != nil {
 		log.Errorf("未找到目标服务 ip:%s 节点 err:%v", sId, err)
 		return
@@ -473,9 +463,7 @@ func (this *ClusterService) RpcInvokeByIds(sId []string, rkey core.Rpc_Key, isca
 
 func (this *ClusterService) RpcInvokeByType(sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error) {
 	defer lego.Recover(fmt.Sprintf("RpcInvokeByType sType:%s rkey:%v iscall %v arg %v", sType, rkey, iscall, arg))
-	this.lock.RLock()
-	defer this.lock.RUnlock()
-	ss, err := this.ClusterService.DefauleRpcRouteRules(sType, core.AutoIp)
+	ss, err := this.clusterService.DefauleRpcRouteRules(sType, core.AutoIp)
 	if err != nil {
 		log.Errorf("未找到目标服务【%s】节点 err:%v", sType, err)
 		return nil, err
@@ -490,9 +478,7 @@ func (this *ClusterService) RpcInvokeByType(sType string, rkey core.Rpc_Key, isc
 
 func (this *ClusterService) RpcInvokeByIp(sIp, sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error) {
 	defer lego.Recover(fmt.Sprintf("RpcInvokeByIp sIp:%s sType:%s rkey:%v iscall %v arg %v", sIp, sType, rkey, iscall, arg))
-	this.lock.RLock()
-	defer this.lock.RUnlock()
-	ss, err := this.ClusterService.DefauleRpcRouteRules(sType, sIp)
+	ss, err := this.clusterService.DefauleRpcRouteRules(sType, sIp)
 	if err != nil {
 		log.Errorf("未找到目标服务 ip:%s type:%s 节点 err:%v", sIp, sType, err)
 		return nil, err
@@ -512,8 +498,6 @@ func (this *ClusterService) RpcInvokeByIps(sIp []string, sType string, rkey core
 		wg   *sync.WaitGroup
 	)
 	defer lego.Recover(fmt.Sprintf("RpcInvokeByIps sIp:%v sType:%s rkey:%v iscall %v arg %v", sIp, sType, rkey, iscall, arg))
-	this.lock.RLock()
-	defer this.lock.RUnlock()
 	if ss, err = this.getServiceSessionByIps(sType, sIp); err != nil {
 		log.Errorf("未找到目标服务 ip:%s type:%s 节点 err:%v", sIp, sType, err)
 		return

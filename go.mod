@@ -18,6 +18,7 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/eclipse/paho.mqtt.golang v1.3.1
 	github.com/go-ole/go-ole v1.2.1 // indirect
+	github.com/go-ping/ping v0.0.0-20211130115550-779d1e919534
 	github.com/go-playground/validator/v10 v10.10.1
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-sql-driver/mysql v1.5.0
@@ -53,6 +54,7 @@ require (
 	github.com/smartystreets/assertions v1.1.0 // indirect
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/ugorji/go/codec v1.2.7
+	github.com/valyala/fastrand v1.1.0
 	github.com/wolfogre/go-pprof-practice v0.0.0-20190402114113-8ce266a210ee
 	go.mongodb.org/mongo-driver v1.5.1
 	go.uber.org/zap v1.21.0

@@ -23,9 +23,9 @@ func newNacos(options Options) (sys *Nacos_Registry, err error) {
 		ctx:       ctx,
 		cancel:    cancel,
 		shash:     make(map[string]uint64),
-		services:  make(map[string]*ServiceNode),
+		services:  make(map[string]*core.ServiceNode),
 		subscribe: make(map[string]*vo.SubscribeParam),
-		rpcsubs:   make(map[core.Rpc_Key][]*ServiceNode),
+		rpcsubs:   make(map[core.Rpc_Key][]*core.ServiceNode),
 	}
 	// 创建clientConfig
 	clientConfig := constant.ClientConfig{
@@ -71,16 +71,16 @@ type Nacos_Registry struct {
 	slock     sync.RWMutex
 	shash     map[string]uint64
 	subscribe map[string]*vo.SubscribeParam
-	services  map[string]*ServiceNode
+	services  map[string]*core.ServiceNode
 	rlock     sync.RWMutex
-	rpcsubs   map[core.Rpc_Key][]*ServiceNode
+	rpcsubs   map[core.Rpc_Key][]*core.ServiceNode
 }
 
 func (this *Nacos_Registry) Start() (err error) {
 	if err = this.getServices(); err != nil && err.Error() != "instance list is empty!" {
 		return
 	}
-	if err = this.registerSNode(&ServiceNode{
+	if err = this.registerSNode(&core.ServiceNode{
 		Tag:       this.options.Service.GetTag(),
 		Id:        this.options.Service.GetId(),
 		IP:        this.options.Service.GetIp(),
@@ -109,7 +109,7 @@ func (this *Nacos_Registry) Stop() (err error) {
 
 func (this *Nacos_Registry) PushServiceInfo() (err error) {
 	if this.isstart {
-		err = this.registerSNode(&ServiceNode{
+		err = this.registerSNode(&core.ServiceNode{
 			Tag:       this.options.Service.GetTag(),
 			Id:        this.options.Service.GetId(),
 			IP:        this.options.Service.GetIp(),
@@ -123,7 +123,7 @@ func (this *Nacos_Registry) PushServiceInfo() (err error) {
 	}
 	return
 }
-func (this *Nacos_Registry) GetServiceById(sId string) (n *ServiceNode, err error) {
+func (this *Nacos_Registry) GetServiceById(sId string) (n *core.ServiceNode, err error) {
 	this.slock.RLock()
 	n, ok := this.services[sId]
 	this.slock.RUnlock()
@@ -132,10 +132,10 @@ func (this *Nacos_Registry) GetServiceById(sId string) (n *ServiceNode, err erro
 	}
 	return
 }
-func (this *Nacos_Registry) GetServiceByType(sType string) (n []*ServiceNode) {
+func (this *Nacos_Registry) GetServiceByType(sType string) (n []*core.ServiceNode) {
 	this.slock.RLock()
 	defer this.slock.RUnlock()
-	n = make([]*ServiceNode, 0)
+	n = make([]*core.ServiceNode, 0)
 	for _, v := range this.services {
 		if v.Type == sType {
 			n = append(n, v)
@@ -143,19 +143,19 @@ func (this *Nacos_Registry) GetServiceByType(sType string) (n []*ServiceNode) {
 	}
 	return
 }
-func (this *Nacos_Registry) GetAllServices() (n []*ServiceNode) {
+func (this *Nacos_Registry) GetAllServices() (n []*core.ServiceNode) {
 	this.slock.RLock()
 	defer this.slock.RUnlock()
-	n = make([]*ServiceNode, 0)
+	n = make([]*core.ServiceNode, 0)
 	for _, v := range this.services {
 		n = append(n, v)
 	}
 	return
 }
-func (this *Nacos_Registry) GetServiceByCategory(category core.S_Category) (n []*ServiceNode) {
+func (this *Nacos_Registry) GetServiceByCategory(category core.S_Category) (n []*core.ServiceNode) {
 	this.slock.RLock()
 	defer this.slock.RUnlock()
-	n = make([]*ServiceNode, 0)
+	n = make([]*core.ServiceNode, 0)
 	for _, v := range this.services {
 		if v.Category == category {
 			n = append(n, v)
@@ -163,8 +163,8 @@ func (this *Nacos_Registry) GetServiceByCategory(category core.S_Category) (n []
 	}
 	return
 }
-func (this *Nacos_Registry) GetRpcSubById(rId core.Rpc_Key) (n []*ServiceNode) {
-	n = make([]*ServiceNode, 0)
+func (this *Nacos_Registry) GetRpcSubById(rId core.Rpc_Key) (n []*core.ServiceNode) {
+	n = make([]*core.ServiceNode, 0)
 	this.rlock.RLock()
 	d, ok := this.rpcsubs[rId]
 	this.rlock.RUnlock()
@@ -226,7 +226,7 @@ locp:
 						}
 					}
 				}
-				temp := make(map[string]*ServiceNode)
+				temp := make(map[string]*core.ServiceNode)
 				this.rlock.RLock()
 				for k, v := range this.services {
 					temp[k] = v
@@ -277,7 +277,7 @@ func (this *Nacos_Registry) getServices() (err error) {
 	}
 	return err
 }
-func (this *Nacos_Registry) registerSNode(snode *ServiceNode) (err error) {
+func (this *Nacos_Registry) registerSNode(snode *core.ServiceNode) (err error) {
 	h, err := hash.Hash(snode, nil)
 	if err != nil {
 		return err
@@ -318,16 +318,16 @@ func (this *Nacos_Registry) deregisterSNode() (err error) {
 	})
 	return
 }
-func (this *Nacos_Registry) addandupdataServiceNode(as model.Instance) (sn *ServiceNode, err error) {
+func (this *Nacos_Registry) addandupdataServiceNode(as model.Instance) (sn *core.ServiceNode, err error) {
 	var (
 		version string
 		rpcid   string
-		snode   *ServiceNode
+		snode   *core.ServiceNode
 		h       uint64
 	)
 	version = as.Metadata["version"]
 	rpcid = as.Metadata["rpcid"]
-	snode = &ServiceNode{
+	snode = &core.ServiceNode{
 		Tag:       as.Metadata["tag"],
 		Type:      as.Metadata["type"],
 		Category:  core.S_Category(as.Metadata["category"]),

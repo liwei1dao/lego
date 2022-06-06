@@ -31,11 +31,12 @@ type IServiceSession interface {
 
 type IClusterServiceBase interface {
 	core.IService
-	GetTag() string               //获取集群标签
-	GetCategory() core.S_Category //服务类别 例如游戏服
-	GetRpcId() string             //获取rpc通信id
-	GetPreWeight() float64        //集群服务负载值 暂时可以不用理会
-	SetPreWeight(weight int32)    //设置服务器权重
+	GetTag() string                 //获取集群标签
+	GetCategory() core.S_Category   //服务类别 例如游戏服
+	GetRpcId() string               //获取rpc通信id
+	GetPreWeight() float64          //集群服务负载值 暂时可以不用理会
+	SetPreWeight(weight int32)      //设置服务器权重
+	SetSelector(selector ISelector) //设置选择器
 }
 
 type IClusterServiceSession interface {

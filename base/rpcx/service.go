@@ -25,8 +25,8 @@ type RPCXService struct {
 	opts          *Options
 	serverList    sync.Map
 	rpcxService   base.IRPCXService
-	IsInClustered bool
-	lock          sync.RWMutex //服务锁
+	selector      base.ISelector //选择器
+	isInClustered bool
 }
 
 func (this *RPCXService) GetTag() string {
@@ -135,8 +135,7 @@ func (this *RPCXService) Destroy() (err error) {
 }
 
 //注册服务会话 当有新的服务加入时
-func (this *RPCXService) FindServiceHandlefunc(node registry.ServiceNode) {
-	this.lock.Lock()
+func (this *RPCXService) FindServiceHandlefunc(node core.ServiceNode) {
 	if _, ok := this.serverList.Load(node.Id); !ok {
 		if s, err := NewServiceSession(&node); err != nil {
 			log.Errorf("创建服务会话失败【%s】 err:%v", node.Id, err)
@@ -144,19 +143,18 @@ func (this *RPCXService) FindServiceHandlefunc(node registry.ServiceNode) {
 			this.serverList.Store(node.Id, s)
 		}
 	}
-	this.lock.Unlock()
-	if this.IsInClustered {
+	if this.isInClustered {
 		event.TriggerEvent(core.Event_FindNewService, node) //触发发现新的服务事件
 	} else {
 		if node.Id == this.opts.Setting.Id { //发现自己 加入集群成功
-			this.IsInClustered = true
+			this.isInClustered = true
 			event.TriggerEvent(core.Event_RegistryStart)
 		}
 	}
 }
 
 //更新服务会话 当有新的服务加入时
-func (this *RPCXService) UpDataServiceHandlefunc(node registry.ServiceNode) {
+func (this *RPCXService) UpDataServiceHandlefunc(node core.ServiceNode) {
 	if ss, ok := this.serverList.Load(node.Id); ok { //已经在缓存中 需要更新节点信息
 		session := ss.(base.IRPCXServiceSession)
 		if session.GetRpcId() != node.RpcId {
@@ -180,13 +178,11 @@ func (this *RPCXService) UpDataServiceHandlefunc(node registry.ServiceNode) {
 
 //注销服务会话
 func (this *RPCXService) LoseServiceHandlefunc(sId string) {
-	this.lock.Lock()
 	session, ok := this.serverList.Load(sId)
 	if ok && session != nil {
 		session.(base.IRPCXServiceSession).Done()
 		this.serverList.Delete(sId)
 	}
-	this.lock.Unlock()
 	event.TriggerEvent(core.Event_LoseService, sId) //触发发现新的服务事件
 }
 
@@ -287,8 +283,6 @@ func (this *RPCXService) RegisterFunctionName(name string, fn interface{}) (err 
 //同步 执行目标远程服务方法
 func (this *RPCXService) RpcCallById(sId string, serviceMethod string, ctx context.Context, args interface{}, reply interface{}) (err error) {
 	defer lego.Recover(fmt.Sprintf("RpcCallById sId:%s rkey:%v arg %v", sId, serviceMethod, args))
-	this.lock.RLock()
-	defer this.lock.RUnlock()
 	ss, ok := this.serverList.Load(sId)
 	if !ok {
 		if node, err := registry.GetServiceById(sId); err != nil {
@@ -310,8 +304,6 @@ func (this *RPCXService) RpcCallById(sId string, serviceMethod string, ctx conte
 //异步 执行目标远程服务方法
 func (this *RPCXService) RpcGoById(sId string, serviceMethod string, ctx context.Context, args interface{}, reply interface{}) (call *client.Call, err error) {
 	defer lego.Recover(fmt.Sprintf("RpcGoById sId:%s rkey:%v arg %v", sId, serviceMethod, args))
-	this.lock.RLock()
-	defer this.lock.RUnlock()
 	ss, ok := this.serverList.Load(sId)
 	if !ok {
 		if node, err := registry.GetServiceById(sId); err != nil {
@@ -332,8 +324,7 @@ func (this *RPCXService) RpcGoById(sId string, serviceMethod string, ctx context
 
 func (this *RPCXService) RpcCallByType(sType string, serviceMethod string, ctx context.Context, args interface{}, reply interface{}) (err error) {
 	defer lego.Recover(fmt.Sprintf("RpcCallByType sType:%s rkey:%s arg %v", sType, serviceMethod, args))
-	this.lock.RLock()
-	defer this.lock.RUnlock()
+
 	ss, err := this.rpcxService.DefauleRpcRouteRules(sType, core.AutoIp)
 	if err != nil {
 		log.Errorf("未找到目标服务【%s】节点 err:%v", sType, err)
@@ -345,8 +336,7 @@ func (this *RPCXService) RpcCallByType(sType string, serviceMethod string, ctx c
 
 func (this *RPCXService) RpcGoByType(sType string, serviceMethod string, ctx context.Context, args interface{}, reply interface{}) (call *client.Call, err error) {
 	defer lego.Recover(fmt.Sprintf("RpcCallByType sType:%s rkey:%s arg %v", sType, serviceMethod, args))
-	this.lock.RLock()
-	defer this.lock.RUnlock()
+
 	ss, err := this.rpcxService.DefauleRpcRouteRules(sType, core.AutoIp)
 	if err != nil {
 		log.Errorf("未找到目标服务【%s】节点 err:%v", sType, err)
