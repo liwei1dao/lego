@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"runtime"
-	"sync"
 
 	"github.com/liwei1dao/lego"
 	"github.com/liwei1dao/lego/base"
@@ -15,15 +14,12 @@ import (
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/registry"
 	"github.com/liwei1dao/lego/sys/rpcx"
-	"github.com/liwei1dao/lego/utils/container/sortslice"
-	"github.com/liwei1dao/lego/utils/container/version"
 	"github.com/smallnest/rpcx/client"
 )
 
 type RPCXService struct {
 	cbase.ServiceBase
 	opts          *Options
-	serverList    sync.Map
 	rpcxService   base.IRPCXService
 	selector      base.ISelector //选择器
 	isInClustered bool
@@ -75,6 +71,7 @@ func (this *RPCXService) Configure(opts ...Option) {
 
 func (this *RPCXService) Init(service core.IService) (err error) {
 	this.rpcxService = service.(base.IRPCXService)
+	this.selector = base.NewSelector(base.WeightedRoundRobin)
 	return this.ServiceBase.Init(service)
 }
 
@@ -136,11 +133,11 @@ func (this *RPCXService) Destroy() (err error) {
 
 //注册服务会话 当有新的服务加入时
 func (this *RPCXService) FindServiceHandlefunc(node core.ServiceNode) {
-	if _, ok := this.serverList.Load(node.Id); !ok {
+	if !this.selector.IsHave(node.Id) {
 		if s, err := NewServiceSession(&node); err != nil {
 			log.Errorf("创建服务会话失败【%s】 err:%v", node.Id, err)
 		} else {
-			this.serverList.Store(node.Id, s)
+			this.selector.AddServer(s)
 		}
 	}
 	if this.isInClustered {
@@ -155,110 +152,17 @@ func (this *RPCXService) FindServiceHandlefunc(node core.ServiceNode) {
 
 //更新服务会话 当有新的服务加入时
 func (this *RPCXService) UpDataServiceHandlefunc(node core.ServiceNode) {
-	if ss, ok := this.serverList.Load(node.Id); ok { //已经在缓存中 需要更新节点信息
-		session := ss.(base.IRPCXServiceSession)
-		if session.GetRpcId() != node.RpcId {
-			if s, err := NewServiceSession(&node); err != nil {
-				log.Errorf("更新服务会话失败【%s】 err:%v", node.Id, err)
-			} else {
-				this.serverList.Store(node.Id, s)
-			}
-			event.TriggerEvent(core.Event_FindNewService, node) //触发发现新的服务事件
-		} else {
-			if session.GetVersion() != node.Version {
-				session.SetVersion(node.Version)
-			}
-			if session.GetPreWeight() != node.PreWeight {
-				session.SetPreWeight(node.PreWeight)
-			}
-			event.TriggerEvent(core.Event_UpDataOldService, node) //触发发现新的服务事件
-		}
+	if this.selector.IsHave(node.Id) {
+		this.selector.UpdateServer(node)
+		event.TriggerEvent(core.Event_UpDataOldService, node)
 	}
 }
 
 //注销服务会话
 func (this *RPCXService) LoseServiceHandlefunc(sId string) {
-	session, ok := this.serverList.Load(sId)
-	if ok && session != nil {
-		session.(base.IRPCXServiceSession).Done()
-		this.serverList.Delete(sId)
-	}
-	event.TriggerEvent(core.Event_LoseService, sId) //触发发现新的服务事件
-}
-
-func (this *RPCXService) getServiceSessionByType(sType string, sIp string) (ss []base.IRPCXServiceSession, err error) {
-	ss = make([]base.IRPCXServiceSession, 0)
-	if nodes := registry.GetServiceByType(sType); nodes == nil {
-		log.Errorf("获取目标类型 type【%s】ip [%s] 服务集失败", sType, sIp)
-		return nil, err
-	} else {
-		if sIp == core.AutoIp {
-			for _, v := range nodes {
-				if s, ok := this.serverList.Load(v.Id); ok {
-					ss = append(ss, s.(base.IRPCXServiceSession))
-				} else {
-					s, err = NewServiceSession(v)
-					if err != nil {
-						log.Errorf("创建服务会话失败【%s】 err:%v", v.Id, err)
-						continue
-					} else {
-						this.serverList.Store(v.Id, s)
-						ss = append(ss, s.(base.IRPCXServiceSession))
-					}
-				}
-			}
-		} else {
-			for _, v := range nodes {
-				if v.IP == sIp {
-					if s, ok := this.serverList.Load(v.Id); ok {
-						ss = append(ss, s.(base.IRPCXServiceSession))
-					} else {
-						s, err = NewServiceSession(v)
-						if err != nil {
-							log.Errorf("创建服务会话失败【%s】 err:%v", v.Id, err)
-							continue
-						} else {
-							this.serverList.Store(v.Id, s)
-							ss = append(ss, s.(base.IRPCXServiceSession))
-						}
-					}
-				}
-			}
-		}
-	}
-	return
-}
-
-//默认路由规则
-func (this *RPCXService) DefauleRpcRouteRules(stype string, sip string) (ss base.IRPCXServiceSession, err error) {
-	if s, e := this.getServiceSessionByType(stype, sip); e != nil {
-		return nil, e
-	} else {
-		ss := make([]interface{}, len(s))
-		for i, v := range s {
-			ss[i] = v
-		}
-		if len(ss) > 0 {
-			//排序找到最优服务
-			sortslice.Sort(ss, func(a interface{}, b interface{}) int8 {
-				as := a.(base.IRPCXServiceSession)
-				bs := b.(base.IRPCXServiceSession)
-				if iscompare := version.CompareStrVer(as.GetVersion(), bs.GetVersion()); iscompare != 0 {
-					return iscompare
-				} else {
-					if as.GetPreWeight() < bs.GetPreWeight() {
-						return 1
-					} else if as.GetPreWeight() > bs.GetPreWeight() {
-						return -1
-					} else {
-						return 0
-					}
-				}
-			})
-			return ss[0].(base.IRPCXServiceSession), nil
-		} else {
-			return nil, fmt.Errorf("未找到IP[%s]类型%s】的服务信息", sip, stype)
-		}
+	if this.selector.IsHave(sId) {
+		this.selector.RemoveServer(sId)
+		event.TriggerEvent(core.Event_LoseService, sId)
 	}
 }
 
@@ -283,19 +187,11 @@ func (this *RPCXService) RegisterFunctionName(name string, fn interface{}) (err 
 //同步 执行目标远程服务方法
 func (this *RPCXService) RpcCallById(sId string, serviceMethod string, ctx context.Context, args interface{}, reply interface{}) (err error) {
 	defer lego.Recover(fmt.Sprintf("RpcCallById sId:%s rkey:%v arg %v", sId, serviceMethod, args))
-	ss, ok := this.serverList.Load(sId)
+	ss, ok := this.selector.Load(sId)
 	if !ok {
-		if node, err := registry.GetServiceById(sId); err != nil {
-			log.Errorf("未找到目标服务【%s】节点 err:%v", sId, err)
-			return fmt.Errorf("No Found " + sId)
-		} else {
-			ss, err = NewServiceSession(node)
-			if err != nil {
-				return fmt.Errorf(fmt.Sprintf("创建服务会话失败【%s】 err:%v", sId, err))
-			} else {
-				this.serverList.Store(node.Id, ss)
-			}
-		}
+		log.Errorf("未找到目标服务【%s】节点 ", sId)
+		return fmt.Errorf("No Found " + sId)
+
 	}
 	err = ss.(base.IRPCXServiceSession).Call(ctx, serviceMethod, args, reply)
 	return
@@ -304,19 +200,10 @@ func (this *RPCXService) RpcCallById(sId string, serviceMethod string, ctx conte
 //异步 执行目标远程服务方法
 func (this *RPCXService) RpcGoById(sId string, serviceMethod string, ctx context.Context, args interface{}, reply interface{}) (call *client.Call, err error) {
 	defer lego.Recover(fmt.Sprintf("RpcGoById sId:%s rkey:%v arg %v", sId, serviceMethod, args))
-	ss, ok := this.serverList.Load(sId)
+	ss, ok := this.selector.Load(sId)
 	if !ok {
-		if node, err := registry.GetServiceById(sId); err != nil {
-			log.Errorf("未找到目标服务【%s】节点 err:%v", sId, err)
-			return nil, fmt.Errorf("No Found " + sId)
-		} else {
-			ss, err = NewServiceSession(node)
-			if err != nil {
-				return nil, fmt.Errorf(fmt.Sprintf("创建服务会话失败【%s】 err:%v", sId, err))
-			} else {
-				this.serverList.Store(node.Id, ss)
-			}
-		}
+		log.Errorf("未找到目标服务【%s】节点", sId)
+		return nil, fmt.Errorf("No Found " + sId)
 	}
 	call, err = ss.(base.IRPCXServiceSession).Go(ctx, serviceMethod, args, reply)
 	return
@@ -325,23 +212,22 @@ func (this *RPCXService) RpcGoById(sId string, serviceMethod string, ctx context
 func (this *RPCXService) RpcCallByType(sType string, serviceMethod string, ctx context.Context, args interface{}, reply interface{}) (err error) {
 	defer lego.Recover(fmt.Sprintf("RpcCallByType sType:%s rkey:%s arg %v", sType, serviceMethod, args))
 
-	ss, err := this.rpcxService.DefauleRpcRouteRules(sType, core.AutoIp)
+	ss, err := this.selector.Select(ctx, sType, core.AutoIp)
 	if err != nil {
 		log.Errorf("未找到目标服务【%s】节点 err:%v", sType, err)
 		return err
 	}
-	err = ss.Call(ctx, serviceMethod, args, reply)
+	err = ss.(base.IRPCXServiceSession).Call(ctx, serviceMethod, args, reply)
 	return
 }
 
 func (this *RPCXService) RpcGoByType(sType string, serviceMethod string, ctx context.Context, args interface{}, reply interface{}) (call *client.Call, err error) {
 	defer lego.Recover(fmt.Sprintf("RpcCallByType sType:%s rkey:%s arg %v", sType, serviceMethod, args))
-
-	ss, err := this.rpcxService.DefauleRpcRouteRules(sType, core.AutoIp)
+	ss, err := this.selector.Select(ctx, sType, core.AutoIp)
 	if err != nil {
 		log.Errorf("未找到目标服务【%s】节点 err:%v", sType, err)
 		return nil, err
 	}
-	call, err = ss.Go(ctx, serviceMethod, args, reply)
+	call, err = ss.(base.IRPCXServiceSession).Go(ctx, serviceMethod, args, reply)
 	return
 }

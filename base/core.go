@@ -70,7 +70,6 @@ type IRPCXServiceSession interface {
 
 type IRPCXService interface {
 	IClusterServiceBase
-	DefauleRpcRouteRules(stype string, sip string) (ss IRPCXServiceSession, err error) //默认rpc路由规则
 	Register(rcvr interface{}) (err error)
 	RegisterFunction(fn interface{}) (err error)
 	RegisterFunctionName(name string, fn interface{}) (err error)

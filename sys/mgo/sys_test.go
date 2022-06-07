@@ -18,7 +18,7 @@ const (
 )
 
 type TestData struct {
-	Id       uint32 `bson:"_id"` //用户id
+	Id       string `bson:"_id"` //用户id
 	NiceName string //昵称
 	Sex      int32  //性别	1男 2女
 	HeadUrl  string //头像Id

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/go-ping/ping"
@@ -29,8 +30,12 @@ const (
 )
 
 type ISelector interface {
-	Select(ctx context.Context, stype, sip string, args interface{}) (session IServiceSession, err error) // SelectFunc
-	UpdateServer(servers map[string]IServiceSession)
+	Load(sId string) (session IServiceSession, ok bool)
+	Select(ctx context.Context, stype, sip string) (session IServiceSession, err error) // SelectFunc
+	IsHave(sId string) bool
+	AddServer(server IServiceSession)
+	RemoveServer(sId string)
+	UpdateServer(node core.ServiceNode)
 }
 
 //服务会话切片
@@ -66,38 +71,95 @@ func (this ServiceSessionSlice) Filter(stype, sip string) (ss ServiceSessionSlic
 }
 
 //创建选择器
-func NewSelector(selectMode SelectMode, servers map[string]IServiceSession) ISelector {
+func NewSelector(selectMode SelectMode) ISelector {
 	switch selectMode {
 	case RandomSelect:
-		return newRandomSelector(servers)
+		return newRandomSelector()
 	case RoundRobin:
-		return newRoundRobinSelector(servers)
+		return newRoundRobinSelector()
 	case WeightedRoundRobin:
-		return newWeightedRoundRobinSelector(servers)
+		return newWeightedRoundRobinSelector()
 	case WeightedICMP:
-		return newWeightedICMPSelector(servers)
+		return newWeightedICMPSelector()
 	default:
-		return newWeightedRoundRobinSelector(servers)
+		return newWeightedRoundRobinSelector()
+	}
+}
+
+type baseSelector struct {
+	servers ServiceSessionSlice
+	lock    sync.RWMutex
+}
+
+func (this *baseSelector) Load(sId string) (session IServiceSession, ok bool) {
+	this.lock.RLock()
+	defer this.lock.RUnlock()
+	for _, v := range this.servers {
+		if v.GetId() == sId {
+			return v, true
+		}
+	}
+	return nil, false
+}
+
+func (this *baseSelector) IsHave(sId string) bool {
+	this.lock.RLock()
+	defer this.lock.RUnlock()
+	for _, v := range this.servers {
+		if v.GetId() == sId {
+			return true
+		}
+	}
+	return false
+}
+
+func (this *baseSelector) AddServer(server IServiceSession) {
+	this.lock.Lock()
+	defer this.lock.Unlock()
+	for _, v := range this.servers {
+		if v.GetId() == server.GetId() {
+			server.Done()
+			return
+		}
+	}
+	this.servers = append(this.servers, server)
+}
+func (this *baseSelector) RemoveServer(sId string) {
+	this.lock.Lock()
+	defer this.lock.Unlock()
+	for i, v := range this.servers {
+		if v.GetId() == sId {
+			this.servers = append(this.servers[0:i], this.servers[i+1:]...)
+			v.Done()
+			return
+		}
+	}
+}
+func (this *baseSelector) UpdateServer(node core.ServiceNode) {
+	this.lock.Lock()
+	defer this.lock.Unlock()
+	for _, v := range this.servers {
+		if v.GetId() == node.Id {
+			v.SetPreWeight(node.PreWeight)
+			v.SetVersion(node.Version)
+		}
 	}
 }
 
 ///随机选择
-func newRandomSelector(servers map[string]IServiceSession) ISelector {
-	ss := make([]IServiceSession, 0, len(servers))
-	for _, v := range servers {
-		ss = append(ss, v)
-	}
-
-	return &randomSelector{servers: ss}
+func newRandomSelector() ISelector {
+	return &randomSelector{}
 }
 
 type randomSelector struct {
-	servers ServiceSessionSlice
+	baseSelector
 }
 
-func (s randomSelector) Select(ctx context.Context, stype, sip string, args interface{}) (session IServiceSession, err error) {
+func (this *randomSelector) Select(ctx context.Context, stype, sip string) (session IServiceSession, err error) {
+	this.lock.RLock()
+	defer this.lock.RUnlock()
 	var ss ServiceSessionSlice
-	if ss, err = s.servers.Filter(stype, sip); err != nil {
+	if ss, err = this.servers.Filter(stype, sip); err != nil {
 		return
 	}
 	i := fastrand.Uint32n(uint32(len(ss)))
@@ -105,67 +167,44 @@ func (s randomSelector) Select(ctx context.Context, stype, sip string, args inte
 	return
 }
 
-func (s *randomSelector) UpdateServer(servers map[string]IServiceSession) {
-	ss := make(ServiceSessionSlice, 0, len(servers))
-	for _, v := range servers {
-		ss = append(ss, v)
-	}
-	s.servers = ss
-}
-
 ///轮询选择
-func newRoundRobinSelector(servers map[string]IServiceSession) ISelector {
-	ss := make(ServiceSessionSlice, 0, len(servers))
-	for _, v := range servers {
-		ss = append(ss, v)
-	}
-
-	return &roundRobinSelector{servers: ss}
+func newRoundRobinSelector() ISelector {
+	return &roundRobinSelector{}
 }
 
 type roundRobinSelector struct {
-	servers ServiceSessionSlice
-	i       int
+	baseSelector
+	i int
 }
 
-func (s *roundRobinSelector) Select(ctx context.Context, stype, sip string, args interface{}) (session IServiceSession, err error) {
+func (this *roundRobinSelector) Select(ctx context.Context, stype, sip string) (session IServiceSession, err error) {
+	this.lock.RLock()
+	defer this.lock.RUnlock()
 	var ss ServiceSessionSlice
-	if ss, err = s.servers.Filter(stype, sip); err != nil {
+	if ss, err = this.servers.Filter(stype, sip); err != nil {
 		return
 	}
-	i := s.i
+	i := this.i
 	i = i % len(ss)
-	s.i = i + 1
+	this.i = i + 1
 	session = ss[i]
 	return
 }
 
-func (s *roundRobinSelector) UpdateServer(servers map[string]IServiceSession) {
-	ss := make([]IServiceSession, 0, len(servers))
-	for _, v := range servers {
-		ss = append(ss, v)
-	}
-
-	s.servers = ss
-}
-
 // 权重选择器
-func newWeightedRoundRobinSelector(servers map[string]IServiceSession) ISelector {
-	ss := make(ServiceSessionSlice, 0, len(servers))
-	for _, v := range servers {
-		ss = append(ss, v)
-	}
-
-	return &roundRobinSelector{servers: ss}
+func newWeightedRoundRobinSelector() ISelector {
+	return &roundRobinSelector{}
 }
 
 type weightedRoundRobinSelector struct {
-	servers ServiceSessionSlice
+	baseSelector
 }
 
-func (s *weightedRoundRobinSelector) Select(ctx context.Context, stype, sip string, args interface{}) (session IServiceSession, err error) {
+func (this *weightedRoundRobinSelector) Select(ctx context.Context, stype, sip string, args interface{}) (session IServiceSession, err error) {
+	this.lock.RLock()
+	defer this.lock.RUnlock()
 	var ss ServiceSessionSlice
-	if ss, err = s.servers.Filter(stype, sip); err != nil {
+	if ss, err = this.servers.Filter(stype, sip); err != nil {
 		return
 	}
 	//排序找到最优服务
@@ -174,34 +213,21 @@ func (s *weightedRoundRobinSelector) Select(ctx context.Context, stype, sip stri
 	return
 }
 
-func (s *weightedRoundRobinSelector) UpdateServer(servers map[string]IServiceSession) {
-	ss := make([]IServiceSession, 0, len(servers))
-	for _, v := range servers {
-		ss = append(ss, v)
-	}
-	s.servers = ss
-}
-
 // 网络质量选择器
-func newWeightedICMPSelector(servers map[string]IServiceSession) ISelector {
-	ss := make(ServiceSessionSlice, 0, len(servers))
-	for _, v := range servers {
-		rtt, _ := Ping(v.GetIp())
-		rtt = CalculateWeight(rtt)
-		v.SetPreWeight(float64(rtt))
-		ss = append(ss, v)
-	}
-	return &weightedICMPSelector{servers: ss}
+func newWeightedICMPSelector() ISelector {
+	return &weightedICMPSelector{}
 }
 
 // 权重选择器
 type weightedICMPSelector struct {
-	servers ServiceSessionSlice
+	baseSelector
 }
 
-func (s *weightedICMPSelector) Select(ctx context.Context, stype, sip string, args interface{}) (session IServiceSession, err error) {
+func (this *weightedICMPSelector) Select(ctx context.Context, stype, sip string) (session IServiceSession, err error) {
+	this.lock.RLock()
+	defer this.lock.RUnlock()
 	var ss ServiceSessionSlice
-	if ss, err = s.servers.Filter(stype, sip); err != nil {
+	if ss, err = this.servers.Filter(stype, sip); err != nil {
 		return
 	}
 	//排序找到最优服务
@@ -210,15 +236,32 @@ func (s *weightedICMPSelector) Select(ctx context.Context, stype, sip string, ar
 	return
 }
 
-func (s *weightedICMPSelector) UpdateServer(servers map[string]IServiceSession) {
-	ss := make([]IServiceSession, 0, len(servers))
-	for _, v := range servers {
-		rtt, _ := Ping(v.GetIp())
-		rtt = CalculateWeight(rtt)
-		v.SetPreWeight(float64(rtt))
-		ss = append(ss, v)
+func (this *weightedICMPSelector) AddServer(server IServiceSession) {
+	this.lock.Lock()
+	defer this.lock.Unlock()
+	for _, v := range this.servers {
+		if v.GetId() == server.GetId() {
+			server.Done()
+			return
+		}
 	}
-	s.servers = ss
+	rtt, _ := Ping(server.GetIp())
+	rtt = CalculateWeight(rtt)
+	server.SetPreWeight(float64(rtt))
+	this.servers = append(this.servers, server)
+}
+
+func (this *weightedICMPSelector) UpdateServer(node core.ServiceNode) {
+	this.lock.Lock()
+	defer this.lock.Unlock()
+	for _, v := range this.servers {
+		if v.GetId() == node.Id {
+			rtt, _ := Ping(node.IP)
+			rtt = CalculateWeight(rtt)
+			v.SetPreWeight(float64(rtt))
+			v.SetVersion(node.Version)
+		}
+	}
 }
 
 // 获取目标主机的网络延迟数
