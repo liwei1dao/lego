@@ -40,7 +40,7 @@ func SetTimeOut(v time.Duration) Option {
 
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
-		MaxPoolSize: 1000,
+		MaxPoolSize: 100,
 		TimeOut:     time.Second * 3,
 	}
 	if config != nil {
@@ -54,7 +54,7 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 
 func newOptionsByOption(opts ...Option) Options {
 	options := Options{
-		MaxPoolSize: 1000,
+		MaxPoolSize: 100,
 		TimeOut:     time.Second * 3,
 	}
 	for _, o := range opts {
