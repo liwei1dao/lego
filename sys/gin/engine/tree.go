@@ -7,7 +7,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/liwei1dao/lego/utils/convert"
+	"github.com/liwei1dao/lego/utils/codec"
 )
 
 var (
@@ -107,7 +107,7 @@ walk:
 
 			n.children = []*node{&child}
 			// []byte for proper unicode char conversion, see #65
-			n.indices = convert.BytesToString([]byte{n.path[i]})
+			n.indices = codec.BytesToString([]byte{n.path[i]})
 			n.path = path[:i]
 			n.handlers = nil
 			n.wildChild = false
@@ -140,7 +140,7 @@ walk:
 			// Otherwise insert it
 			if c != ':' && c != '*' && n.nType != catchAll {
 				// []byte for proper unicode char conversion, see #65
-				n.indices += convert.BytesToString([]byte{c})
+				n.indices += codec.BytesToString([]byte{c})
 				child := &node{
 					fullPath: fullPath,
 				}
@@ -820,14 +820,14 @@ func findWildcard(path string) (wildcard string, i int, valid bool) {
 
 func countParams(path string) uint16 {
 	var n uint16
-	s := convert.StringToBytes(path)
+	s := codec.StringToBytes(path)
 	n += uint16(bytes.Count(s, strColon))
 	n += uint16(bytes.Count(s, strStar))
 	return n
 }
 
 func countSections(path string) uint16 {
-	s := convert.StringToBytes(path)
+	s := codec.StringToBytes(path)
 	return uint16(bytes.Count(s, strSlash))
 }
 func min(a, b int) int {

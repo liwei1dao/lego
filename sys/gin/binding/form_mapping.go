@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/liwei1dao/lego/utils/convert"
+	"github.com/liwei1dao/lego/utils/codec"
 )
 
 var (
@@ -236,9 +236,9 @@ func setWithProperType(val string, value reflect.Value, field reflect.StructFiel
 		case time.Time:
 			return setTimeField(val, field, value)
 		}
-		return json.Unmarshal(convert.StringToBytes(val), value.Addr().Interface())
+		return json.Unmarshal(codec.StringToBytes(val), value.Addr().Interface())
 	case reflect.Map:
-		return json.Unmarshal(convert.StringToBytes(val), value.Addr().Interface())
+		return json.Unmarshal(codec.StringToBytes(val), value.Addr().Interface())
 	default:
 		return errUnknownType
 	}

@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/liwei1dao/lego/sys/gin/render"
-	"github.com/liwei1dao/lego/utils/convert"
+	"github.com/liwei1dao/lego/utils/codec"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
@@ -417,7 +417,7 @@ func (this *Engine) redirectFixedPath(c *Context, root *node, trailingSlash bool
 	rPath := req.URL.Path
 
 	if fixedPath, ok := root.findCaseInsensitivePath(cleanPath(rPath), trailingSlash); ok {
-		req.URL.Path = convert.BytesToString(fixedPath)
+		req.URL.Path = codec.BytesToString(fixedPath)
 		this.redirectRequest(c)
 		return true
 	}

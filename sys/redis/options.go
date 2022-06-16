@@ -63,7 +63,7 @@ func SetRedis_Single_PoolSize(v int) Option {
 		o.Redis_Single_PoolSize = v
 	}
 }
-func Redis_Cluster_Addr(v []string) Option {
+func SetRedis_Cluster_Addr(v []string) Option {
 	return func(o *Options) {
 		o.Redis_Cluster_Addr = v
 	}

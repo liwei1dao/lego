@@ -1,8 +1,6 @@
 package single
 
 import (
-	"reflect"
-
 	"github.com/go-redis/redis/v8"
 )
 
@@ -57,17 +55,11 @@ func (this *Redis) ZLexCount(key string, min string, max string) (result int64, 
 /*
 Redis ZRange 通过索引区间返回有序集合指定区间内的成员
 */
-func (this *Redis) ZRange(valuetype reflect.Type, key string, start int64, stop int64) (result []interface{}, err error) {
+func (this *Redis) ZRange(key string, start int64, stop int64, v interface{}) (err error) {
 	var _result []string
 	cmd := this.client.ZRange(this.getContext(), key, start, stop)
 	if _result, err = cmd.Result(); err == nil {
-		result = make([]interface{}, len(_result))
-		for i, v := range _result {
-			temp := reflect.New(valuetype.Elem()).Interface()
-			if err = this.Decode([]byte(v), &temp); err == nil {
-				result[i] = temp
-			}
-		}
+		err = this.decode.DecoderSliceString(_result, v)
 	}
 	return
 }
@@ -75,17 +67,11 @@ func (this *Redis) ZRange(valuetype reflect.Type, key string, start int64, stop 
 /*
 Redis ZRangeByLex 通过字典区间返回有序集合的成员
 */
-func (this *Redis) ZRangeByLex(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error) {
+func (this *Redis) ZRangeByLex(key string, opt *redis.ZRangeBy, v interface{}) (err error) {
 	var _result []string
 	cmd := this.client.ZRangeByLex(this.getContext(), key, opt)
 	if _result, err = cmd.Result(); err == nil {
-		result = make([]interface{}, len(_result))
-		for i, v := range _result {
-			temp := reflect.New(valuetype.Elem()).Interface()
-			if err = this.Decode([]byte(v), &temp); err == nil {
-				result[i] = temp
-			}
-		}
+		err = this.decode.DecoderSliceString(_result, v)
 	}
 	return
 }
@@ -93,17 +79,11 @@ func (this *Redis) ZRangeByLex(valuetype reflect.Type, key string, opt *redis.ZR
 /*
 Redis ZRangeByScore 通过分数返回有序集合指定区间内的成员
 */
-func (this *Redis) ZRangeByScore(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error) {
+func (this *Redis) ZRangeByScore(key string, opt *redis.ZRangeBy, v interface{}) (err error) {
 	var _result []string
 	cmd := this.client.ZRangeByScore(this.getContext(), key, opt)
 	if _result, err = cmd.Result(); err == nil {
-		result = make([]interface{}, len(_result))
-		for i, v := range _result {
-			temp := reflect.New(valuetype.Elem()).Interface()
-			if err = this.Decode([]byte(v), &temp); err == nil {
-				result[i] = temp
-			}
-		}
+		err = this.decode.DecoderSliceString(_result, v)
 	}
 	return
 }
@@ -151,17 +131,11 @@ func (this *Redis) ZRemRangeByScore(key string, min string, max string) (result 
 /*
 Redis ZRevRange 返回有序集中指定区间内的成员，通过索引，分数从高到低 ZREVRANGE
 */
-func (this *Redis) ZRevRange(valuetype reflect.Type, key string, start int64, stop int64) (result []interface{}, err error) {
+func (this *Redis) ZRevRange(key string, start int64, stop int64, v interface{}) (err error) {
 	var _result []string
 	cmd := this.client.ZRevRange(this.getContext(), key, start, stop)
 	if _result, err = cmd.Result(); err == nil {
-		result = make([]interface{}, len(_result))
-		for i, v := range _result {
-			temp := reflect.New(valuetype.Elem()).Interface()
-			if err = this.Decode([]byte(v), &temp); err == nil {
-				result[i] = temp
-			}
-		}
+		err = this.decode.DecoderSliceString(_result, v)
 	}
 	return
 }
@@ -169,17 +143,11 @@ func (this *Redis) ZRevRange(valuetype reflect.Type, key string, start int64, st
 /*
 Redis ZRevRangeByScore 返回有序集中指定分数区间内的成员，分数从高到低排序
 */
-func (this *Redis) ZRevRangeByScore(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error) {
+func (this *Redis) ZRevRangeByScore(key string, opt *redis.ZRangeBy, v interface{}) (err error) {
 	var _result []string
 	cmd := this.client.ZRevRangeByScore(this.getContext(), key, opt)
 	if _result, err = cmd.Result(); err == nil {
-		result = make([]interface{}, len(_result))
-		for i, v := range _result {
-			temp := reflect.New(valuetype.Elem()).Interface()
-			if err = this.Decode([]byte(v), &temp); err == nil {
-				result[i] = temp
-			}
-		}
+		err = this.decode.DecoderSliceString(_result, v)
 	}
 	return
 }

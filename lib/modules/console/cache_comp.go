@@ -2,7 +2,6 @@ package console
 
 import (
 	"fmt"
-	reflect "reflect"
 	"time"
 
 	"github.com/liwei1dao/lego/core"
@@ -188,16 +187,9 @@ func (this *CacheComp) AddNewClusterMonitor(data map[string]*ClusterMonitor) {
 
 //添加新的ClusterMonitor
 func (this *CacheComp) GetClusterMonitor(sIs string, timeleng int) (result []*ClusterMonitor, err error) {
-	var values []interface{}
 	result = make([]*ClusterMonitor, 0)
 	id := fmt.Sprintf(string(Cache_ConsoleClusterMonitor), sIs)
-	values, err = this.redis.LRange(id, 0, timeleng, reflect.TypeOf(&ClusterMonitor{}))
-	if err == nil && values != nil && len(values) > 0 {
-		result = make([]*ClusterMonitor, len(values))
-		for i, v := range values {
-			result[i] = v.(*ClusterMonitor)
-		}
-	}
+	err = this.redis.LRange(id, 0, timeleng, result)
 	return
 }
 
@@ -237,14 +229,7 @@ func (this *CacheComp) AddNewHostMonitor(data *HostMonitor) {
 
 //添加新的HostMonitor
 func (this *CacheComp) GetHostMonitor(timeleng int) (result []*HostMonitor, err error) {
-	var values []interface{}
 	result = make([]*HostMonitor, 0)
-	values, err = this.redis.LRange(Cache_ConsoleHostMonitor, 0, timeleng, reflect.TypeOf(&HostMonitor{}))
-	if values != nil && len(values) > 0 {
-		result = make([]*HostMonitor, len(values))
-		for i, v := range values {
-			result[i] = v.(*HostMonitor)
-		}
-	}
+	err = this.redis.LRange(Cache_ConsoleHostMonitor, 0, timeleng, result)
 	return
 }

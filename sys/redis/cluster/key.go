@@ -9,7 +9,6 @@ import (
 ///删除redis key
 func (this *Redis) Delete(key string) (err error) {
 	err = this.client.Do(this.getContext(), "DEL", key).Err()
-
 	return
 }
 

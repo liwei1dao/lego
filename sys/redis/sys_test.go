@@ -3,12 +3,30 @@ package redis_test
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/liwei1dao/lego/sys/redis"
 )
+
+func TestMain(m *testing.M) {
+	if err := redis.OnInit(nil,
+		redis.SetRedisType(redis.Redis_Cluster),
+		redis.SetRedis_Cluster_Addr([]string{"10.0.0.9:9001", "10.0.0.9:9002", "10.0.0.9:9003", "10.0.1.45:9004", "10.0.1.45:9005", "10.0.1.45:9006"}),
+		redis.SetRedis_Cluster_Password(""),
+		redis.SetRedisStorageType(redis.JsonData),
+	); err != nil {
+		fmt.Println("err:", err)
+		return
+	}
+	defer os.Exit(m.Run())
+	// if err := cache.OnInit(nil, cache.Set_Redis_Addr([]string{"10.0.0.9:9001", "10.0.0.9:9002", "10.0.0.9:9003", "10.0.1.45:9004", "10.0.1.45:9005", "10.0.1.45:9006"}), cache.Set_Redis_Password("")); err != nil {
+	// 	fmt.Printf("err:%v\n", err)
+	// 	return
+	// }
+}
 
 func Test_SysIPV6(t *testing.T) {
 	err := redis.OnInit(map[string]interface{}{
@@ -139,5 +157,40 @@ func Test_Redis_Type(t *testing.T) {
 	} else {
 		fmt.Printf("Test_Redis_Type:%s \n", ty)
 	}
+}
 
+type TestData struct {
+	Name string `json:"name"`
+	Agr  int    `json:"agr"`
+}
+
+func Test_Redis_Encoder_Struct(t *testing.T) {
+	err := redis.Set("test:1001", &TestData{Name: "liwei1dao", Agr: 12}, -1)
+	fmt.Printf("err:%v\n", err)
+}
+func Test_Redis_Encoder_int(t *testing.T) {
+	err := redis.Set("test:1002", 856, -1)
+	fmt.Printf("err:%v \n", err)
+	data := 0
+	err = redis.Get("test:1002", &data)
+	fmt.Printf("data:%d err:%v\n", data, err)
+}
+
+func Test_Redis_Encoder_Hash(t *testing.T) {
+	// err := redis.HMSet("test:1003", &TestData{Name: "liwei1dao", Agr: 12})
+	// fmt.Printf("err:%v\n", err)
+	data := &TestData{}
+	err := redis.HGetAll("test:1003", data)
+	fmt.Printf("data:%v err:%v\n", data, err)
+
+	// name := ""
+	// err := redis.HGet("test:1003", "Name", &name)
+	// fmt.Printf("name:%v err:%v", name, err)
+
+	// data1 := map[string]*TestData{"li_1": {Name: "liwei2dao", Agr: 56}, "li_2": {Name: "liwei3dao", Agr: 78}}
+	// err := redis.HMSet("test:1004", data1)
+	// fmt.Printf("err:%v\n", err)
+	// data2 := make(map[string]*TestData)
+	// err = redis.HGetAll("test:1004", data2)
+	// fmt.Printf("data2:%v err:%v\n", data2, err)
 }

@@ -3,19 +3,27 @@ package redis
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/liwei1dao/lego/sys/redis/cluster"
 	"github.com/liwei1dao/lego/sys/redis/single"
+	"github.com/liwei1dao/lego/utils/codec"
+
+	"github.com/go-redis/redis/v8"
 	"google.golang.org/protobuf/proto"
 )
 
 func newSys(options Options) (sys *Redis, err error) {
 	sys = &Redis{options: options}
+	if options.RedisStorageType == JsonData {
+		sys.decoder = &codec.Decoder{DefDecoder: jsoniter.Unmarshal}
+		sys.encoder = &codec.Encoder{DefEncoder: jsoniter.Marshal}
+	} else {
+		sys.decoder = &codec.Decoder{DefDecoder: func(buf []byte, v interface{}) error { return proto.Unmarshal(buf, v.(proto.Message)) }}
+		sys.encoder = &codec.Encoder{DefEncoder: func(v interface{}) (data []byte, err error) { return proto.Marshal(v.(proto.Message)) }}
+	}
 	err = sys.init()
 	return
 }
@@ -23,6 +31,8 @@ func newSys(options Options) (sys *Redis, err error) {
 type Redis struct {
 	options Options
 	client  IRedis
+	decoder codec.IDecoder
+	encoder codec.IEncoder
 }
 
 func (this *Redis) init() (err error) {
@@ -33,16 +43,16 @@ func (this *Redis) init() (err error) {
 			this.options.Redis_Single_DB,
 			this.options.Redis_Single_PoolSize,
 			this.options.TimeOut,
-			this.Encode,
-			this.Decode,
+			this.encoder,
+			this.decoder,
 		)
 	} else if this.options.RedisType == Redis_Cluster {
 		this.client, err = cluster.NewSys(
 			this.options.Redis_Cluster_Addr,
 			this.options.Redis_Cluster_Password,
 			this.options.TimeOut,
-			this.Encode,
-			this.Decode,
+			this.encoder,
+			this.decoder,
 		)
 	} else {
 		err = fmt.Errorf("init Redis err:RedisType - %d", this.options.RedisType)
@@ -70,33 +80,6 @@ func (this *Redis) Lock(key string, outTime int) (result bool, err error) {
 }
 func (this *Redis) UnLock(key string) (err error) {
 	return this.client.UnLock(key)
-}
-
-///数据编码
-func (this *Redis) Encode(value interface{}) (result []byte, err error) {
-	if this.options.RedisStorageType == JsonData {
-		result, err = jsoniter.Marshal(value)
-	} else {
-		if _, ok := value.(proto.Message); ok {
-			result, err = proto.Marshal(value.(proto.Message))
-		} else {
-			result, err = jsoniter.Marshal(value)
-		}
-	}
-	return
-}
-
-func (this *Redis) Decode(value []byte, result interface{}) (err error) {
-	if this.options.RedisStorageType == JsonData {
-		err = jsoniter.Unmarshal(value, result)
-	} else {
-		if _, ok := result.(proto.Message); ok {
-			err = proto.Unmarshal(value, result.(proto.Message))
-		} else {
-			err = jsoniter.Unmarshal(value, result)
-		}
-	}
-	return
 }
 
 func (this *Redis) Delete(key string) (err error) {
@@ -180,8 +163,8 @@ func (this *Redis) Get(key string, value interface{}) (err error) {
 func (this *Redis) GetSet(key string, value interface{}, result interface{}) (err error) {
 	return this.client.GetSet(key, value, result)
 }
-func (this *Redis) MGet(keys ...string) (result []string, err error) {
-	return this.client.MGet(keys...)
+func (this *Redis) MGet(v interface{}, keys ...string) (err error) {
+	return this.client.MGet(v, keys...)
 }
 func (this *Redis) INCRBY(key string, amount int64) (result int64, err error) {
 	return this.client.INCRBY(key, amount)
@@ -206,8 +189,8 @@ func (this *Redis) LPush(key string, values ...interface{}) (err error) {
 func (this *Redis) LPushX(key string, values ...interface{}) (err error) {
 	return this.client.LPushX(key, values...)
 }
-func (this *Redis) LRange(key string, start, end int, valuetype reflect.Type) (result []interface{}, err error) {
-	return this.client.LRange(key, start, end, valuetype)
+func (this *Redis) LRange(key string, start, end int, v interface{}) (err error) {
+	return this.client.LRange(key, start, end, v)
 }
 func (this *Redis) LRem(key string, count int, target interface{}) (err error) {
 	return this.client.LRem(key, count, target)
@@ -241,8 +224,8 @@ func (this *Redis) HExists(key string, field string) (result bool, err error) {
 func (this *Redis) HGet(key string, field string, value interface{}) (err error) {
 	return this.client.HGet(key, field, value)
 }
-func (this *Redis) HGetAll(key string, valuetype reflect.Type) (result []interface{}, err error) {
-	return this.client.HGetAll(key, valuetype)
+func (this *Redis) HGetAll(key string, v interface{}) (err error) {
+	return this.client.HGetAll(key, v)
 }
 func (this *Redis) HIncrBy(key string, field string, value int) (err error) {
 	return this.client.HIncrBy(key, field, value)
@@ -256,11 +239,11 @@ func (this *Redis) Hkeys(key string) (result []string, err error) {
 func (this *Redis) Hlen(key string) (result int, err error) {
 	return this.client.Hlen(key)
 }
-func (this *Redis) HMGet(key string, valuetype reflect.Type, fields ...string) (result []interface{}, err error) {
-	return this.client.HMGet(key, valuetype, fields...)
+func (this *Redis) HMGet(key string, v interface{}, fields ...string) (err error) {
+	return this.client.HMGet(key, v, fields...)
 }
-func (this *Redis) HMSet(key string, value map[string]interface{}) (err error) {
-	return this.client.HMSet(key, value)
+func (this *Redis) HMSet(key string, v interface{}) (err error) {
+	return this.client.HMSet(key, v)
 }
 func (this *Redis) HSet(key string, field string, value interface{}) (err error) {
 	return this.client.HSet(key, field, value)
@@ -276,14 +259,14 @@ func (this *Redis) SAdd(key string, values ...interface{}) (err error) {
 func (this *Redis) SCard(key string) (result int64, err error) {
 	return this.client.SCard(key)
 }
-func (this *Redis) SDiff(valuetype reflect.Type, keys ...string) (result []interface{}, err error) {
-	return this.client.SDiff(valuetype, keys...)
+func (this *Redis) SDiff(v interface{}, keys ...string) (err error) {
+	return this.client.SDiff(v, keys...)
 }
 func (this *Redis) SDiffStore(destination string, keys ...string) (result int64, err error) {
 	return this.client.SDiffStore(destination, keys...)
 }
-func (this *Redis) SInter(valuetype reflect.Type, keys ...string) (result []interface{}, err error) {
-	return this.client.SInter(valuetype, keys...)
+func (this *Redis) SInter(v interface{}, keys ...string) (err error) {
+	return this.client.SInter(v, keys...)
 }
 func (this *Redis) SInterStore(destination string, keys ...string) (result int64, err error) {
 	return this.client.SInterStore(destination, keys...)
@@ -291,8 +274,8 @@ func (this *Redis) SInterStore(destination string, keys ...string) (result int64
 func (this *Redis) Sismember(key string, value interface{}) (iskeep bool, err error) {
 	return this.client.Sismember(key, value)
 }
-func (this *Redis) SMembers(valuetype reflect.Type, key string) (result []interface{}, err error) {
-	return this.client.SMembers(valuetype, key)
+func (this *Redis) SMembers(v interface{}, key string) (err error) {
+	return this.client.SMembers(v, key)
 }
 func (this *Redis) SMove(source string, destination string, member interface{}) (result bool, err error) {
 	return this.client.SMove(source, destination, member)
@@ -306,8 +289,8 @@ func (this *Redis) Srandmember(key string) (result string, err error) {
 func (this *Redis) SRem(key string, members ...interface{}) (result int64, err error) {
 	return this.client.SRem(key, members...)
 }
-func (this *Redis) SUnion(valuetype reflect.Type, keys ...string) (result []interface{}, err error) {
-	return this.client.SUnion(valuetype, keys...)
+func (this *Redis) SUnion(v interface{}, keys ...string) (err error) {
+	return this.client.SUnion(v, keys...)
 }
 func (this *Redis) Sunionstore(destination string, keys ...string) (result int64, err error) {
 	return this.client.Sunionstore(destination, keys...)
@@ -335,14 +318,14 @@ func (this *Redis) ZInterStore(destination string, store *redis.ZStore) (result 
 func (this *Redis) ZLexCount(key string, min string, max string) (result int64, err error) {
 	return this.client.ZLexCount(key, min, max)
 }
-func (this *Redis) ZRange(valuetype reflect.Type, key string, start int64, stop int64) (result []interface{}, err error) {
-	return this.client.ZRange(valuetype, key, start, stop)
+func (this *Redis) ZRange(key string, start int64, stop int64, v interface{}) (err error) {
+	return this.client.ZRange(key, start, stop, v)
 }
-func (this *Redis) ZRangeByLex(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error) {
-	return this.client.ZRangeByLex(valuetype, key, opt)
+func (this *Redis) ZRangeByLex(key string, opt *redis.ZRangeBy, v interface{}) (err error) {
+	return this.client.ZRangeByLex(key, opt, v)
 }
-func (this *Redis) ZRangeByScore(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error) {
-	return this.client.ZRangeByScore(valuetype, key, opt)
+func (this *Redis) ZRangeByScore(key string, opt *redis.ZRangeBy, v interface{}) (err error) {
+	return this.client.ZRangeByScore(key, opt, v)
 }
 func (this *Redis) ZRank(key string, member string) (result int64, err error) {
 	return this.client.ZRank(key, member)
@@ -359,11 +342,11 @@ func (this *Redis) ZRemRangeByRank(key string, start int64, stop int64) (result 
 func (this *Redis) ZRemRangeByScore(key string, min string, max string) (result int64, err error) {
 	return this.client.ZRemRangeByScore(key, min, max)
 }
-func (this *Redis) ZRevRange(valuetype reflect.Type, key string, start int64, stop int64) (result []interface{}, err error) {
-	return this.client.ZRevRange(valuetype, key, start, stop)
+func (this *Redis) ZRevRange(key string, start int64, stop int64, v interface{}) (err error) {
+	return this.client.ZRevRange(key, start, stop, v)
 }
-func (this *Redis) ZRevRangeByScore(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error) {
-	return this.client.ZRevRangeByScore(valuetype, key, opt)
+func (this *Redis) ZRevRangeByScore(key string, opt *redis.ZRangeBy, v interface{}) (err error) {
+	return this.client.ZRevRangeByScore(key, opt, v)
 }
 func (this *Redis) ZRevRank(key string, member string) (result int64, err error) {
 	return this.client.ZRevRank(key, member)

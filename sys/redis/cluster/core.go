@@ -4,12 +4,14 @@ import (
 	"context"
 	"time"
 
+	"github.com/liwei1dao/lego/utils/codec"
+
 	"github.com/go-redis/redis/v8"
 )
 
 func NewSys(RedisUrl []string, RedisPassword string, timeOut time.Duration,
-	encode func(value interface{}) (result []byte, err error),
-	decode func(value []byte, result interface{}) (err error),
+	encode codec.IEncoder,
+	decode codec.IDecoder,
 ) (sys *Redis, err error) {
 	var (
 		client *redis.ClusterClient
@@ -21,8 +23,8 @@ func NewSys(RedisUrl []string, RedisPassword string, timeOut time.Duration,
 	sys = &Redis{
 		client:  client,
 		timeOut: timeOut,
-		Encode:  encode,
-		Decode:  decode,
+		encode:  encode,
+		decode:  decode,
 	}
 	_, err = sys.Ping()
 	return
@@ -31,8 +33,8 @@ func NewSys(RedisUrl []string, RedisPassword string, timeOut time.Duration,
 type Redis struct {
 	client  *redis.ClusterClient
 	timeOut time.Duration
-	Encode  func(value interface{}) (result []byte, err error)
-	Decode  func(value []byte, result interface{}) (err error)
+	encode  codec.IEncoder
+	decode  codec.IDecoder
 }
 
 func (this *Redis) getContext() (ctx context.Context) {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/liwei1dao/lego/utils/convert"
+	"github.com/liwei1dao/lego/utils/codec"
 )
 
 // String contains the given interface object slice and its format.
@@ -32,6 +32,6 @@ func WriteString(w http.ResponseWriter, format string, data []interface{}) (err 
 		_, err = fmt.Fprintf(w, format, data...)
 		return
 	}
-	_, err = w.Write(convert.StringToBytes(format))
+	_, err = w.Write(codec.StringToBytes(format))
 	return
 }

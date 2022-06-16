@@ -1,7 +1,5 @@
 package single
 
-import "reflect"
-
 /*
 Redis Sadd 命令将一个或多个成员元素加入到集合中，已经存在于集合的成员元素将被忽略。
 假如集合 key 不存在，则创建一个只包含添加的元素作成员的集合。
@@ -12,7 +10,7 @@ func (this *Redis) SAdd(key string, values ...interface{}) (err error) {
 	agrs = append(agrs, "SADD")
 	agrs = append(agrs, key)
 	for _, v := range values {
-		result, _ := this.Encode(v)
+		result, _ := this.encode.EncoderString(v)
 		agrs = append(agrs, result)
 	}
 	err = this.client.Do(this.getContext(), agrs...).Err()
@@ -32,17 +30,11 @@ Redis Sdiff 命令返回第一个集合与其他集合之间的差异，也可�
 差集的结果来自前面的 FIRST_KEY ,而不是后面的 OTHER_KEY1，也不是整个 FIRST_KEY OTHER_KEY1..OTHER_KEYN 的差集。
 实例:
 */
-func (this *Redis) SDiff(valuetype reflect.Type, keys ...string) (result []interface{}, err error) {
+func (this *Redis) SDiff(v interface{}, keys ...string) (err error) {
 	var _result []string
 	cmd := this.client.SDiff(this.getContext(), keys...)
 	if _result, err = cmd.Result(); err == nil {
-		result = make([]interface{}, len(_result))
-		for i, v := range _result {
-			temp := reflect.New(valuetype.Elem()).Interface()
-			if err = this.Decode([]byte(v), &temp); err == nil {
-				result[i] = temp
-			}
-		}
+		err = this.decode.DecoderSliceString(_result, v)
 	}
 	return
 }
@@ -58,17 +50,11 @@ func (this *Redis) SDiffStore(destination string, keys ...string) (result int64,
 /*
 Redis Sismember 命令返回给定所有给定集合的交集。 不存在的集合 key 被视为空集。 当给定集合当中有一个空集时，结果也为空集(根据集合运算定律)。
 */
-func (this *Redis) SInter(valuetype reflect.Type, keys ...string) (result []interface{}, err error) {
+func (this *Redis) SInter(v interface{}, keys ...string) (err error) {
 	var _result []string
 	cmd := this.client.SInter(this.getContext(), keys...)
 	if _result, err = cmd.Result(); err == nil {
-		result = make([]interface{}, len(_result))
-		for i, v := range _result {
-			temp := reflect.New(valuetype.Elem()).Interface()
-			if err = this.Decode([]byte(v), &temp); err == nil {
-				result[i] = temp
-			}
-		}
+		err = this.decode.DecoderSliceString(_result, v)
 	}
 	return
 }
@@ -92,17 +78,11 @@ func (this *Redis) Sismember(key string, value interface{}) (iskeep bool, err er
 /*
 Redis Smembers 号召返回集合中的所有成员。
 */
-func (this *Redis) SMembers(valuetype reflect.Type, key string) (result []interface{}, err error) {
+func (this *Redis) SMembers(v interface{}, key string) (err error) {
 	var _result []string
 	cmd := this.client.SMembers(this.getContext(), key)
 	if _result, err = cmd.Result(); err == nil {
-		result = make([]interface{}, len(_result))
-		for i, v := range _result {
-			temp := reflect.New(valuetype.Elem()).Interface()
-			if err = this.Decode([]byte(v), &temp); err == nil {
-				result[i] = temp
-			}
-		}
+		err = this.decode.DecoderSliceString(_result, v)
 	}
 	return
 }
@@ -153,17 +133,11 @@ func (this *Redis) SRem(key string, members ...interface{}) (result int64, err e
 /*
 Redis Sunion 命令返回给定集合的并集。
 */
-func (this *Redis) SUnion(valuetype reflect.Type, keys ...string) (result []interface{}, err error) {
+func (this *Redis) SUnion(v interface{}, keys ...string) (err error) {
 	var _result []string
 	cmd := this.client.SUnion(this.getContext(), keys...)
 	if _result, err = cmd.Result(); err == nil {
-		result = make([]interface{}, len(_result))
-		for i, v := range _result {
-			temp := reflect.New(valuetype.Elem()).Interface()
-			if err = this.Decode([]byte(v), &temp); err == nil {
-				result[i] = temp
-			}
-		}
+		err = this.decode.DecoderSliceString(_result, v)
 	}
 	return
 }
