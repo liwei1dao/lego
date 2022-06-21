@@ -218,7 +218,7 @@ func (this *Encoder) EncoderToMapString(v interface{}) (data map[string]string, 
 			tag := fieldInfo.Tag
 			name := tag.Get("json")
 			if len(name) == 0 {
-				name = fieldInfo.Name
+				continue
 			}
 			field := elem.Field(i).Interface()
 			var valuedata string
@@ -244,6 +244,7 @@ func (this *Encoder) EncoderToSliceString(v interface{}) (data []string, err err
 	}
 	// vof = vof.Elem()
 	if vof.Kind() == reflect.Slice {
+		data = make([]string, vof.Len())
 		for i := 0; i < vof.Len(); i++ {
 			value := vof.Index(i).Interface()
 			var valuedata string

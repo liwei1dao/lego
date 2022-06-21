@@ -58,7 +58,7 @@ func Test_Redis_ExpireatKey(t *testing.T) {
 	if err = redis.Set("liwei1dao", 123, -1); err != nil {
 		fmt.Printf("Redis:err:%v \n", err)
 	}
-	if err = redis.ExpireKey("liwei1dao", 120); err != nil {
+	if err = redis.Expire("liwei1dao", 120); err != nil {
 		fmt.Printf("Redis:err:%v \n", err)
 	}
 	fmt.Printf("Redis:end \n")
@@ -159,9 +159,14 @@ func Test_Redis_Type(t *testing.T) {
 	}
 }
 
+type TestAny struct {
+	SubName string `json:"subname"`
+	Age     int32  `json:"age"`
+}
 type TestData struct {
-	Name string `json:"name"`
-	Agr  int    `json:"agr"`
+	Name string   `json:"name"`
+	Agr  int      `json:"agr"`
+	Sub  *TestAny `json:"sub"`
 }
 
 func Test_Redis_Encoder_Struct(t *testing.T) {
@@ -177,15 +182,20 @@ func Test_Redis_Encoder_int(t *testing.T) {
 }
 
 func Test_Redis_Encoder_Hash(t *testing.T) {
-	// err := redis.HMSet("test:1003", &TestData{Name: "liwei1dao", Agr: 12})
+	// err := redis.HMSet("test:1005", &TestData{Name: "liwei1dao", Agr: 12, Sub: &TestAny{SubName: "test", Age: 20}})
 	// fmt.Printf("err:%v\n", err)
-	data := &TestData{}
-	err := redis.HGetAll("test:1003", data)
-	fmt.Printf("data:%v err:%v\n", data, err)
 
-	// name := ""
-	// err := redis.HGet("test:1003", "Name", &name)
-	// fmt.Printf("name:%v err:%v", name, err)
+	// data := &TestData{}
+	// err = redis.HGetAll("test:1005", data)
+	// fmt.Printf("data:%v err:%v\n", data, err)
+
+	// redis.HSet("test:1003", "Name", "eeee")
+	name := ""
+	err := redis.HGet("test:103", "name", &name)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(name)
 
 	// data1 := map[string]*TestData{"li_1": {Name: "liwei2dao", Agr: 56}, "li_2": {Name: "liwei3dao", Agr: 78}}
 	// err := redis.HMSet("test:1004", data1)

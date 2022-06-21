@@ -19,15 +19,15 @@ type (
 		/*Key*/
 		Delete(key string) (err error)
 		ExistsKey(key string) (iskeep bool, err error)
-		ExpireKey(key string, expire int) (err error)
-		ExpireatKey(key string, expire_unix int64) (err error)
-		Pexpirekey(key string, expire int) (err error)
-		PexpireatKey(key string, expire_unix int64) (err error)
-		PersistKey(key string) (err error)
-		PttlKey(key string) (leftexpire int64, err error)
-		TtlKey(key string) (leftexpire int64, err error)
-		RenameKye(oldkey string, newkey string) (err error)
-		RenamenxKey(oldkey string, newkey string) (err error)
+		Expire(key string, expiration time.Duration) (err error)
+		ExpireAt(key string, tm time.Time) (err error)
+		PExpire(key string, expiration time.Duration) (err error)
+		PExpireAt(key string, tm time.Time) (err error)
+		Persist(key string) (err error)
+		PTTL(key string) (leftexpire time.Duration, err error)
+		TTL(key string) (leftexpire time.Duration, err error)
+		Rename(oldkey string, newkey string) (err error)
+		RenameNX(oldkey string, newkey string) (err error)
 		Keys(pattern string) (keys []string, err error)
 		Type(key string) (ty string, err error)
 		/*String*/
@@ -158,32 +158,32 @@ func Delete(key string) (err error) {
 func ExistsKey(key string) (iskeep bool, err error) {
 	return defsys.ExistsKey(key)
 }
-func ExpireKey(key string, expire int) (err error) {
-	return defsys.ExpireKey(key, expire)
+func Expire(key string, expiration time.Duration) (err error) {
+	return defsys.Expire(key, expiration)
 }
-func ExpireatKey(key string, expire_unix int64) (err error) {
-	return defsys.ExpireatKey(key, expire_unix)
+func ExpireAt(key string, tm time.Time) (err error) {
+	return defsys.ExpireAt(key, tm)
 }
-func Pexpirekey(key string, expire int) (err error) {
-	return defsys.Pexpirekey(key, expire)
+func PExpire(key string, expiration time.Duration) (err error) {
+	return defsys.PExpire(key, expiration)
 }
-func PexpireatKey(key string, expire_unix int64) (err error) {
-	return defsys.PexpireatKey(key, expire_unix)
+func PExpireAt(key string, tm time.Time) (err error) {
+	return defsys.PExpireAt(key, tm)
 }
-func PersistKey(key string) (err error) {
-	return defsys.PersistKey(key)
+func Persist(key string) (err error) {
+	return defsys.Persist(key)
 }
-func PttlKey(key string) (leftexpire int64, err error) {
-	return defsys.PttlKey(key)
+func PTTL(key string) (leftexpire time.Duration, err error) {
+	return defsys.PTTL(key)
 }
-func TtlKey(key string) (leftexpire int64, err error) {
-	return defsys.TtlKey(key)
+func TTL(key string) (leftexpire time.Duration, err error) {
+	return defsys.TTL(key)
 }
-func RenameKye(oldkey string, newkey string) (err error) {
-	return defsys.RenameKye(oldkey, newkey)
+func Rename(oldkey string, newkey string) (err error) {
+	return defsys.Rename(oldkey, newkey)
 }
-func RenamenxKey(oldkey string, newkey string) (err error) {
-	return defsys.RenamenxKey(oldkey, newkey)
+func RenameNX(oldkey string, newkey string) (err error) {
+	return defsys.RenameNX(oldkey, newkey)
 }
 func Keys(pattern string) (keys []string, err error) {
 	return defsys.Keys(pattern)

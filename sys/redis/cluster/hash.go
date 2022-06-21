@@ -54,6 +54,10 @@ func (this *Redis) HGet(key string, field string, v interface{}) (err error) {
 	this.client.Process(this.getContext(), cmd)
 	var _result string
 	if _result, err = cmd.Result(); err == nil {
+		if len(_result) == 0 {
+			err = redis.Nil
+			return
+		}
 		err = this.decode.DecoderString(_result, v)
 	}
 	return
@@ -68,6 +72,10 @@ func (this *Redis) HGetAll(key string, v interface{}) (err error) {
 	this.client.Process(this.getContext(), cmd)
 	var _result map[string]string
 	if _result, err = cmd.Result(); err == nil {
+		if len(_result) == 0 {
+			err = redis.Nil
+			return
+		}
 		err = this.decode.DecoderMapString(_result, v)
 	}
 	return

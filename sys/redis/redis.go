@@ -90,32 +90,32 @@ func (this *Redis) ExistsKey(key string) (iskeep bool, err error) {
 	return this.client.ExistsKey(key)
 }
 
-func (this *Redis) ExpireKey(key string, expire int) (err error) {
-	return this.client.ExpireKey(key, expire)
+func (this *Redis) Expire(key string, expire time.Duration) (err error) {
+	return this.client.Expire(key, expire)
 }
-func (this *Redis) ExpireatKey(key string, expire_unix int64) (err error) {
-	return this.client.ExpireatKey(key, expire_unix)
+func (this *Redis) ExpireAt(key string, tm time.Time) (err error) {
+	return this.client.ExpireAt(key, tm)
 }
-func (this *Redis) Pexpirekey(key string, expire int) (err error) {
-	return this.client.Pexpirekey(key, expire)
+func (this *Redis) PExpire(key string, expire time.Duration) (err error) {
+	return this.client.PExpire(key, expire)
 }
-func (this *Redis) PexpireatKey(key string, expire_unix int64) (err error) {
-	return this.client.PexpireatKey(key, expire_unix)
+func (this *Redis) PExpireAt(key string, tm time.Time) (err error) {
+	return this.client.PExpireAt(key, tm)
 }
-func (this *Redis) PersistKey(key string) (err error) {
-	return this.client.PersistKey(key)
+func (this *Redis) Persist(key string) (err error) {
+	return this.client.Persist(key)
 }
-func (this *Redis) PttlKey(key string) (leftexpire int64, err error) {
-	return this.client.PttlKey(key)
+func (this *Redis) PTTL(key string) (leftexpire time.Duration, err error) {
+	return this.client.PTTL(key)
 }
-func (this *Redis) TtlKey(key string) (leftexpire int64, err error) {
-	return this.client.TtlKey(key)
+func (this *Redis) TTL(key string) (leftexpire time.Duration, err error) {
+	return this.client.TTL(key)
 }
-func (this *Redis) RenameKye(oldkey string, newkey string) (err error) {
-	return this.client.RenameKye(oldkey, newkey)
+func (this *Redis) Rename(oldkey string, newkey string) (err error) {
+	return this.client.Rename(oldkey, newkey)
 }
-func (this *Redis) RenamenxKey(oldkey string, newkey string) (err error) {
-	return this.client.RenamenxKey(oldkey, newkey)
+func (this *Redis) RenameNX(oldkey string, newkey string) (err error) {
+	return this.client.RenameNX(oldkey, newkey)
 }
 func (this *Redis) Keys(pattern string) (keys []string, err error) {
 	return this.client.Keys(pattern)

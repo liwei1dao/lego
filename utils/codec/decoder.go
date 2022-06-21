@@ -326,31 +326,44 @@ func (this *Decoder) DecoderMapString(data map[string]string, v interface{}) err
 
 //redis 存储解析 针对 string 转换
 func (this *Decoder) DecoderSliceString(data []string, v interface{}) error {
-	vof := reflect.ValueOf(v)
-	if !vof.IsValid() {
-		return fmt.Errorf("Decoder: DecoderMap(nil)")
+	t := reflect.TypeOf(v)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
 	}
-	if vof.Kind() != reflect.Ptr && vof.Kind() != reflect.Map && vof.Kind() != reflect.Slice {
-		return fmt.Errorf("Decoder: DecoderMap(non-pointer %T)", v)
-	}
-	if vof.Kind() == reflect.Slice {
-		elemType := vof.Type().Elem()
-		for _, buf := range data {
-			if vof.Len() < vof.Cap() {
-				vof.Set(vof.Slice(0, vof.Len()+1))
-				elem := vof.Index(vof.Len() - 1)
-				if elem.IsNil() {
-					elem.Set(reflect.New(elemType))
-				}
-				this.DecoderString(buf, elem.Elem().Addr().Interface())
-				continue
-			}
-			elem := reflect.New(elemType)
-			vof.Set(reflect.Append(vof, elem))
-			this.DecoderString(buf, elem.Elem().Addr().Interface())
-		}
+
+	if t.Kind() == reflect.Slice {
+		t = t.Elem()
 	} else {
-		return fmt.Errorf("Decoder: DecoderSliceString(invalid type %T)", v)
+		panic("Input param is not a slice")
+	}
+
+	sl := reflect.ValueOf(v)
+
+	if t.Kind() == reflect.Ptr {
+		sl = sl.Elem()
+	}
+
+	st := sl.Type()
+	fmt.Printf("Slice Type %s:\n", st)
+
+	sliceType := st.Elem()
+	if sliceType.Kind() == reflect.Ptr {
+		sliceType = sliceType.Elem()
+	}
+	fmt.Printf("Slice Elem Type %v:\n", sliceType)
+	for _, buf := range data {
+		if sl.Len() < sl.Cap() {
+			sl.Set(sl.Slice(0, sl.Len()+1))
+			elem := sl.Index(sl.Len() - 1)
+			if elem.IsNil() {
+				elem.Set(reflect.New(sliceType))
+			}
+			this.DecoderString(buf, elem.Elem().Addr().Interface())
+			continue
+		}
+		elem := reflect.New(sliceType)
+		sl.Set(reflect.Append(sl, elem))
+		this.DecoderString(buf, elem.Elem().Addr().Interface())
 	}
 	return nil
 }
