@@ -1,30 +1,17 @@
-package rpcx
+package rpcl
 
 import (
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/mapstructure"
-	"github.com/smallnest/rpcx/client"
 )
 
 type Option func(*Options)
 type Options struct {
-	ServiceId string          //服务id
-	Port      int             //监听地址
-	FailMode  client.FailMode //失败模式
-	Debug     bool            //日志是否开启
+	ReportErr bool //注册错误答应
+	Debug     bool //日志是否开启
 	Log       log.ILog
 }
 
-func SetServiceId(v string) Option {
-	return func(o *Options) {
-		o.ServiceId = v
-	}
-}
-func SetPort(v int) Option {
-	return func(o *Options) {
-		o.Port = v
-	}
-}
 func SetDebug(v bool) Option {
 	return func(o *Options) {
 		o.Debug = v
