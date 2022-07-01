@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/liwei1dao/lego/sys/log"
 )
@@ -11,9 +12,21 @@ import (
 var TypeOfError = reflect.TypeOf((*error)(nil)).Elem()
 var TypeOfContext = reflect.TypeOf((*context.Context)(nil)).Elem()
 
+// SelectMode defines the algorithm of selecting a services from candidates.
+type SelectMode int
+
+const (
+	RandomSelect       SelectMode = iota //随机选择器
+	RoundRobin                           //轮询选择器
+	WeightedRoundRobin                   //权重轮询选择器
+	WeightedICMP                         //网络质量选择器
+)
+
 type (
 	ISys interface {
 		log.Ilogf
+		UpdateInterval() time.Duration //更新间隔
+		GetServers() (servers map[string]bool)
 	}
 	//路由
 	IRoute interface {
@@ -23,14 +36,22 @@ type (
 		UpdateServer(servers map[string]string)
 	}
 	IRPC interface {
-		Go(ctx context.Context, sId, serviceMethod string) (call *Call, err error)
+		Go(ctx context.Context, servicePath, serviceMethod string) (call *Call, err error)
+	}
+	ServiceDiscovery interface {
+		GetServices() []*KVPair
+		WatchService() chan []*KVPair
+		RemoveWatcher(ch chan []*KVPair)
+		Clone(servicePath string) (ServiceDiscovery, error)
+		Close()
 	}
 	//服务对象
 	Server struct {
 		sync.Mutex
-		Fn        reflect.Value
-		ArgType   reflect.Type
-		ReplyType reflect.Type
+		Fn        reflect.Value //执行方法
+		ArgType   reflect.Type  //请求参数类型
+		ReplyType reflect.Type  //返回数据类型
+		IsActive  bool          //是否激活
 	}
 	//异步返回结构
 	Call struct {
@@ -38,17 +59,5 @@ type (
 		Reply interface{} //返回参数
 		Error error       //错误信息
 		Done  chan *Call
-	}
-)
-
-type (
-	//服务节点信息
-	ServiceNode struct {
-		Tag     string  `json:"Tag"`     //服务集群标签
-		Type    string  `json:"Type"`    //服务类型
-		Id      string  `json:"Id"`      //服务Id
-		Version string  `json:"Version"` //服务版本
-		Addr    string  `json:"Addr"`    //服务端地址
-		Weight  float64 `json:"Weight"`  //服务负载权重
 	}
 )

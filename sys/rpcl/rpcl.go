@@ -21,9 +21,16 @@ func newSys(options Options) (sys ISys, err error) {
 
 type RPCL struct {
 	options      Options
-	selector     core.ISelector
 	serviceMapMu sync.RWMutex
 	serviceMap   map[string]*core.Server
+}
+
+func (this *RPCL) GetServers() (servers map[string]bool) {
+	servers = make(map[string]bool)
+	for k, v := range this.serviceMap {
+		servers[k] = v.IsActive
+	}
+	return
 }
 
 //注册服务 批量注册
@@ -46,23 +53,26 @@ func (this *RPCL) RegisterFunctionName(name string, fn interface{}) (err error) 
 
 //注销服务
 func (this *RPCL) UnRegister(name string) (err error) {
+	this.serviceMapMu.Lock()
+	delete(this.serviceMap, name)
+	this.serviceMapMu.Unlock()
 	return
 }
 
 //同步执行
-func (this *RPCL) Call(ctx context.Context, route core.IRoute, serviceMethod string) (err error) { //同步调用 等待结果
-	// sid := this.selector.Select(ctx, route, serviceMethod)
+func (this *RPCL) Call(ctx context.Context, route core.IRoute, serviceMethod string, args interface{}, reply interface{}) (err error) { //同步调用 等待结果
+
 	return nil
 }
 
 //异步执行 异步返回
-func (this *RPCL) Go(ctx context.Context, route core.IRoute, serviceMethod string) (call *core.Call, err error) { //异步调用 异步返回
+func (this *RPCL) Go(ctx context.Context, route core.IRoute, serviceMethod string, args interface{}, reply interface{}, done chan *core.Call) (call *core.Call, err error) { //异步调用 异步返回
 	// sid := this.selector.Select(ctx, route, serviceMethod)
 	return nil, nil
 }
 
 //同步执行 无返回
-func (this *RPCL) GoNR(ctx context.Context, route core.IRoute, serviceMethod string) (err error) { //异步调用 无返回
+func (this *RPCL) GoNR(ctx context.Context, route core.IRoute, serviceMethod string, args interface{}) (err error) { //异步调用 无返回
 	// sid := this.selector.Select(ctx, route, serviceMethod)
 	return nil
 }

@@ -307,17 +307,10 @@ func (this *Decoder) DecoderMapString(data map[string]string, v interface{}) err
 			}
 			if value, ok := data[name]; ok {
 				v := reflect.New(fieldInfo.Type).Elem()
-				if fieldInfo.Type.Kind() != reflect.Ptr {
-					if err := this.DecoderString(value, v.Addr().Interface()); err != nil {
-						return fmt.Errorf("Decoder: Decoder(non-pointer %T) err:%v", value, err)
-					}
-					elem.FieldByName(fieldInfo.Name).Set(v)
-				} else {
-					if err := this.DecoderString(value, v); err != nil {
-						return fmt.Errorf("Decoder: Decoder(non-pointer %T) err:%v", value, err)
-					}
-					elem.FieldByName(fieldInfo.Name).Set(v)
+				if err := this.DecoderString(value, v.Addr().Interface()); err != nil {
+					return fmt.Errorf("Decoder: Decoder(non-pointer %T) err:%v", value, err)
 				}
+				elem.FieldByName(fieldInfo.Name).Set(v)
 			}
 		}
 	}
