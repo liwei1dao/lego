@@ -7,7 +7,7 @@ import (
 	"github.com/liwei1dao/lego/sys/rpcl/core"
 )
 
-func newClient(sys core.ISys) (client *Client, err error) {
+func newClient(sys core.ISys, servicePath string) (client *Client, err error) {
 	return
 }
 

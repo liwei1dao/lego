@@ -5,37 +5,77 @@ import (
 
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/rpcl/core"
-	"github.com/liwei1dao/lego/sys/rpcl/selector"
+	"github.com/liwei1dao/lego/utils/codec"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
 
 type Option func(*Options)
 type Options struct {
-	UpDateInterval time.Duration
-	Selector       core.ISelector
-	Debug          bool //日志是否开启
+	BasePath       string              //服务根节点
+	ServiceType    string              //服务类型
+	ServiceId      string              //服务Id
+	CommType       core.NewConnectType //通信类型
+	UpdateInterval time.Duration       //更新间隔时间
+	Kafka_Addr     []string            //kafka 连接地址
+	Kafka_Version  string              //kafka 版本
+	Tcp_Addr       string              //Tcp 地址
+	Decoder        codec.IDecoder      //解码器
+	Encoder        codec.IEncoder      //编码器
+	Debug          bool                //日志是否开启
 	Log            log.ILog
 }
 
-func Set_UpDateInterval(v time.Duration) Option {
+func SetBasePath(v string) Option {
 	return func(o *Options) {
-		o.UpDateInterval = v
+		o.BasePath = v
 	}
 }
-
-func Set_Selector(v core.ISelector) Option {
+func SetServiceType(v string) Option {
 	return func(o *Options) {
-		o.Selector = v
+		o.ServiceType = v
 	}
 }
-
-func Set_Debug(v bool) Option {
+func SetServiceId(v string) Option {
+	return func(o *Options) {
+		o.ServiceId = v
+	}
+}
+func SetCommType(v bool) Option {
 	return func(o *Options) {
 		o.Debug = v
 	}
 }
 
-func Set_Log(v log.ILog) Option {
+func SetKafka_Addr(v []string) Option {
+	return func(o *Options) {
+		o.Kafka_Addr = v
+	}
+}
+func SetKafka_Version(v string) Option {
+	return func(o *Options) {
+		o.Kafka_Version = v
+	}
+}
+
+func SetDecoder(v codec.IDecoder) Option {
+	return func(o *Options) {
+		o.Decoder = v
+	}
+}
+
+func SetEncoder(v codec.IEncoder) Option {
+	return func(o *Options) {
+		o.Encoder = v
+	}
+}
+
+func SetDebug(v bool) Option {
+	return func(o *Options) {
+		o.Debug = v
+	}
+}
+
+func SetLog(v log.ILog) Option {
 	return func(o *Options) {
 		o.Log = v
 	}
@@ -43,7 +83,7 @@ func Set_Log(v log.ILog) Option {
 
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
-		Selector: selector.NewSelector(core.RandomSelect, map[string]string{}),
+		CommType: core.Tcp,
 		Debug:    true,
 		Log:      log.Clone(log.SetLoglayer(2)),
 	}
@@ -58,7 +98,7 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 
 func newOptionsByOption(opts ...Option) Options {
 	options := Options{
-		Selector: selector.NewSelector(core.RandomSelect, map[string]string{}),
+		CommType: core.Tcp,
 		Debug:    true,
 		Log:      log.Clone(log.SetLoglayer(2)),
 	}

@@ -8,29 +8,82 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
+	jsoniter "github.com/json-iterator/go"
+	"github.com/liwei1dao/lego/sys/rpcl/connect"
 	"github.com/liwei1dao/lego/sys/rpcl/core"
+	"github.com/liwei1dao/lego/utils/codec"
 )
 
-func newSys(options Options) (sys ISys, err error) {
-
+func newSys(options Options) (sys *RPCL, err error) {
+	sys = &RPCL{
+		options:    options,
+		decoder:    options.Decoder,
+		encoder:    options.Encoder,
+		serviceMap: make(map[string]*core.Server),
+	}
+	if sys.decoder == nil {
+		sys.decoder = &codec.Decoder{DefDecoder: jsoniter.Unmarshal}
+	}
+	if sys.encoder == nil {
+		sys.encoder = &codec.Encoder{DefEncoder: jsoniter.Marshal}
+	}
+	if sys.connect, err = connect.NewConnect(sys); err != nil {
+		return
+	}
 	return
 }
 
 type RPCL struct {
 	options      Options
+	node         *core.ServiceNode
+	decoder      codec.IDecoder
+	encoder      codec.IEncoder
+	connect      core.IConnect
 	serviceMapMu sync.RWMutex
 	serviceMap   map[string]*core.Server
 }
 
-func (this *RPCL) GetServers() (servers map[string]bool) {
-	servers = make(map[string]bool)
-	for k, v := range this.serviceMap {
-		servers[k] = v.IsActive
-	}
+//启动系统
+func (this *RPCL) Start() (err error) {
 	return
+}
+
+//关闭系统
+func (this *RPCL) Close() (err error) {
+	return
+}
+func (this *RPCL) GetUpdateInterval() time.Duration {
+	return this.options.UpdateInterval
+}
+
+func (this *RPCL) GetBasePath() string {
+	return this.options.BasePath
+}
+
+func (this *RPCL) GetNodePath() string {
+	return fmt.Sprintf("%s/%s/%s", this.options.BasePath, this.options.ServiceType, this.options.ServiceId)
+}
+
+func (this *RPCL) GetServiceNode() *core.ServiceNode {
+	return this.node
+}
+
+func (this *RPCL) Decoder() codec.IDecoder {
+	return this.decoder
+}
+func (this *RPCL) Encoder() codec.IEncoder {
+	return this.encoder
+}
+
+func (this *RPCL) GetKafkaAddr() []string {
+	return this.options.Kafka_Addr
+}
+func (this *RPCL) GetKafkaVersion() string {
+	return this.options.Kafka_Version
 }
 
 //注册服务 批量注册
@@ -52,11 +105,10 @@ func (this *RPCL) RegisterFunctionName(name string, fn interface{}) (err error) 
 }
 
 //注销服务
-func (this *RPCL) UnRegister(name string) (err error) {
+func (this *RPCL) UnRegister(name string) {
 	this.serviceMapMu.Lock()
 	delete(this.serviceMap, name)
 	this.serviceMapMu.Unlock()
-	return
 }
 
 //同步执行
@@ -75,6 +127,11 @@ func (this *RPCL) Go(ctx context.Context, route core.IRoute, serviceMethod strin
 func (this *RPCL) GoNR(ctx context.Context, route core.IRoute, serviceMethod string, args interface{}) (err error) { //异步调用 无返回
 	// sid := this.selector.Select(ctx, route, serviceMethod)
 	return nil
+}
+
+//接收到远程消息
+func (this *RPCL) Receive(message *core.Message) {
+
 }
 
 ///日志***********************************************************************
@@ -235,6 +292,54 @@ func (this *RPCL) registerFunction(fn interface{}, name string, useName bool) (e
 	return
 }
 
+//处理请求
+func (this *RPCL) handleRequest(ctx context.Context, req *core.Message) (res *core.Message, err error) {
+	methodName := req.ServiceMethod
+	res = req.Clone()
+	res.SetMessageType(core.Response)
+	this.serviceMapMu.RLock()
+	service, ok := this.serviceMap[methodName]
+	this.Debugf("server get service %+v for an request %+v", service, req)
+	this.serviceMapMu.RUnlock()
+	if ok {
+		argv := reflectTypePools.Get(service.ArgType)
+		err = this.decoder.Decoder(req.Payload, argv)
+		if err != nil {
+			return handleError(res, err)
+		}
+		replyv := reflectTypePools.Get(service.ReplyType)
+		if service.ArgType.Kind() != reflect.Ptr {
+			err = service.Call(ctx, reflect.ValueOf(argv).Elem(), reflect.ValueOf(replyv))
+		} else {
+			err = service.Call(ctx, reflect.ValueOf(argv), reflect.ValueOf(replyv))
+		}
+		reflectTypePools.Put(service.ArgType, argv)
+		if err != nil {
+			if replyv != nil {
+				data, err := this.encoder.Encoder(replyv)
+				reflectTypePools.Put(service.ReplyType, replyv)
+				if err != nil {
+					return handleError(res, err)
+				}
+				res.Payload = data
+			}
+			return handleError(res, err)
+		}
+		if !req.IsOneway() {
+			data, err := this.encoder.Encoder(replyv)
+			reflectTypePools.Put(service.ReplyType, replyv)
+			if err != nil {
+				return handleError(res, err)
+			}
+			res.Payload = data
+		} else if replyv != nil {
+			reflectTypePools.Put(service.ReplyType, replyv)
+		}
+		this.Debugf("server called service %+v for an request %+v", service, req)
+	}
+	return
+}
+
 func isExportedOrBuiltinType(t reflect.Type) bool {
 	for t.Kind() == reflect.Ptr {
 		t = t.Elem()
@@ -245,4 +350,13 @@ func isExportedOrBuiltinType(t reflect.Type) bool {
 func isExported(name string) bool {
 	rune, _ := utf8.DecodeRuneInString(name)
 	return unicode.IsUpper(rune)
+}
+
+func handleError(res *core.Message, err error) (*core.Message, error) {
+	res.SetMessageStatusType(core.Error)
+	if res.Metadata == nil {
+		res.Metadata = make(map[string]string)
+	}
+	res.Metadata[core.ServiceError] = err.Error()
+	return res, err
 }

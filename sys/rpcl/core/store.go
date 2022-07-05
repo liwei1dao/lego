@@ -27,6 +27,7 @@ type IStore interface {
 	Get(key string) (*KVPair, error)
 	Delete(key string) error
 	Exists(key string) (bool, error)
+	List(directory string) ([]*KVPair, error)
 	WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*KVPair, error)
 	Close()
 }

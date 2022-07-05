@@ -20,3 +20,8 @@ var (
 	// ErrKeyExists is thrown when the previous value exists in the case of an AtomicPut
 	ErrKeyExists = errors.New("Previous K/V pair exists, cannot complete Atomic operation")
 )
+
+const (
+	// ServiceError contains error info of service invocation
+	ServiceError = "__rpcx_error__"
+)

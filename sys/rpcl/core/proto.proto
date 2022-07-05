@@ -11,3 +11,4 @@ message ServiceNode {
     map<string,string> Metadata = 7;    //元数据
     map<string,bool> Servers = 8;       //提供的服务列表 方法名
 }
+
