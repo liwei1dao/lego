@@ -41,6 +41,7 @@ require (
 	github.com/liwei1dao/dm v0.0.0-20211103094420-938edf103cf0
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/hashstructure v1.1.0
+	github.com/modern-go/reflect2 v1.0.2
 	github.com/nacos-group/nacos-sdk-go v1.0.8
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/nats-io/nats-server/v2 v2.1.9 // indirect
