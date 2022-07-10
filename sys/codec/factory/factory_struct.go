@@ -177,14 +177,6 @@ func processTags(structDescriptor *StructDescriptor, codec core.ICodec) {
 		for _, tagPart := range tagParts[1:] {
 			if tagPart == "omitempty" {
 				shouldOmitEmpty = true
-			} else if tagPart == "string" {
-				if binding.Field.Type().Kind() == reflect.String {
-					binding.Decoder = &stringModeStringDecoder{codec, binding.Decoder}
-					binding.Encoder = &stringModeStringEncoder{codec, binding.Encoder}
-				} else {
-					binding.Decoder = &stringModeNumberDecoder{binding.Decoder}
-					binding.Encoder = &stringModeNumberEncoder{binding.Encoder}
-				}
 			}
 		}
 		binding.Decoder = &structFieldDecoder{binding.Field, binding.Decoder}
@@ -374,73 +366,6 @@ func (decoder *structFieldDecoder) Decode(ptr unsafe.Pointer, extra core.IExtrac
 	if extra.Error() != nil && extra.Error() != io.EOF {
 		extra.SetErr(fmt.Errorf("%s: %s", decoder.field.Name(), extra.Error().Error()))
 	}
-}
-
-//Number-----------------------------------------------------------------------------------------------------------------------
-type stringModeNumberDecoder struct {
-	elemDecoder core.IDecoder
-}
-
-func (decoder *stringModeNumberDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
-	if extra.WhatIsNext() == core.NilValue {
-		decoder.elemDecoder.Decode(ptr, extra)
-		return
-	}
-	if extra.ReadKeyStart() {
-		return
-	}
-	decoder.elemDecoder.Decode(ptr, extra)
-	if extra.Error() != nil {
-		return
-	}
-	if extra.ReadKeyEnd() {
-		return
-	}
-}
-
-type stringModeNumberEncoder struct {
-	elemEncoder core.IEncoder
-}
-
-func (encoder *stringModeNumberEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
-	stream.WriteKeyStart()
-	encoder.elemEncoder.Encode(ptr, stream)
-	stream.WriteKeyEnd()
-}
-
-func (encoder *stringModeNumberEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	return encoder.elemEncoder.IsEmpty(ptr)
-}
-
-//String-----------------------------------------------------------------------------------------------------------------------
-type stringModeStringDecoder struct {
-	code        core.ICodec
-	elemDecoder core.IDecoder
-}
-
-func (this *stringModeStringDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
-	this.elemDecoder.Decode(ptr, extra)
-	str := *((*string)(ptr))
-	tempIter := this.code.BorrowExtractor()
-	tempIter.ResetBytes([]byte(str))
-	defer this.code.ReturnExtractor(tempIter)
-	*((*string)(ptr)) = tempIter.ReadString()
-}
-
-type stringModeStringEncoder struct {
-	codec       core.ICodec
-	elemEncoder core.IEncoder
-}
-
-func (this *stringModeStringEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
-	tempStream := this.codec.BorrowStream()
-	defer this.codec.ReturnStream(tempStream)
-	this.elemEncoder.Encode(ptr, tempStream)
-	stream.WriteBytes(tempStream.Buffer())
-}
-
-func (this *stringModeStringEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	return this.elemEncoder.IsEmpty(ptr)
 }
 
 //Empty-----------------------------------------------------------------------------------------------------------------------

@@ -312,7 +312,7 @@ func validateFloat(str string) string {
 }
 
 //Write Float To String-------------------------------------------------------------------------------------------------------------------------------------------------------------
-func WriteFloat32(buff *[]byte, val float32) (err error) {
+func WriteFloat32ToString(buff *[]byte, val float32) (err error) {
 	if math.IsInf(float64(val), 0) || math.IsNaN(float64(val)) {
 		err = fmt.Errorf("unsupported value: %f", val)
 		return
@@ -339,7 +339,7 @@ func WriteFloat32LossyToString(buf *[]byte, val float32) (err error) {
 		val = -val
 	}
 	if val > 0x4ffffff {
-		WriteFloat32(buf, val)
+		WriteFloat32ToString(buf, val)
 		return
 	}
 	precision := 6

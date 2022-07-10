@@ -359,13 +359,13 @@ func WriteChar(buff *[]byte, c byte) {
 }
 
 // WriteUint8 write uint8 to stream
-func WriteUint8ToString(buf *[]byte, val uint8) (err error) {
+func WriteUint8ToString(buf *[]byte, val uint8) {
 	*buf = writeFirstBuf(*buf, digits[val])
 	return
 }
 
 // WriteInt8 write int8 to stream
-func WriteInt8ToString(buf *[]byte, nval int8) (err error) {
+func WriteInt8ToString(buf *[]byte, nval int8) {
 	var val uint8
 	if nval < 0 {
 		val = uint8(-nval)
@@ -378,7 +378,7 @@ func WriteInt8ToString(buf *[]byte, nval int8) (err error) {
 }
 
 // WriteUint16 write uint16 to stream
-func WriteUint16ToString(buf *[]byte, val uint16) (err error) {
+func WriteUint16ToString(buf *[]byte, val uint16) {
 	q1 := val / 1000
 	if q1 == 0 {
 		*buf = writeFirstBuf(*buf, digits[val])
@@ -391,7 +391,7 @@ func WriteUint16ToString(buf *[]byte, val uint16) (err error) {
 }
 
 // WriteInt16 write int16 to stream
-func WriteInt16ToString(buf *[]byte, nval int16) (err error) {
+func WriteInt16ToString(buf *[]byte, nval int16) {
 	var val uint16
 	if nval < 0 {
 		val = uint16(-nval)
@@ -399,12 +399,12 @@ func WriteInt16ToString(buf *[]byte, nval int16) (err error) {
 	} else {
 		val = uint16(nval)
 	}
-	err = WriteUint16ToString(buf, val)
+	WriteUint16ToString(buf, val)
 	return
 }
 
 // WriteUint32 write uint32 to stream
-func WriteUint32ToString(buf *[]byte, val uint32) (err error) {
+func WriteUint32ToString(buf *[]byte, val uint32) {
 	q1 := val / 1000
 	if q1 == 0 {
 		*buf = writeFirstBuf(*buf, digits[val])
@@ -432,7 +432,7 @@ func WriteUint32ToString(buf *[]byte, val uint32) (err error) {
 }
 
 // WriteInt32 write int32 to stream
-func WriteInt32ToString(buf *[]byte, nval int32) (err error) {
+func WriteInt32ToString(buf *[]byte, nval int32) {
 	var val uint32
 	if nval < 0 {
 		val = uint32(-nval)
@@ -440,12 +440,12 @@ func WriteInt32ToString(buf *[]byte, nval int32) (err error) {
 	} else {
 		val = uint32(nval)
 	}
-	err = WriteUint32ToString(buf, val)
+	WriteUint32ToString(buf, val)
 	return
 }
 
 // WriteUint64 write uint64 to stream
-func WriteUint64ToString(buf *[]byte, val uint64) (err error) {
+func WriteUint64ToString(buf *[]byte, val uint64) {
 	q1 := val / 1000
 	if q1 == 0 {
 		*buf = writeFirstBuf(*buf, digits[val])
@@ -503,7 +503,7 @@ func WriteUint64ToString(buf *[]byte, val uint64) (err error) {
 }
 
 // WriteInt64 write int64 to stream
-func WriteInt64ToString(buf *[]byte, nval int64) (err error) {
+func WriteInt64ToString(buf *[]byte, nval int64) {
 	var val uint64
 	if nval < 0 {
 		val = uint64(-nval)
@@ -511,18 +511,18 @@ func WriteInt64ToString(buf *[]byte, nval int64) (err error) {
 	} else {
 		val = uint64(nval)
 	}
-	err = WriteUint64ToString(buf, val)
+	WriteUint64ToString(buf, val)
 	return
 }
 
 // WriteInt write int to stream
-func WriteIntToString(buf *[]byte, val int) (err error) {
+func WriteIntToString(buf *[]byte, val int) {
 	WriteInt64ToString(buf, int64(val))
 	return
 }
 
 // WriteUint write uint to stream
-func WriteUint(buf *[]byte, val uint) (err error) {
+func WriteUint(buf *[]byte, val uint) {
 	WriteUint64ToString(buf, uint64(val))
 	return
 }

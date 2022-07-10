@@ -38,6 +38,7 @@ const (
 type (
 	ICodec interface {
 		Options() *Options
+		GetEncoderFromCache(cacheKey uintptr) IEncoder
 		EncoderOf(typ reflect2.Type) IEncoder
 		BorrowExtractor() IExtractor      //借 提取器
 		ReturnExtractor(extra IExtractor) //还 提取器
@@ -107,7 +108,6 @@ type (
 		Buffer() []byte //返回缓存区数据
 		Error() error
 		SetErr(err error)
-		ReportError(string)
 	}
 	//编码器
 	IEncoder interface {
