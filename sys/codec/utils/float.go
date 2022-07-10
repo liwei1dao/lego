@@ -1,4 +1,4 @@
-package reflect
+package utils
 
 import (
 	"errors"
@@ -35,8 +35,9 @@ func init() {
 	floatDigits['.'] = dotInNumber
 }
 
-//Read------------------------------------------------------------------------------------------------------------------------------------
-func ReadBigFloat(buf []byte) (ret *big.Float, n int, err error) {
+//Read Float For String-------------------------------------------------------------------------------------------------------------------------------------------------------------
+//从字符串中读取float 对象
+func ReadBigFloatForString(buf []byte) (ret *big.Float, n int, err error) {
 	var str string
 	if str, n, err = readNumberAsString(buf); err == nil {
 		return
@@ -48,8 +49,7 @@ func ReadBigFloat(buf []byte) (ret *big.Float, n int, err error) {
 	ret, _, err = big.ParseFloat(str, 10, uint(prec), big.ToZero)
 	return
 }
-
-func ReadFloat32(buf []byte) (ret float32, n int, err error) {
+func ReadFloat32ForString(buf []byte) (ret float32, n int, err error) {
 	if buf[0] == '-' {
 		ret, n, err = readPositiveFloat32(buf[1:])
 		ret = -ret
@@ -57,8 +57,7 @@ func ReadFloat32(buf []byte) (ret float32, n int, err error) {
 	}
 	return readPositiveFloat32(buf)
 }
-
-func ReadFloat64(buf []byte) (ret float64, n int, err error) {
+func ReadFloat64ForString(buf []byte) (ret float64, n int, err error) {
 	if buf[0] == '-' {
 		ret, n, err = readPositiveFloat64(buf[1:])
 		ret = -ret
@@ -67,131 +66,7 @@ func ReadFloat64(buf []byte) (ret float64, n int, err error) {
 	return readPositiveFloat64(buf)
 }
 
-//Write----------------------------------------------------------------------------------------------------------------------------------
-func WriteFloat32(buff *[]byte, val float32) (err error) {
-	if math.IsInf(float64(val), 0) || math.IsNaN(float64(val)) {
-		err = fmt.Errorf("unsupported value: %f", val)
-		return
-	}
-	abs := math.Abs(float64(val))
-	fmt := byte('f')
-	if abs != 0 {
-		if float32(abs) < 1e-6 || float32(abs) >= 1e21 {
-			fmt = 'e'
-		}
-	}
-	*buff = strconv.AppendFloat(*buff, float64(val), fmt, -1, 32)
-	return
-}
-
-//float32 写入只有 6 位精度的流，但速度要快得多
-func WriteFloat32Lossy(buf *[]byte, val float32) (err error) {
-	if math.IsInf(float64(val), 0) || math.IsNaN(float64(val)) {
-		err = fmt.Errorf("unsupported value: %f", val)
-		return
-	}
-	if val < 0 {
-		WriteChar(buf, '-')
-		val = -val
-	}
-	if val > 0x4ffffff {
-		WriteFloat32(buf, val)
-		return
-	}
-	precision := 6
-	exp := uint64(1000000) // 6
-	lval := uint64(float64(val)*float64(exp) + 0.5)
-	WriteUint64(buf, lval/exp)
-	fval := lval % exp
-	if fval == 0 {
-		return
-	}
-	WriteChar(buf, '.')
-	for p := precision - 1; p > 0 && fval < pow10[p]; p-- {
-		WriteChar(buf, '0')
-	}
-	WriteUint64(buf, fval)
-	temp := *buf
-	for temp[len(temp)-1] == '0' {
-		temp = temp[:len(temp)-1]
-	}
-	buf = &temp
-	return
-}
-
-func WriteFloat64(buf *[]byte, val float64) (err error) {
-	if math.IsInf(val, 0) || math.IsNaN(val) {
-		err = fmt.Errorf("unsupported value: %f", val)
-		return
-	}
-	abs := math.Abs(val)
-	fmt := byte('f')
-	// Note: Must use float32 comparisons for underlying float32 value to get precise cutoffs right.
-	if abs != 0 {
-		if abs < 1e-6 || abs >= 1e21 {
-			fmt = 'e'
-		}
-	}
-	*buf = strconv.AppendFloat(*buf, float64(val), fmt, -1, 64)
-	return
-}
-
-//将 float64 写入只有 6 位精度的流，但速度要快得多
-func WriteFloat64Lossy(buf *[]byte, val float64) (err error) {
-	if math.IsInf(val, 0) || math.IsNaN(val) {
-		err = fmt.Errorf("unsupported value: %f", val)
-		return
-	}
-	if val < 0 {
-		WriteChar(buf, '-')
-		val = -val
-	}
-	if val > 0x4ffffff {
-		WriteFloat64(buf, val)
-		return
-	}
-	precision := 6
-	exp := uint64(1000000) // 6
-	lval := uint64(val*float64(exp) + 0.5)
-	WriteUint64(buf, lval/exp)
-	fval := lval % exp
-	if fval == 0 {
-		return
-	}
-	WriteChar(buf, '.')
-	for p := precision - 1; p > 0 && fval < pow10[p]; p-- {
-		WriteChar(buf, '0')
-	}
-	WriteUint64(buf, fval)
-	temp := *buf
-	for temp[len(temp)-1] == '0' {
-		temp = temp[:len(temp)-1]
-	}
-	buf = &temp
-	return
-}
-
-func readNumberAsString(buf []byte) (ret string, n int, err error) {
-	strBuf := [16]byte{}
-	str := strBuf[0:0]
-load_loop:
-	for i := 0; i < len(buf); i++ {
-		c := buf[i]
-		switch c {
-		case '+', '-', '.', 'e', 'E', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			str = append(str, c)
-			continue
-		default:
-			n = i
-			break load_loop
-		}
-	}
-	if len(str) == 0 {
-		err = errors.New("readNumberAsString invalid number")
-	}
-	ret = *(*string)(unsafe.Pointer(&str))
-	return
-}
+//读取float32
 func readPositiveFloat32(buf []byte) (ret float32, n int, err error) {
 	i := 0
 	// first char
@@ -291,6 +166,7 @@ func readFloat32SlowPath(buf []byte) (ret float32, n int, err error) {
 	return
 }
 
+//读取float64
 func readPositiveFloat64(buf []byte) (ret float64, n int, err error) {
 	i := 0
 	// first char
@@ -390,8 +266,31 @@ func readFloat64SlowPath(buf []byte) (ret float64, n int, err error) {
 	return
 }
 
+//读取字符串数字
+func readNumberAsString(buf []byte) (ret string, n int, err error) {
+	strBuf := [16]byte{}
+	str := strBuf[0:0]
+load_loop:
+	for i := 0; i < len(buf); i++ {
+		c := buf[i]
+		switch c {
+		case '+', '-', '.', 'e', 'E', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+			str = append(str, c)
+			continue
+		default:
+			n = i
+			break load_loop
+		}
+	}
+	if len(str) == 0 {
+		err = errors.New("readNumberAsString invalid number")
+	}
+	ret = *(*string)(unsafe.Pointer(&str))
+	return
+}
+
+//字符串float 错误检验
 func validateFloat(str string) string {
-	// strconv.ParseFloat is not validating `1.` or `1.e1`
 	if len(str) == 0 {
 		return "empty number"
 	}
@@ -410,4 +309,108 @@ func validateFloat(str string) string {
 		}
 	}
 	return ""
+}
+
+//Write Float To String-------------------------------------------------------------------------------------------------------------------------------------------------------------
+func WriteFloat32(buff *[]byte, val float32) (err error) {
+	if math.IsInf(float64(val), 0) || math.IsNaN(float64(val)) {
+		err = fmt.Errorf("unsupported value: %f", val)
+		return
+	}
+	abs := math.Abs(float64(val))
+	fmt := byte('f')
+	if abs != 0 {
+		if float32(abs) < 1e-6 || float32(abs) >= 1e21 {
+			fmt = 'e'
+		}
+	}
+	*buff = strconv.AppendFloat(*buff, float64(val), fmt, -1, 32)
+	return
+}
+
+//float32 写入只有 6 位精度的流，但速度要快得多
+func WriteFloat32LossyToString(buf *[]byte, val float32) (err error) {
+	if math.IsInf(float64(val), 0) || math.IsNaN(float64(val)) {
+		err = fmt.Errorf("unsupported value: %f", val)
+		return
+	}
+	if val < 0 {
+		WriteChar(buf, '-')
+		val = -val
+	}
+	if val > 0x4ffffff {
+		WriteFloat32(buf, val)
+		return
+	}
+	precision := 6
+	exp := uint64(1000000) // 6
+	lval := uint64(float64(val)*float64(exp) + 0.5)
+	WriteUint64ToString(buf, lval/exp)
+	fval := lval % exp
+	if fval == 0 {
+		return
+	}
+	WriteChar(buf, '.')
+	for p := precision - 1; p > 0 && fval < pow10[p]; p-- {
+		WriteChar(buf, '0')
+	}
+	WriteUint64ToString(buf, fval)
+	temp := *buf
+	for temp[len(temp)-1] == '0' {
+		temp = temp[:len(temp)-1]
+	}
+	buf = &temp
+	return
+}
+
+func WriteFloat64ToString(buf *[]byte, val float64) (err error) {
+	if math.IsInf(val, 0) || math.IsNaN(val) {
+		err = fmt.Errorf("unsupported value: %f", val)
+		return
+	}
+	abs := math.Abs(val)
+	fmt := byte('f')
+	// Note: Must use float32 comparisons for underlying float32 value to get precise cutoffs right.
+	if abs != 0 {
+		if abs < 1e-6 || abs >= 1e21 {
+			fmt = 'e'
+		}
+	}
+	*buf = strconv.AppendFloat(*buf, float64(val), fmt, -1, 64)
+	return
+}
+
+//将 float64 写入只有 6 位精度的流，但速度要快得多
+func WriteFloat64LossyToString(buf *[]byte, val float64) (err error) {
+	if math.IsInf(val, 0) || math.IsNaN(val) {
+		err = fmt.Errorf("unsupported value: %f", val)
+		return
+	}
+	if val < 0 {
+		WriteChar(buf, '-')
+		val = -val
+	}
+	if val > 0x4ffffff {
+		WriteFloat64ToString(buf, val)
+		return
+	}
+	precision := 6
+	exp := uint64(1000000) // 6
+	lval := uint64(val*float64(exp) + 0.5)
+	WriteUint64ToString(buf, lval/exp)
+	fval := lval % exp
+	if fval == 0 {
+		return
+	}
+	WriteChar(buf, '.')
+	for p := precision - 1; p > 0 && fval < pow10[p]; p-- {
+		WriteChar(buf, '0')
+	}
+	WriteUint64ToString(buf, fval)
+	temp := *buf
+	for temp[len(temp)-1] == '0' {
+		temp = temp[:len(temp)-1]
+	}
+	buf = &temp
+	return
 }
