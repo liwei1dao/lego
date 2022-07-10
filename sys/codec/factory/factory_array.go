@@ -1,4 +1,4 @@
-package reflect
+package factory
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 
 func decoderOfArray(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
 	arrayType := typ.(*reflect2.UnsafeArrayType)
-	decoder := decoderOfType(ctx.Append("[arrayElem]"), arrayType.Elem())
+	decoder := DecoderOfType(ctx.Append("[arrayElem]"), arrayType.Elem())
 	return &arrayDecoder{arrayType, decoder}
 }
 
@@ -30,18 +30,18 @@ type arrayEncoder struct {
 	elemEncoder core.IEncoder
 }
 
-func (encoder *arrayEncoder) Encode(ptr unsafe.Pointer, stream core.IStream, opt *core.ExecuteOptions) {
+func (encoder *arrayEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	stream.WriteArrayStart()
 	elemPtr := unsafe.Pointer(ptr)
-	encoder.elemEncoder.Encode(elemPtr, stream, opt)
+	encoder.elemEncoder.Encode(elemPtr, stream)
 	for i := 1; i < encoder.arrayType.Len(); i++ {
-		stream.WriteMore()
+		stream.WriteMemberSplit()
 		elemPtr = encoder.arrayType.UnsafeGetIndex(ptr, i)
-		encoder.elemEncoder.Encode(elemPtr, stream, opt)
+		encoder.elemEncoder.Encode(elemPtr, stream)
 	}
 	stream.WriteArrayEnd()
 	if stream.Error() != nil && stream.Error() != io.EOF {
-		stream.SetError(fmt.Errorf("%v: %s", encoder.arrayType, stream.Error().Error()))
+		stream.SetErr(fmt.Errorf("%v: %s", encoder.arrayType, stream.Error().Error()))
 	}
 }
 
@@ -54,50 +54,37 @@ type arrayDecoder struct {
 	elemDecoder core.IDecoder
 }
 
-func (this *arrayDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor, opt *core.ExecuteOptions) {
-	this.doDecode(ptr, extra, opt)
-	if extra.Error() != nil && extra.Error() != io.EOF {
-		extra.SetError(fmt.Errorf("%v: %s", this.arrayType, extra.Error().Error()))
-	}
-}
-func (this *arrayDecoder) doDecode(ptr unsafe.Pointer, extra core.IExtractor, opt *core.ExecuteOptions) {
-	c := extra.NextToken()
+func (this *arrayDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	arrayType := this.arrayType
-	if c == 'n' {
-		extra.SkipBytes([]byte{'u', 'l', 'l'})
+	if extra.ReadNil() {
 		return
 	}
-	if c != '[' {
-		extra.ReportError("decode array", "expect [ or n, but found "+string([]byte{c}))
+	if extra.ReadArrayStart() {
 		return
 	}
-	c = extra.NextToken()
-	if c == ']' {
+	if extra.CheckNextIsArrayEnd() {
 		return
 	}
-	extra.UnreadChar()
 	elemPtr := arrayType.UnsafeGetIndex(ptr, 0)
-	this.elemDecoder.Decode(elemPtr, extra, opt)
+	this.elemDecoder.Decode(elemPtr, extra)
 	length := 1
-	for c = extra.NextToken(); c == ','; c = extra.NextToken() {
-		if length >= arrayType.Len() {
-			extra.Skip()
-			continue
-		}
+	for extra.ReadMemberSplit() {
 		idx := length
 		length += 1
 		elemPtr = arrayType.UnsafeGetIndex(ptr, idx)
-		this.elemDecoder.Decode(elemPtr, extra, opt)
+		this.elemDecoder.Decode(elemPtr, extra)
 	}
-	if c != ']' {
-		extra.ReportError("decode array", "expect ], but found "+string([]byte{c}))
+	if extra.ReadArrayEnd() {
 		return
+	}
+	if extra.Error() != nil && extra.Error() != io.EOF {
+		extra.SetErr(fmt.Errorf("%v: %s", this.arrayType, extra.Error().Error()))
 	}
 }
 
 type emptyArrayEncoder struct{}
 
-func (this emptyArrayEncoder) Encode(ptr unsafe.Pointer, stream core.IStream, opt *core.ExecuteOptions) {
+func (this emptyArrayEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	stream.WriteEmptyArray()
 }
 

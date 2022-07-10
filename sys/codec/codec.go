@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/liwei1dao/lego/sys/codec/core"
-	"github.com/liwei1dao/lego/sys/codec/reflect"
+	"github.com/liwei1dao/lego/sys/codec/factory"
 	"github.com/liwei1dao/lego/sys/codec/stream"
 	"github.com/modern-go/reflect2"
 )
@@ -34,14 +34,16 @@ type codec struct {
 func (this *codec) Options() *core.Options {
 	return this.options
 }
-func (this *codec) Marshal(val interface{}) ([]byte, error) {
+
+//序列化Josn
+func (this *codec) MarshalJson(val interface{}, option ...core.ExecuteOption) (buf []byte, err error) {
 	stream := this.BorrowStream()
 	defer this.ReturnStream(stream)
-	stream.WriteVal(val, nil)
-	if stream.Error() != nil {
+	stream.WriteVal(val)
+	if stream.Error != nil {
 		return nil, stream.Error()
 	}
-	result := stream.ToBuffer()
+	result := stream.Buffer()
 	copied := make([]byte, len(result))
 	copy(copied, result)
 	return copied, nil
@@ -54,6 +56,7 @@ func (this *codec) Unmarshal(data []byte, v interface{}) error {
 func (this *codec) addEncoderToCache(cacheKey uintptr, encoder core.IEncoder) {
 	this.encoderCache.Store(cacheKey, encoder)
 }
+
 func (this *codec) GetEncoderFromCache(cacheKey uintptr) core.IEncoder {
 	encoder, found := this.encoderCache.Load(cacheKey)
 	if found {
@@ -74,9 +77,9 @@ func (this *codec) EncoderOf(typ reflect2.Type) core.IEncoder {
 		Decoders: map[reflect2.Type]core.IDecoder{},
 		Encoders: map[reflect2.Type]core.IEncoder{},
 	}
-	encoder = reflect.EncoderOfType(ctx, typ)
+	encoder = factory.EncoderOfType(ctx, typ)
 	if typ.LikePtr() {
-		encoder = reflect.NewonePtrEncoder(encoder)
+		encoder = factory.NewonePtrEncoder(encoder)
 	}
 	this.addEncoderToCache(cacheKey, encoder)
 	return encoder

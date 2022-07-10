@@ -1,6 +1,7 @@
-package reflect
+package factory
 
 import (
+	"errors"
 	"reflect"
 	"unsafe"
 
@@ -12,9 +13,9 @@ type dynamicEncoder struct {
 	valType reflect2.Type
 }
 
-func (encoder *dynamicEncoder) Encode(ptr unsafe.Pointer, stream core.IStream, opt *core.ExecuteOptions) {
+func (encoder *dynamicEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	obj := encoder.valType.UnsafeIndirect(ptr)
-	stream.WriteVal(obj, opt)
+	stream.WriteVal(obj)
 }
 
 func (encoder *dynamicEncoder) IsEmpty(ptr unsafe.Pointer) bool {
@@ -24,7 +25,7 @@ func (encoder *dynamicEncoder) IsEmpty(ptr unsafe.Pointer) bool {
 type efaceDecoder struct {
 }
 
-func (decoder *efaceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor, opt *core.ExecuteOptions) {
+func (decoder *efaceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	pObj := (*interface{})(ptr)
 	obj := *pObj
 	if obj == nil {
@@ -40,7 +41,7 @@ func (decoder *efaceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor, o
 	ptrElemType := ptrType.Elem()
 	if extra.WhatIsNext() == core.NilValue {
 		if ptrElemType.Kind() != reflect.Ptr {
-			extra.SkipBytes([]byte{'n', 'u', 'l', 'l'})
+			extra.ReadNil()
 			*pObj = nil
 			return
 		}
@@ -58,14 +59,14 @@ type ifaceDecoder struct {
 	valType *reflect2.UnsafeIFaceType
 }
 
-func (decoder *ifaceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor, opt *core.ExecuteOptions) {
+func (decoder *ifaceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if extra.ReadNil() {
 		decoder.valType.UnsafeSet(ptr, decoder.valType.UnsafeNew())
 		return
 	}
 	obj := decoder.valType.UnsafeIndirect(ptr)
 	if reflect2.IsNil(obj) {
-		extra.ReportError("decode non empty interface", "can not unmarshal into nil")
+		extra.SetErr(errors.New("decode non empty interface can not unmarshal into nil"))
 		return
 	}
 	extra.ReadVal(obj)

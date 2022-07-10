@@ -7,7 +7,6 @@ import (
 type Option func(*Options)
 type Options struct {
 	IndentionStep                 int    //缩进步骤
-	SortMapKeys                   bool   //是否需要排序mapkey
 	ObjectFieldMustBeSimpleString bool   //对象字段必须是简单字符串
 	OnlyTaggedField               bool   //仅仅处理标签字段
 	DisallowUnknownFields         bool   //禁止未知字段
@@ -22,7 +21,7 @@ type ExecuteOption func(*ExecuteOptions)
 type ExecuteOptions struct {
 }
 
-func newExecuteOptions(opts ...ExecuteOption) ExecuteOptions {
+func NewExecuteOptions(opts ...ExecuteOption) ExecuteOptions {
 	options := ExecuteOptions{}
 	for _, o := range opts {
 		o(&options)

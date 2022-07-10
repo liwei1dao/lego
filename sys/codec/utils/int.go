@@ -56,6 +56,7 @@ func ReadInt8ForString(buf []byte) (ret int8, n int, err error) {
 	ret = int8(val)
 	return
 }
+
 func ReadInt16ForString(buf []byte) (ret int16, n int, err error) {
 	var (
 		val uint32
@@ -78,6 +79,7 @@ func ReadInt16ForString(buf []byte) (ret int16, n int, err error) {
 	ret = int16(val)
 	return
 }
+
 func ReadInt32ForString(buf []byte) (ret int32, n int, err error) {
 	var (
 		val uint32
@@ -100,6 +102,7 @@ func ReadInt32ForString(buf []byte) (ret int32, n int, err error) {
 	ret = int32(val)
 	return
 }
+
 func ReadInt64ForString(buf []byte) (ret int64, n int, err error) {
 	var (
 		val uint64
@@ -122,6 +125,7 @@ func ReadInt64ForString(buf []byte) (ret int64, n int, err error) {
 	ret = int64(val)
 	return
 }
+
 func ReadUInt8ForString(buf []byte) (ret uint8, n int, err error) {
 	var (
 		val uint32
@@ -341,6 +345,7 @@ func ReadUint64ForString(buf []byte) (ret uint64, n int, err error) {
 	}
 	return
 }
+
 func assertInteger(buf []byte) (err error) {
 	if len(buf) > 0 && buf[0] == '.' {
 		err = errors.New("assertInteger can not decode float as int")
@@ -532,6 +537,7 @@ func writeFirstBuf(space []byte, v uint32) []byte {
 	space = append(space, byte(v))
 	return space
 }
+
 func writeBuf(buf []byte, v uint32) []byte {
 	return append(buf, byte(v>>16), byte(v>>8), byte(v))
 }

@@ -1,4 +1,4 @@
-package reflect
+package factory
 
 import (
 	"fmt"
@@ -143,7 +143,7 @@ func describeStruct(ctx *core.Ctx, typ reflect2.Type) *StructDescriptor {
 			}
 		}
 		fieldNames := calcFieldNames(field.Name(), tagParts[0], tag)
-		decoder := decoderOfType(ctx.Append(field.Name()), field.Type())
+		decoder := DecoderOfType(ctx.Append(field.Name()), field.Type())
 		encoder := EncoderOfType(ctx.Append(field.Name()), field.Type())
 		binding := &Binding{
 			Field:     field,
@@ -255,7 +255,7 @@ type structEncoder struct {
 	fields []structFieldTo
 }
 
-func (this *structEncoder) Encode(ptr unsafe.Pointer, stream core.IStream, opt *core.ExecuteOptions) {
+func (this *structEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	stream.WriteObjectStart()
 	isNotFirst := false
 	for _, field := range this.fields {
@@ -266,15 +266,15 @@ func (this *structEncoder) Encode(ptr unsafe.Pointer, stream core.IStream, opt *
 			continue
 		}
 		if isNotFirst {
-			stream.WriteMore()
+			stream.WriteMemberSplit()
 		}
-		stream.WriteObjectField(field.toName)
-		field.encoder.Encode(ptr, stream, opt)
+		stream.WriteObjectFieldName(field.toName)
+		field.encoder.Encode(ptr, stream)
 		isNotFirst = true
 	}
 	stream.WriteObjectEnd()
 	if stream.Error() != nil && stream.Error() != io.EOF {
-		stream.SetError(fmt.Errorf("%v.%s", this.typ, stream.Error().Error()))
+		stream.SetErr(fmt.Errorf("%v.%s", this.typ, stream.Error().Error()))
 	}
 }
 
@@ -289,60 +289,45 @@ type structDecoder struct {
 	disallowUnknownFields bool
 }
 
-func (this *structDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor, opt *core.ExecuteOptions) {
+func (this *structDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if !extra.ReadObjectStart() {
 		return
 	}
-	if !extra.IncrementDepth() {
-		return
-	}
-	var c byte
-	for c = ','; c == ','; c = extra.NextToken() {
-		this.decodeField(ptr, extra, opt)
+	for extra.ReadMemberSplit() {
+		this.decodeField(ptr, extra)
 	}
 	if extra.Error() != nil && extra.Error() != io.EOF && len(this.typ.Type1().Name()) != 0 {
-		extra.SetError(fmt.Errorf("%v.%s", this.typ, extra.Error().Error()))
+		extra.SetErr(fmt.Errorf("%v.%s", this.typ, extra.Error().Error()))
 	}
-	if c != '}' {
-		extra.ReportError("struct Decode", `expect }, but found `+string([]byte{c}))
-	}
-	extra.DecrementDepth()
+	extra.ReadObjectEnd()
 }
 
-func (this *structDecoder) decodeField(ptr unsafe.Pointer, extra core.IExtractor, opt *core.ExecuteOptions) {
+func (this *structDecoder) decodeField(ptr unsafe.Pointer, extra core.IExtractor) {
 	var field string
 	var fieldDecoder *structFieldDecoder
-	if this.opt.ObjectFieldMustBeSimpleString {
-		fieldBytes := extra.ReadStringAsSlice()
-		field = *(*string)(unsafe.Pointer(&fieldBytes))
-		fieldDecoder = this.fields[field]
-		if fieldDecoder == nil && !this.opt.CaseSensitive {
-			fieldDecoder = this.fields[strings.ToLower(field)]
-		}
-	} else {
-		field = extra.ReadString()
-		fieldDecoder = this.fields[field]
-		if fieldDecoder == nil && !this.opt.CaseSensitive {
-			fieldDecoder = this.fields[strings.ToLower(field)]
-		}
+
+	field = extra.ReadString()
+	fieldDecoder = this.fields[field]
+	if fieldDecoder == nil && !this.opt.CaseSensitive {
+		fieldDecoder = this.fields[strings.ToLower(field)]
 	}
+
 	if fieldDecoder == nil {
 		if this.disallowUnknownFields {
 			msg := "found unknown field: " + field
-			extra.ReportError("ReadObject", msg)
+			extra.SetErr(fmt.Errorf("decodeField %s", msg))
+			return
 		}
-		c := extra.NextToken()
-		if c != ':' {
-			extra.ReportError("ReadObject", "expect : after object field, but found "+string([]byte{c}))
+		if !extra.ReadKVSplit() {
+			return
 		}
-		extra.Skip()
+		extra.Skip() //跳过一个数据单元
 		return
 	}
-	c := extra.NextToken()
-	if c != ':' {
-		extra.ReportError("ReadObject", "expect : after object field, but found "+string([]byte{c}))
+	if extra.ReadKVSplit() {
+		return
 	}
-	fieldDecoder.Decode(ptr, extra, opt)
+	fieldDecoder.Decode(ptr, extra)
 }
 
 //结构对象字段 编解码-----------------------------------------------------------------------------------------------------------------------
@@ -356,11 +341,11 @@ type structFieldEncoder struct {
 	omitempty    bool
 }
 
-func (encoder *structFieldEncoder) Encode(ptr unsafe.Pointer, stream core.IStream, opt *core.ExecuteOptions) {
+func (encoder *structFieldEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	fieldPtr := encoder.field.UnsafeGet(ptr)
-	encoder.fieldEncoder.Encode(fieldPtr, stream, opt)
+	encoder.fieldEncoder.Encode(fieldPtr, stream)
 	if stream.Error() != nil && stream.Error() != io.EOF {
-		stream.SetError(fmt.Errorf("%s: %s", encoder.field.Name(), stream.Error().Error()))
+		stream.SetErr(fmt.Errorf("%s: %s", encoder.field.Name(), stream.Error().Error()))
 	}
 }
 
@@ -383,12 +368,48 @@ type structFieldDecoder struct {
 	fieldDecoder core.IDecoder
 }
 
-func (decoder *structFieldDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor, opt *core.ExecuteOptions) {
+func (decoder *structFieldDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	fieldPtr := decoder.field.UnsafeGet(ptr)
-	decoder.fieldDecoder.Decode(fieldPtr, extra, opt)
+	decoder.fieldDecoder.Decode(fieldPtr, extra)
 	if extra.Error() != nil && extra.Error() != io.EOF {
-		extra.SetError(fmt.Errorf("%s: %s", decoder.field.Name(), extra.Error().Error()))
+		extra.SetErr(fmt.Errorf("%s: %s", decoder.field.Name(), extra.Error().Error()))
 	}
+}
+
+//Number-----------------------------------------------------------------------------------------------------------------------
+type stringModeNumberDecoder struct {
+	elemDecoder core.IDecoder
+}
+
+func (decoder *stringModeNumberDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+	if extra.WhatIsNext() == core.NilValue {
+		decoder.elemDecoder.Decode(ptr, extra)
+		return
+	}
+	if extra.ReadKeyStart() {
+		return
+	}
+	decoder.elemDecoder.Decode(ptr, extra)
+	if extra.Error() != nil {
+		return
+	}
+	if extra.ReadKeyEnd() {
+		return
+	}
+}
+
+type stringModeNumberEncoder struct {
+	elemEncoder core.IEncoder
+}
+
+func (encoder *stringModeNumberEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
+	stream.WriteKeyStart()
+	encoder.elemEncoder.Encode(ptr, stream)
+	stream.WriteKeyEnd()
+}
+
+func (encoder *stringModeNumberEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+	return encoder.elemEncoder.IsEmpty(ptr)
 }
 
 //String-----------------------------------------------------------------------------------------------------------------------
@@ -397,8 +418,8 @@ type stringModeStringDecoder struct {
 	elemDecoder core.IDecoder
 }
 
-func (this *stringModeStringDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor, opt *core.ExecuteOptions) {
-	this.elemDecoder.Decode(ptr, extra, opt)
+func (this *stringModeStringDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+	this.elemDecoder.Decode(ptr, extra)
 	str := *((*string)(ptr))
 	tempIter := this.code.BorrowExtractor()
 	tempIter.ResetBytes([]byte(str))
@@ -411,63 +432,22 @@ type stringModeStringEncoder struct {
 	elemEncoder core.IEncoder
 }
 
-func (this *stringModeStringEncoder) Encode(ptr unsafe.Pointer, stream core.IStream, opt *core.ExecuteOptions) {
+func (this *stringModeStringEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	tempStream := this.codec.BorrowStream()
 	defer this.codec.ReturnStream(tempStream)
-	this.elemEncoder.Encode(ptr, tempStream, opt)
-	stream.WriteBytes(tempStream.ToBuffer())
+	this.elemEncoder.Encode(ptr, tempStream)
+	stream.WriteBytes(tempStream.Buffer())
 }
 
 func (this *stringModeStringEncoder) IsEmpty(ptr unsafe.Pointer) bool {
 	return this.elemEncoder.IsEmpty(ptr)
 }
 
-//Number-----------------------------------------------------------------------------------------------------------------------
-type stringModeNumberDecoder struct {
-	elemDecoder core.IDecoder
-}
-
-func (decoder *stringModeNumberDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor, opt *core.ExecuteOptions) {
-	if extra.WhatIsNext() == core.NilValue {
-		decoder.elemDecoder.Decode(ptr, extra, opt)
-		return
-	}
-
-	c := extra.NextToken()
-	if c != '"' {
-		extra.ReportError("stringModeNumberDecoder", `expect ", but found `+string([]byte{c}))
-		return
-	}
-	decoder.elemDecoder.Decode(ptr, extra, opt)
-	if extra.Error() != nil {
-		return
-	}
-	c = extra.ReadChar()
-	if c != '"' {
-		extra.ReportError("stringModeNumberDecoder", `expect ", but found `+string([]byte{c}))
-		return
-	}
-}
-
-type stringModeNumberEncoder struct {
-	elemEncoder core.IEncoder
-}
-
-func (encoder *stringModeNumberEncoder) Encode(ptr unsafe.Pointer, stream core.IStream, opt *core.ExecuteOptions) {
-	stream.WriteChar('"')
-	encoder.elemEncoder.Encode(ptr, stream, opt)
-	stream.WriteChar('"')
-}
-
-func (encoder *stringModeNumberEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	return encoder.elemEncoder.IsEmpty(ptr)
-}
-
 //Empty-----------------------------------------------------------------------------------------------------------------------
 type emptyStructEncoder struct {
 }
 
-func (encoder *emptyStructEncoder) Encode(ptr unsafe.Pointer, stream core.IStream, opt *core.ExecuteOptions) {
+func (encoder *emptyStructEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	stream.WriteEmptyObject()
 }
 

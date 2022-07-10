@@ -1,4 +1,4 @@
-package reflect
+package factory
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 
 func decoderOfSlice(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
 	sliceType := typ.(*reflect2.UnsafeSliceType)
-	decoder := decoderOfType(ctx.Append("[sliceElem]"), sliceType.Elem())
+	decoder := DecoderOfType(ctx.Append("[sliceElem]"), sliceType.Elem())
 	return &sliceDecoder{sliceType, decoder}
 }
 func encoderOfSlice(ctx *core.Ctx, typ reflect2.Type) core.IEncoder {
@@ -25,7 +25,7 @@ type sliceEncoder struct {
 	elemEncoder core.IEncoder
 }
 
-func (encoder *sliceEncoder) Encode(ptr unsafe.Pointer, stream core.IStream, opt *core.ExecuteOptions) {
+func (encoder *sliceEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	if encoder.sliceType.UnsafeIsNil(ptr) {
 		stream.WriteNil()
 		return
@@ -36,15 +36,15 @@ func (encoder *sliceEncoder) Encode(ptr unsafe.Pointer, stream core.IStream, opt
 		return
 	}
 	stream.WriteArrayStart()
-	encoder.elemEncoder.Encode(encoder.sliceType.UnsafeGetIndex(ptr, 0), stream, opt)
+	encoder.elemEncoder.Encode(encoder.sliceType.UnsafeGetIndex(ptr, 0), stream)
 	for i := 1; i < length; i++ {
-		stream.WriteMore()
+		stream.WriteMemberSplit()
 		elemPtr := encoder.sliceType.UnsafeGetIndex(ptr, i)
-		encoder.elemEncoder.Encode(elemPtr, stream, opt)
+		encoder.elemEncoder.Encode(elemPtr, stream)
 	}
 	stream.WriteArrayEnd()
 	if stream.Error() != nil && stream.Error() != io.EOF {
-		stream.SetError(fmt.Errorf("%v: %s", encoder.sliceType, stream.Error().Error()))
+		stream.SetErr(fmt.Errorf("%v: %s", encoder.sliceType, stream.Error().Error()))
 	}
 }
 
@@ -57,44 +57,34 @@ type sliceDecoder struct {
 	elemDecoder core.IDecoder
 }
 
-func (decoder *sliceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor, opt *core.ExecuteOptions) {
-	decoder.doDecode(ptr, extra, opt)
-	if extra.Error() != nil && extra.Error() != io.EOF {
-		extra.SetError(fmt.Errorf("%v: %s", decoder.sliceType, extra.Error().Error()))
-	}
-}
-
-func (decoder *sliceDecoder) doDecode(ptr unsafe.Pointer, extra core.IExtractor, opt *core.ExecuteOptions) {
-	c := extra.NextToken()
+func (decoder *sliceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	sliceType := decoder.sliceType
-	if c == 'n' {
-		extra.SkipBytes([]byte{'u', 'l', 'l'})
+	if extra.ReadNil() {
 		sliceType.UnsafeSetNil(ptr)
 		return
 	}
-	if c != '[' {
-		extra.ReportError("decode slice", "expect [ or n, but found "+string([]byte{c}))
+	if !extra.ReadArrayStart() {
 		return
 	}
-	c = extra.NextToken()
-	if c == ']' {
+	if extra.CheckNextIsArrayEnd() {
 		sliceType.UnsafeSet(ptr, sliceType.UnsafeMakeSlice(0, 0))
 		return
 	}
-	extra.UnreadChar()
 	sliceType.UnsafeGrow(ptr, 1)
 	elemPtr := sliceType.UnsafeGetIndex(ptr, 0)
-	decoder.elemDecoder.Decode(elemPtr, extra, opt)
+	decoder.elemDecoder.Decode(elemPtr, extra)
 	length := 1
-	for c = extra.NextToken(); c == ','; c = extra.NextToken() {
+	for extra.ReadMemberSplit() {
 		idx := length
 		length += 1
 		sliceType.UnsafeGrow(ptr, length)
 		elemPtr = sliceType.UnsafeGetIndex(ptr, idx)
-		decoder.elemDecoder.Decode(elemPtr, extra, opt)
+		decoder.elemDecoder.Decode(elemPtr, extra)
 	}
-	if c != ']' {
-		extra.ReportError("decode slice", "expect ], but found "+string([]byte{c}))
+	if extra.ReadArrayEnd() {
 		return
+	}
+	if extra.Error() != nil && extra.Error() != io.EOF {
+		extra.SetErr(fmt.Errorf("%v: %s", decoder.sliceType, extra.Error().Error()))
 	}
 }

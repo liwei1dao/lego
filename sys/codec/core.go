@@ -6,7 +6,7 @@ import (
 
 type (
 	ISys interface {
-		Marshal(v interface{}) ([]byte, error)
+		MarshalJson(v interface{}, option ...core.ExecuteOption) ([]byte, error)
 		Unmarshal(data []byte, v interface{}) error
 	}
 )

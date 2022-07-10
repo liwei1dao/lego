@@ -1,4 +1,4 @@
-package reflect
+package factory
 
 import (
 	"unsafe"
@@ -10,7 +10,7 @@ import (
 func decoderOfOptional(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
 	ptrType := typ.(*reflect2.UnsafePtrType)
 	elemType := ptrType.Elem()
-	decoder := decoderOfType(ctx, elemType)
+	decoder := DecoderOfType(ctx, elemType)
 	return &OptionalDecoder{elemType, decoder}
 }
 
@@ -28,18 +28,16 @@ type OptionalDecoder struct {
 	ValueDecoder core.IDecoder
 }
 
-func (decoder *OptionalDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor, opt *core.ExecuteOptions) {
+func (decoder *OptionalDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if extra.ReadNil() {
 		*((*unsafe.Pointer)(ptr)) = nil
 	} else {
 		if *((*unsafe.Pointer)(ptr)) == nil {
-			//pointer to null, we have to allocate memory to hold the value
 			newPtr := decoder.ValueType.UnsafeNew()
-			decoder.ValueDecoder.Decode(newPtr, extra, opt)
+			decoder.ValueDecoder.Decode(newPtr, extra)
 			*((*unsafe.Pointer)(ptr)) = newPtr
 		} else {
-			//reuse existing instance
-			decoder.ValueDecoder.Decode(*((*unsafe.Pointer)(ptr)), extra, opt)
+			decoder.ValueDecoder.Decode(*((*unsafe.Pointer)(ptr)), extra)
 		}
 	}
 }
@@ -48,11 +46,11 @@ type OptionalEncoder struct {
 	ValueEncoder core.IEncoder
 }
 
-func (encoder *OptionalEncoder) Encode(ptr unsafe.Pointer, stream core.IStream, opt *core.ExecuteOptions) {
+func (encoder *OptionalEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	if *((*unsafe.Pointer)(ptr)) == nil {
 		stream.WriteNil()
 	} else {
-		encoder.ValueEncoder.Encode(*((*unsafe.Pointer)(ptr)), stream, opt)
+		encoder.ValueEncoder.Encode(*((*unsafe.Pointer)(ptr)), stream)
 	}
 }
 
@@ -65,8 +63,8 @@ type referenceEncoder struct {
 	encoder core.IEncoder
 }
 
-func (encoder *referenceEncoder) Encode(ptr unsafe.Pointer, stream core.IStream, opt *core.ExecuteOptions) {
-	encoder.encoder.Encode(unsafe.Pointer(&ptr), stream, opt)
+func (encoder *referenceEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
+	encoder.encoder.Encode(unsafe.Pointer(&ptr), stream)
 }
 
 func (encoder *referenceEncoder) IsEmpty(ptr unsafe.Pointer) bool {
@@ -77,8 +75,8 @@ type referenceDecoder struct {
 	decoder core.IDecoder
 }
 
-func (decoder *referenceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor, opt *core.ExecuteOptions) {
-	decoder.decoder.Decode(unsafe.Pointer(&ptr), extra, opt)
+func (decoder *referenceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+	decoder.decoder.Decode(unsafe.Pointer(&ptr), extra)
 }
 
 //dereference--------------------------------------------------------------------------------------------------------------------
@@ -87,13 +85,13 @@ type dereferenceDecoder struct {
 	valueDecoder core.IDecoder
 }
 
-func (this *dereferenceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor, opt *core.ExecuteOptions) {
+func (this *dereferenceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if *((*unsafe.Pointer)(ptr)) == nil {
 		newPtr := this.valueType.UnsafeNew()
-		this.valueDecoder.Decode(newPtr, extra, opt)
+		this.valueDecoder.Decode(newPtr, extra)
 		*((*unsafe.Pointer)(ptr)) = newPtr
 	} else {
-		this.valueDecoder.Decode(*((*unsafe.Pointer)(ptr)), extra, opt)
+		this.valueDecoder.Decode(*((*unsafe.Pointer)(ptr)), extra)
 	}
 }
 
@@ -101,11 +99,11 @@ type dereferenceEncoder struct {
 	ValueEncoder core.IEncoder
 }
 
-func (encoder *dereferenceEncoder) Encode(ptr unsafe.Pointer, stream core.IStream, opt *core.ExecuteOptions) {
+func (encoder *dereferenceEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	if *((*unsafe.Pointer)(ptr)) == nil {
 		stream.WriteNil()
 	} else {
-		encoder.ValueEncoder.Encode(*((*unsafe.Pointer)(ptr)), stream, opt)
+		encoder.ValueEncoder.Encode(*((*unsafe.Pointer)(ptr)), stream)
 	}
 }
 
