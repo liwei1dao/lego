@@ -13,7 +13,7 @@ import (
 	"github.com/liwei1dao/lego/utils/container/id"
 )
 
-func newSys(options Options) (sys *LiveGo, err error) {
+func newSys(options *Options) (sys *LiveGo, err error) {
 	sys = &LiveGo{
 		options:       options,
 		keyLock:       new(sync.RWMutex),
@@ -28,7 +28,7 @@ func newSys(options Options) (sys *LiveGo, err error) {
 }
 
 type LiveGo struct {
-	options Options
+	options *Options
 	///流管理
 	streams *sync.Map
 	///流频道管理

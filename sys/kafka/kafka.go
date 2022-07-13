@@ -8,14 +8,14 @@ import (
 	"github.com/liwei1dao/lego/sys/log"
 )
 
-func newSys(options Options) (sys *Kafka, err error) {
+func newSys(options *Options) (sys *Kafka, err error) {
 	sys = &Kafka{options: options}
 	err = sys.init()
 	return
 }
 
 type Kafka struct {
-	options       Options
+	options       *Options
 	client        sarama.Client
 	syncproducer  sarama.SyncProducer
 	asyncproducer sarama.AsyncProducer

@@ -12,7 +12,7 @@ import (
 	"github.com/liwei1dao/lego/sys/gin/middleware/recovery"
 )
 
-func newSys(options Options) (sys *Gin, err error) {
+func newSys(options *Options) (sys *Gin, err error) {
 	sys = &Gin{
 		options: options,
 	}
@@ -28,7 +28,7 @@ func newSys(options Options) (sys *Gin, err error) {
 }
 
 type Gin struct {
-	options Options
+	options *Options
 	server  *http.Server
 	engine  *engine.Engine
 }

@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func newSys(options Options) (sys *CacheGo, err error) {
+func newSys(options *Options) (sys *CacheGo, err error) {
 	sys = &CacheGo{
 		options: options,
 		items:   make(map[string]Item),
@@ -15,7 +15,7 @@ func newSys(options Options) (sys *CacheGo, err error) {
 }
 
 type CacheGo struct {
-	options   Options
+	options   *Options
 	items     map[string]Item
 	mu        sync.RWMutex
 	onEvicted func(string, interface{})
@@ -44,4 +44,36 @@ func (this *CacheGo) run() {
 
 func (this *CacheGo) Clsoe() {
 	this.stop <- true
+}
+
+///日志***********************************************************************
+func (this *CacheGo) Debugf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Debugf("[SYS CacheGo] "+format, a...)
+	}
+}
+func (this *CacheGo) Infof(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Infof("[SYS CacheGo] "+format, a...)
+	}
+}
+func (this *CacheGo) Warnf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Warnf("[SYS CacheGo] "+format, a...)
+	}
+}
+func (this *CacheGo) Errorf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Errorf("[SYS CacheGo] "+format, a...)
+	}
+}
+func (this *CacheGo) Panicf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Panicf("[SYS CacheGo] "+format, a...)
+	}
+}
+func (this *CacheGo) Fatalf(format string, a ...interface{}) {
+	if this.options.Debug {
+		this.options.Log.Fatalf("[SYS CacheGo] "+format, a...)
+	}
 }

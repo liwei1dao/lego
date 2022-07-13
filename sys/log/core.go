@@ -50,7 +50,11 @@ func NewSys(option ...Option) (sys ILog, err error) {
 }
 
 func Clone(option ...Option) ILog {
-	return defsys.Clone(option...)
+	if defsys != nil {
+		return defsys.Clone(option...)
+	} else {
+		return nil
+	}
 }
 
 func Debug(msg string, fields ...Field)      { defsys.Debug(msg, fields...) }

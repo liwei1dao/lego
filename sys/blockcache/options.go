@@ -1,6 +1,8 @@
 package blockcache
 
 import (
+	"errors"
+
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
@@ -29,29 +31,35 @@ func SetLog(v log.ILog) Option {
 	}
 }
 
-func newOptions(config map[string]interface{}, opts ...Option) Options {
-	options := Options{
+func newOptions(config map[string]interface{}, opts ...Option) (options *Options, err error) {
+	options = &Options{
 		CacheMaxSzie: 1024 * 1024 * 100,
-		Debug:        true,
-		Log:          log.Clone(log.SetLoglayer(2)),
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
 	}
 	for _, o := range opts {
-		o(&options)
+		o(options)
 	}
-	return options
+	if options.Debug && options.Log == nil {
+		if options.Log = log.Clone(log.SetLoglayer(2)); options.Log == nil {
+			err = errors.New("log is nil")
+		}
+	}
+	return
 }
 
-func newOptionsByOption(opts ...Option) Options {
-	options := Options{
+func newOptionsByOption(opts ...Option) (options *Options, err error) {
+	options = &Options{
 		CacheMaxSzie: 1024 * 1024 * 100,
-		Debug:        true,
-		Log:          log.Clone(log.SetLoglayer(2)),
 	}
 	for _, o := range opts {
-		o(&options)
+		o(options)
 	}
-	return options
+	if options.Debug && options.Log == nil {
+		if options.Log = log.Clone(log.SetLoglayer(2)); options.Log == nil {
+			err = errors.New("log is nil")
+		}
+	}
+	return
 }

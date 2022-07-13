@@ -8,7 +8,7 @@ import (
 	"github.com/liwei1dao/lego/utils/container"
 )
 
-func newSys(options Options) (sys *Cache, err error) {
+func newSys(options *Options) (sys *Cache, err error) {
 	sys = &Cache{
 		options:  options,
 		inpip:    make(chan interface{}),
@@ -27,7 +27,7 @@ type Item struct {
 }
 
 type Cache struct {
-	options   Options
+	options   *Options
 	inpip     chan interface{}
 	outpip    chan interface{}
 	outnotic  chan struct{}

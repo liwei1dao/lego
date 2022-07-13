@@ -9,17 +9,11 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/sys/blockcache"
-	"github.com/liwei1dao/lego/sys/log"
 )
 
 func Test_sys(t *testing.T) {
-	if err := log.OnInit(nil, log.SetLoglevel(log.DebugLevel), log.SetDebugMode(true)); err != nil {
-		fmt.Printf("log init err:%v", err)
-		return
-	}
-	log.Debugf("log init succ")
 	if sys, err := blockcache.NewSys(blockcache.SetCacheMaxSzie(100)); err != nil {
-		log.Debugf("livego init err:%v", err)
+		fmt.Printf("livego init err:%v \n", err)
 		return
 	} else {
 		closeSignal := make(chan struct{})
@@ -31,17 +25,17 @@ func Test_sys(t *testing.T) {
 					break locp
 				default:
 					sys.In() <- "liwei1dao"
-					log.Debugf("In:liwei1dao")
+					fmt.Printf("In:liwei1dao\n")
 				}
 			}
-			log.Debugf("In:End")
+			fmt.Printf("In:End\n")
 		}()
 		go func() {
 			for v := range sys.Out() {
-				log.Debugf("Out:%v", v)
+				fmt.Printf("Out:%v\n", v)
 				time.Sleep(time.Second)
 			}
-			log.Debugf("Out:End")
+			fmt.Printf("Out:End\n")
 		}()
 		go func() {
 			time.Sleep(time.Second * 3)
