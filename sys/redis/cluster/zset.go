@@ -59,7 +59,7 @@ func (this *Redis) ZRange(key string, start int64, stop int64, v interface{}) (e
 	var _result []string
 	cmd := this.client.ZRange(this.getContext(), key, start, stop)
 	if _result, err = cmd.Result(); err == nil {
-		err = this.decode.DecoderSliceString(_result, v)
+		err = this.codec.UnmarshalSlice(_result, v)
 	}
 	return
 }
@@ -71,7 +71,7 @@ func (this *Redis) ZRangeByLex(key string, opt *redis.ZRangeBy, v interface{}) (
 	var _result []string
 	cmd := this.client.ZRangeByLex(this.getContext(), key, opt)
 	if _result, err = cmd.Result(); err == nil {
-		err = this.decode.DecoderSliceString(_result, v)
+		err = this.codec.UnmarshalSlice(_result, v)
 	}
 	return
 }
@@ -83,7 +83,7 @@ func (this *Redis) ZRangeByScore(key string, opt *redis.ZRangeBy, v interface{})
 	var _result []string
 	cmd := this.client.ZRangeByScore(this.getContext(), key, opt)
 	if _result, err = cmd.Result(); err == nil {
-		err = this.decode.DecoderSliceString(_result, v)
+		err = this.codec.UnmarshalSlice(_result, v)
 	}
 	return
 }
@@ -135,7 +135,7 @@ func (this *Redis) ZRevRange(key string, start int64, stop int64, v interface{})
 	var _result []string
 	cmd := this.client.ZRevRange(this.getContext(), key, start, stop)
 	if _result, err = cmd.Result(); err == nil {
-		err = this.decode.DecoderSliceString(_result, v)
+		err = this.codec.UnmarshalSlice(_result, v)
 	}
 	return
 }
@@ -147,7 +147,7 @@ func (this *Redis) ZRevRangeByScore(key string, opt *redis.ZRangeBy, v interface
 	var _result []string
 	cmd := this.client.ZRevRangeByScore(this.getContext(), key, opt)
 	if _result, err = cmd.Result(); err == nil {
-		err = this.decode.DecoderSliceString(_result, v)
+		err = this.codec.UnmarshalSlice(_result, v)
 	}
 	return
 }

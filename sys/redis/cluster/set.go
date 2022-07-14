@@ -10,7 +10,7 @@ func (this *Redis) SAdd(key string, values ...interface{}) (err error) {
 	agrs = append(agrs, "SADD")
 	agrs = append(agrs, key)
 	for _, v := range values {
-		result, _ := this.encode.EncoderString(v)
+		result, _ := this.codec.Marshal(v)
 		agrs = append(agrs, result)
 	}
 	err = this.client.Do(this.getContext(), agrs...).Err()
@@ -34,7 +34,7 @@ func (this *Redis) SDiff(v interface{}, keys ...string) (err error) {
 	var _result []string
 	cmd := this.client.SDiff(this.getContext(), keys...)
 	if _result, err = cmd.Result(); err == nil {
-		err = this.decode.DecoderSliceString(_result, v)
+		err = this.codec.UnmarshalSlice(_result, v)
 	}
 	return
 }
@@ -54,7 +54,7 @@ func (this *Redis) SInter(v interface{}, keys ...string) (err error) {
 	var _result []string
 	cmd := this.client.SInter(this.getContext(), keys...)
 	if _result, err = cmd.Result(); err == nil {
-		err = this.decode.DecoderSliceString(_result, v)
+		err = this.codec.UnmarshalSlice(_result, v)
 	}
 	return
 }
@@ -82,7 +82,7 @@ func (this *Redis) SMembers(v interface{}, key string) (err error) {
 	var _result []string
 	cmd := this.client.SMembers(this.getContext(), key)
 	if _result, err = cmd.Result(); err == nil {
-		err = this.decode.DecoderSliceString(_result, v)
+		err = this.codec.UnmarshalSlice(_result, v)
 	}
 	return
 }
@@ -137,7 +137,7 @@ func (this *Redis) SUnion(v interface{}, keys ...string) (err error) {
 	var _result []string
 	cmd := this.client.SUnion(this.getContext(), keys...)
 	if _result, err = cmd.Result(); err == nil {
-		err = this.decode.DecoderSliceString(_result, v)
+		err = this.codec.UnmarshalSlice(_result, v)
 	}
 	return
 }

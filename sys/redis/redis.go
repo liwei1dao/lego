@@ -5,25 +5,15 @@ import (
 	"fmt"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
-
+	"github.com/liwei1dao/lego/sys/codec"
 	"github.com/liwei1dao/lego/sys/redis/cluster"
 	"github.com/liwei1dao/lego/sys/redis/single"
-	"github.com/liwei1dao/lego/utils/codec"
 
 	"github.com/go-redis/redis/v8"
-	"google.golang.org/protobuf/proto"
 )
 
 func newSys(options Options) (sys *Redis, err error) {
 	sys = &Redis{options: options}
-	if options.RedisStorageType == JsonData {
-		sys.decoder = &codec.Decoder{DefDecoder: jsoniter.Unmarshal}
-		sys.encoder = &codec.Encoder{DefEncoder: jsoniter.Marshal}
-	} else {
-		sys.decoder = &codec.Decoder{DefDecoder: func(buf []byte, v interface{}) error { return proto.Unmarshal(buf, v.(proto.Message)) }}
-		sys.encoder = &codec.Encoder{DefEncoder: func(v interface{}) (data []byte, err error) { return proto.Marshal(v.(proto.Message)) }}
-	}
 	err = sys.init()
 	return
 }
@@ -31,8 +21,6 @@ func newSys(options Options) (sys *Redis, err error) {
 type Redis struct {
 	options Options
 	client  IRedis
-	decoder codec.IDecoder
-	encoder codec.IEncoder
 }
 
 func (this *Redis) init() (err error) {
@@ -43,23 +31,20 @@ func (this *Redis) init() (err error) {
 			this.options.Redis_Single_DB,
 			this.options.Redis_Single_PoolSize,
 			this.options.TimeOut,
-			this.encoder,
-			this.decoder,
+			this,
 		)
 	} else if this.options.RedisType == Redis_Cluster {
 		this.client, err = cluster.NewSys(
 			this.options.Redis_Cluster_Addr,
 			this.options.Redis_Cluster_Password,
 			this.options.TimeOut,
-			this.encoder,
-			this.decoder,
+			this,
 		)
 	} else {
 		err = fmt.Errorf("init Redis err:RedisType - %d", this.options.RedisType)
 	}
 	return
 }
-
 func (this *Redis) Close() (err error) {
 	return this.client.Close()
 }
@@ -81,15 +66,12 @@ func (this *Redis) Lock(key string, outTime int) (result bool, err error) {
 func (this *Redis) UnLock(key string) (err error) {
 	return this.client.UnLock(key)
 }
-
 func (this *Redis) Delete(key string) (err error) {
 	return this.client.Delete(key)
 }
-
 func (this *Redis) ExistsKey(key string) (iskeep bool, err error) {
 	return this.client.ExistsKey(key)
 }
-
 func (this *Redis) Expire(key string, expire time.Duration) (err error) {
 	return this.client.Expire(key, expire)
 }
@@ -120,8 +102,6 @@ func (this *Redis) RenameNX(oldkey string, newkey string) (err error) {
 func (this *Redis) Keys(pattern string) (keys []string, err error) {
 	return this.client.Keys(pattern)
 }
-
-///获取键类型
 func (this *Redis) Type(key string) (ty string, err error) {
 	return this.client.Type(key)
 }
@@ -227,6 +207,9 @@ func (this *Redis) HGet(key string, field string, value interface{}) (err error)
 func (this *Redis) HGetAll(key string, v interface{}) (err error) {
 	return this.client.HGetAll(key, v)
 }
+func (this *Redis) HGetAllToMapString(key string) (result map[string]string, err error) {
+	return this.client.HGetAllToMapString(key)
+}
 func (this *Redis) HIncrBy(key string, field string, value int) (err error) {
 	return this.client.HIncrBy(key, field, value)
 }
@@ -245,6 +228,11 @@ func (this *Redis) HMGet(key string, v interface{}, fields ...string) (err error
 func (this *Redis) HMSet(key string, v interface{}) (err error) {
 	return this.client.HMSet(key, v)
 }
+
+func (this *Redis) HMSetForMap(key string, v map[string]string) (err error) {
+	return this.client.HMSetForMap(key, v)
+}
+
 func (this *Redis) HSet(key string, field string, value interface{}) (err error) {
 	return this.client.HSet(key, field, value)
 }
@@ -359,4 +347,62 @@ func (this *Redis) ZUnionStore(dest string, store *redis.ZStore) (result int64, 
 }
 func (this *Redis) ZScan(key string, _cursor uint64, match string, count int64) (keys []string, cursor uint64, err error) {
 	return this.client.ZScan(key, _cursor, match, count)
+}
+
+//lua Script
+func (this *Redis) NewScript(src string) *redis.StringCmd {
+	return this.client.NewScript(src)
+}
+func (this *Redis) Eval(script string, keys []string, args ...interface{}) *redis.Cmd {
+	return this.client.Eval(script, keys, args...)
+}
+func (this *Redis) EvalSha(sha1 string, keys []string, args ...interface{}) *redis.Cmd {
+	return this.client.EvalSha(sha1, keys, args...)
+}
+func (this *Redis) ScriptExists(hashes ...string) *redis.BoolSliceCmd {
+	return this.client.ScriptExists(hashes...)
+}
+
+//Codec---------------------------------------------------------------------------------------------------------------------------------------
+func (this *Redis) Marshal(v interface{}) ([]byte, error) {
+	if this.options.Codec != nil {
+		return this.options.Codec.Marshal(v)
+	} else {
+		return codec.MarshalJson(v)
+	}
+}
+func (this *Redis) Unmarshal(data []byte, v interface{}) error {
+	if this.options.Codec != nil {
+		return this.options.Codec.Unmarshal(data, v)
+	} else {
+		return codec.UnmarshalJson(data, v)
+	}
+}
+func (this *Redis) MarshalMap(val interface{}) (ret map[string]string, err error) {
+	if this.options.Codec != nil {
+		return this.options.Codec.MarshalMap(val)
+	} else {
+		return codec.MarshalMapJson(val)
+	}
+}
+func (this *Redis) UnmarshalMap(data map[string]string, val interface{}) (err error) {
+	if this.options.Codec != nil {
+		return this.options.Codec.UnmarshalMap(data, val)
+	} else {
+		return codec.UnmarshalMapJson(data, val)
+	}
+}
+func (this *Redis) MarshalSlice(val interface{}) (ret []string, err error) {
+	if this.options.Codec != nil {
+		return this.options.Codec.MarshalSlice(val)
+	} else {
+		return codec.MarshalSliceJson(val)
+	}
+}
+func (this *Redis) UnmarshalSlice(data []string, val interface{}) (err error) {
+	if this.options.Codec != nil {
+		return this.options.Codec.UnmarshalSlice(data, val)
+	} else {
+		return codec.UnmarshalSliceJson(data, val)
+	}
 }

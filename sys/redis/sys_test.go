@@ -3,6 +3,7 @@ package redis_test
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"sync"
 	"testing"
@@ -16,7 +17,6 @@ func TestMain(m *testing.M) {
 		redis.SetRedisType(redis.Redis_Cluster),
 		redis.SetRedis_Cluster_Addr([]string{"10.0.0.9:9001", "10.0.0.9:9002", "10.0.0.9:9003", "10.0.1.45:9004", "10.0.1.45:9005", "10.0.1.45:9006"}),
 		redis.SetRedis_Cluster_Password(""),
-		redis.SetRedisStorageType(redis.JsonData),
 	); err != nil {
 		fmt.Println("err:", err)
 		return
@@ -182,25 +182,56 @@ func Test_Redis_Encoder_int(t *testing.T) {
 }
 
 func Test_Redis_Encoder_Hash(t *testing.T) {
-	// err := redis.HMSet("test:1005", &TestData{Name: "liwei1dao", Agr: 12, Sub: &TestAny{SubName: "test", Age: 20}})
-	// fmt.Printf("err:%v\n", err)
-
-	// data := &TestData{}
-	// err = redis.HGetAll("test:1005", data)
-	// fmt.Printf("data:%v err:%v\n", data, err)
-
-	// redis.HSet("test:1003", "Name", "eeee")
 	name := ""
 	err := redis.HGet("test:103", "name", &name)
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Println(name)
+}
 
-	// data1 := map[string]*TestData{"li_1": {Name: "liwei2dao", Agr: 56}, "li_2": {Name: "liwei3dao", Agr: 78}}
-	// err := redis.HMSet("test:1004", data1)
-	// fmt.Printf("err:%v\n", err)
-	// data2 := make(map[string]*TestData)
-	// err = redis.HGetAll("test:1004", data2)
-	// fmt.Printf("data2:%v err:%v\n", data2, err)
+//测试redis lua 脚本
+func Test_Redis_Lua(t *testing.T) {
+	script := redis.NewScript(`
+		local goodsSurplus
+		local flag
+		local existUserIds    = tostring(KEYS[1])
+		local memberUid       = tonumber(ARGV[1])
+		local goodsSurplusKey = tostring(KEYS[2])
+		local hasBuy = redis.call("sIsMember", existUserIds, memberUid)
+
+		if hasBuy ~= 0 then
+		return 0
+		end
+		
+
+		goodsSurplus =  redis.call("GET", goodsSurplusKey)
+		if goodsSurplus == false then
+		return 0
+		end
+		
+		-- 没有剩余可抢购物品
+		goodsSurplus = tonumber(goodsSurplus)
+		if goodsSurplus <= 0 then
+		return 0
+		end
+		
+		flag = redis.call("SADD", existUserIds, memberUid)
+		flag = redis.call("DECR", goodsSurplusKey)
+		return 1
+	`)
+	sha, err := script.Result()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	ret := redis.EvalSha(sha, []string{
+		"hadBuyUids",
+		"goodsSurplus",
+	}, "userId")
+	if result, err := ret.Result(); err != nil {
+		log.Fatalf("Execute Redis fail: %v", err.Error())
+	} else {
+		fmt.Println("")
+		fmt.Printf("userid: %s, result: %d", "userId", result)
+	}
 }

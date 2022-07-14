@@ -16,6 +16,7 @@ type (
 		Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error)
 		TxPipelined(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error)
 		Watch(ctx context.Context, fn func(*redis.Tx) error, keys ...string) (err error)
+
 		/*Key*/
 		Delete(key string) (err error)
 		ExistsKey(key string) (iskeep bool, err error)
@@ -65,12 +66,14 @@ type (
 		HExists(key string, field string) (result bool, err error)
 		HGet(key string, field string, value interface{}) (err error)
 		HGetAll(key string, v interface{}) (err error)
+		HGetAllToMapString(key string) (result map[string]string, err error)
 		HIncrBy(key string, field string, value int) (err error)
 		HIncrByFloat(key string, field string, value float32) (err error)
 		Hkeys(key string) (result []string, err error)
 		Hlen(key string) (result int, err error)
 		HMGet(key string, v interface{}, fields ...string) (err error)
 		HMSet(key string, v interface{}) (err error)
+		HMSetForMap(key string, v map[string]string) (err error)
 		HSet(key string, field string, value interface{}) (err error)
 		HSetNX(key string, field string, value interface{}) (err error)
 		/*Set*/
@@ -110,6 +113,12 @@ type (
 		ZScore(key string, member string) (result float64, err error)
 		ZUnionStore(dest string, store *redis.ZStore) (result int64, err error)
 		ZScan(key string, _cursor uint64, match string, count int64) (keys []string, cursor uint64, err error)
+
+		/*Lua Script*/
+		NewScript(src string) *redis.StringCmd
+		Eval(script string, keys []string, args ...interface{}) *redis.Cmd
+		EvalSha(sha1 string, keys []string, args ...interface{}) *redis.Cmd
+		ScriptExists(hashes ...string) *redis.BoolSliceCmd
 	}
 
 	ISys interface {
@@ -325,6 +334,9 @@ func HMGet(key string, v interface{}, fields ...string) (err error) {
 func HMSet(key string, v interface{}) (err error) {
 	return defsys.HMSet(key, v)
 }
+func HMSetForMap(key string, v map[string]string) (err error) {
+	return defsys.HMSetForMap(key, v)
+}
 func HSet(key string, field string, value interface{}) (err error) {
 	return defsys.HSet(key, field, value)
 }
@@ -439,4 +451,18 @@ func ZUnionStore(dest string, store *redis.ZStore) (result int64, err error) {
 }
 func ZScan(key string, _cursor uint64, match string, count int64) (keys []string, cursor uint64, err error) {
 	return defsys.ZScan(key, _cursor, match, count)
+}
+
+/*Lua Script*/
+func NewScript(src string) *redis.StringCmd {
+	return defsys.NewScript(src)
+}
+func Eval(script string, keys []string, args ...interface{}) *redis.Cmd {
+	return defsys.Eval(script, keys, args...)
+}
+func EvalSha(sha1 string, keys []string, args ...interface{}) *redis.Cmd {
+	return defsys.Eval(sha1, keys, args...)
+}
+func ScriptExists(hashes ...string) *redis.BoolSliceCmd {
+	return defsys.ScriptExists(hashes...)
 }

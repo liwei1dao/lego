@@ -10,9 +10,13 @@ Redis Lindex 命令用于通过索引获取列表中的元素。你也可以使�
 func (this *Redis) Lindex(key string, v interface{}) (err error) {
 	cmd := redis.NewStringCmd(this.getContext(), "LINDEX", key)
 	this.client.Process(this.getContext(), cmd)
-	var _result string
-	if _result, err = cmd.Result(); err == nil {
-		err = this.decode.DecoderString(_result, v)
+	var _result []byte
+	if _result, err = cmd.Bytes(); err == nil {
+		if len(_result) == 0 {
+			err = redis.Nil
+			return
+		}
+		err = this.codec.Unmarshal(_result, v)
 	}
 	return
 }
@@ -24,13 +28,13 @@ Redis Linsert 命令用于在列表的元素前或者后插入元素。当指定
 */
 func (this *Redis) Linsert(key string, isbefore bool, tager interface{}, value interface{}) (err error) {
 	var (
-		tagervalue  string
-		resultvalue string
+		tagervalue  []byte
+		resultvalue []byte
 	)
-	if tagervalue, err = this.encode.EncoderString(tager); err != nil {
+	if tagervalue, err = this.codec.Marshal(tager); err != nil {
 		return
 	}
-	if resultvalue, err = this.encode.EncoderString(value); err != nil {
+	if resultvalue, err = this.codec.Marshal(value); err != nil {
 		return
 	}
 	if isbefore {
@@ -55,9 +59,9 @@ Redis Lpop 命令用于移除并返回列表的第一个元素
 func (this *Redis) LPop(key string, v interface{}) (err error) {
 	cmd := redis.NewStringCmd(this.getContext(), "LPOP", key)
 	this.client.Process(this.getContext(), cmd)
-	var _result string
-	if _result, err = cmd.Result(); err == nil {
-		err = this.decode.DecoderString(_result, v)
+	var _result []byte
+	if _result, err = cmd.Bytes(); err == nil {
+		err = this.codec.Unmarshal(_result, v)
 	}
 	return
 }
@@ -69,7 +73,7 @@ func (this *Redis) LPush(key string, values ...interface{}) (err error) {
 	agrs := make([]interface{}, 0)
 	agrs = append(agrs, "LPUSH")
 	for _, v := range values {
-		result, _ := this.encode.EncoderString(v)
+		result, _ := this.codec.Marshal(v)
 		agrs = append(agrs, result)
 	}
 	err = this.client.Do(this.getContext(), agrs...).Err()
@@ -83,7 +87,7 @@ func (this *Redis) LPushX(key string, values ...interface{}) (err error) {
 	agrs := make([]interface{}, 0)
 	agrs = append(agrs, "LPUSHX")
 	for _, v := range values {
-		result, _ := this.encode.EncoderString(v)
+		result, _ := this.codec.Marshal(v)
 		agrs = append(agrs, result)
 	}
 	err = this.client.Do(this.getContext(), agrs...).Err()
@@ -99,7 +103,7 @@ func (this *Redis) LRange(key string, start, end int, v interface{}) (err error)
 	cmd := redis.NewStringSliceCmd(this.getContext(), "LRANGE", key, start, end)
 	this.client.Process(this.getContext(), cmd)
 	if _result, err = cmd.Result(); err == nil {
-		err = this.decode.DecoderSliceString(_result, v)
+		err = this.codec.UnmarshalSlice(_result, v)
 	}
 	return
 }
@@ -112,8 +116,8 @@ count < 0 : 从表尾开始向表头搜索，移除与 VALUE 相等的元素，�
 count = 0 : 移除表中所有与 VALUE 相等的值
 */
 func (this *Redis) LRem(key string, count int, target interface{}) (err error) {
-	var resultvalue string
-	if resultvalue, err = this.encode.EncoderString(target); err != nil {
+	var resultvalue []byte
+	if resultvalue, err = this.codec.Marshal(target); err != nil {
 		return
 	}
 	err = this.client.Do(this.getContext(), "LREM", key, count, resultvalue).Err()
@@ -125,8 +129,8 @@ Redis Lset 通过索引来设置元素的值。
 当索引参数超出范围，或对一个空列表进行 LSET 时，返回一个错误
 */
 func (this *Redis) LSet(key string, index int, value interface{}) (err error) {
-	var resultvalue string
-	if resultvalue, err = this.encode.EncoderString(value); err == nil {
+	var resultvalue []byte
+	if resultvalue, err = this.codec.Marshal(value); err == nil {
 		return
 	}
 	err = this.client.Do(this.getContext(), "LSET", key, index, resultvalue).Err()
@@ -149,9 +153,9 @@ Redis Rpop 命令用于移除列表的最后一个元素，返回值为移除的
 func (this *Redis) Rpop(key string, v interface{}) (err error) {
 	cmd := redis.NewStringCmd(this.getContext(), "RPOP", key)
 	this.client.Process(this.getContext(), cmd)
-	var _result string
-	if _result, err = cmd.Result(); err == nil {
-		err = this.decode.DecoderString(_result, v)
+	var _result []byte
+	if _result, err = cmd.Bytes(); err == nil {
+		err = this.codec.Unmarshal(_result, v)
 	}
 	return
 }
@@ -162,9 +166,9 @@ Redis Rpoplpush 命令用于移除列表的最后一个元素，并将该元素�
 func (this *Redis) RPopLPush(oldkey string, newkey string, v interface{}) (err error) {
 	cmd := redis.NewStringCmd(this.getContext(), "RPOPLPUSH", oldkey, newkey)
 	this.client.Process(this.getContext(), cmd)
-	var _result string
-	if _result, err = cmd.Result(); err == nil {
-		err = this.decode.DecoderString(_result, v)
+	var _result []byte
+	if _result, err = cmd.Bytes(); err == nil {
+		err = this.codec.Unmarshal(_result, v)
 	}
 	return
 }
@@ -178,7 +182,7 @@ func (this *Redis) RPush(key string, values ...interface{}) (err error) {
 	agrs := make([]interface{}, 0)
 	agrs = append(agrs, "RPUSH")
 	for _, v := range values {
-		result, _ := this.encode.EncoderString(v)
+		result, _ := this.codec.Marshal(v)
 		agrs = append(agrs, result)
 	}
 	err = this.client.Do(this.getContext(), agrs...).Err()
@@ -192,7 +196,7 @@ func (this *Redis) RPushX(key string, values ...interface{}) (err error) {
 	agrs := make([]interface{}, 0)
 	agrs = append(agrs, "RPUSHX")
 	for _, v := range values {
-		result, _ := this.encode.EncoderString(v)
+		result, _ := this.codec.Marshal(v)
 		agrs = append(agrs, result)
 	}
 	err = this.client.Do(this.getContext(), agrs...).Err()

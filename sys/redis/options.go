@@ -3,6 +3,7 @@ package redis
 import (
 	"time"
 
+	"github.com/liwei1dao/lego/sys/redis/core"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
 
@@ -11,14 +12,6 @@ type RedisType int8
 const (
 	Redis_Single RedisType = iota
 	Redis_Cluster
-)
-
-///redis 存储数据格式化类型
-type RedisStorageTyoe int8
-
-const (
-	JsonData RedisStorageTyoe = iota
-	ProtoData
 )
 
 type Option func(*Options)
@@ -30,8 +23,8 @@ type Options struct {
 	Redis_Single_PoolSize  int
 	Redis_Cluster_Addr     []string
 	Redis_Cluster_Password string
-	RedisStorageType       RedisStorageTyoe
 	TimeOut                time.Duration
+	Codec                  core.ICodec
 }
 
 func SetRedisType(v RedisType) Option {
@@ -74,15 +67,16 @@ func SetRedis_Cluster_Password(v string) Option {
 		o.Redis_Cluster_Password = v
 	}
 }
-func SetRedisStorageType(v RedisStorageTyoe) Option {
-	return func(o *Options) {
-		o.RedisStorageType = v
-	}
-}
 
 func SetTimeOut(v time.Duration) Option {
 	return func(o *Options) {
 		o.TimeOut = v
+	}
+}
+
+func SetCodec(v core.ICodec) Option {
+	return func(o *Options) {
+		o.Codec = v
 	}
 }
 

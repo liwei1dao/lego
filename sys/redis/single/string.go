@@ -11,8 +11,8 @@ import (
 命令用于设置给定 key 的值。如果 key 已经存储其他值， SET 就覆写旧值，且无视类型。
 */
 func (this *Redis) Set(key string, value interface{}, expiration time.Duration) (err error) {
-	var result string
-	if result, err = this.encode.EncoderString(value); err != nil {
+	var result []byte
+	if result, err = this.codec.Marshal(value); err != nil {
 		return
 	}
 	err = this.client.Set(this.getContext(), key, result, expiration).Err()
@@ -37,7 +37,7 @@ func (this *Redis) MSet(v map[string]interface{}) (err error) {
 	agrs := make([]interface{}, 0)
 	agrs = append(agrs, "MSET")
 	for k, v := range v {
-		result, _ := this.encode.EncoderString(v)
+		result, _ := this.codec.Marshal(v)
 		agrs = append(agrs, k, result)
 	}
 	err = this.client.Do(this.getContext(), agrs...).Err()
@@ -51,7 +51,7 @@ func (this *Redis) MSetNX(v map[string]interface{}) (err error) {
 	agrs := make([]interface{}, 0)
 	agrs = append(agrs, "MSETNX")
 	for k, v := range v {
-		result, _ := this.encode.EncoderString(v)
+		result, _ := this.codec.Marshal(v)
 		agrs = append(agrs, k, result)
 	}
 	err = this.client.Do(this.getContext(), agrs...).Err()
@@ -117,8 +117,8 @@ Redis Append 命令用于为指定的 key 追加值。
 如果 key 不存在， APPEND 就简单地将给定 key 设为 value ，就像执行 SET key value 一样。
 */
 func (this *Redis) Append(key string, value interface{}) (err error) {
-	var result string
-	if result, err = this.encode.EncoderString(value); err != nil {
+	var result []byte
+	if result, err = this.codec.Marshal(value); err != nil {
 		return
 	}
 	err = this.client.Do(this.getContext(), "APPEND", key, result).Err()
@@ -129,9 +129,9 @@ func (this *Redis) Append(key string, value interface{}) (err error) {
 命令用于设置给定 key 的值。如果 key 已经存储其他值， SET 就覆写旧值，且无视类型
 */
 func (this *Redis) Get(key string, value interface{}) (err error) {
-	var result string
-	if result, err = this.client.Get(this.getContext(), key).Result(); err == nil {
-		err = this.decode.DecoderString(result, value)
+	var result []byte
+	if result, err = this.client.Get(this.getContext(), key).Bytes(); err == nil {
+		err = this.codec.Unmarshal(result, value)
 	}
 	return
 }
@@ -141,14 +141,14 @@ func (this *Redis) Get(key string, value interface{}) (err error) {
 */
 func (this *Redis) GetSet(key string, value interface{}, result interface{}) (err error) {
 	var (
-		_value string
+		_value []byte
 	)
-	if _value, err = this.encode.EncoderString(value); err == nil {
+	if _value, err = this.codec.Marshal(value); err == nil {
 		cmd := redis.NewStringCmd(this.getContext(), "GETSET", key, _value)
 		this.client.Process(this.getContext(), cmd)
-		var _result string
-		if _result, err = cmd.Result(); err == nil {
-			err = this.decode.DecoderString(_result, result)
+		var _result []byte
+		if _result, err = cmd.Bytes(); err == nil {
+			err = this.codec.Unmarshal(_result, result)
 		}
 	}
 	return
@@ -169,7 +169,7 @@ func (this *Redis) MGet(v interface{}, keys ...string) (err error) {
 	if result, err = cmd.Result(); err != nil {
 		return
 	}
-	err = this.decode.DecoderSliceString(result, v)
+	err = this.codec.UnmarshalSlice(result, v)
 	return
 }
 

@@ -4,14 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/liwei1dao/lego/utils/codec"
+	"github.com/liwei1dao/lego/sys/redis/core"
 
 	"github.com/go-redis/redis/v8"
 )
 
 func NewSys(RedisUrl []string, RedisPassword string, timeOut time.Duration,
-	encode codec.IEncoder,
-	decode codec.IDecoder,
+	codec core.ICodec,
 ) (sys *Redis, err error) {
 	var (
 		client *redis.ClusterClient
@@ -23,8 +22,7 @@ func NewSys(RedisUrl []string, RedisPassword string, timeOut time.Duration,
 	sys = &Redis{
 		client:  client,
 		timeOut: timeOut,
-		encode:  encode,
-		decode:  decode,
+		codec:   codec,
 	}
 	_, err = sys.Ping()
 	return
@@ -33,8 +31,7 @@ func NewSys(RedisUrl []string, RedisPassword string, timeOut time.Duration,
 type Redis struct {
 	client  *redis.ClusterClient
 	timeOut time.Duration
-	encode  codec.IEncoder
-	decode  codec.IDecoder
+	codec   core.ICodec
 }
 
 func (this *Redis) getContext() (ctx context.Context) {
@@ -92,4 +89,22 @@ func (this *Redis) Lock(key string, outTime int) (result bool, err error) {
 func (this *Redis) UnLock(key string) (err error) {
 	err = this.Delete(key)
 	return
+}
+
+//lua Script
+func (this *Redis) NewScript(src string) *redis.StringCmd {
+	script := redis.NewScript(src)
+	return script.Load(this.getContext(), this.client)
+}
+func (this *Redis) Eval(script string, keys []string, args ...interface{}) *redis.Cmd {
+	return this.client.Eval(this.getContext(), script, keys, args...)
+}
+func (this *Redis) EvalSha(sha1 string, keys []string, args ...interface{}) *redis.Cmd {
+	return this.client.EvalSha(this.getContext(), sha1, keys, args...)
+}
+func (this *Redis) ScriptExists(hashes ...string) *redis.BoolSliceCmd {
+	return this.client.ScriptExists(this.getContext(), hashes...)
+}
+func (this *Redis) ScriptLoad(script string) *redis.StringCmd {
+	return this.client.ScriptLoad(this.getContext(), script)
 }

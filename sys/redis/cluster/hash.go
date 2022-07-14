@@ -36,10 +36,21 @@ func (this *Redis) HMSet(key string, v interface{}) (err error) {
 	agrs = append(agrs, "HMSET")
 	agrs = append(agrs, key)
 	var data map[string]string
-	if data, err = this.encode.EncoderToMapString(v); err != nil {
+	if data, err = this.codec.MarshalMap(v); err != nil {
 		return
 	}
 	for k, v := range data {
+		agrs = append(agrs, k, v)
+	}
+	err = this.client.Do(this.getContext(), agrs...).Err()
+	return
+}
+
+func (this *Redis) HMSetForMap(key string, v map[string]string) (err error) {
+	agrs := make([]interface{}, 0)
+	agrs = append(agrs, "HMSET")
+	agrs = append(agrs, key)
+	for k, v := range v {
 		agrs = append(agrs, k, v)
 	}
 	err = this.client.Do(this.getContext(), agrs...).Err()
@@ -52,13 +63,13 @@ Redis Hget 命令用于返回哈希表中指定字段的值
 func (this *Redis) HGet(key string, field string, v interface{}) (err error) {
 	cmd := redis.NewStringCmd(this.getContext(), "HGET", key, field)
 	this.client.Process(this.getContext(), cmd)
-	var _result string
-	if _result, err = cmd.Result(); err == nil {
+	var _result []byte
+	if _result, err = cmd.Bytes(); err == nil {
 		if len(_result) == 0 {
 			err = redis.Nil
 			return
 		}
-		err = this.decode.DecoderString(_result, v)
+		err = this.codec.Unmarshal(_result, v)
 	}
 	return
 }
@@ -76,7 +87,22 @@ func (this *Redis) HGetAll(key string, v interface{}) (err error) {
 			err = redis.Nil
 			return
 		}
-		err = this.decode.DecoderMapString(_result, v)
+		err = this.codec.UnmarshalMap(_result, v)
+	}
+	return
+}
+
+/*
+	读取全部hash集合数据到map中
+*/
+func (this *Redis) HGetAllToMapString(key string) (result map[string]string, err error) {
+	cmd := redis.NewStringStringMapCmd(this.getContext(), "HGETALL", key)
+	this.client.Process(this.getContext(), cmd)
+	if result, err = cmd.Result(); err == nil {
+		if len(result) == 0 {
+			err = redis.Nil
+			return
+		}
 	}
 	return
 }
@@ -136,7 +162,11 @@ func (this *Redis) HMGet(key string, v interface{}, fields ...string) (err error
 	this.client.Process(this.getContext(), cmd)
 	var _result map[string]string
 	if _result, err = cmd.Result(); err == nil {
-		err = this.decode.DecoderMapString(_result, v)
+		if len(_result) == 0 {
+			err = redis.Nil
+			return
+		}
+		err = this.codec.UnmarshalMap(_result, v)
 	}
 	return
 }
@@ -148,7 +178,7 @@ Redis Hset 命令用于为哈希表中的字段赋值
 */
 func (this *Redis) HSet(key string, field string, value interface{}) (err error) {
 	var resultvalue []byte
-	if resultvalue, err = this.encode.Encoder(value); err == nil {
+	if resultvalue, err = this.codec.Marshal(value); err == nil {
 		err = this.client.Do(this.getContext(), "HSET", key, field, resultvalue).Err()
 	}
 	return
@@ -162,7 +192,7 @@ Redis Hsetnx 命令用于为哈希表中不存在的的字段赋值
 */
 func (this *Redis) HSetNX(key string, field string, value interface{}) (err error) {
 	var resultvalue []byte
-	if resultvalue, err = this.encode.Encoder(value); err == nil {
+	if resultvalue, err = this.codec.Marshal(value); err == nil {
 		err = this.client.Do(this.getContext(), "HSETNX", key, field, resultvalue).Err()
 	}
 	return
