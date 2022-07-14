@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
-	"github.com/liwei1dao/lego/sys/log"
 )
 
 func newSys(options *Options) (sys *Kafka, err error) {
@@ -193,22 +192,22 @@ func (this *Kafka) Consumer_Close() (err error) {
 func (this *Kafka) Close() (err error) {
 	if this.client != nil {
 		if err = this.client.Close(); err != nil {
-			log.Errorf("Sys Kafka client Close err:%v", err)
+			this.Errorf("client Close err:%v", err)
 		}
 	}
 	if this.syncproducer != nil {
 		if err = this.syncproducer.Close(); err != nil {
-			log.Errorf("Sys Kafka syncproducer Close err:%v", err)
+			this.Errorf("syncproducer Close err:%v", err)
 		}
 	}
 	if this.asyncproducer != nil {
 		if err = this.asyncproducer.Close(); err != nil {
-			log.Errorf("Sys Kafka asyncproducer Close err:%v", err)
+			this.Errorf("asyncproducer Close err:%v", err)
 		}
 	}
 	if this.consumer != nil {
 		if err = this.consumer.Consumer_Close(); err != nil {
-			log.Errorf("Sys Kafka consumer Close err:%v", err)
+			this.Errorf("consumer Close err:%v", err)
 		}
 	}
 	return
@@ -231,27 +230,33 @@ func (this *Kafka) Warnf(format string, a ...interface{}) {
 	}
 }
 func (this *Kafka) Errorf(format string, a ...interface{}) {
-	if this.options.Debug {
+	if this.options.Log != nil {
 		this.options.Log.Errorf("[SYS Kafka] "+format, a...)
 	}
 }
 func (this *Kafka) Panicf(format string, a ...interface{}) {
-	if this.options.Debug {
+	if this.options.Log != nil {
 		this.options.Log.Panicf("[SYS Kafka] "+format, a...)
 	}
 }
 func (this *Kafka) Fatalf(format string, a ...interface{}) {
-	if this.options.Debug {
+	if this.options.Log != nil {
 		this.options.Log.Fatalf("[SYS Kafka] "+format, a...)
 	}
 }
 
 func (this *Kafka) Print(v ...interface{}) {
-	this.options.Log.Warnf("[SYS Kafka] ", v...)
+	if this.options.Debug {
+		this.options.Log.Warnf("[SYS Kafka] ", v...)
+	}
 }
 func (this *Kafka) Printf(format string, v ...interface{}) {
-	this.options.Log.Warnf("[SYS Kafka] "+format, v...)
+	if this.options.Debug {
+		this.options.Log.Warnf("[SYS Kafka] "+format, v...)
+	}
 }
 func (this *Kafka) Println(v ...interface{}) {
-	this.options.Log.Warnf("[SYS Kafka] ", v...)
+	if this.options.Debug {
+		this.options.Log.Warnf("[SYS Kafka] ", v...)
+	}
 }

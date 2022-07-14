@@ -13,9 +13,9 @@ import (
 	"github.com/modern-go/reflect2"
 )
 
-func newSys(options core.Options) (sys *Codec, err error) {
+func newSys(options *core.Options) (sys *Codec, err error) {
 	sys = &Codec{
-		options:      &options,
+		options:      options,
 		decoderCache: new(sync.Map),
 		encoderCache: new(sync.Map),
 		streamPool: &sync.Pool{

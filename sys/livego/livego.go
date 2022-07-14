@@ -220,17 +220,17 @@ func (this *LiveGo) Warnf(format string, a ...interface{}) {
 	}
 }
 func (this *LiveGo) Errorf(format string, a ...interface{}) {
-	if this.options.Debug {
+	if this.options.Log != nil {
 		this.options.Log.Errorf("[SYS LiveGo] "+format, a...)
 	}
 }
 func (this *LiveGo) Panicf(format string, a ...interface{}) {
-	if this.options.Debug {
+	if this.options.Log != nil {
 		this.options.Log.Panicf("[SYS LiveGo] "+format, a...)
 	}
 }
 func (this *LiveGo) Fatalf(format string, a ...interface{}) {
-	if this.options.Debug {
+	if this.options.Log != nil {
 		this.options.Log.Fatalf("[SYS LiveGo] "+format, a...)
 	}
 }
