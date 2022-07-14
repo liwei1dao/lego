@@ -1,8 +1,9 @@
-package stream
+package render
 
 import (
 	"github.com/liwei1dao/lego/sys/codec/core"
 	"github.com/liwei1dao/lego/sys/codec/utils"
+
 	"github.com/modern-go/reflect2"
 )
 
@@ -142,9 +143,14 @@ func (this *JsonStream) WriteString(val string) {
 	}
 	utils.WriteStringSlowPath(&this.buf, i, val, valLen)
 }
-
 func (this *JsonStream) WriteBytes(val []byte) {
 	this.buf = append(this.buf, val...)
+}
+func (this *JsonStream) Reset(bufSize int) {
+	this.buf = make([]byte, 0, bufSize)
+	this.err = nil
+	this.indention = 0
+	return
 }
 func (this *JsonStream) Buffer() []byte {
 	return this.buf

@@ -1,9 +1,12 @@
 package factory
 
 import (
+	"fmt"
+	"reflect"
 	"unsafe"
 
 	"github.com/liwei1dao/lego/sys/codec/core"
+
 	"github.com/modern-go/reflect2"
 )
 
@@ -28,17 +31,29 @@ type OptionalDecoder struct {
 	ValueDecoder core.IDecoder
 }
 
-func (decoder *OptionalDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (this *OptionalDecoder) GetType() reflect.Kind {
+	return this.ValueDecoder.GetType()
+}
+func (this *OptionalDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if extra.ReadNil() {
 		*((*unsafe.Pointer)(ptr)) = nil
 	} else {
 		if *((*unsafe.Pointer)(ptr)) == nil {
-			newPtr := decoder.ValueType.UnsafeNew()
-			decoder.ValueDecoder.Decode(newPtr, extra)
+			newPtr := this.ValueType.UnsafeNew()
+			this.ValueDecoder.Decode(newPtr, extra)
 			*((*unsafe.Pointer)(ptr)) = newPtr
 		} else {
-			decoder.ValueDecoder.Decode(*((*unsafe.Pointer)(ptr)), extra)
+			this.ValueDecoder.Decode(*((*unsafe.Pointer)(ptr)), extra)
 		}
+	}
+}
+
+func (this *OptionalDecoder) DecodeForMapJson(ptr unsafe.Pointer, extra map[string]string) (err error) {
+	if decoderMapJson, ok := this.ValueDecoder.(core.IDecoderMapJson); !ok {
+		err = fmt.Errorf("encoder %T not support EncodeToMapJson", this.ValueDecoder)
+		return
+	} else {
+		return decoderMapJson.DecodeForMapJson(ptr, extra)
 	}
 }
 
@@ -46,16 +61,33 @@ type OptionalEncoder struct {
 	ValueEncoder core.IEncoder
 }
 
-func (encoder *OptionalEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (this *OptionalEncoder) GetType() reflect.Kind {
+	return this.ValueEncoder.GetType()
+}
+func (this *OptionalEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	if *((*unsafe.Pointer)(ptr)) == nil {
 		stream.WriteNil()
 	} else {
-		encoder.ValueEncoder.Encode(*((*unsafe.Pointer)(ptr)), stream)
+		this.ValueEncoder.Encode(*((*unsafe.Pointer)(ptr)), stream)
 	}
 }
 
-func (encoder *OptionalEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+func (this *OptionalEncoder) IsEmpty(ptr unsafe.Pointer) bool {
 	return *((*unsafe.Pointer)(ptr)) == nil
+}
+
+func (this *OptionalEncoder) EncodeToMapJson(ptr unsafe.Pointer) (ret map[string]string, err error) {
+	if encoderMapJson, ok := this.ValueEncoder.(core.IEncoderMapJson); !ok {
+		err = fmt.Errorf("encoder %T not support EncodeToMapJson", this.ValueEncoder)
+		return
+	} else {
+		if *((*unsafe.Pointer)(ptr)) == nil {
+			err = fmt.Errorf("encoder ptr is nil")
+			return
+		} else {
+			return encoderMapJson.EncodeToMapJson(*((*unsafe.Pointer)(ptr)))
+		}
+	}
 }
 
 //reference--------------------------------------------------------------------------------------------------------------------
@@ -63,20 +95,20 @@ type referenceEncoder struct {
 	encoder core.IEncoder
 }
 
-func (encoder *referenceEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
-	encoder.encoder.Encode(unsafe.Pointer(&ptr), stream)
+func (this *referenceEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
+	this.encoder.Encode(unsafe.Pointer(&ptr), stream)
 }
 
-func (encoder *referenceEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	return encoder.encoder.IsEmpty(unsafe.Pointer(&ptr))
+func (this *referenceEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+	return this.encoder.IsEmpty(unsafe.Pointer(&ptr))
 }
 
 type referenceDecoder struct {
 	decoder core.IDecoder
 }
 
-func (decoder *referenceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
-	decoder.decoder.Decode(unsafe.Pointer(&ptr), extra)
+func (this *referenceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+	this.decoder.Decode(unsafe.Pointer(&ptr), extra)
 }
 
 //dereference--------------------------------------------------------------------------------------------------------------------
@@ -85,6 +117,9 @@ type dereferenceDecoder struct {
 	valueDecoder core.IDecoder
 }
 
+func (this *dereferenceDecoder) GetType() reflect.Kind {
+	return this.valueDecoder.GetType()
+}
 func (this *dereferenceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if *((*unsafe.Pointer)(ptr)) == nil {
 		newPtr := this.valueType.UnsafeNew()
@@ -99,28 +134,31 @@ type dereferenceEncoder struct {
 	ValueEncoder core.IEncoder
 }
 
-func (encoder *dereferenceEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (this *dereferenceEncoder) GetType() reflect.Kind {
+	return this.ValueEncoder.GetType()
+}
+func (this *dereferenceEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	if *((*unsafe.Pointer)(ptr)) == nil {
 		stream.WriteNil()
 	} else {
-		encoder.ValueEncoder.Encode(*((*unsafe.Pointer)(ptr)), stream)
+		this.ValueEncoder.Encode(*((*unsafe.Pointer)(ptr)), stream)
 	}
 }
 
-func (encoder *dereferenceEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+func (this *dereferenceEncoder) IsEmpty(ptr unsafe.Pointer) bool {
 	dePtr := *((*unsafe.Pointer)(ptr))
 	if dePtr == nil {
 		return true
 	}
-	return encoder.ValueEncoder.IsEmpty(dePtr)
+	return this.ValueEncoder.IsEmpty(dePtr)
 }
 
-func (encoder *dereferenceEncoder) IsEmbeddedPtrNil(ptr unsafe.Pointer) bool {
+func (this *dereferenceEncoder) IsEmbeddedPtrNil(ptr unsafe.Pointer) bool {
 	deReferenced := *((*unsafe.Pointer)(ptr))
 	if deReferenced == nil {
 		return true
 	}
-	isEmbeddedPtrNil, converted := encoder.ValueEncoder.(core.IsEmbeddedPtrNil)
+	isEmbeddedPtrNil, converted := this.ValueEncoder.(core.IsEmbeddedPtrNil)
 	if !converted {
 		return false
 	}

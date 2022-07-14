@@ -118,17 +118,17 @@ func (this *Cache) Warnf(format string, a ...interface{}) {
 	}
 }
 func (this *Cache) Errorf(format string, a ...interface{}) {
-	if this.options.Debug {
+	if this.options.Log != nil {
 		this.options.Log.Errorf("[SYS BlockCache] "+format, a...)
 	}
 }
 func (this *Cache) Panicf(format string, a ...interface{}) {
-	if this.options.Debug {
+	if this.options.Log != nil {
 		this.options.Log.Panicf("[SYS BlockCache] "+format, a...)
 	}
 }
 func (this *Cache) Fatalf(format string, a ...interface{}) {
-	if this.options.Debug {
+	if this.options.Log != nil {
 		this.options.Log.Fatalf("[SYS BlockCache] "+format, a...)
 	}
 }

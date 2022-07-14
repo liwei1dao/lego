@@ -6,6 +6,7 @@ import (
 	"unsafe"
 
 	"github.com/liwei1dao/lego/sys/codec/core"
+
 	"github.com/modern-go/reflect2"
 )
 
@@ -197,6 +198,9 @@ func createEncoderOfNative(ctx *core.Ctx, typ reflect2.Type) core.IEncoder {
 type stringCodec struct {
 }
 
+func (codec *stringCodec) GetType() reflect.Kind {
+	return reflect.String
+}
 func (codec *stringCodec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	*((*string)(ptr)) = extra.ReadString()
 }
@@ -211,6 +215,10 @@ func (codec *stringCodec) IsEmpty(ptr unsafe.Pointer) bool {
 }
 
 type int8Codec struct {
+}
+
+func (codec *int8Codec) GetType() reflect.Kind {
+	return reflect.Int8
 }
 
 func (codec *int8Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
@@ -230,6 +238,9 @@ func (codec *int8Codec) IsEmpty(ptr unsafe.Pointer) bool {
 type int16Codec struct {
 }
 
+func (codec *int16Codec) GetType() reflect.Kind {
+	return reflect.Int16
+}
 func (codec *int16Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if !extra.ReadNil() {
 		*((*int16)(ptr)) = extra.ReadInt16()
@@ -247,6 +258,9 @@ func (codec *int16Codec) IsEmpty(ptr unsafe.Pointer) bool {
 type int32Codec struct {
 }
 
+func (codec *int32Codec) GetType() reflect.Kind {
+	return reflect.Int32
+}
 func (codec *int32Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if !extra.ReadNil() {
 		*((*int32)(ptr)) = extra.ReadInt32()
@@ -263,6 +277,9 @@ func (codec *int32Codec) IsEmpty(ptr unsafe.Pointer) bool {
 type int64Codec struct {
 }
 
+func (codec *int64Codec) GetType() reflect.Kind {
+	return reflect.Int64
+}
 func (codec *int64Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if !extra.ReadNil() {
 		*((*int64)(ptr)) = extra.ReadInt64()
@@ -280,6 +297,9 @@ func (codec *int64Codec) IsEmpty(ptr unsafe.Pointer) bool {
 type uint8Codec struct {
 }
 
+func (codec *uint8Codec) GetType() reflect.Kind {
+	return reflect.Uint8
+}
 func (codec *uint8Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if !extra.ReadNil() {
 		*((*uint8)(ptr)) = extra.ReadUint8()
@@ -297,6 +317,9 @@ func (codec *uint8Codec) IsEmpty(ptr unsafe.Pointer) bool {
 type uint16Codec struct {
 }
 
+func (codec *uint16Codec) GetType() reflect.Kind {
+	return reflect.Uint16
+}
 func (codec *uint16Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if !extra.ReadNil() {
 		*((*uint16)(ptr)) = extra.ReadUint16()
@@ -314,6 +337,9 @@ func (codec *uint16Codec) IsEmpty(ptr unsafe.Pointer) bool {
 type uint32Codec struct {
 }
 
+func (codec *uint32Codec) GetType() reflect.Kind {
+	return reflect.Uint32
+}
 func (codec *uint32Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if !extra.ReadNil() {
 		*((*uint32)(ptr)) = extra.ReadUint32()
@@ -330,6 +356,9 @@ func (codec *uint32Codec) IsEmpty(ptr unsafe.Pointer) bool {
 type uint64Codec struct {
 }
 
+func (codec *uint64Codec) GetType() reflect.Kind {
+	return reflect.Uint64
+}
 func (codec *uint64Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if !extra.ReadNil() {
 		*((*uint64)(ptr)) = extra.ReadUint64()
@@ -347,6 +376,9 @@ func (codec *uint64Codec) IsEmpty(ptr unsafe.Pointer) bool {
 type float32Codec struct {
 }
 
+func (codec *float32Codec) GetType() reflect.Kind {
+	return reflect.Float32
+}
 func (codec *float32Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if !extra.ReadNil() {
 		*((*float32)(ptr)) = extra.ReadFloat32()
@@ -364,6 +396,9 @@ func (codec *float32Codec) IsEmpty(ptr unsafe.Pointer) bool {
 type float64Codec struct {
 }
 
+func (codec *float64Codec) GetType() reflect.Kind {
+	return reflect.Float64
+}
 func (codec *float64Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if !extra.ReadNil() {
 		*((*float64)(ptr)) = extra.ReadFloat64()
@@ -381,6 +416,9 @@ func (codec *float64Codec) IsEmpty(ptr unsafe.Pointer) bool {
 type boolCodec struct {
 }
 
+func (codec *boolCodec) GetType() reflect.Kind {
+	return reflect.Bool
+}
 func (codec *boolCodec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if !extra.ReadNil() {
 		*((*bool)(ptr)) = extra.ReadBool()

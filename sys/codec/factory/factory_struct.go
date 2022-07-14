@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -10,6 +11,7 @@ import (
 	"unsafe"
 
 	"github.com/liwei1dao/lego/sys/codec/core"
+
 	"github.com/modern-go/reflect2"
 )
 
@@ -62,7 +64,7 @@ func encoderOfStruct(ctx *core.Ctx, typ reflect2.Type) core.IEncoder {
 			})
 		}
 	}
-	return &structEncoder{typ, finalOrderedFields}
+	return &structEncoder{ctx.ICodec, typ, finalOrderedFields}
 }
 
 func decoderOfStruct(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
@@ -96,7 +98,7 @@ func decoderOfStruct(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
 			}
 		}
 	}
-	return createStructDecoder(ctx.Options(), typ, fields)
+	return createStructDecoder(ctx.ICodec, typ, fields)
 }
 
 //结构第编辑码构建
@@ -204,11 +206,11 @@ func calcFieldNames(originalFieldName string, tagProvidedFieldName string, whole
 	return fieldNames
 }
 
-func createStructDecoder(opt *core.Options, typ reflect2.Type, fields map[string]*structFieldDecoder) core.IDecoder {
-	if opt.DisallowUnknownFields {
+func createStructDecoder(codec core.ICodec, typ reflect2.Type, fields map[string]*structFieldDecoder) core.IDecoder {
+	if codec.Options().DisallowUnknownFields {
 		return &structDecoder{typ: typ, fields: fields, disallowUnknownFields: true}
 	} else {
-		return &structDecoder{opt, typ, fields, false}
+		return &structDecoder{codec, typ, fields, false}
 	}
 }
 
@@ -243,10 +245,14 @@ func resolveConflictBinding(opt *core.Options, old, new *Binding) (ignoreOld, ig
 
 //结构对象 编解码-----------------------------------------------------------------------------------------------------------------------
 type structEncoder struct {
+	codec  core.ICodec
 	typ    reflect2.Type
 	fields []structFieldTo
 }
 
+func (codec *structEncoder) GetType() reflect.Kind {
+	return reflect.Struct
+}
 func (this *structEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	stream.WriteObjectStart()
 	isNotFirst := false
@@ -270,21 +276,46 @@ func (this *structEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	}
 }
 
+func (this *structEncoder) EncodeToMapJson(ptr unsafe.Pointer) (ret map[string]string, err error) {
+	ret = make(map[string]string)
+	stream := this.codec.BorrowStream()
+	for _, field := range this.fields {
+		if field.encoder.omitempty && field.encoder.IsEmpty(ptr) {
+			continue
+		}
+		if field.encoder.IsEmbeddedPtrNil(ptr) {
+			continue
+		}
+		stream.Reset(512)
+		field.encoder.Encode(ptr, stream)
+		if stream.Error() != nil && stream.Error() != io.EOF {
+			err = stream.Error()
+			return
+		}
+		ret[field.toName] = BytesToString(stream.Buffer())
+	}
+	return
+}
+
 func (this *structEncoder) IsEmpty(ptr unsafe.Pointer) bool {
 	return false
 }
 
 type structDecoder struct {
-	opt                   *core.Options
+	codec                 core.ICodec
 	typ                   reflect2.Type
 	fields                map[string]*structFieldDecoder
 	disallowUnknownFields bool
 }
 
+func (codec *structDecoder) GetType() reflect.Kind {
+	return reflect.Struct
+}
 func (this *structDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if !extra.ReadObjectStart() {
 		return
 	}
+	this.decodeField(ptr, extra)
 	for extra.ReadMemberSplit() {
 		this.decodeField(ptr, extra)
 	}
@@ -300,7 +331,7 @@ func (this *structDecoder) decodeField(ptr unsafe.Pointer, extra core.IExtractor
 
 	field = extra.ReadString()
 	fieldDecoder = this.fields[field]
-	if fieldDecoder == nil && !this.opt.CaseSensitive {
+	if fieldDecoder == nil && !this.codec.Options().CaseSensitive {
 		fieldDecoder = this.fields[strings.ToLower(field)]
 	}
 
@@ -316,10 +347,36 @@ func (this *structDecoder) decodeField(ptr unsafe.Pointer, extra core.IExtractor
 		extra.Skip() //跳过一个数据单元
 		return
 	}
-	if extra.ReadKVSplit() {
+	if !extra.ReadKVSplit() {
 		return
 	}
 	fieldDecoder.Decode(ptr, extra)
+}
+
+//解码对象从MapJson 中
+func (this *structDecoder) DecodeForMapJson(ptr unsafe.Pointer, extra map[string]string) (err error) {
+	var fieldDecoder *structFieldDecoder
+	ext := this.codec.BorrowExtractor([]byte{})
+	for k, v := range extra {
+		fieldDecoder = this.fields[k]
+		if fieldDecoder == nil && !this.codec.Options().CaseSensitive {
+			fieldDecoder = this.fields[strings.ToLower(k)]
+		}
+		if fieldDecoder == nil {
+			if this.disallowUnknownFields {
+				err = errors.New("found unknown field: " + k)
+				return
+			}
+			continue
+		}
+		ext.ResetBytes(StringToBytes(v))
+		fieldDecoder.Decode(ptr, ext)
+		if ext.Error() != nil && ext.Error() != io.EOF {
+			err = ext.Error()
+			return
+		}
+	}
+	return
 }
 
 //结构对象字段 编解码-----------------------------------------------------------------------------------------------------------------------
@@ -333,6 +390,9 @@ type structFieldEncoder struct {
 	omitempty    bool
 }
 
+func (this *structFieldEncoder) GetType() reflect.Kind {
+	return this.fieldEncoder.GetType()
+}
 func (encoder *structFieldEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	fieldPtr := encoder.field.UnsafeGet(ptr)
 	encoder.fieldEncoder.Encode(fieldPtr, stream)
@@ -360,6 +420,9 @@ type structFieldDecoder struct {
 	fieldDecoder core.IDecoder
 }
 
+func (this *structFieldDecoder) GetType() reflect.Kind {
+	return this.fieldDecoder.GetType()
+}
 func (decoder *structFieldDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	fieldPtr := decoder.field.UnsafeGet(ptr)
 	decoder.fieldDecoder.Decode(fieldPtr, extra)
@@ -372,6 +435,9 @@ func (decoder *structFieldDecoder) Decode(ptr unsafe.Pointer, extra core.IExtrac
 type emptyStructEncoder struct {
 }
 
+func (codec *emptyStructEncoder) GetType() reflect.Kind {
+	return reflect.Struct
+}
 func (encoder *emptyStructEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	stream.WriteEmptyObject()
 }

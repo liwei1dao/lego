@@ -6,6 +6,7 @@ import (
 	"unsafe"
 
 	"github.com/liwei1dao/lego/sys/codec/core"
+
 	"github.com/modern-go/reflect2"
 )
 
@@ -13,6 +14,9 @@ type dynamicEncoder struct {
 	valType reflect2.Type
 }
 
+func (codec *dynamicEncoder) GetType() reflect.Kind {
+	return reflect.Interface
+}
 func (encoder *dynamicEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	obj := encoder.valType.UnsafeIndirect(ptr)
 	stream.WriteVal(obj)
@@ -25,6 +29,9 @@ func (encoder *dynamicEncoder) IsEmpty(ptr unsafe.Pointer) bool {
 type efaceDecoder struct {
 }
 
+func (codec *efaceDecoder) GetType() reflect.Kind {
+	return reflect.Interface
+}
 func (decoder *efaceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	pObj := (*interface{})(ptr)
 	obj := *pObj
@@ -59,6 +66,9 @@ type ifaceDecoder struct {
 	valType *reflect2.UnsafeIFaceType
 }
 
+func (codec *ifaceDecoder) GetType() reflect.Kind {
+	return reflect.Interface
+}
 func (decoder *ifaceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if extra.ReadNil() {
 		decoder.valType.UnsafeSet(ptr, decoder.valType.UnsafeNew())

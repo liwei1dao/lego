@@ -1,6 +1,7 @@
 package core
 
 import (
+	"reflect"
 	"unsafe"
 
 	"github.com/modern-go/reflect2"
@@ -39,18 +40,19 @@ type (
 	ICodec interface {
 		Options() *Options
 		GetEncoderFromCache(cacheKey uintptr) IEncoder
+		GetDecoderFromCache(cacheKey uintptr) IDecoder
 		EncoderOf(typ reflect2.Type) IEncoder
-		BorrowExtractor() IExtractor      //借 提取器
-		ReturnExtractor(extra IExtractor) //还 提取器
-		BorrowStream() IStream            //借 输出对象
-		ReturnStream(stream IStream)      //换 输出对象
+		DecoderOf(typ reflect2.Type) IDecoder
+		BorrowExtractor(buf []byte) IExtractor //借 提取器
+		ReturnExtractor(extra IExtractor)      //还 提取器
+		BorrowStream() IStream                 //借 输出对象
+		ReturnStream(stream IStream)           //换 输出对象
 	}
 	IExtractor interface {
-		WhatIsNext() ValueType            //读取下一个对象类型
-		Read() interface{}                //读取匿名对象
-		ReadVal(obj interface{})          //读取指定类型对象
+		ReadVal(obj interface{}) //读取指定类型对象
+		WhatIsNext() ValueType
+		Read() interface{}
 		ReadNil() (ret bool)              //读取空 null
-		ReadEmptyArray() (ret bool)       //读空数组 []
 		ReadArrayStart() (ret bool)       //读数组开始 [
 		CheckNextIsArrayEnd() (ret bool)  //下一个是否是数组结束符 不影响数据游标位置
 		ReadArrayEnd() (ret bool)         //读数组结束 ]
@@ -105,18 +107,38 @@ type (
 		WriteFloat64(val float64)
 		WriteString(val string)
 		WriteBytes(val []byte)
+		Reset(bufSize int)
 		Buffer() []byte //返回缓存区数据
 		Error() error
 		SetErr(err error)
 	}
-	//编码器
+	//Json 编码器
 	IEncoder interface {
+		GetType() reflect.Kind
 		IsEmpty(ptr unsafe.Pointer) bool
 		Encode(ptr unsafe.Pointer, stream IStream)
 	}
-	//解码器
+	//MapJson 编码器
+	IEncoderMapJson interface {
+		EncodeToMapJson(ptr unsafe.Pointer) (ret map[string]string, err error)
+	}
+	//SliceJson 编码器
+	IEncoderSliceJson interface {
+		EncodeToSliceJson(ptr unsafe.Pointer) (ret []string, err error)
+	}
+
+	//Json 解码器
 	IDecoder interface {
+		GetType() reflect.Kind
 		Decode(ptr unsafe.Pointer, extra IExtractor)
+	}
+	//MapJson 解码器
+	IDecoderMapJson interface {
+		DecodeForMapJson(ptr unsafe.Pointer, extra map[string]string) (err error)
+	}
+	//MapJson 解码器
+	IDecoderSliceJson interface {
+		DecodeForSliceJson(ptr unsafe.Pointer, extra []string) (err error)
 	}
 	//空校验
 	CheckIsEmpty interface {

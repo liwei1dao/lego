@@ -64,7 +64,7 @@ func ReadInt16ForString(buf []byte) (ret int16, n int, err error) {
 	c := buf[0]
 	if c == '-' {
 		val, n, err = ReadUint32ForString(buf[1:])
-		if val > math.MaxInt8+1 {
+		if val > math.MaxInt16+1 {
 			err = errors.New("ReadInt16ForString overflow: " + strconv.FormatInt(int64(val), 10))
 			return
 		}
@@ -72,7 +72,7 @@ func ReadInt16ForString(buf []byte) (ret int16, n int, err error) {
 		return
 	}
 	val, n, err = ReadUint32ForString(buf)
-	if val > math.MaxInt8 {
+	if val > math.MaxInt16 {
 		err = errors.New("ReadInt16ForString overflow: " + strconv.FormatInt(int64(val), 10))
 		return
 	}
@@ -87,7 +87,7 @@ func ReadInt32ForString(buf []byte) (ret int32, n int, err error) {
 	c := buf[0]
 	if c == '-' {
 		val, n, err = ReadUint32ForString(buf[1:])
-		if val > math.MaxInt8+1 {
+		if val > math.MaxInt32+1 {
 			err = errors.New("ReadInt32ForString overflow: " + strconv.FormatInt(int64(val), 10))
 			return
 		}
@@ -95,7 +95,7 @@ func ReadInt32ForString(buf []byte) (ret int32, n int, err error) {
 		return
 	}
 	val, n, err = ReadUint32ForString(buf)
-	if val > math.MaxInt8 {
+	if val > math.MaxInt32 {
 		err = errors.New("ReadInt32ForString overflow: " + strconv.FormatInt(int64(val), 10))
 		return
 	}
@@ -110,7 +110,7 @@ func ReadInt64ForString(buf []byte) (ret int64, n int, err error) {
 	c := buf[0]
 	if c == '-' {
 		val, n, err = ReadUint64ForString(buf[1:])
-		if val > math.MaxInt8+1 {
+		if val > math.MaxInt64+1 {
 			err = errors.New("ReadInt64ForString overflow: " + strconv.FormatInt(int64(val), 10))
 			return
 		}
@@ -118,7 +118,7 @@ func ReadInt64ForString(buf []byte) (ret int64, n int, err error) {
 		return
 	}
 	val, n, err = ReadUint64ForString(buf)
-	if val > math.MaxInt8 {
+	if val > math.MaxInt64 {
 		err = errors.New("ReadInt64ForString overflow: " + strconv.FormatInt(int64(val), 10))
 		return
 	}
@@ -126,12 +126,12 @@ func ReadInt64ForString(buf []byte) (ret int64, n int, err error) {
 	return
 }
 
-func ReadUInt8ForString(buf []byte) (ret uint8, n int, err error) {
+func ReadUint8ForString(buf []byte) (ret uint8, n int, err error) {
 	var (
 		val uint32
 	)
 	val, n, err = ReadUint32ForString(buf)
-	if val > math.MaxInt8 {
+	if val > math.MaxUint8 {
 		err = errors.New("ReadUInt8ForString overflow: " + strconv.FormatInt(int64(val), 10))
 		return
 	}
@@ -139,12 +139,12 @@ func ReadUInt8ForString(buf []byte) (ret uint8, n int, err error) {
 	return
 }
 
-func ReadUInt16ForString(buf []byte) (ret uint16, n int, err error) {
+func ReadUint16ForString(buf []byte) (ret uint16, n int, err error) {
 	var (
 		val uint32
 	)
 	val, n, err = ReadUint32ForString(buf)
-	if val > math.MaxInt16 {
+	if val > math.MaxUint16 {
 		err = errors.New("ReadUInt16ForString overflow: " + strconv.FormatInt(int64(val), 10))
 		return
 	}
@@ -228,7 +228,7 @@ func ReadUint32ForString(buf []byte) (ret uint32, n int, err error) {
 			return
 		}
 	}
-	for i := 0; i < len(buf); i++ {
+	for i := 1; i < len(buf); i++ {
 		ind = intDigits[buf[i]]
 		if ind == invalidCharForNumber {
 			n = i
@@ -325,7 +325,7 @@ func ReadUint64ForString(buf []byte) (ret uint64, n int, err error) {
 			return
 		}
 	}
-	for i := 0; i < len(buf); i++ {
+	for i := 1; i < len(buf); i++ {
 		ind = intDigits[buf[i]]
 		if ind == invalidCharForNumber {
 			n = i

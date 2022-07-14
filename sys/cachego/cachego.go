@@ -63,17 +63,17 @@ func (this *CacheGo) Warnf(format string, a ...interface{}) {
 	}
 }
 func (this *CacheGo) Errorf(format string, a ...interface{}) {
-	if this.options.Debug {
+	if this.options.Log != nil {
 		this.options.Log.Errorf("[SYS CacheGo] "+format, a...)
 	}
 }
 func (this *CacheGo) Panicf(format string, a ...interface{}) {
-	if this.options.Debug {
+	if this.options.Log != nil {
 		this.options.Log.Panicf("[SYS CacheGo] "+format, a...)
 	}
 }
 func (this *CacheGo) Fatalf(format string, a ...interface{}) {
-	if this.options.Debug {
+	if this.options.Log != nil {
 		this.options.Log.Fatalf("[SYS CacheGo] "+format, a...)
 	}
 }

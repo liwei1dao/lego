@@ -6,6 +6,7 @@ import (
 	"unsafe"
 
 	"github.com/liwei1dao/lego/sys/codec/core"
+
 	"github.com/modern-go/reflect2"
 )
 
@@ -112,11 +113,28 @@ func _createDecoderOfType(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
 	}
 }
 
+// string
+func BytesToString(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
+}
+
+func StringToBytes(s string) []byte {
+	return *(*[]byte)(unsafe.Pointer(
+		&struct {
+			string
+			Cap int
+		}{s, len(s)},
+	))
+}
+
 //根节点 -------------------------------------------------------------------
 type rootDecoder struct {
 	decoder core.IDecoder
 }
 
+func (this *rootDecoder) GetType() reflect.Kind {
+	return reflect.Ptr
+}
 func (this *rootDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	this.decoder.Decode(ptr, extra)
 }
@@ -125,6 +143,9 @@ type rootEncoder struct {
 	encoder core.IEncoder
 }
 
+func (this *rootEncoder) GetType() reflect.Kind {
+	return reflect.Ptr
+}
 func (this *rootEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	this.encoder.Encode(ptr, stream)
 }
@@ -142,12 +163,25 @@ type onePtrEncoder struct {
 	encoder core.IEncoder
 }
 
-func (encoder *onePtrEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	return encoder.encoder.IsEmpty(unsafe.Pointer(&ptr))
+func (this *onePtrEncoder) GetType() reflect.Kind {
+	return reflect.Ptr
 }
 
-func (encoder *onePtrEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
-	encoder.encoder.Encode(unsafe.Pointer(&ptr), stream)
+func (this *onePtrEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+	return this.encoder.IsEmpty(unsafe.Pointer(&ptr))
+}
+
+func (this *onePtrEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
+	this.encoder.Encode(unsafe.Pointer(&ptr), stream)
+}
+
+func (this *onePtrEncoder) EncodeToMapJson(ptr unsafe.Pointer) (ret map[string]string, err error) {
+	if encoderMapJson, ok := this.encoder.(core.IEncoderMapJson); !ok {
+		err = fmt.Errorf("encoder %T not support EncodeToMapJson", this.encoder)
+		return
+	} else {
+		return encoderMapJson.EncodeToMapJson(unsafe.Pointer(&ptr))
+	}
 }
 
 //错误节点 ------------------------------------------------------------------
@@ -155,6 +189,9 @@ type lazyErrorDecoder struct {
 	err error
 }
 
+func (this *lazyErrorDecoder) GetType() reflect.Kind {
+	return reflect.Ptr
+}
 func (this *lazyErrorDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	if extra.Error() == nil {
 		extra.SetErr(this.err)
@@ -163,6 +200,10 @@ func (this *lazyErrorDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) 
 
 type lazyErrorEncoder struct {
 	err error
+}
+
+func (this *lazyErrorEncoder) GetType() reflect.Kind {
+	return reflect.Ptr
 }
 
 func (this *lazyErrorEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
