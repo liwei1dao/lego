@@ -1,5 +1,10 @@
 package core
 
+import (
+	"encoding"
+	"time"
+)
+
 type (
 	ICodec interface {
 		Marshal(v interface{}) ([]byte, error)
@@ -10,3 +15,12 @@ type (
 		UnmarshalSlice(data []string, val interface{}) (err error)
 	}
 )
+
+func IsBaseType(v interface{}) bool {
+	switch v.(type) {
+	case nil, string, []byte, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, bool, time.Time, time.Duration, encoding.BinaryMarshaler:
+		return true
+	default:
+		return false
+	}
+}

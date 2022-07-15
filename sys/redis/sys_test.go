@@ -3,7 +3,6 @@ package redis_test
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"sync"
 	"testing"
@@ -14,47 +13,19 @@ import (
 
 func TestMain(m *testing.M) {
 	if err := redis.OnInit(nil,
-		redis.SetRedisType(redis.Redis_Cluster),
-		redis.SetRedis_Cluster_Addr([]string{"10.0.0.9:9001", "10.0.0.9:9002", "10.0.0.9:9003", "10.0.1.45:9004", "10.0.1.45:9005", "10.0.1.45:9006"}),
-		redis.SetRedis_Cluster_Password(""),
+		redis.SetRedisType(redis.Redis_Single),
+		redis.SetRedis_Single_Addr("10.0.0.9:6986"),
+		redis.SetRedis_Single_Password("li13451234"),
+		redis.SetRedis_Single_DB(6),
 	); err != nil {
 		fmt.Println("err:", err)
 		return
 	}
 	defer os.Exit(m.Run())
-	// if err := cache.OnInit(nil, cache.Set_Redis_Addr([]string{"10.0.0.9:9001", "10.0.0.9:9002", "10.0.0.9:9003", "10.0.1.45:9004", "10.0.1.45:9005", "10.0.1.45:9006"}), cache.Set_Redis_Password("")); err != nil {
-	// 	fmt.Printf("err:%v\n", err)
-	// 	return
-	// }
-}
-
-func Test_SysIPV6(t *testing.T) {
-	err := redis.OnInit(map[string]interface{}{
-		"Redis_Single_Addr":     "172.27.100.143:6382",
-		"Redis_Single_DB":       0,
-		"Redis_Single_Password": "idss@sjzt",
-	})
-	if err != nil {
-		fmt.Printf("Redis:err:%v \n", err)
-		return
-	}
-	fmt.Printf("Redis:succ \n")
-	if err = redis.Set("liwei1dao", 123, -1); err != nil {
-		fmt.Printf("Redis:err:%v \n", err)
-	}
 }
 
 func Test_Redis_ExpireatKey(t *testing.T) {
-	err := redis.OnInit(map[string]interface{}{
-		"Redis_Single_Addr":     "172.20.27.145:10001",
-		"Redis_Single_DB":       0,
-		"Redis_Single_Password": "li13451234",
-	})
-	if err != nil {
-		fmt.Printf("Redis:err:%v \n", err)
-		return
-	}
-	fmt.Printf("Redis:succ \n")
+	var err error
 	if err = redis.Set("liwei1dao", 123, -1); err != nil {
 		fmt.Printf("Redis:err:%v \n", err)
 	}
@@ -70,16 +41,6 @@ func Test_JsonMarshal(t *testing.T) {
 }
 
 func Test_Redis_SetNX(t *testing.T) {
-	err := redis.OnInit(map[string]interface{}{
-		"Redis_Single_Addr":     "172.20.27.145:10001",
-		"RedisDB":               0,
-		"Redis_Single_Password": "li13451234",
-	})
-	if err != nil {
-		fmt.Printf("Redis:err:%v \n", err)
-		return
-	}
-
 	wg := new(sync.WaitGroup)
 	wg.Add(20)
 	for i := 0; i < 20; i++ {
@@ -93,30 +54,11 @@ func Test_Redis_SetNX(t *testing.T) {
 	fmt.Printf("Redis:end \n")
 }
 func Test_Redis_Lock(t *testing.T) {
-	err := redis.OnInit(map[string]interface{}{
-		"Redis_Single_Addr":     "172.20.27.145:10001",
-		"Redis_Single_DB":       0,
-		"Redis_Single_Password": "li13451234",
-	})
-	if err != nil {
-		fmt.Printf("Redis:err:%v \n", err)
-		return
-	}
 	result, err := redis.Lock("liwei2dao", 100000)
 	fmt.Printf("Redis result:%v err:%v  \n", result, err)
 }
 
 func Test_Redis_Mutex(t *testing.T) {
-	err := redis.OnInit(map[string]interface{}{
-		"Redis_Single_Addr":     "172.20.27.145:10001",
-		"Redis_Single_DB":       0,
-		"Redis_Single_Password": "li13451234",
-	})
-	if err != nil {
-		fmt.Printf("Redis:err:%v \n", err)
-		return
-	}
-
 	wg := new(sync.WaitGroup)
 	wg.Add(20)
 	for i := 0; i < 20; i++ {
@@ -141,17 +83,6 @@ func Test_Redis_Mutex(t *testing.T) {
 }
 
 func Test_Redis_Type(t *testing.T) {
-	err := redis.OnInit(map[string]interface{}{
-		"Redis_Single_Addr":     "172.20.27.145:10001",
-		"Redis_Single_DB":       1,
-		"Redis_Single_Password": "li13451234",
-	})
-	if err != nil {
-		fmt.Printf("Redis:err:%v \n", err)
-		return
-	}
-	fmt.Printf("Redis:succ \n")
-
 	if ty, err := redis.Type("test_set"); err != nil {
 		fmt.Printf("Test_Redis_Type:err:%v \n", err)
 	} else {
@@ -191,47 +122,69 @@ func Test_Redis_Encoder_Hash(t *testing.T) {
 }
 
 //测试redis lua 脚本
-func Test_Redis_Lua(t *testing.T) {
+func Test_Redis_Lua_HGETALL(t *testing.T) {
 	script := redis.NewScript(`
-		local goodsSurplus
-		local flag
-		local existUserIds    = tostring(KEYS[1])
-		local memberUid       = tonumber(ARGV[1])
-		local goodsSurplusKey = tostring(KEYS[2])
-		local hasBuy = redis.call("sIsMember", existUserIds, memberUid)
-
-		if hasBuy ~= 0 then
-		return 0
+	local key    = tostring(KEYS[1])
+	local keys = redis.call("HGETALL", key)
+	local data = {}
+	local n = 1
+	for i, v in ipairs(keys) do
+		if i%2 == 0 then
+			data[n] = redis.call("HGETALL", v)
+			n = n+1
 		end
-		
-
-		goodsSurplus =  redis.call("GET", goodsSurplusKey)
-		if goodsSurplus == false then
-		return 0
-		end
-		
-		-- 没有剩余可抢购物品
-		goodsSurplus = tonumber(goodsSurplus)
-		if goodsSurplus <= 0 then
-		return 0
-		end
-		
-		flag = redis.call("SADD", existUserIds, memberUid)
-		flag = redis.call("DECR", goodsSurplusKey)
-		return 1
-	`)
+	end 
+	return data
+`)
 	sha, err := script.Result()
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
 	}
-	ret := redis.EvalSha(sha, []string{
-		"hadBuyUids",
-		"goodsSurplus",
-	}, "userId")
+	ret := redis.EvalSha(redis.Context(), sha, []string{"items:0_62c259916d8cf3e4e06311a8"})
 	if result, err := ret.Result(); err != nil {
-		log.Fatalf("Execute Redis fail: %v", err.Error())
+		fmt.Printf("Execute Redis err: %v", err.Error())
 	} else {
-		fmt.Println("")
-		fmt.Printf("userid: %s, result: %d", "userId", result)
+		temp1 := result.([]interface{})
+		data := make([]map[string]string, len(temp1))
+		for i, v := range temp1 {
+			temp2 := v.([]interface{})
+			data[i] = make(map[string]string)
+			for n := 0; n < len(temp2); n += 2 {
+				data[i][temp2[n].(string)] = temp2[n+1].(string)
+			}
+		}
+		fmt.Printf("data: %v", data)
+	}
+}
+
+//测试redis lua 脚本
+func Test_Redis_Lua_HSETALL(t *testing.T) {
+	script := redis.NewScript(`
+	local n = 1
+	local key = ""
+	for i, v in ipairs(KEYS) do
+		key = v
+		local argv = {}
+		for i=n,#ARGV,1 do
+			n = n+1
+			if ARGV[i] == "#end" then
+				redis.call("HMSet", key,unpack(argv))
+				break
+			else
+				table.insert(argv, ARGV[i])
+			end
+		end
+	end 
+	return "OK"
+`)
+	sha, err := script.Result()
+	if err != nil {
+		fmt.Println(err)
+	}
+	ret := redis.EvalSha(redis.Context(), sha, []string{"test_HMSet", "test_HMSet_1"}, "a", "1", "b", "2", "#end", "a1", "11", "b", "21", "#end")
+	if result, err := ret.Result(); err != nil {
+		fmt.Printf("Execute Redis err: %v", err.Error())
+	} else {
+		fmt.Printf("data: %v", result)
 	}
 }

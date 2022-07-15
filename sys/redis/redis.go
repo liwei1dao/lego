@@ -29,7 +29,6 @@ func (this *Redis) init() (err error) {
 			this.options.Redis_Single_Addr,
 			this.options.Redis_Single_Password,
 			this.options.Redis_Single_DB,
-			this.options.Redis_Single_PoolSize,
 			this.options.TimeOut,
 			this,
 		)
@@ -48,6 +47,14 @@ func (this *Redis) init() (err error) {
 func (this *Redis) Close() (err error) {
 	return this.client.Close()
 }
+func (this *Redis) GetClient() IRedis {
+	return this.client
+}
+
+func (this *Redis) Context() context.Context {
+	return this.client.Context()
+}
+
 func (this *Redis) Do(ctx context.Context, args ...interface{}) *redis.Cmd {
 	return this.client.Do(ctx, args...)
 }
@@ -353,14 +360,14 @@ func (this *Redis) ZScan(key string, _cursor uint64, match string, count int64) 
 func (this *Redis) NewScript(src string) *redis.StringCmd {
 	return this.client.NewScript(src)
 }
-func (this *Redis) Eval(script string, keys []string, args ...interface{}) *redis.Cmd {
-	return this.client.Eval(script, keys, args...)
+func (this *Redis) Eval(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd {
+	return this.client.Eval(ctx, script, keys, args...)
 }
-func (this *Redis) EvalSha(sha1 string, keys []string, args ...interface{}) *redis.Cmd {
-	return this.client.EvalSha(sha1, keys, args...)
+func (this *Redis) EvalSha(ctx context.Context, sha1 string, keys []string, args ...interface{}) *redis.Cmd {
+	return this.client.EvalSha(ctx, sha1, keys, args...)
 }
-func (this *Redis) ScriptExists(hashes ...string) *redis.BoolSliceCmd {
-	return this.client.ScriptExists(hashes...)
+func (this *Redis) ScriptExists(ctx context.Context, hashes ...string) *redis.BoolSliceCmd {
+	return this.client.ScriptExists(ctx, hashes...)
 }
 
 //Codec---------------------------------------------------------------------------------------------------------------------------------------

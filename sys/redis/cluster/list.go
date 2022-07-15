@@ -8,8 +8,8 @@ import (
 Redis Lindex 命令用于通过索引获取列表中的元素。你也可以使用负数下标，以 -1 表示列表的最后一个元素， -2 表示列表的倒数第二个元素，以此类推
 */
 func (this *Redis) Lindex(key string, v interface{}) (err error) {
-	cmd := redis.NewStringCmd(this.getContext(), "LINDEX", key)
-	this.client.Process(this.getContext(), cmd)
+	cmd := redis.NewStringCmd(this.client.Context(), "LINDEX", key)
+	this.client.Process(this.client.Context(), cmd)
 	var _result []byte
 	if _result, err = cmd.Bytes(); err == nil {
 		if len(_result) == 0 {
@@ -38,9 +38,9 @@ func (this *Redis) Linsert(key string, isbefore bool, tager interface{}, value i
 		return
 	}
 	if isbefore {
-		err = this.client.Do(this.getContext(), "LINSERT", key, "BEFORE", tagervalue, resultvalue).Err()
+		err = this.client.Do(this.client.Context(), "LINSERT", key, "BEFORE", tagervalue, resultvalue).Err()
 	} else {
-		err = this.client.Do(this.getContext(), "LINSERT", key, "AFTER", tagervalue, resultvalue).Err()
+		err = this.client.Do(this.client.Context(), "LINSERT", key, "AFTER", tagervalue, resultvalue).Err()
 	}
 	return
 }
@@ -49,7 +49,7 @@ func (this *Redis) Linsert(key string, isbefore bool, tager interface{}, value i
 Redis Llen 命令用于返回列表的长度。 如果列表 key 不存在，则 key 被解释为一个空列表，返回 0 。 如果 key 不是列表类型，返回一个错误
 */
 func (this *Redis) Llen(key string) (result int, err error) {
-	result, err = this.client.Do(this.getContext(), "LLEN", key).Int()
+	result, err = this.client.Do(this.client.Context(), "LLEN", key).Int()
 	return
 }
 
@@ -57,8 +57,8 @@ func (this *Redis) Llen(key string) (result int, err error) {
 Redis Lpop 命令用于移除并返回列表的第一个元素
 */
 func (this *Redis) LPop(key string, v interface{}) (err error) {
-	cmd := redis.NewStringCmd(this.getContext(), "LPOP", key)
-	this.client.Process(this.getContext(), cmd)
+	cmd := redis.NewStringCmd(this.client.Context(), "LPOP", key)
+	this.client.Process(this.client.Context(), cmd)
 	var _result []byte
 	if _result, err = cmd.Bytes(); err == nil {
 		err = this.codec.Unmarshal(_result, v)
@@ -76,7 +76,7 @@ func (this *Redis) LPush(key string, values ...interface{}) (err error) {
 		result, _ := this.codec.Marshal(v)
 		agrs = append(agrs, result)
 	}
-	err = this.client.Do(this.getContext(), agrs...).Err()
+	err = this.client.Do(this.client.Context(), agrs...).Err()
 	return
 }
 
@@ -90,7 +90,7 @@ func (this *Redis) LPushX(key string, values ...interface{}) (err error) {
 		result, _ := this.codec.Marshal(v)
 		agrs = append(agrs, result)
 	}
-	err = this.client.Do(this.getContext(), agrs...).Err()
+	err = this.client.Do(this.client.Context(), agrs...).Err()
 	return
 }
 
@@ -100,8 +100,8 @@ Redis Lrange 返回列表中指定区间内的元素，区间以偏移量 START 
 */
 func (this *Redis) LRange(key string, start, end int, v interface{}) (err error) {
 	var _result []string
-	cmd := redis.NewStringSliceCmd(this.getContext(), "LRANGE", key, start, end)
-	this.client.Process(this.getContext(), cmd)
+	cmd := redis.NewStringSliceCmd(this.client.Context(), "LRANGE", key, start, end)
+	this.client.Process(this.client.Context(), cmd)
 	if _result, err = cmd.Result(); err == nil {
 		err = this.codec.UnmarshalSlice(_result, v)
 	}
@@ -120,7 +120,7 @@ func (this *Redis) LRem(key string, count int, target interface{}) (err error) {
 	if resultvalue, err = this.codec.Marshal(target); err != nil {
 		return
 	}
-	err = this.client.Do(this.getContext(), "LREM", key, count, resultvalue).Err()
+	err = this.client.Do(this.client.Context(), "LREM", key, count, resultvalue).Err()
 	return
 }
 
@@ -133,7 +133,7 @@ func (this *Redis) LSet(key string, index int, value interface{}) (err error) {
 	if resultvalue, err = this.codec.Marshal(value); err == nil {
 		return
 	}
-	err = this.client.Do(this.getContext(), "LSET", key, index, resultvalue).Err()
+	err = this.client.Do(this.client.Context(), "LSET", key, index, resultvalue).Err()
 	return
 }
 
@@ -143,7 +143,7 @@ Redis Ltrim 对一个列表进行修剪(trim)，就是说，让列表只保留�
 以 -1 表示列表的最后一个元素， -2 表示列表的倒数第二个元素，以此类推
 */
 func (this *Redis) Ltrim(key string, start, stop int) (err error) {
-	err = this.client.Do(this.getContext(), "LTRIM", key, start, stop).Err()
+	err = this.client.Do(this.client.Context(), "LTRIM", key, start, stop).Err()
 	return
 }
 
@@ -151,8 +151,8 @@ func (this *Redis) Ltrim(key string, start, stop int) (err error) {
 Redis Rpop 命令用于移除列表的最后一个元素，返回值为移除的元素
 */
 func (this *Redis) Rpop(key string, v interface{}) (err error) {
-	cmd := redis.NewStringCmd(this.getContext(), "RPOP", key)
-	this.client.Process(this.getContext(), cmd)
+	cmd := redis.NewStringCmd(this.client.Context(), "RPOP", key)
+	this.client.Process(this.client.Context(), cmd)
 	var _result []byte
 	if _result, err = cmd.Bytes(); err == nil {
 		err = this.codec.Unmarshal(_result, v)
@@ -164,8 +164,8 @@ func (this *Redis) Rpop(key string, v interface{}) (err error) {
 Redis Rpoplpush 命令用于移除列表的最后一个元素，并将该元素添加到另一个列表并返回
 */
 func (this *Redis) RPopLPush(oldkey string, newkey string, v interface{}) (err error) {
-	cmd := redis.NewStringCmd(this.getContext(), "RPOPLPUSH", oldkey, newkey)
-	this.client.Process(this.getContext(), cmd)
+	cmd := redis.NewStringCmd(this.client.Context(), "RPOPLPUSH", oldkey, newkey)
+	this.client.Process(this.client.Context(), cmd)
 	var _result []byte
 	if _result, err = cmd.Bytes(); err == nil {
 		err = this.codec.Unmarshal(_result, v)
@@ -185,7 +185,7 @@ func (this *Redis) RPush(key string, values ...interface{}) (err error) {
 		result, _ := this.codec.Marshal(v)
 		agrs = append(agrs, result)
 	}
-	err = this.client.Do(this.getContext(), agrs...).Err()
+	err = this.client.Do(this.client.Context(), agrs...).Err()
 	return
 }
 
@@ -199,6 +199,6 @@ func (this *Redis) RPushX(key string, values ...interface{}) (err error) {
 		result, _ := this.codec.Marshal(v)
 		agrs = append(agrs, result)
 	}
-	err = this.client.Do(this.getContext(), agrs...).Err()
+	err = this.client.Do(this.client.Context(), agrs...).Err()
 	return
 }

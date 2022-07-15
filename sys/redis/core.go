@@ -10,6 +10,7 @@ import (
 type (
 	IRedis interface {
 		Close() (err error)
+		Context() context.Context
 		Do(ctx context.Context, args ...interface{}) *redis.Cmd
 		Lock(key string, outTime int) (result bool, err error)
 		UnLock(key string) (err error)
@@ -116,13 +117,15 @@ type (
 
 		/*Lua Script*/
 		NewScript(src string) *redis.StringCmd
-		Eval(script string, keys []string, args ...interface{}) *redis.Cmd
-		EvalSha(sha1 string, keys []string, args ...interface{}) *redis.Cmd
-		ScriptExists(hashes ...string) *redis.BoolSliceCmd
+		Eval(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd
+		EvalSha(ctx context.Context, sha1 string, keys []string, args ...interface{}) *redis.Cmd
+		ScriptExists(ctx context.Context, hashes ...string) *redis.BoolSliceCmd
+		// ScriptLoad(ctx context.Context, script string) *redis.StringCmd
 	}
 
 	ISys interface {
 		IRedis
+		GetClient() IRedis
 		/*Lock*/
 		NewRedisMutex(key string, opt ...RMutexOption) (result *RedisMutex, err error)
 	}
@@ -148,6 +151,15 @@ func NewSys(option ...Option) (sys ISys, err error) {
 func Close() (err error) {
 	return defsys.Close()
 }
+
+func GetClient() IRedis {
+	return defsys.GetClient()
+}
+
+func Context() context.Context {
+	return defsys.Context()
+}
+
 func Do(ctx context.Context, args ...interface{}) *redis.Cmd {
 	return defsys.Do(ctx, args...)
 }
@@ -457,12 +469,16 @@ func ZScan(key string, _cursor uint64, match string, count int64) (keys []string
 func NewScript(src string) *redis.StringCmd {
 	return defsys.NewScript(src)
 }
-func Eval(script string, keys []string, args ...interface{}) *redis.Cmd {
-	return defsys.Eval(script, keys, args...)
+func Eval(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd {
+	return defsys.Eval(ctx, script, keys, args...)
 }
-func EvalSha(sha1 string, keys []string, args ...interface{}) *redis.Cmd {
-	return defsys.Eval(sha1, keys, args...)
+func EvalSha(ctx context.Context, sha1 string, keys []string, args ...interface{}) *redis.Cmd {
+	return defsys.EvalSha(ctx, sha1, keys, args...)
 }
-func ScriptExists(hashes ...string) *redis.BoolSliceCmd {
-	return defsys.ScriptExists(hashes...)
+func ScriptExists(ctx context.Context, hashes ...string) *redis.BoolSliceCmd {
+	return defsys.ScriptExists(ctx, hashes...)
 }
+
+// func ScriptLoad(ctx context.Context, script string) *redis.StringCmd {
+// 	return defsys.ScriptLoad(ctx, script)
+// }

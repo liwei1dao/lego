@@ -16,8 +16,11 @@ func NewSys(RedisUrl []string, RedisPassword string, timeOut time.Duration,
 		client *redis.ClusterClient
 	)
 	client = redis.NewClusterClient(&redis.ClusterOptions{
-		Addrs:    RedisUrl,
-		Password: RedisPassword,
+		Addrs:        RedisUrl,
+		Password:     RedisPassword,
+		DialTimeout:  timeOut,
+		ReadTimeout:  timeOut,
+		WriteTimeout: timeOut,
 	})
 	sys = &Redis{
 		client:  client,
@@ -34,20 +37,20 @@ type Redis struct {
 	codec   core.ICodec
 }
 
-func (this *Redis) getContext() (ctx context.Context) {
-	ctx, _ = context.WithTimeout(context.Background(), this.timeOut)
-	return
-}
-
 ///事务
 func (this *Redis) Close() (err error) {
 	err = this.client.Close()
 	return
 }
 
+/// Context
+func (this *Redis) Context() context.Context {
+	return this.client.Context()
+}
+
 /// Ping
 func (this *Redis) Ping() (string, error) {
-	return this.client.Ping(this.getContext()).Result()
+	return this.client.Ping(this.client.Context()).Result()
 }
 
 /// 命令接口
@@ -79,8 +82,8 @@ func (this *Redis) Watch(ctx context.Context, fn func(*redis.Tx) error, keys ...
 
 //锁
 func (this *Redis) Lock(key string, outTime int) (result bool, err error) {
-	cmd := redis.NewBoolCmd(this.getContext(), "set", key, 1, "ex", outTime, "nx")
-	this.client.Process(this.getContext(), cmd)
+	cmd := redis.NewBoolCmd(this.client.Context(), "set", key, 1, "ex", outTime, "nx")
+	this.client.Process(this.client.Context(), cmd)
 	result, err = cmd.Result()
 	return
 }
@@ -94,17 +97,18 @@ func (this *Redis) UnLock(key string) (err error) {
 //lua Script
 func (this *Redis) NewScript(src string) *redis.StringCmd {
 	script := redis.NewScript(src)
-	return script.Load(this.getContext(), this.client)
+	return script.Load(this.Context(), this.client)
 }
-func (this *Redis) Eval(script string, keys []string, args ...interface{}) *redis.Cmd {
-	return this.client.Eval(this.getContext(), script, keys, args...)
+func (this *Redis) Eval(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd {
+	return this.client.Eval(ctx, script, keys, args...)
 }
-func (this *Redis) EvalSha(sha1 string, keys []string, args ...interface{}) *redis.Cmd {
-	return this.client.EvalSha(this.getContext(), sha1, keys, args...)
+func (this *Redis) EvalSha(ctx context.Context, sha1 string, keys []string, args ...interface{}) *redis.Cmd {
+	return this.client.EvalSha(ctx, sha1, keys, args...)
 }
-func (this *Redis) ScriptExists(hashes ...string) *redis.BoolSliceCmd {
-	return this.client.ScriptExists(this.getContext(), hashes...)
+func (this *Redis) ScriptExists(ctx context.Context, hashes ...string) *redis.BoolSliceCmd {
+	return this.client.ScriptExists(ctx, hashes...)
 }
-func (this *Redis) ScriptLoad(script string) *redis.StringCmd {
-	return this.client.ScriptLoad(this.getContext(), script)
-}
+
+// func (this *Redis) ScriptLoad(ctx context.Context, script string) *redis.StringCmd {
+// 	return this.client.ScriptLoad(ctx, script)
+// }

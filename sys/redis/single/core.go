@@ -9,44 +9,45 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-func NewSys(RedisUrl, RedisPassword string, RedisDB, PoolSize int, timeOut time.Duration,
+func NewSys(RedisUrl, RedisPassword string, RedisDB int, timeOut time.Duration,
 	codec core.ICodec,
 ) (sys *Redis, err error) {
 	var (
 		client *redis.Client
 	)
 	client = redis.NewClient(&redis.Options{
-		Addr:     RedisUrl,
-		Password: RedisPassword,
-		DB:       RedisDB,
-		PoolSize: PoolSize, // 连接池大小
+		Addr:         RedisUrl,
+		Password:     RedisPassword,
+		DB:           RedisDB,
+		DialTimeout:  timeOut,
+		WriteTimeout: timeOut,
+		ReadTimeout:  timeOut,
 	})
 	sys = &Redis{
-		client:  client,
-		timeOut: timeOut,
-		codec:   codec,
+		client: client,
+		codec:  codec,
 	}
 	_, err = sys.Ping()
 	return
 }
 
 type Redis struct {
-	client  *redis.Client
-	timeOut time.Duration
-	codec   core.ICodec
+	client *redis.Client
+	codec  core.ICodec
 }
 
-func (this *Redis) getContext() (ctx context.Context) {
-	ctx, _ = context.WithTimeout(context.Background(), this.timeOut)
-	return
-}
 func (this *Redis) Close() (err error) {
 	return this.client.Close()
 }
 
+/// Context
+func (this *Redis) Context() context.Context {
+	return this.client.Context()
+}
+
 /// Ping
 func (this *Redis) Ping() (string, error) {
-	return this.client.Ping(this.getContext()).Result()
+	return this.client.Ping(this.client.Context()).Result()
 }
 
 /// 命令接口
@@ -78,8 +79,8 @@ func (this *Redis) Watch(ctx context.Context, fn func(*redis.Tx) error, keys ...
 
 //锁
 func (this *Redis) Lock(key string, outTime int) (result bool, err error) {
-	cmd := redis.NewBoolCmd(this.getContext(), "set", key, 1, "ex", outTime, "nx")
-	this.client.Process(this.getContext(), cmd)
+	cmd := redis.NewBoolCmd(this.client.Context(), "set", key, 1, "ex", outTime, "nx")
+	this.client.Process(this.client.Context(), cmd)
 	result, err = cmd.Result()
 	return
 }
@@ -93,17 +94,18 @@ func (this *Redis) UnLock(key string) (err error) {
 //lua Script
 func (this *Redis) NewScript(src string) *redis.StringCmd {
 	script := redis.NewScript(src)
-	return script.Load(this.getContext(), this.client)
+	return script.Load(this.Context(), this.client)
 }
-func (this *Redis) Eval(script string, keys []string, args ...interface{}) *redis.Cmd {
-	return this.client.Eval(this.getContext(), script, keys, args...)
+func (this *Redis) Eval(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd {
+	return this.client.Eval(ctx, script, keys, args...)
 }
-func (this *Redis) EvalSha(sha1 string, keys []string, args ...interface{}) *redis.Cmd {
-	return this.client.EvalSha(this.getContext(), sha1, keys, args...)
+func (this *Redis) EvalSha(ctx context.Context, sha1 string, keys []string, args ...interface{}) *redis.Cmd {
+	return this.client.EvalSha(ctx, sha1, keys, args...)
 }
-func (this *Redis) ScriptExists(hashes ...string) *redis.BoolSliceCmd {
-	return this.client.ScriptExists(this.getContext(), hashes...)
+func (this *Redis) ScriptExists(ctx context.Context, hashes ...string) *redis.BoolSliceCmd {
+	return this.client.ScriptExists(ctx, hashes...)
 }
-func (this *Redis) ScriptLoad(script string) *redis.StringCmd {
-	return this.client.ScriptLoad(this.getContext(), script)
-}
+
+// func (this *Redis) ScriptLoad(ctx context.Context, script string) *redis.StringCmd {
+// 	return this.client.ScriptLoad(ctx, script)
+// }

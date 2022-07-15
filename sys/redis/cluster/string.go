@@ -15,7 +15,7 @@ func (this *Redis) Set(key string, value interface{}, expiration time.Duration) 
 	if result, err = this.codec.Marshal(value); err != nil {
 		return
 	}
-	err = this.client.Set(this.getContext(), key, result, expiration).Err()
+	err = this.client.Set(this.client.Context(), key, result, expiration).Err()
 	return
 }
 
@@ -23,8 +23,8 @@ func (this *Redis) Set(key string, value interface{}, expiration time.Duration) 
 指定的 key 不存在时，为 key 设置指定的值
 */
 func (this *Redis) SetNX(key string, value interface{}) (result int64, err error) {
-	cmd := redis.NewIntCmd(this.getContext(), "SETNX", key, value)
-	this.client.Process(this.getContext(), cmd)
+	cmd := redis.NewIntCmd(this.client.Context(), "SETNX", key, value)
+	this.client.Process(this.client.Context(), cmd)
 	result, err = cmd.Result()
 	// }
 	return
@@ -40,7 +40,7 @@ func (this *Redis) MSet(v map[string]interface{}) (err error) {
 		result, _ := this.codec.Marshal(v)
 		agrs = append(agrs, k, result)
 	}
-	err = this.client.Do(this.getContext(), agrs...).Err()
+	err = this.client.Do(this.client.Context(), agrs...).Err()
 	return
 }
 
@@ -54,7 +54,7 @@ func (this *Redis) MSetNX(v map[string]interface{}) (err error) {
 		result, _ := this.codec.Marshal(v)
 		agrs = append(agrs, k, result)
 	}
-	err = this.client.Do(this.getContext(), agrs...).Err()
+	err = this.client.Do(this.client.Context(), agrs...).Err()
 	return
 }
 
@@ -65,7 +65,7 @@ Redis Incr 命令将 key 中储存的数字值增一。
 本操作的值限制在 64 位(bit)有符号数字表示之内。
 */
 func (this *Redis) Incr(key string) (err error) {
-	err = this.client.Do(this.getContext(), "INCR", key).Err()
+	err = this.client.Do(this.client.Context(), "INCR", key).Err()
 	return
 }
 
@@ -76,7 +76,7 @@ Redis Incrby 命令将 key 中储存的数字加上指定的增量值。
 本操作的值限制在 64 位(bit)有符号数字表示之内
 */
 func (this *Redis) IncrBY(key string, value int) (err error) {
-	err = this.client.Do(this.getContext(), "INCRBY", key, value).Err()
+	err = this.client.Do(this.client.Context(), "INCRBY", key, value).Err()
 	return
 }
 
@@ -85,7 +85,7 @@ Redis Incrbyfloat 命令为 key 中所储存的值加上指定的浮点数增量
 如果 key 不存在，那么 INCRBYFLOAT 会先将 key 的值设为 0 ，再执行加法操作
 */
 func (this *Redis) Incrbyfloat(key string, value float32) (err error) {
-	err = this.client.Do(this.getContext(), "INCRBYFLOAT", key, value).Err()
+	err = this.client.Do(this.client.Context(), "INCRBYFLOAT", key, value).Err()
 	return
 }
 
@@ -96,7 +96,7 @@ Redis Decr 命令将 key 中储存的数字值减一。
 本操作的值限制在 64 位(bit)有符号数字表示之内
 */
 func (this *Redis) Decr(key string, value int) (err error) {
-	err = this.client.Do(this.getContext(), "DECR", key, value).Err()
+	err = this.client.Do(this.client.Context(), "DECR", key, value).Err()
 	return
 }
 
@@ -107,7 +107,7 @@ Redis Decrby 命令将 key 所储存的值减去指定的减量值。
 本操作的值限制在 64 位(bit)有符号数字表示之内
 */
 func (this *Redis) DecrBy(key string, value int) (err error) {
-	err = this.client.Do(this.getContext(), "DECRBY", key, value).Err()
+	err = this.client.Do(this.client.Context(), "DECRBY", key, value).Err()
 	return
 }
 
@@ -121,7 +121,7 @@ func (this *Redis) Append(key string, value interface{}) (err error) {
 	if result, err = this.codec.Marshal(value); err != nil {
 		return
 	}
-	err = this.client.Do(this.getContext(), "APPEND", key, result).Err()
+	err = this.client.Do(this.client.Context(), "APPEND", key, result).Err()
 	return
 }
 
@@ -130,7 +130,7 @@ func (this *Redis) Append(key string, value interface{}) (err error) {
 */
 func (this *Redis) Get(key string, value interface{}) (err error) {
 	var result []byte
-	if result, err = this.client.Get(this.getContext(), key).Bytes(); err == nil {
+	if result, err = this.client.Get(this.client.Context(), key).Bytes(); err == nil {
 		err = this.codec.Unmarshal(result, value)
 	}
 	return
@@ -144,8 +144,8 @@ func (this *Redis) GetSet(key string, value interface{}, result interface{}) (er
 		_value []byte
 	)
 	if _value, err = this.codec.Marshal(value); err == nil {
-		cmd := redis.NewStringCmd(this.getContext(), "GETSET", key, _value)
-		this.client.Process(this.getContext(), cmd)
+		cmd := redis.NewStringCmd(this.client.Context(), "GETSET", key, _value)
+		this.client.Process(this.client.Context(), cmd)
 		var _result []byte
 		if _result, err = cmd.Bytes(); err == nil {
 			err = this.codec.Unmarshal(_result, result)
@@ -163,8 +163,8 @@ func (this *Redis) MGet(v interface{}, keys ...string) (err error) {
 	for _, v := range keys {
 		agrs = append(agrs, v)
 	}
-	cmd := redis.NewStringSliceCmd(this.getContext(), agrs...)
-	this.client.Process(this.getContext(), cmd)
+	cmd := redis.NewStringSliceCmd(this.client.Context(), agrs...)
+	this.client.Process(this.client.Context(), cmd)
 	var result []string
 	if result, err = cmd.Result(); err != nil {
 		return
@@ -175,8 +175,8 @@ func (this *Redis) MGet(v interface{}, keys ...string) (err error) {
 
 ///判断是否存在key pattern:key*
 func (this *Redis) INCRBY(key string, amount int64) (result int64, err error) {
-	cmd := redis.NewIntCmd(this.getContext(), "INCRBY", key, amount)
-	this.client.Process(this.getContext(), cmd)
+	cmd := redis.NewIntCmd(this.client.Context(), "INCRBY", key, amount)
+	this.client.Process(this.client.Context(), cmd)
 	result, err = cmd.Result()
 	return
 }
