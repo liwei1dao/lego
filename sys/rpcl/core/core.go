@@ -61,9 +61,8 @@ type (
 	IConnect interface {
 		Start() (err error)
 		Close() (err error)
-		Go(ctx context.Context, servicePath, serviceMethod string) (call *Call, err error)
+		Go(ctx context.Context, servicePath, message []byte) (err error)
 	}
-
 	//服务对象
 	Server struct {
 		sync.Mutex

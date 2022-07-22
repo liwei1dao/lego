@@ -13,9 +13,9 @@ import (
 	"github.com/modern-go/reflect2"
 )
 
-func newSys(options *core.Options) (sys *Codec, err error) {
+func newSys(options core.Options) (sys *Codec, err error) {
 	sys = &Codec{
-		options:      options,
+		options:      &options,
 		decoderCache: new(sync.Map),
 		encoderCache: new(sync.Map),
 		streamPool: &sync.Pool{
@@ -257,17 +257,17 @@ func (this *Codec) Warnf(format string, a ...interface{}) {
 	}
 }
 func (this *Codec) Errorf(format string, a ...interface{}) {
-	if this.options.Log != nil {
+	if this.options.Debug {
 		this.options.Log.Errorf("[SYS Codec] "+format, a...)
 	}
 }
 func (this *Codec) Panicf(format string, a ...interface{}) {
-	if this.options.Log != nil {
+	if this.options.Debug {
 		this.options.Log.Panicf("[SYS Codec] "+format, a...)
 	}
 }
 func (this *Codec) Fatalf(format string, a ...interface{}) {
-	if this.options.Log != nil {
+	if this.options.Debug {
 		this.options.Log.Fatalf("[SYS Codec] "+format, a...)
 	}
 }

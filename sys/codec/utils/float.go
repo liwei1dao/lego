@@ -52,6 +52,7 @@ func ReadBigFloatForString(buf []byte) (ret *big.Float, n int, err error) {
 func ReadFloat32ForString(buf []byte) (ret float32, n int, err error) {
 	if buf[0] == '-' {
 		ret, n, err = readPositiveFloat32(buf[1:])
+		n++
 		ret = -ret
 		return
 	}
@@ -60,6 +61,7 @@ func ReadFloat32ForString(buf []byte) (ret float32, n int, err error) {
 func ReadFloat64ForString(buf []byte) (ret float64, n int, err error) {
 	if buf[0] == '-' {
 		ret, n, err = readPositiveFloat64(buf[1:])
+		n++
 		ret = -ret
 		return
 	}

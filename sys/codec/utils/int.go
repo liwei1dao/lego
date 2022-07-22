@@ -41,6 +41,7 @@ func ReadInt8ForString(buf []byte) (ret int8, n int, err error) {
 	c := buf[0]
 	if c == '-' {
 		val, n, err = ReadUint32ForString(buf[1:])
+		n++
 		if val > math.MaxInt8+1 {
 			err = errors.New("ReadInt8ForString overflow: " + strconv.FormatInt(int64(val), 10))
 			return
@@ -64,6 +65,7 @@ func ReadInt16ForString(buf []byte) (ret int16, n int, err error) {
 	c := buf[0]
 	if c == '-' {
 		val, n, err = ReadUint32ForString(buf[1:])
+		n++
 		if val > math.MaxInt16+1 {
 			err = errors.New("ReadInt16ForString overflow: " + strconv.FormatInt(int64(val), 10))
 			return
@@ -87,6 +89,7 @@ func ReadInt32ForString(buf []byte) (ret int32, n int, err error) {
 	c := buf[0]
 	if c == '-' {
 		val, n, err = ReadUint32ForString(buf[1:])
+		n++
 		if val > math.MaxInt32+1 {
 			err = errors.New("ReadInt32ForString overflow: " + strconv.FormatInt(int64(val), 10))
 			return
@@ -110,6 +113,7 @@ func ReadInt64ForString(buf []byte) (ret int64, n int, err error) {
 	c := buf[0]
 	if c == '-' {
 		val, n, err = ReadUint64ForString(buf[1:])
+		n++
 		if val > math.MaxInt64+1 {
 			err = errors.New("ReadInt64ForString overflow: " + strconv.FormatInt(int64(val), 10))
 			return
@@ -154,6 +158,7 @@ func ReadUint16ForString(buf []byte) (ret uint16, n int, err error) {
 
 func ReadUint32ForString(buf []byte) (ret uint32, n int, err error) {
 	ind := intDigits[buf[0]]
+	n = 1
 	if ind == 0 {
 		err = assertInteger(buf[1:])
 		return
@@ -164,7 +169,7 @@ func ReadUint32ForString(buf []byte) (ret uint32, n int, err error) {
 	}
 	ret = uint32(ind)
 	if len(buf) > 10 {
-		i := 0
+		i := 1
 		ind2 := intDigits[buf[i]]
 		if ind2 == invalidCharForNumber {
 			n = i
@@ -228,7 +233,7 @@ func ReadUint32ForString(buf []byte) (ret uint32, n int, err error) {
 			return
 		}
 	}
-	for i := 1; i < len(buf); i++ {
+	for i := n; i < len(buf); i++ {
 		ind = intDigits[buf[i]]
 		if ind == invalidCharForNumber {
 			n = i
@@ -251,6 +256,7 @@ func ReadUint32ForString(buf []byte) (ret uint32, n int, err error) {
 
 func ReadUint64ForString(buf []byte) (ret uint64, n int, err error) {
 	ind := intDigits[buf[0]]
+	n = 1
 	if ind == 0 {
 		err = assertInteger(buf[1:])
 		return
@@ -325,7 +331,7 @@ func ReadUint64ForString(buf []byte) (ret uint64, n int, err error) {
 			return
 		}
 	}
-	for i := 1; i < len(buf); i++ {
+	for i := n; i < len(buf); i++ {
 		ind = intDigits[buf[i]]
 		if ind == invalidCharForNumber {
 			n = i

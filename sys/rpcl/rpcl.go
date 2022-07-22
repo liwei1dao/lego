@@ -112,20 +112,19 @@ func (this *RPCL) UnRegister(name string) {
 }
 
 //同步执行
-func (this *RPCL) Call(ctx context.Context, route core.IRoute, serviceMethod string, args interface{}, reply interface{}) (err error) { //同步调用 等待结果
+func (this *RPCL) Call(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (err error) { //同步调用 等待结果
 
 	return nil
 }
 
 //异步执行 异步返回
-func (this *RPCL) Go(ctx context.Context, route core.IRoute, serviceMethod string, args interface{}, reply interface{}, done chan *core.Call) (call *core.Call, err error) { //异步调用 异步返回
-	// sid := this.selector.Select(ctx, route, serviceMethod)
+func (this *RPCL) Go(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}, done chan *core.Call) (call *core.Call, err error) { //异步调用 异步返回
 	return nil, nil
 }
 
 //同步执行 无返回
-func (this *RPCL) GoNR(ctx context.Context, route core.IRoute, serviceMethod string, args interface{}) (err error) { //异步调用 无返回
-	// sid := this.selector.Select(ctx, route, serviceMethod)
+func (this *RPCL) GoNR(ctx context.Context, servicePath string, serviceMethod string, args interface{}) (err error) { //异步调用 无返回
+
 	return nil
 }
 

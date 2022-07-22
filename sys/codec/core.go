@@ -21,21 +21,13 @@ type (
 
 var defsys ISys
 
-func OnInit(config map[string]interface{}, opt ...core.Option) (err error) {
-	var option *core.Options
-	if option, err = newOptions(config, opt...); err != nil {
-		return
-	}
-	defsys, err = newSys(option)
+func OnInit(config map[string]interface{}, option ...core.Option) (err error) {
+	defsys, err = newSys(newOptions(config, option...))
 	return
 }
 
-func NewSys(opt ...core.Option) (sys ISys, err error) {
-	var option *core.Options
-	if option, err = newOptionsByOption(opt...); err != nil {
-		return
-	}
-	sys, err = newSys(option)
+func NewSys(option ...core.Option) (sys ISys, err error) {
+	sys, err = newSys(newOptionsByOption(option...))
 	return
 }
 func DecoderOf(typ reflect2.Type) core.IDecoder {
