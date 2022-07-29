@@ -1,0 +1,135 @@
+package tcp
+
+import (
+	"bufio"
+	"crypto/tls"
+	"net"
+	"runtime"
+	"sync"
+	"sync/atomic"
+	"time"
+
+	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/log"
+	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
+	"github.com/liwei1dao/lego/sys/rpcl/protocol"
+)
+
+func newClient(pool *TcpConnPool, config *lcore.Config, conn net.Conn) (client *Client, err error) {
+	client = &Client{
+		pool:   pool,
+		config: config,
+		conn:   conn,
+		hbeat:  0,
+		state:  0,
+	}
+	go client.serveConn()
+	return
+}
+
+type Client struct {
+	pool        *TcpConnPool
+	config      *lcore.Config
+	node        *core.ServiceNode
+	conn        net.Conn
+	closeSignal chan bool
+	hbeat       int32 //心跳发出次数
+	state       int32 //状态 0 未启动 1 运行 2 关闭中
+	wg          sync.WaitGroup
+}
+
+func (this *Client) ServiceNode() *core.ServiceNode {
+	return this.node
+}
+func (this *Client) ResetHbeat() {
+	atomic.StoreInt32(&this.hbeat, 0)
+}
+
+func (this *Client) Start() {
+	atomic.StoreInt32(&this.state, 1)
+	this.wg.Add(1)
+	go this.heartbeat()
+	return
+}
+func (this *Client) Write(msg []byte) (err error) {
+	_, err = this.conn.Write(msg)
+	if err != nil {
+		this.pool.sys.Errorf("send msg err:%v", err)
+	}
+	return
+}
+
+func (this *Client) Close() (err error) {
+	this.conn.Close()
+	return
+}
+
+func (this *Client) serveConn() {
+	defer func() {
+		if err := recover(); err != nil {
+			const size = 64 << 10
+			buf := make([]byte, size)
+			ss := runtime.Stack(buf, false)
+			if ss > size {
+				ss = size
+			}
+			buf = buf[:ss]
+			this.pool.sys.Errorf("serving %s panic error: %s, stack:\n %s", this.conn.RemoteAddr(), err, buf)
+		}
+		this.pool.sys.Debugf("server closed conn: %v", this.conn.RemoteAddr().String())
+	}()
+
+	if tlsConn, ok := this.conn.(*tls.Conn); ok {
+		if d := this.config.ReadTimeout; d != 0 {
+			this.conn.SetReadDeadline(time.Now().Add(d))
+		}
+		if d := this.config.WriteTimeout; d != 0 {
+			this.conn.SetWriteDeadline(time.Now().Add(d))
+		}
+		if err := tlsConn.Handshake(); err != nil {
+			this.pool.sys.Errorf("rpcx: TLS handshake error from %s: %v", this.conn.RemoteAddr(), err)
+			return
+		}
+	}
+
+	r := bufio.NewReaderSize(this.conn, ReaderBuffsize)
+	for {
+		t0 := time.Now()
+		if this.config.ReadTimeout > 0 {
+			this.conn.SetReadDeadline(t0.Add(this.config.ReadTimeout))
+		}
+
+		req := protocol.GetPooledMsg()
+		err := req.Decode(r)
+		if err != nil {
+			return
+		}
+		log.Debugf("server received an request %+v from conn: %v", req, this.conn.RemoteAddr().String())
+	}
+}
+
+func (this *Client) heartbeat() {
+	var (
+		timer *time.Ticker
+		err   error
+	)
+	timer = time.NewTicker(this.config.KeepAlivePeriod)
+locp:
+	for {
+		select {
+		case <-timer.C:
+			if err = this.Write(this.pool.sys.Heartbeat()); err != nil {
+				this.pool.sys.Errorf("err:%v", err)
+				go this.pool.CloseClient(this.node)
+			}
+			if atomic.LoadInt32(&this.hbeat) > 3 {
+				this.pool.sys.Errorf("heartbeat exception !")
+				go this.pool.CloseClient(this.node)
+			}
+		case <-this.closeSignal:
+			break locp
+		}
+	}
+	timer.Stop()
+	this.wg.Done()
+}

@@ -75,7 +75,7 @@ func (this *Client) heartbeat() {
 		timer *time.Ticker
 		err   error
 	)
-	timer = time.NewTicker(this.config.WriteTimeout)
+	timer = time.NewTicker(this.config.KeepAlivePeriod)
 locp:
 	for {
 		select {
