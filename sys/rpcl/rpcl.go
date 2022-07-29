@@ -77,6 +77,12 @@ func (this *RPCL) Start() (err error) {
 	if err = this.discovery.Start(); err != nil {
 		return
 	}
+	this.selector.UpdateServer(this.discovery.GetServices())
+	go func() { //监控服务发现
+		for v := range this.discovery.WatchService() {
+			this.selector.UpdateServer(v)
+		}
+	}()
 	return
 }
 
