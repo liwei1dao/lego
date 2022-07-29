@@ -74,8 +74,8 @@ func SetCodec(v core.ICodec) Option {
 	}
 }
 
-func newOptions(config map[string]interface{}, opts ...Option) Options {
-	options := Options{
+func newOptions(config map[string]interface{}, opts ...Option) (options *Options, err error) {
+	options = &Options{
 		Redis_Single_Addr:      "127.0.0.1:6379",
 		Redis_Single_Password:  "",
 		Redis_Single_DB:        1,
@@ -84,16 +84,16 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 		TimeOut:                time.Second * 3,
 	}
 	if config != nil {
-		mapstructure.Decode(config, &options)
+		mapstructure.Decode(config, options)
 	}
 	for _, o := range opts {
-		o(&options)
+		o(options)
 	}
-	return options
+	return
 }
 
-func newOptionsByOption(opts ...Option) Options {
-	options := Options{
+func newOptionsByOption(opts ...Option) (options *Options, err error) {
+	options = &Options{
 		Redis_Single_Addr:      "127.0.0.1:6379",
 		Redis_Single_Password:  "",
 		Redis_Single_DB:        1,
@@ -102,9 +102,9 @@ func newOptionsByOption(opts ...Option) Options {
 		TimeOut:                time.Second * 3,
 	}
 	for _, o := range opts {
-		o(&options)
+		o(options)
 	}
-	return options
+	return
 }
 
 type RMutexOption func(*RMutexOptions)

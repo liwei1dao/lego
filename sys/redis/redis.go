@@ -12,14 +12,14 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-func newSys(options Options) (sys *Redis, err error) {
+func newSys(options *Options) (sys *Redis, err error) {
 	sys = &Redis{options: options}
 	err = sys.init()
 	return
 }
 
 type Redis struct {
-	options Options
+	options *Options
 	client  IRedis
 }
 
