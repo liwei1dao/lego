@@ -7,8 +7,5 @@ message ServiceNode {
     string Id           =3;             //服务Id
     string Version      =4;             //服务版本
     string Addr         =5;             //地址
-    float Weight        =6;             //权重
-    map<string,string> Metadata = 7;    //元数据
-    map<string,bool> Servers = 8;       //提供的服务列表 方法名
 }
 

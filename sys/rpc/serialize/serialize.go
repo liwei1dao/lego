@@ -70,7 +70,6 @@ func init() {
 	OnRegisterRpcData(core.ErrorCode(0), errorCodeToBytes, bytesToErrorCode)
 	OnRegisterRpcData(core.CustomRoute(0), customRouteToBytes, bytesToCustomRoute)
 	OnRegisterRpcData(map[uint16][]uint16{}, jsonStructMarshal, bytesToMapUnit16SliceUInt16Rpc)
-	OnRegisterRpcData(&core.ServiceMonitor{}, jsonStructMarshal, jsonStructUnmarshal)
 }
 
 func OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {

@@ -11,7 +11,7 @@ import (
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/rpcl/connpool"
-	gcore "github.com/liwei1dao/lego/sys/rpcl/core"
+	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
 	"github.com/liwei1dao/lego/sys/rpcl/protocol"
 )
 
@@ -31,14 +31,19 @@ func newSys(options Options) (sys *RPCL, err error) {
 
 type RPCL struct {
 	options      Options
-	node         *core.ServiceNode
-	selector     gcore.ISelector
-	cpool        gcore.IConnPool
+	selector     lcore.ISelector
+	cpool        lcore.IConnPool
+	heartbeat    []byte
+	shakehands   []byte
 	serviceMapMu sync.RWMutex
 	serviceMap   map[string]*Server
 	pendingmutex sync.Mutex
 	seq          uint64
 	pending      map[uint64]*MessageCall
+}
+
+func (this *RPCL) Heartbeat() []byte {
+	return this.heartbeat
 }
 
 //启动系统
@@ -51,12 +56,8 @@ func (this *RPCL) Close() (err error) {
 	return
 }
 
-func (this *RPCL) GetNodePath() string {
-	return fmt.Sprintf("%s/%s/%s", this.options.ServiceNode.Tag, this.options.ServiceNode.Type, this.options.ServiceNode.Id)
-}
-
-func (this *RPCL) GetServiceNode() *core.ServiceNode {
-	return this.node
+func (this *RPCL) ServiceNode() *core.ServiceNode {
+	return this.options.ServiceNode
 }
 
 //注册服务 批量注册
@@ -86,7 +87,7 @@ func (this *RPCL) UnRegister(name string) {
 
 //同步执行
 func (this *RPCL) Call(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (err error) { //同步调用 等待结果
-	
+
 	return nil
 }
 
@@ -106,11 +107,15 @@ func (this *RPCL) Broadcast(ctx context.Context, servicePath string, serviceMeth
 }
 
 //接收到远程消息
-func (this *RPCL) Handle(client gcore.IConnClient, message *protocol.Message) {
-	if message.MessageType() == protocol.Request { //请求消息
+func (this *RPCL) Handle(client lcore.IConnClient, message lcore.IMessage) {
+	if message.MessageType() == lcore.Request { //请求消息
+		if message.IsHeartbeat() { //心跳
+			client.ResetHbeat()
+			return
+		}
 		if res, _ := this.handleRequest(context.Background(), message); res != nil {
 			if !message.IsOneway() { //需要回应
-				if len(res.Payload) > 1024 && res.CompressType() != protocol.CompressNone {
+				if len(res.Payload()) > 1024 && res.CompressType() != lcore.CompressNone {
 					res.SetCompressType(res.CompressType())
 				}
 				data := res.EncodeSlicePointer()
@@ -119,6 +124,15 @@ func (this *RPCL) Handle(client gcore.IConnClient, message *protocol.Message) {
 			}
 		}
 	} else { //回应
+		if message.IsShakeHands() { //握手
+			seq := message.Seq()
+			this.pendingmutex.Lock()
+			call := this.pending[seq]
+			delete(this.pending, seq)
+			this.pendingmutex.Unlock()
+			call.done(this)
+			return
+		}
 		this.handleresponse(context.Background(), message)
 	}
 }
@@ -244,61 +258,51 @@ func (this *RPCL) registerFunction(fn interface{}, name string, useName bool) (e
 }
 
 //执行远程服务---------------------------------------------------------------------------------------
-func (this *RPCL) call(ctx context.Context, seq uint64, call *MessageCall) (err error) {
+func (this *RPCL) call(client lcore.IConnClient, call *MessageCall, seq uint64) (err error) {
 	var (
-		targets []*core.ServiceNode
-		client  gcore.IConnClient
 		data    []byte
 		allData *[]byte
 	)
-	targets = this.selector.Select(ctx, call.ServicePath)
-	if targets == nil || len(targets) == 0 {
-		err = ErrXClientNoServer
-		return
-	}
+
 	req := protocol.GetPooledMsg()
-	req.SetMessageType(protocol.Request)
+	req.SetMessageType(lcore.Request)
 	req.SetSeq(seq)
 	if call.Reply == nil {
 		req.SetOneway(true)
 	}
 	if call.Metadata != nil {
-		req.Metadata = call.Metadata
+		req.SetMetadata(call.Metadata)
 	}
 
-	req.ServicePath = call.ServicePath
-	req.ServiceMethod = call.ServiceMethod
-
+	req.SetServiceMethod(call.ServiceMethod)
+	req.SetFrom(this.options.ServiceNode)
 	codec := codecs[this.options.SerializeType]
 	if codec == nil {
-		err = ErrUnsupportedCodec
+		err = lcore.ErrUnsupportedCodec
 		return
 	}
 	data, err = codec.Marshal(call.Args)
 	if err != nil {
 		return
 	}
-	if len(data) > 1024 && this.options.CompressType != protocol.CompressNone {
+	if len(data) > 1024 && this.options.CompressType != lcore.CompressNone {
 		req.SetCompressType(this.options.CompressType)
 	}
-	req.Payload = data
+	req.SetPayload(data)
 	allData = req.EncodeSlicePointer()
 	defer func() {
 		protocol.PutData(allData)
 		protocol.FreeMsg(req)
 	}()
-	if client, err = this.cpool.GetClient(targets[0]); err != nil {
-		return
-	}
 	err = client.Write(*allData)
 	return
 }
 
 //处理响应------------------------------------------------------------------------------------------
-func (this *RPCL) handleresponse(ctx context.Context, res *protocol.Message) {
+func (this *RPCL) handleresponse(ctx context.Context, res lcore.IMessage) {
 	var call *MessageCall
 	seq := res.Seq()
-	isServerMessage := (res.MessageType() == protocol.Request && !res.IsHeartbeat() && res.IsOneway())
+	isServerMessage := (res.MessageType() == lcore.Request && !res.IsHeartbeat() && res.IsOneway())
 	if !isServerMessage {
 		this.pendingmutex.Lock()
 		call = this.pending[seq]
@@ -308,13 +312,13 @@ func (this *RPCL) handleresponse(ctx context.Context, res *protocol.Message) {
 	switch {
 	case call == nil:
 		this.Warnf("call is nil res:%v", res)
-	case res.MessageStatusType() == protocol.Error:
-		if len(res.Metadata) > 0 {
-			call.ResMetadata = res.Metadata
-			call.Error = errors.New(res.Metadata[ServiceError])
+	case res.MessageStatusType() == lcore.Error:
+		if len(res.Metadata()) > 0 {
+			call.ResMetadata = res.Metadata()
+			call.Error = errors.New(res.Metadata()[lcore.ServiceError])
 		}
-		if len(res.Payload) > 0 {
-			data := res.Payload
+		if len(res.Payload()) > 0 {
+			data := res.Payload()
 			codec := codecs[res.SerializeType()]
 			if codec != nil {
 				_ = codec.Unmarshal(data, call.Reply)
@@ -322,11 +326,11 @@ func (this *RPCL) handleresponse(ctx context.Context, res *protocol.Message) {
 			call.done(this)
 		}
 	default:
-		data := res.Payload
+		data := res.Payload()
 		if len(data) > 0 {
 			codec := codecs[res.SerializeType()]
 			if codec == nil {
-				call.Error = ErrUnsupportedCodec
+				call.Error = lcore.ErrUnsupportedCodec
 			} else {
 				err := codec.Unmarshal(data, call.Reply)
 				if err != nil {
@@ -334,18 +338,18 @@ func (this *RPCL) handleresponse(ctx context.Context, res *protocol.Message) {
 				}
 			}
 		}
-		if len(res.Metadata) > 0 {
-			call.ResMetadata = res.Metadata
+		if len(res.Metadata()) > 0 {
+			call.ResMetadata = res.Metadata()
 		}
 		call.done(this)
 	}
 }
 
 //处理服务消息---------------------------------------------------------------------------------------
-func (this *RPCL) handleRequest(ctx context.Context, req *protocol.Message) (res *protocol.Message, err error) {
-	methodName := req.ServiceMethod
+func (this *RPCL) handleRequest(ctx context.Context, req lcore.IMessage) (res lcore.IMessage, err error) {
+	methodName := req.ServiceMethod()
 	res = req.Clone()
-	res.SetMessageType(protocol.Response)
+	res.SetMessageType(lcore.Response)
 	this.serviceMapMu.RLock()
 	service, ok := this.serviceMap[methodName]
 	this.Debugf("server get service %+v for an request %+v", service, req)
@@ -362,7 +366,7 @@ func (this *RPCL) handleRequest(ctx context.Context, req *protocol.Message) (res
 
 	argv := reflectTypePools.Get(service.ArgType)
 
-	err = codec.Unmarshal(req.Payload, argv)
+	err = codec.Unmarshal(req.Payload(), argv)
 	if err != nil {
 		return handleError(res, err)
 	}
@@ -380,7 +384,7 @@ func (this *RPCL) handleRequest(ctx context.Context, req *protocol.Message) (res
 			if err != nil {
 				return handleError(res, err)
 			}
-			res.Payload = data
+			res.SetPayload(data)
 		}
 		return handleError(res, err)
 	}
@@ -390,7 +394,7 @@ func (this *RPCL) handleRequest(ctx context.Context, req *protocol.Message) (res
 		if err != nil {
 			return handleError(res, err)
 		}
-		res.Payload = data
+		res.SetPayload(data)
 	} else if replyv != nil {
 		reflectTypePools.Put(service.ReplyType, replyv)
 	}
@@ -398,11 +402,53 @@ func (this *RPCL) handleRequest(ctx context.Context, req *protocol.Message) (res
 	return
 }
 
-func handleError(res *protocol.Message, err error) (*protocol.Message, error) {
-	res.SetMessageStatusType(protocol.Error)
-	if res.Metadata == nil {
-		res.Metadata = make(map[string]string)
+//握手请求
+func (this *RPCL) ShakehandsRequest(ctx context.Context, client lcore.IConnClient) (err error) {
+	var (
+		data []byte
+	)
+	call := new(MessageCall)
+	call.Done = make(chan *MessageCall, 10)
+	call.Args = client.ServiceNode
+	this.pendingmutex.Lock()
+	seq := this.seq
+	this.seq++
+	this.pending[seq] = call
+	this.pendingmutex.Unlock()
+	req := protocol.GetPooledMsg()
+	req.SetShakeHands(true)
+	req.SetOneway(false)
+	req.SetFrom(this.options.ServiceNode)
+	req.SetMessageType(lcore.Request)
+	req.SetSeq(seq)
+	data, err = codecs[lcore.ProtoBuffer].Marshal(call.Args)
+	if err != nil {
+		return
 	}
-	res.Metadata[ServiceError] = err.Error()
-	return res, err
+	if len(data) > 1024 && this.options.CompressType != lcore.CompressNone {
+		req.SetCompressType(this.options.CompressType)
+	}
+	req.SetPayload(data)
+	allData := req.EncodeSlicePointer()
+	err = client.Write(*allData)
+	protocol.PutData(allData)
+	protocol.FreeMsg(req)
+	if err != nil {
+		return
+	}
+	select {
+	case <-ctx.Done(): // cancel by context
+		this.pendingmutex.Lock()
+		call := this.pending[seq]
+		delete(this.pending, seq)
+		this.pendingmutex.Unlock()
+		if call != nil {
+			call.Error = ctx.Err()
+			call.done(this)
+		}
+		return ctx.Err()
+	case call := <-call.Done:
+		err = call.Error
+	}
+	return
 }

@@ -2,49 +2,12 @@ package protocol
 
 import (
 	"encoding/binary"
+
+	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
 )
 
 const (
 	magicNumber byte = 0x08
-)
-
-//消息类型
-type MessageType byte
-
-const (
-	Request  MessageType = iota //请求
-	Response                    //回应
-)
-
-// 消息序列化方式
-type SerializeType byte
-
-const (
-	// JSON for payload.
-	JSON SerializeType = iota
-	// ProtoBuffer for payload.
-	ProtoBuffer
-	// MsgPack for payload
-	MsgPack
-	// Thrift
-	// Thrift for payload
-	Thrift
-)
-
-//消息压缩类型
-type CompressType byte
-
-const (
-	CompressNone CompressType = iota //无压缩
-	CompressGzip                     //gzip压缩
-)
-
-//消息状态
-type MessageStatusType byte
-
-const (
-	Normal MessageStatusType = iota //正常消息
-	Error                           //错误消息
 )
 
 //消息头
@@ -65,13 +28,27 @@ func (this *Header) SetVersion(v byte) {
 }
 
 // 协议类型 请求/回应
-func (this Header) MessageType() MessageType {
-	return MessageType(this[2]&0x80) >> 7
+func (this Header) MessageType() lcore.MessageType {
+	return lcore.MessageType(this[2]&0x80) >> 7
 }
 
 // 设置 协议类型 请求/回应
-func (this *Header) SetMessageType(mt MessageType) {
+func (this *Header) SetMessageType(mt lcore.MessageType) {
 	this[2] = this[2] | (byte(mt) << 7)
+}
+
+// 是否是握手
+func (h Header) IsShakeHands() bool {
+	return h[2]&0x10 == 0x10
+}
+
+// 设置握手
+func (this *Header) SetShakeHands(sh bool) {
+	if sh {
+		this[2] = this[2] | 0x10
+	} else {
+		this[2] = this[2] &^ 0x10
+	}
 }
 
 // 是否是心跳消息
@@ -89,22 +66,22 @@ func (h *Header) SetHeartbeat(hb bool) {
 }
 
 //读取压缩方式
-func (this Header) CompressType() CompressType {
-	return CompressType((this[2] & 0x1C) >> 2)
+func (this Header) CompressType() lcore.CompressType {
+	return lcore.CompressType((this[2] & 0x1C) >> 2)
 }
 
 //设置压缩类型
-func (this *Header) SetCompressType(ct CompressType) {
+func (this *Header) SetCompressType(ct lcore.CompressType) {
 	this[2] = (this[2] &^ 0x1C) | ((byte(ct) << 2) & 0x1C)
 }
 
 //消息状态
-func (this Header) MessageStatusType() MessageStatusType {
-	return MessageStatusType(this[2] & 0x03)
+func (this Header) MessageStatusType() lcore.MessageStatusType {
+	return lcore.MessageStatusType(this[2] & 0x03)
 }
 
 // 设置消息状态 正常或者错误
-func (this *Header) SetMessageStatusType(mt MessageStatusType) {
+func (this *Header) SetMessageStatusType(mt lcore.MessageStatusType) {
 	this[2] = (this[2] &^ 0x03) | (byte(mt) & 0x03)
 }
 
@@ -123,12 +100,12 @@ func (this *Header) SetOneway(oneway bool) {
 }
 
 // SerializeType returns serialization type of payload.
-func (h Header) SerializeType() SerializeType {
-	return SerializeType((h[3] & 0xF0) >> 4)
+func (h Header) SerializeType() lcore.SerializeType {
+	return lcore.SerializeType((h[3] & 0xF0) >> 4)
 }
 
 // SetSerializeType sets the serialization type.
-func (h *Header) SetSerializeType(st SerializeType) {
+func (h *Header) SetSerializeType(st lcore.SerializeType) {
 	h[3] = (h[3] &^ 0xF0) | (byte(st) << 4)
 }
 

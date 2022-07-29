@@ -3,18 +3,18 @@ package rpcl
 import (
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
-	gcore "github.com/liwei1dao/lego/sys/rpcl/core"
-	"github.com/liwei1dao/lego/sys/rpcl/protocol"
+	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
 
 type Option func(*Options)
 type Options struct {
-	ServiceNode   *core.ServiceNode      //服务节点
-	SerializeType protocol.SerializeType //消息序列化方式
-	CompressType  protocol.CompressType  //消息压缩模式
-	Config        *gcore.Config          //连接配置
-	Debug         bool                   //日志是否开启
+	ServiceNode   *core.ServiceNode   //服务节点
+	SerializeType lcore.SerializeType //消息序列化方式
+	CompressType  lcore.CompressType  //消息压缩模式
+	Auth          string              //认证
+	Config        *lcore.Config       //连接配置
+	Debug         bool                //日志是否开启
 	Log           log.ILog
 }
 

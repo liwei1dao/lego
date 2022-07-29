@@ -2,18 +2,6 @@ package rpcl
 
 import (
 	"context"
-	"errors"
-)
-
-var (
-	ErrXClientNoServer  = errors.New("can not found any server")
-	ErrUnsupportedCodec = errors.New("unsupported codec")
-)
-
-const (
-	ServiceError   = "__rpcx_error__" //服务错误信息字段
-	ReqMetaDataKey = "__req_metadata" //请求元数据字段
-	ResMetaDataKey = "__res_metadata" //返回元数据字段
 )
 
 type (

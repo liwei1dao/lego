@@ -13,9 +13,9 @@ func newService(sys core.ISys, config *gcore.Config) (service *Service, err erro
 	service.kafka, err = kafka.NewSys(
 		kafka.SetHosts(config.Endpoints),
 		kafka.SetStartType(kafka.Consumer),
-		kafka.SetClientID(sys.GetNodePath()),
+		kafka.SetClientID(sys.ServiceNode().GetNodePath()),
 		kafka.SetVersion(config.Vsersion),
-		kafka.SetTopics([]string{sys.GetNodePath()}),
+		kafka.SetTopics([]string{sys.ServiceNode().GetNodePath()}),
 		kafka.SetConsumer_Offsets_Initial(-1),
 	)
 	return

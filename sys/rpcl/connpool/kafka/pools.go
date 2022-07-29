@@ -4,10 +4,10 @@ import (
 	"sync"
 
 	"github.com/liwei1dao/lego/core"
-	gcore "github.com/liwei1dao/lego/sys/rpcl/core"
+	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
 )
 
-func NewKafkaConnPool(sys gcore.ISys, config *gcore.Config) (cpool *KafkaConnPool, err error) {
+func NewKafkaConnPool(sys lcore.ISys, config *lcore.Config) (cpool *KafkaConnPool, err error) {
 	cpool = &KafkaConnPool{
 		sys: sys,
 	}
@@ -16,7 +16,7 @@ func NewKafkaConnPool(sys gcore.ISys, config *gcore.Config) (cpool *KafkaConnPoo
 }
 
 type KafkaConnPool struct {
-	sys         gcore.ISys
+	sys         lcore.ISys
 	service     *Service
 	clientMapMu sync.RWMutex
 	clients     map[string]*Client
@@ -27,10 +27,9 @@ func (this *KafkaConnPool) Start() (err error) {
 	return
 }
 
-func (this *KafkaConnPool) GetClient(server *core.ServiceNode) (client gcore.IConnClient, err error) {
+func (this *KafkaConnPool) GetClient(node *core.ServiceNode) (client lcore.IConnClient, err error) {
 	return
 }
-
 func (this *KafkaConnPool) Close() (err error) {
 
 	return
