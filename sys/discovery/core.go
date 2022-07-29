@@ -9,7 +9,7 @@ type (
 		Start() (err error)
 		WatchService() chan []*core.ServiceNode
 		GetServices() []*core.ServiceNode
-		Stop() error
+		Close() error
 	}
 )
 
@@ -44,6 +44,6 @@ func WatchService() chan []*core.ServiceNode {
 func GetServices() []*core.ServiceNode {
 	return defsys.GetServices()
 }
-func Stop() (err error) {
-	return defsys.Stop()
+func Close() (err error) {
+	return defsys.Close()
 }

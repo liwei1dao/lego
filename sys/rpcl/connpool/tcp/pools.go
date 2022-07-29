@@ -19,12 +19,11 @@ const (
 	WriteChanSize = 1024 * 1024
 )
 
-func NewKafkaConnPool(sys lcore.ISys, config *lcore.Config) (cpool *TcpConnPool, err error) {
+func NewTcpConnPool(sys lcore.ISys, config *lcore.Config) (cpool *TcpConnPool, err error) {
 	cpool = &TcpConnPool{
 		sys:    sys,
 		config: config,
 	}
-	err = cpool.init()
 	return
 }
 
@@ -36,7 +35,7 @@ type TcpConnPool struct {
 	clients     map[string]lcore.IConnClient
 }
 
-func (this *TcpConnPool) init() (err error) {
+func (this *TcpConnPool) Start() (err error) {
 	var (
 		ln net.Listener
 	)
@@ -53,7 +52,7 @@ func (this *TcpConnPool) GetClient(node *core.ServiceNode) (client lcore.IConnCl
 		conn net.Conn
 	)
 	this.clientMapMu.RLock()
-	client, ok = this.clients[node.Addr]
+	client, ok = this.clients[node.GetNodePath()]
 	this.clientMapMu.RUnlock()
 	if !ok {
 		if conn, err = net.DialTimeout("tcp", node.Addr, this.config.ConnectionTimeout); err == nil {
@@ -67,7 +66,7 @@ func (this *TcpConnPool) createClient(conn net.Conn) (client lcore.IConnClient, 
 	if client, err = newClient(this, this.config, conn); err == nil {
 		if err = this.sys.ShakehandsRequest(context.Background(), client); err == nil {
 			this.clientMapMu.Lock()
-			this.clients[client.ServiceNode().Addr] = client
+			this.clients[client.ServiceNode().GetNodePath()] = client
 			this.clientMapMu.Unlock()
 			client.Start()
 		}
@@ -98,13 +97,18 @@ func (this *TcpConnPool) CloseClient(node *core.ServiceNode) (err error) {
 		ok     bool
 	)
 	this.clientMapMu.RLock()
-	client, ok = this.clients[node.Addr]
+	client, ok = this.clients[node.GetNodePath()]
 	this.clientMapMu.RUnlock()
 	if ok {
 		this.clientMapMu.Lock()
-		delete(this.clients, node.Addr)
+		delete(this.clients, node.GetNodePath())
 		this.clientMapMu.Unlock()
 		err = client.Close()
 	}
+	return
+}
+
+func (this *TcpConnPool) Close() (err error) {
+
 	return
 }

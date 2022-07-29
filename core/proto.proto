@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = ".;core";
+option go_package = ".;pb";
 
 message ServiceNode {
     string Tag          =1;             //服务集群标签

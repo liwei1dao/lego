@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/sys/log"
 	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
 	"github.com/liwei1dao/lego/sys/rpcl/protocol"
 )
@@ -98,13 +97,13 @@ func (this *Client) serveConn() {
 		if this.config.ReadTimeout > 0 {
 			this.conn.SetReadDeadline(t0.Add(this.config.ReadTimeout))
 		}
-
 		req := protocol.GetPooledMsg()
 		err := req.Decode(r)
 		if err != nil {
+			this.pool.sys.Errorf("err:%v", err)
 			return
 		}
-		log.Debugf("server received an request %+v from conn: %v", req, this.conn.RemoteAddr().String())
+		go this.pool.sys.Handle(this, req)
 	}
 }
 

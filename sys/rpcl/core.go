@@ -6,6 +6,8 @@ import (
 
 type (
 	ISys interface {
+		Start() (err error)
+		Close() (err error)
 		Register(rcvr interface{}) error
 		RegisterFunction(fn interface{}) error
 		RegisterFunctionName(name string, fn interface{}) (err error)
@@ -21,21 +23,29 @@ var (
 	defsys ISys
 )
 
-func OnInit(config map[string]interface{}, option ...Option) (err error) {
-	defsys, err = newSys(newOptions(config, option...))
+func OnInit(config map[string]interface{}, opt ...Option) (err error) {
+	var option *Options
+	if option, err = newOptions(config, opt...); err != nil {
+		return
+	}
+	defsys, err = newSys(option)
 	return
 }
 
-func NewSys(option ...Option) (sys ISys, err error) {
-	sys, err = newSys(newOptionsByOption(option...))
+func NewSys(opt ...Option) (sys ISys, err error) {
+	var option *Options
+	if option, err = newOptionsByOption(opt...); err != nil {
+		return
+	}
+	sys, err = newSys(option)
 	return
 }
 
 func Start() (err error) {
-	return
+	return defsys.Start()
 }
-func Stop() (err error) {
-	return
+func Close() (err error) {
+	return defsys.Close()
 }
 
 func Register(rcvr interface{}) error {

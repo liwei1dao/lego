@@ -35,16 +35,17 @@ func (this *ClusterService) GetVersion() string {
 func (this *ClusterService) GetSettings() core.ServiceSttings {
 	return this.option.Setting
 }
-
-func (this *ClusterService) SetPreWeight(weight float32) {
-	this.serviceNode.Weight = weight
-}
-
 func (this *ClusterService) Options() *Options {
 	return this.option
 }
 func (this *ClusterService) Configure(option ...Option) {
 	this.option = newOptions(option...)
+	this.serviceNode = &core.ServiceNode{
+		Tag:     this.option.Setting.Tag,
+		Id:      this.option.Setting.Id,
+		Type:    this.option.Setting.Type,
+		Version: this.option.Version,
+	}
 }
 
 func (this *ClusterService) Init(service core.IService) (err error) {
@@ -76,10 +77,10 @@ func (this *ClusterService) InitSys() {
 }
 
 func (this *ClusterService) Destroy() (err error) {
-	if err = rpcl.Stop(); err != nil {
+	if err = rpcl.Close(); err != nil {
 		return
 	}
-	cron.Stop()
+	cron.Close()
 	err = this.ServiceBase.Destroy()
 	return
 }

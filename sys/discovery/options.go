@@ -107,6 +107,12 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 	for _, o := range opts {
 		o(options)
 	}
+	if options.Config == nil {
+		options.Config = &dcore.Config{
+			ConnectionTimeout: 5 * time.Second,
+		}
+	}
+
 	if options.Debug && options.Log == nil {
 		if options.Log = log.Clone(log.SetLoglayer(2)); options.Log == nil {
 			err = errors.New("log is nil")

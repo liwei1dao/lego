@@ -19,7 +19,7 @@ func (this *Cron) Start() {
 	this.cron.Start()
 }
 
-func (this *Cron) Stop() {
+func (this *Cron) Close() {
 	this.cron.Stop()
 }
 

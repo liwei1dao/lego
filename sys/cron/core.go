@@ -7,7 +7,7 @@ import (
 type (
 	ISys interface {
 		Start()
-		Stop()
+		Close()
 		AddFunc(spec string, cmd func()) (tcron.EntryID, error)
 		Remove(id tcron.EntryID)
 	}
@@ -35,8 +35,8 @@ func Start() {
 	defsys.Start()
 }
 
-func Stop() {
-	defsys.Stop()
+func Close() {
+	defsys.Close()
 }
 
 func AddFunc(spec string, cmd func()) (tcron.EntryID, error) {

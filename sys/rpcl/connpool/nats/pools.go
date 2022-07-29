@@ -42,13 +42,13 @@ func (this *NatsConnPool) GetClient(node *core.ServiceNode) (client lcore.IConnC
 		ok bool
 	)
 	this.clientMapMu.RLock()
-	client, ok = this.clients[node.Addr]
+	client, ok = this.clients[node.GetNodePath()]
 	this.clientMapMu.RUnlock()
 	if !ok {
 		if client, err = newClient(this, this.config, node); err == nil {
 			if err = this.sys.ShakehandsRequest(context.Background(), client); err == nil {
 				this.clientMapMu.Lock()
-				this.clients[node.Addr] = client
+				this.clients[node.GetNodePath()] = client
 				this.clientMapMu.Unlock()
 				client.Start()
 			}
@@ -69,11 +69,11 @@ func (this *NatsConnPool) CloseClient(node *core.ServiceNode) (err error) {
 		ok     bool
 	)
 	this.clientMapMu.RLock()
-	client, ok = this.clients[node.Addr]
+	client, ok = this.clients[node.GetNodePath()]
 	this.clientMapMu.RUnlock()
 	if ok {
 		this.clientMapMu.Lock()
-		delete(this.clients, node.Addr)
+		delete(this.clients, node.GetNodePath())
 		this.clientMapMu.Unlock()
 		err = client.Close()
 	}

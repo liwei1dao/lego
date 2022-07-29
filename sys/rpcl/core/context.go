@@ -9,7 +9,6 @@ import (
 
 const (
 	ContextTagsLock = "_tagsLock"
-	isShareContext  = "_isShareContext"
 )
 
 type Context struct {
@@ -24,7 +23,7 @@ func NewContext(ctx context.Context) *Context {
 	return &Context{
 		tagsLock: tagsLock,
 		Context:  ctx,
-		tags:     map[interface{}]interface{}{isShareContext: true},
+		tags:     map[interface{}]interface{}{},
 	}
 }
 
@@ -101,10 +100,4 @@ func WithLocalValue(ctx *Context, key, val interface{}) *Context {
 
 	ctx.tags[key] = val
 	return ctx
-}
-
-// IsShareContext checks whether a context is share.Context.
-func IsShareContext(ctx context.Context) bool {
-	ok := ctx.Value(isShareContext)
-	return ok != nil
 }

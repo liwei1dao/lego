@@ -17,26 +17,9 @@ type ISingleService interface {
 	core.IService
 }
 
-type IServiceSession interface {
-	GetId() string
-	GetIp() string
-	GetRpcId() string
-	GetType() string
-	GetVersion() string
-	SetVersion(v string)
-	GetPreWeight() float64
-	SetPreWeight(p float64)
-	Done()
-}
-
-type IClusterServiceBase interface {
-	core.IService
-	GetTag() string            //获取集群标签
-	SetPreWeight(weight int32) //设置服务器权重
-}
-
 type IClusterService interface {
-	IClusterServiceBase
+	core.IService
+	GetTag() string //获取集群标签
 	Register(rcvr interface{}) (err error)
 	RegisterFunction(fn interface{}) (err error)
 	RegisterFunctionName(name string, fn interface{}) (err error)

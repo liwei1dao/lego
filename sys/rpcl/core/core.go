@@ -22,14 +22,15 @@ const (
 	ReqMetaDataKey = "__req_metadata"   //请求元数据字段
 	ResMetaDataKey = "__res_metadata"   //返回元数据字段
 	ServiceAddrKey = "__service_addr__" //服务端地址
+	CallSeqKey     = "__call_seq__"     //客户端请求id存储key
 )
 
 type ConnectType int //通信类型
 const (
-	Http  ConnectType = iota //http  连接对象
+	Tcp   ConnectType = iota //Tcp  连接对象
 	Kafka                    //Kafka 连接
 	Nats                     //Nats  连接
-	Tcp                      //Tcp   连接
+	http                     //http   连接
 )
 
 type SelectMode int //选择器类型

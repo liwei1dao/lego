@@ -8,8 +8,10 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/discovery"
 	"github.com/liwei1dao/lego/sys/rpcl/connpool"
 	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
 	"github.com/liwei1dao/lego/sys/rpcl/protocol"
@@ -18,23 +20,44 @@ import (
 var TypeOfError = reflect.TypeOf((*error)(nil)).Elem()
 var TypeOfContext = reflect.TypeOf((*context.Context)(nil)).Elem()
 
-func newSys(options Options) (sys *RPCL, err error) {
+func newSys(options *Options) (sys *RPCL, err error) {
 	sys = &RPCL{
 		options:    options,
 		serviceMap: make(map[string]*Server),
+		seq:        0,
+		pending:    make(map[uint64]*MessageCall),
 	}
-	if sys.cpool, err = connpool.NewConnPool(sys, options.Config); err != nil {
+
+	if options.ConnectType == lcore.Tcp {
+		options.ServiceNode.Addr = options.MessageEndpoints[0]
+	}
+
+	if sys.cpool, err = connpool.NewConnPool(sys, &lcore.Config{
+		ConnectType: options.ConnectType,
+		Endpoints:   options.MessageEndpoints,
+	}); err != nil {
+		return
+	}
+	if sys.discovery, err = discovery.NewSys(
+		discovery.SetBasePath(options.ServiceNode.Tag),
+		discovery.SetServiceNode(options.ServiceNode),
+		discovery.SetStoreType(options.DiscoveryStoreType),
+		discovery.SetEndpoints(options.DiscoveryEndpoints),
+		discovery.SetUpdateInterval(time.Duration(options.DiscoveryInterval)*time.Second),
+		discovery.SetCodec(codecs[lcore.JSON]),
+		discovery.SetLog(options.Log),
+	); err != nil {
 		return
 	}
 	return
 }
 
 type RPCL struct {
-	options      Options
-	selector     lcore.ISelector
+	options      *Options
 	cpool        lcore.IConnPool
+	discovery    discovery.ISys
+	selector     lcore.ISelector
 	heartbeat    []byte
-	shakehands   []byte
 	serviceMapMu sync.RWMutex
 	serviceMap   map[string]*Server
 	pendingmutex sync.Mutex
@@ -48,11 +71,23 @@ func (this *RPCL) Heartbeat() []byte {
 
 //启动系统
 func (this *RPCL) Start() (err error) {
+	if err = this.cpool.Start(); err != nil {
+		return
+	}
+	if err = this.discovery.Start(); err != nil {
+		return
+	}
 	return
 }
 
 //关闭系统
 func (this *RPCL) Close() (err error) {
+	if err = this.discovery.Close(); err != nil {
+		return
+	}
+	if err = this.cpool.Close(); err != nil {
+		return
+	}
 	return
 }
 
@@ -87,18 +122,53 @@ func (this *RPCL) UnRegister(name string) {
 
 //同步执行
 func (this *RPCL) Call(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (err error) { //同步调用 等待结果
-
+	seq := new(uint64)
+	ctx = lcore.WithValue(ctx, lcore.CallSeqKey, seq)
+	this.Debugf("client.Call for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
+	defer func() {
+		this.Debugf("client.Call done for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
+	}()
+	var call *MessageCall
+	call, err = this.call(ctx, servicePath, serviceMethod, args, reply)
+	select {
+	case <-ctx.Done(): // cancel by context
+		this.pendingmutex.Lock()
+		call := this.pending[*seq]
+		delete(this.pending, *seq)
+		this.pendingmutex.Unlock()
+		if call != nil {
+			call.Error = ctx.Err()
+			call.done(this)
+		}
+		return ctx.Err()
+	case call := <-call.Done:
+		err = call.Error
+	}
 	return nil
 }
 
 //异步执行 异步返回
 func (this *RPCL) Go(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) { //异步调用 异步返回
-	return nil, nil
+	seq := new(uint64)
+	ctx = lcore.WithValue(ctx, lcore.CallSeqKey, seq)
+	this.Debugf("client.Go for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
+	defer func() {
+		this.Debugf("client.Go done for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
+	}()
+	call, err = this.call(ctx, servicePath, serviceMethod, args, reply)
+	return
 }
 
 //同步执行 无返回
 func (this *RPCL) GoNR(ctx context.Context, servicePath string, serviceMethod string, args interface{}) (err error) { //异步调用 无返回
-
+	call := new(MessageCall)
+	call.Done = make(chan *MessageCall, 10)
+	call.Args = args
+	var client lcore.IConnClient
+	if client, err = this.getclient(ctx, servicePath); err != nil {
+		return
+	}
+	err = this.send(client, call, 0)
 	return nil
 }
 
@@ -113,7 +183,7 @@ func (this *RPCL) Handle(client lcore.IConnClient, message lcore.IMessage) {
 			client.ResetHbeat()
 			return
 		}
-		if res, _ := this.handleRequest(context.Background(), message); res != nil {
+		if res, _ := this.handleRequest(lcore.NewContext(context.Background()), message); res != nil {
 			if !message.IsOneway() { //需要回应
 				if len(res.Payload()) > 1024 && res.CompressType() != lcore.CompressNone {
 					res.SetCompressType(res.CompressType())
@@ -133,7 +203,7 @@ func (this *RPCL) Handle(client lcore.IConnClient, message lcore.IMessage) {
 			call.done(this)
 			return
 		}
-		this.handleresponse(context.Background(), message)
+		this.handleresponse(lcore.NewContext(context.Background()), message)
 	}
 }
 
@@ -258,7 +328,42 @@ func (this *RPCL) registerFunction(fn interface{}, name string, useName bool) (e
 }
 
 //执行远程服务---------------------------------------------------------------------------------------
-func (this *RPCL) call(client lcore.IConnClient, call *MessageCall, seq uint64) (err error) {
+func (this *RPCL) call(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) {
+	call = new(MessageCall)
+	call.Done = make(chan *MessageCall, 10)
+	call.Args = args
+	call.Reply = reply
+	this.pendingmutex.Lock()
+	seq := this.seq
+	this.seq++
+	this.pending[seq] = call
+	this.pendingmutex.Unlock()
+	if cseq, ok := ctx.Value(lcore.CallSeqKey).(*uint64); ok {
+		*cseq = seq
+	}
+	var client lcore.IConnClient
+	if client, err = this.getclient(ctx, servicePath); err != nil {
+		return
+	}
+	err = this.send(client, call, seq)
+	return
+}
+
+func (this *RPCL) getclient(ctx context.Context, servicePath string) (client lcore.IConnClient, err error) {
+	nodes := this.selector.Select(ctx, servicePath)
+	if nodes == nil || len(nodes) == 0 {
+		err = fmt.Errorf("no found any node:%s", servicePath)
+		this.Errorf("selector.Select err:%s", err)
+		return
+	}
+	if client, err = this.cpool.GetClient(nodes[0]); err != nil {
+		this.Errorf("get client err:%s", err)
+		return
+	}
+	return
+}
+
+func (this *RPCL) send(client lcore.IConnClient, call *MessageCall, seq uint64) (err error) {
 	var (
 		data    []byte
 		allData *[]byte

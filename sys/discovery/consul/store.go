@@ -139,7 +139,7 @@ func (this *ConsulStore) Exists(key string) (bool, error) {
 	return true, nil
 }
 func (this *ConsulStore) List(directory string) ([]*core.KVPair, error) {
-	pairs, _, err := this.client.KV().List(this.normalize(directory), nil)
+	pairs, _, err := this.client.KV().List(this.normalize(directory), &api.QueryOptions{WaitTime: 5 * time.Second})
 	if err != nil {
 		return nil, err
 	}

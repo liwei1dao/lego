@@ -61,7 +61,7 @@ func (this *Discovery) Start() (err error) {
 	)
 	ps, err = this.store.List(this.options.BasePath)
 	if err != nil && err != dcore.ErrKeyNotFound {
-		log.Infof("cannot get services of from registry: %v, err: %v", this.options.BasePath, err)
+		this.Errorf("cannot get services of from registry: %v, err: %v", this.options.BasePath, err)
 		return err
 	}
 
@@ -112,7 +112,7 @@ func (this *Discovery) Start() (err error) {
 	return nil
 }
 
-func (this *Discovery) Stop() error {
+func (this *Discovery) Close() error {
 	_ = this.store.Delete(this.options.BasePath)
 	this.stopregisterSignal <- struct{}{}
 	this.stopwatchSignal <- struct{}{}

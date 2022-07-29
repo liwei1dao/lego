@@ -82,44 +82,46 @@ func (this *ServiceBase) Start() (err error) {
 }
 
 func (this *ServiceBase) Run(mod ...core.IModule) {
-	for _, v := range mod {
-		if sf, ok := this.Service.GetSettings().Modules[string(v.GetType())]; ok {
-			this.modules[v.GetType()] = &defaultModule{
-				seetring: sf,
-				mi:       v,
-				closeSig: make(chan bool, 1),
+	go func() {
+		for _, v := range mod {
+			if sf, ok := this.Service.GetSettings().Modules[string(v.GetType())]; ok {
+				this.modules[v.GetType()] = &defaultModule{
+					seetring: sf,
+					mi:       v,
+					closeSig: make(chan bool, 1),
+				}
+			} else {
+				this.modules[v.GetType()] = &defaultModule{
+					seetring: make(map[string]interface{}),
+					mi:       v,
+					closeSig: make(chan bool, 1),
+				}
+				log.Warnf("注册模块【%s】 没有对应的配置信息", v.GetType())
 			}
-		} else {
-			this.modules[v.GetType()] = &defaultModule{
-				seetring: make(map[string]interface{}),
-				mi:       v,
-				closeSig: make(chan bool, 1),
-			}
-			log.Warnf("注册模块【%s】 没有对应的配置信息", v.GetType())
 		}
-	}
-	for _, v := range this.modules {
-		options := v.mi.NewOptions()
-		if err := options.LoadConfig(v.seetring); err == nil {
-			err := v.mi.Init(this.Service, v.mi, options)
+		for _, v := range this.modules {
+			options := v.mi.NewOptions()
+			if err := options.LoadConfig(v.seetring); err == nil {
+				err := v.mi.Init(this.Service, v.mi, options)
+				if err != nil {
+					log.Panicf(fmt.Sprintf("初始化模块【%s】错误 err:%v", v.mi.GetType(), err))
+				}
+			} else {
+				log.Panicf(fmt.Sprintf("模块【%s】 Options:%v 配置错误 err:%v", v.mi.GetType(), v.seetring, err))
+			}
+		}
+		for _, v := range this.modules {
+			err := v.mi.Start()
 			if err != nil {
-				log.Panicf(fmt.Sprintf("初始化模块【%s】错误 err:%v", v.mi.GetType(), err))
+				log.Panicf(fmt.Sprintf("启动模块【%s】错误 err:%v", v.mi.GetType(), err))
 			}
-		} else {
-			log.Panicf(fmt.Sprintf("模块【%s】 Options:%v 配置错误 err:%v", v.mi.GetType(), v.seetring, err))
 		}
-	}
-	for _, v := range this.modules {
-		err := v.mi.Start()
-		if err != nil {
-			log.Panicf(fmt.Sprintf("启动模块【%s】错误 err:%v", v.mi.GetType(), err))
+		for _, v := range this.modules {
+			v.wg.Add(1)
+			go v.run()
 		}
-	}
-	for _, v := range this.modules {
-		v.wg.Add(1)
-		go v.run()
-	}
-	event.TriggerEvent(core.Event_ServiceStartEnd) //广播事件
+		event.TriggerEvent(core.Event_ServiceStartEnd) //广播事件
+	}()
 	//监听外部关闭服务信号
 	c := make(chan os.Signal, 1)
 	//添加进程结束信号
