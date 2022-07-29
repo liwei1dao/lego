@@ -7,7 +7,6 @@ require (
 	cloud.google.com/go/storage v1.10.0
 	firebase.google.com/go/v4 v4.7.1
 	github.com/Shopify/sarama v1.30.1
-	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/ZZMarquis/gm v1.3.2
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.885
 	github.com/aliyun/aliyun-oss-go-sdk v2.1.6+incompatible
@@ -17,18 +16,17 @@ require (
 	github.com/denisenkom/go-mssqldb v0.9.0
 	github.com/disintegration/imaging v1.6.2
 	github.com/eclipse/paho.mqtt.golang v1.3.1
-	github.com/go-ole/go-ole v1.2.1 // indirect
-	github.com/go-ping/ping v0.0.0-20211130115550-779d1e919534
 	github.com/go-playground/validator/v10 v10.10.1
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/go-zookeeper/zk v1.0.2
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/godror/godror v0.25.3
+	github.com/gogo/protobuf v1.3.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/protobuf v1.5.2
+	github.com/golang/snappy v0.0.4
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
-	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/consul/api v1.12.0
 	github.com/hashicorp/go-msgpack v1.1.5 // indirect
 	github.com/hashicorp/go-sockaddr v1.0.2 // indirect
@@ -40,7 +38,6 @@ require (
 	github.com/lib/pq v1.9.0 // indirect
 	github.com/liwei1dao/dm v0.0.0-20211103094420-938edf103cf0
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
-	github.com/mitchellh/hashstructure v1.1.0
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/nacos-group/nacos-sdk-go v1.0.8
 	github.com/natefinch/lumberjack v2.0.0+incompatible
@@ -50,12 +47,13 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/xid v1.3.0
 	github.com/satori/go.uuid v1.2.0
-	github.com/shirou/gopsutil v3.20.12+incompatible
 	github.com/smallnest/rpcx v1.7.4
 	github.com/smartystreets/assertions v1.1.0 // indirect
+	github.com/tinylib/msgp v1.1.6
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/ugorji/go/codec v1.2.7
-	github.com/valyala/fastrand v1.1.0
+	github.com/valyala/bytebufferpool v1.0.0
+	github.com/vmihailenco/msgpack/v5 v5.3.5
 	github.com/wolfogre/go-pprof-practice v0.0.0-20190402114113-8ce266a210ee
 	go.mongodb.org/mongo-driver v1.5.1
 	go.uber.org/zap v1.21.0

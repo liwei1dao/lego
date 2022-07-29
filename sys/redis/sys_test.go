@@ -188,3 +188,66 @@ func Test_Redis_Lua_HSETALL(t *testing.T) {
 		fmt.Printf("data: %v", result)
 	}
 }
+
+func Test_Redis_Lua_Queue(t *testing.T) {
+	//Redis 自定义脚本 批量读取队列数据
+	script := redis.NewScript(`
+	local count	= tonumber(ARGV[1])
+	local k   = tostring(ARGV[3])
+	local keys = {}
+	local out = {}
+	local n = 1
+	for i, v in ipairs(KEYS) do
+		if (i == 1) then
+			for i=n,#ARGV,1 do
+				n = n+1
+				if ARGV[i] == "#end" then
+					break
+				end
+			end
+		elseif (i == 2) then
+			for i=n,#ARGV,1 do
+				n = n+1
+				if ARGV[i] == "#end" then
+					break
+				end
+			end
+		else
+			local key = v
+			local argv = {}
+			table.insert(keys, key)
+			for i=n,#ARGV,1 do
+				n = n+1
+				if ARGV[i] == "#end" then
+					redis.call("HMSet", key,unpack(argv))
+					break
+				else
+					table.insert(argv, ARGV[i])
+				end
+			end
+		end
+	end
+	redis.call("RPush", k,unpack(keys))
+	local c = tonumber(redis.call("LLEN", k))
+	if (c > count) then
+		local off = c-count
+		out = redis.call("LRANGE", k,0,off-1)
+		redis.call("LTRIM", k,off,-1)
+		for i, v in ipairs(out) do
+			redis.call("DEL", v)
+		end
+	end
+	return out
+	`)
+	sha, err := script.Result()
+	if err != nil {
+		fmt.Println(err)
+	}
+	ret := redis.EvalSha(redis.Context(), sha, []string{"count", "key", "Test_Redis_Lua_Queue_1", "Test_Redis_Lua_Queue_2", "Test_Redis_Lua_Queue_3"}, "10", "#end", "Test_Redis_Lua_Queue", "#end", "a", "1", "b", "2", "#end", "a1", "11", "b1", "21", "#end", "a3", "13", "b3", "23", "#end")
+	if result, err := ret.Result(); err != nil {
+		fmt.Printf("Execute Redis err: %v", err.Error())
+	} else {
+		fmt.Printf("data: %v", result)
+	}
+	return
+}

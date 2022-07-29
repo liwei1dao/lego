@@ -24,9 +24,13 @@ const ( //默认事件
 )
 
 const (
-	S_Category_SystemService   S_Category = "SystemService"   //系统服务类型
-	S_Category_GateService     S_Category = "GateService"     //网关服务类型
-	S_Category_BusinessService S_Category = "BusinessService" //业务服务器
+	SCategory_SystemService   = "SystemService"   //系统服务类型
+	SCategory_GateService     = "GateService"     //网关服务类型
+	SCategory_BusinessService = "BusinessService" //业务服务器
+)
+
+const (
+	ServiceMateKye_Category = "category"
 )
 
 type ServiceSttings struct {
@@ -105,17 +109,6 @@ type IServiceMonitor interface {
 //Monitor 数据
 type (
 	//服务节点
-	ServiceNode struct {
-		Tag       string     `json:"Tag"`       //服务集群标签
-		Type      string     `json:"Type"`      //服务类型
-		Category  S_Category `json:"Category"`  //服务列别
-		Id        string     `json:"Id"`        //服务Id
-		Version   string     `json:"Version"`   //服务版本
-		IP        string     `json:"Ip"`        //服务Ip
-		Port      int        `json:"Port"`      //端口
-		RpcId     string     `json:"RpcId"`     //服务通信Id
-		PreWeight float64    `json:"PreWeight"` //服务负载权重
-	}
 	SettingItem struct {
 		ItemName string
 		IsWrite  bool

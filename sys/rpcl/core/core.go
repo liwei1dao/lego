@@ -2,25 +2,19 @@ package core
 
 import (
 	"context"
-	"fmt"
-	"reflect"
-	"runtime"
-	"sync"
 	"time"
 
+	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
-	"github.com/liwei1dao/lego/utils/codec"
+	"github.com/liwei1dao/lego/sys/rpcl/protocol"
 )
 
-var TypeOfError = reflect.TypeOf((*error)(nil)).Elem()
-var TypeOfContext = reflect.TypeOf((*context.Context)(nil)).Elem()
-
-type NewConnectType int //通信类型
+type ConnectType int //通信类型
 const (
-	Http  NewConnectType = iota //http  连接对象
-	Kafka                       //Kafka 连接
-	Nats                        //Nats  连接
-	Tcp                         //Tcp   连接
+	Http  ConnectType = iota //http  连接对象
+	Kafka                    //Kafka 连接
+	Nats                     //Nats  连接
+	Tcp                      //Tcp   连接
 )
 
 type SelectMode int //选择器类型
@@ -32,73 +26,44 @@ const (
 	RuleRobin                            //规则选择器 默认
 )
 
-type (
-	ISys interface {
-		log.Ilogf
-		Decoder() codec.IDecoder
-		Encoder() codec.IEncoder
-		GetUpdateInterval() time.Duration //更新间隔
-		GetBasePath() string              //根节点路径
-		GetNodePath() string              //节点路径
-		GetServiceNode() *ServiceNode     //获取服务节点信息
-		GetKafkaAddr() []string           //kafka 连接地址
-		GetKafkaVersion() string          //kafka版本号
-		Receive(message *Message)         //接收到远程消息
-	}
-	//路由
-	IRoute interface {
-	}
-	//选择器
-	ISelector interface {
-		Select(ctx context.Context, route IRoute, serviceMethod string) string // SelectFunc
-		UpdateServer(servers map[string]string)
-	}
-	//发现
-	IDiscovery interface {
-		GetServices() []*ServiceNode
-		Close()
-	}
-	IConnect interface {
-		Start() (err error)
-		Close() (err error)
-		Go(ctx context.Context, servicePath, message []byte) (err error)
-	}
-	//服务对象
-	Server struct {
-		sync.Mutex
-		Fn        reflect.Value //执行方法
-		ArgType   reflect.Type  //请求参数类型
-		ReplyType reflect.Type  //返回数据类型
-		IsActive  bool          //是否激活
-	}
+//系统对象
+type ISys interface {
+	log.Ilogf
+	GetNodePath() string                                  //服务节点路径
+	Handle(client IConnClient, message *protocol.Message) //接收到远程消息
+}
 
-	//异步返回结构
-	Call struct {
-		Args  interface{} //请求参数
-		Reply interface{} //返回参数
-		Error error       //错误信息
-		Done  chan *Call
-	}
-)
+//路由
+type ICodec interface {
+	Marshal(v interface{}) ([]byte, error)
+	Unmarshal(data []byte, v interface{}) error
+}
 
-func (this *Server) Call(ctx context.Context, argv, replyv reflect.Value) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			buf := make([]byte, 4096)
-			n := runtime.Stack(buf, false)
-			buf = buf[:n]
+//选择器
+type ISelector interface {
+	Select(ctx context.Context, servicePath string) []*core.ServiceNode
+	UpdateServer(servers []*core.ServiceNode)
+}
 
-			err = fmt.Errorf("%v, argv: %+v, stack: %s",
-				r, argv.Interface(), buf)
-		}
-	}()
+//连接对象池
+type IConnPool interface {
+	Start() error
+	GetClient(server *core.ServiceNode) (client IConnClient, err error)
+	Close() error
+}
 
-	// Invoke the method, providing a new value for the reply.
-	returnValues := this.Fn.Call([]reflect.Value{reflect.ValueOf(ctx), argv, replyv})
-	// The return value for the method is an error.
-	errInter := returnValues[0].Interface()
-	if errInter != nil {
-		return errInter.(error)
-	}
-	return nil
+type IConnClient interface {
+	Write(msg []byte) (err error)
+}
+
+//连接配置信息
+type Config struct {
+	ConnectType       ConnectType   //通信类型
+	Endpoints         []string      //节点信息
+	ConnectionTimeout time.Duration //连接超时
+	ReadTimeout       time.Duration //读取超时
+	WriteTimeout      time.Duration //写入超时
+	Username          string        //用户名
+	Password          string        //密码
+	Vsersion          string        //版本
 }

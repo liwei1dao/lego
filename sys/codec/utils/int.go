@@ -168,7 +168,7 @@ func ReadUint32ForString(buf []byte) (ret uint32, n int, err error) {
 		return
 	}
 	ret = uint32(ind)
-	if len(buf) > 10 {
+	if len(buf) > 11 {
 		i := 1
 		ind2 := intDigits[buf[i]]
 		if ind2 == invalidCharForNumber {
@@ -246,11 +246,13 @@ func ReadUint32ForString(buf []byte) (ret uint32, n int, err error) {
 				err = errors.New("ReadUint32ForString overflow")
 				return
 			}
+			n = i
 			ret = value2
 			continue
 		}
 		ret = (ret << 3) + (ret << 1) + uint32(ind)
 	}
+	n = len(buf)
 	return
 }
 
@@ -266,8 +268,8 @@ func ReadUint64ForString(buf []byte) (ret uint64, n int, err error) {
 		return
 	}
 	ret = uint64(ind)
-	if len(buf) > 10 {
-		i := 0
+	if len(buf) > 11 {
+		i := 1
 		ind2 := intDigits[buf[i]]
 		if ind2 == invalidCharForNumber {
 			n = i
@@ -345,10 +347,12 @@ func ReadUint64ForString(buf []byte) (ret uint64, n int, err error) {
 				return
 			}
 			ret = value2
+			n = i
 			continue
 		}
 		ret = (ret << 3) + (ret << 1) + uint64(ind)
 	}
+	n = len(buf)
 	return
 }
 

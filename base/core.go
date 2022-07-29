@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/liwei1dao/lego/core"
-	"github.com/smallnest/rpcx/client"
+	"github.com/liwei1dao/lego/sys/rpcl"
 )
 
 type Result struct {
@@ -31,50 +31,17 @@ type IServiceSession interface {
 
 type IClusterServiceBase interface {
 	core.IService
-	GetTag() string                 //获取集群标签
-	GetCategory() core.S_Category   //服务类别 例如游戏服
-	GetRpcId() string               //获取rpc通信id
-	GetPreWeight() float64          //集群服务负载值 暂时可以不用理会
-	SetPreWeight(weight int32)      //设置服务器权重
-	SetSelector(selector ISelector) //设置选择器
-}
-
-type IClusterServiceSession interface {
-	IServiceSession
-	CallNR(_func core.Rpc_Key, params ...interface{}) (err error)
-	Call(_func core.Rpc_Key, params ...interface{}) (interface{}, error)
+	GetTag() string            //获取集群标签
+	SetPreWeight(weight int32) //设置服务器权重
 }
 
 type IClusterService interface {
 	IClusterServiceBase
-	GetSessionsByCategory(category core.S_Category) (ss []IClusterServiceSession)         //按服务类别获取服务列表
-	DefauleRpcRouteRules(stype string, sip string) (ss IClusterServiceSession, err error) //默认rpc路由规则
-	RpcInvokeById(sId string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error)
-	RpcInvokeByIds(sId []string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (results map[string]*Result, err error)               //执行远程服务Rpc方法
-	RpcInvokeByType(sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error)                      //根据路由规则执行远程方法
-	RpcInvokeByIp(sIp, sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (result interface{}, err error)                   //根据目标IP和类型执行远程方法
-	RpcInvokeByIps(sIp []string, sType string, rkey core.Rpc_Key, iscall bool, arg ...interface{}) (results map[string]*Result, err error) //根据目标IP集和类型执行远程方法
-	ReleaseRpc(rkey core.Rpc_Key, arg ...interface{})                                                                                      //发布Rpc
-	Register(id core.Rpc_Key, f interface{})                                                                                               //注册RPC远程方法
-	RegisterGO(id core.Rpc_Key, f interface{})                                                                                             //注册RPC远程方法
-	//废弃此方法
-	Subscribe(id core.Rpc_Key, f interface{}) (err error)   //订阅Rpc
-	UnSubscribe(id core.Rpc_Key, f interface{}) (err error) //订阅Rpc
-}
-
-type IRPCXServiceSession interface {
-	IServiceSession
-	Call(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) error
-	Go(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) (*client.Call, error)
-}
-
-type IRPCXService interface {
-	IClusterServiceBase
 	Register(rcvr interface{}) (err error)
 	RegisterFunction(fn interface{}) (err error)
 	RegisterFunctionName(name string, fn interface{}) (err error)
-	RpcCallById(sId string, serviceMethod string, ctx context.Context, args interface{}, reply interface{}) (err error)
-	RpcGoById(sId string, serviceMethod string, ctx context.Context, args interface{}, reply interface{}) (call *client.Call, err error)
-	RpcCallByType(sType string, serviceMethod string, ctx context.Context, args interface{}, reply interface{}) (err error)
-	RpcGoByType(sType string, serviceMethod string, ctx context.Context, args interface{}, reply interface{}) (call *client.Call, err error)
+	RpcCall(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}) (err error)
+	RpcGo(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}, done chan *rpcl.MessageCall) (call *rpcl.MessageCall, err error)
+	RpcNoCall(ctx context.Context, servicePath, serviceMethod string, args interface{}) (err error)
+	Broadcast(ctx context.Context, servicePath, serviceMethod string, args interface{}) (err error)
 }

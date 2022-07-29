@@ -240,11 +240,11 @@ func (this *numericMapKeyDecoder) GetType() reflect.Kind {
 	return this.decoder.GetType()
 }
 func (this *numericMapKeyDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
-	if extra.ReadKeyStart() {
+	if !extra.ReadKeyStart() {
 		return
 	}
 	this.decoder.Decode(ptr, extra)
-	if extra.ReadKeyEnd() {
+	if !extra.ReadKeyEnd() {
 		return
 	}
 }
