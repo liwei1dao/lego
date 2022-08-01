@@ -15,6 +15,7 @@ import (
 	"github.com/liwei1dao/lego/sys/rpcl/connpool"
 	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
 	"github.com/liwei1dao/lego/sys/rpcl/protocol"
+	"github.com/liwei1dao/lego/sys/rpcl/selector"
 )
 
 var TypeOfError = reflect.TypeOf((*error)(nil)).Elem()
@@ -49,6 +50,7 @@ func newSys(options *Options) (sys *RPCL, err error) {
 	); err != nil {
 		return
 	}
+	sys.selector, err = selector.NewSelector(sys.discovery.GetServices())
 	return
 }
 
