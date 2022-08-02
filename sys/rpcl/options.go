@@ -57,7 +57,7 @@ func SetLog(v log.ILog) Option {
 func newOptions(config map[string]interface{}, opts ...Option) (options *Options, err error) {
 	options = &Options{
 		Debug: true,
-		Log:   log.Clone(log.SetLoglayer(2)),
+		Log:   log.Clone(2),
 	}
 	if config != nil {
 		mapstructure.Decode(config, options)
@@ -71,7 +71,7 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 func newOptionsByOption(opts ...Option) (options *Options, err error) {
 	options = &Options{
 		Debug: true,
-		Log:   log.Clone(log.SetLoglayer(2)),
+		Log:   log.Clone(2),
 	}
 	for _, o := range opts {
 		o(options)

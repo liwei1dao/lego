@@ -49,7 +49,7 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 		RpcExpired:    5,
 		Kafka_Version: "1.0.0",
 		Debug:         true,
-		Log:           log.Clone(log.SetLoglayer(2)),
+		Log:           log.Clone(2),
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
@@ -67,7 +67,7 @@ func newOptionsByOption(opts ...Option) Options {
 		RpcExpired:    5,
 		Kafka_Version: "1.0.0",
 		Debug:         true,
-		Log:           log.Clone(log.SetLoglayer(2)),
+		Log:           log.Clone(2),
 	}
 	for _, o := range opts {
 		o(&options)

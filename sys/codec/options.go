@@ -18,7 +18,7 @@ func newOptions(config map[string]interface{}, opts ...core.Option) core.Options
 		o(&options)
 	}
 	if options.Debug && options.Log == nil {
-		options.Log = log.Clone()
+		options.Log = log.Clone(2)
 	}
 	return options
 }
@@ -32,7 +32,7 @@ func newOptionsByOption(opts ...core.Option) core.Options {
 		o(&options)
 	}
 	if options.Debug && options.Log == nil {
-		options.Log = log.Clone()
+		options.Log = log.Clone(2)
 	}
 	return options
 }

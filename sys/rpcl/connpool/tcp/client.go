@@ -40,6 +40,7 @@ type Client struct {
 func (this *Client) ServiceNode() *core.ServiceNode {
 	return this.node
 }
+
 func (this *Client) ResetHbeat() {
 	atomic.StoreInt32(&this.hbeat, 0)
 }
@@ -50,6 +51,7 @@ func (this *Client) Start() {
 	go this.heartbeat()
 	return
 }
+
 func (this *Client) Write(msg []byte) (err error) {
 	_, err = this.conn.Write(msg)
 	if err != nil {

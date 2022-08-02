@@ -12,7 +12,7 @@ import (
 )
 
 func Test_sys(t *testing.T) {
-	if err := log.OnInit(nil, log.SetLoglevel(log.DebugLevel), log.SetDebugMode(true)); err != nil {
+	if err := log.OnInit(nil, log.SetLoglevel(log.DebugLevel)); err != nil {
 		fmt.Printf("log init err:%v", err)
 		return
 	}

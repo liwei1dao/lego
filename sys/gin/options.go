@@ -52,7 +52,6 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 		CertFile:   "",
 		KeyFile:    "",
 		Debug:      true,
-		Log:        log.Clone(log.SetLoglayer(2)),
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
@@ -61,7 +60,7 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 		o(options)
 	}
 	if options.Debug && options.Log == nil {
-		if options.Log = log.Clone(log.SetLoglayer(2)); options.Log == nil {
+		if options.Log = log.Clone(2); options.Log == nil {
 			err = errors.New("log is nil")
 		}
 	}
@@ -74,13 +73,12 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 		CertFile:   "",
 		KeyFile:    "",
 		Debug:      true,
-		Log:        log.Clone(log.SetLoglayer(2)),
 	}
 	for _, o := range opts {
 		o(options)
 	}
 	if options.Debug && options.Log == nil {
-		if options.Log = log.Clone(log.SetLoglayer(2)); options.Log == nil {
+		if options.Log = log.Clone(2); options.Log == nil {
 			err = errors.New("log is nil")
 		}
 	}

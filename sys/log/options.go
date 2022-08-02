@@ -1,114 +1,146 @@
 package log
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/liwei1dao/lego/utils/mapstructure"
-)
-
-type Loglevel int8
-
-const (
-	DebugLevel Loglevel = iota
-	InfoLevel
-	WarnLevel
-	ErrorLevel
-	PanicLevel
-	FatalLevel
 )
 
 type LogEncoder int8
 
 const (
-	Console LogEncoder = iota
-	JSON
+	TextEncoder LogEncoder = iota
+	JSONEncoder
 )
+
+type Loglevel int8
+
+const (
+	PanicLevel Loglevel = iota
+	FatalLevel
+	ErrorLevel
+	WarnLevel
+	InfoLevel
+	DebugLevel
+)
+
+func (level Loglevel) String() string {
+	if b, err := level.MarshalText(); err == nil {
+		return string(b)
+	} else {
+		return "unknown"
+	}
+}
+
+func (level Loglevel) MarshalText() ([]byte, error) {
+	switch level {
+	case DebugLevel:
+		return []byte("debug"), nil
+	case InfoLevel:
+		return []byte("info"), nil
+	case WarnLevel:
+		return []byte("warn"), nil
+	case ErrorLevel:
+		return []byte("error"), nil
+	case FatalLevel:
+		return []byte("fatal"), nil
+	case PanicLevel:
+		return []byte("panic"), nil
+	}
+
+	return nil, fmt.Errorf("not a valid logrus level %d", level)
+}
 
 type Option func(*Options)
 type Options struct {
-	FileName      string     //日志文件名包含
-	Loglevel      Loglevel   //日志输出级别
-	Debugmode     bool       //是否debug模式
-	Encoder       LogEncoder //日志输出样式
-	Loglayer      int        //日志堆栈信息打印层级
-	LogMaxSize    int        //每个日志文件最大尺寸 单位 M 默认 1024M
-	LogMaxBackups int        //最多保留备份个数	默认 10个
-	LogMaxAge     int        //文件最多保存多少天 默认 7天
+	FileName     string     //日志文件名包含
+	Loglevel     Loglevel   //日志输出级别
+	ReportCaller bool       //是否输出堆栈信息
+	CallerSkip   int        //堆栈深度
+	Encoder      LogEncoder //日志输出样式
+	RotationTime int32      //日志分割时间 单位 小时
+	MaxAgeTime   int32      //日志最大保存时间 单位天
 }
 
+///日志文件名包含
 func SetFileName(v string) Option {
 	return func(o *Options) {
 		o.FileName = v
 	}
 }
 
+///日志输出级别 debug info warning error fatal panic
 func SetLoglevel(v Loglevel) Option {
 	return func(o *Options) {
 		o.Loglevel = v
 	}
 }
 
-func SetDebugMode(v bool) Option {
+func SetReportCaller(v bool) Option {
 	return func(o *Options) {
-		o.Debugmode = v
+		o.ReportCaller = v
 	}
 }
+func SetCallerSkip(v int) Option {
+	return func(o *Options) {
+		o.CallerSkip = v
+	}
+}
+
+///日志输出样式
 func SetEncoder(v LogEncoder) Option {
 	return func(o *Options) {
 		o.Encoder = v
 	}
 }
-func SetLoglayer(v int) Option {
+
+///日志分割时间 单位 小时
+func SetRotationTime(v int32) Option {
 	return func(o *Options) {
-		o.Loglayer = v
-	}
-}
-func SetLogMaxSize(v int) Option {
-	return func(o *Options) {
-		o.LogMaxSize = v
-	}
-}
-func SetLogMaxBackups(v int) Option {
-	return func(o *Options) {
-		o.LogMaxBackups = v
-	}
-}
-func SetLogMaxAge(v int) Option {
-	return func(o *Options) {
-		o.LogMaxAge = v
+		o.RotationTime = v
 	}
 }
 
-func newOptions(config map[string]interface{}, opts ...Option) Options {
-	options := Options{
-		FileName:      "./lego.log",
-		Loglevel:      WarnLevel,
-		Debugmode:     false,
-		Encoder:       Console,
-		Loglayer:      2,
-		LogMaxSize:    1024,
-		LogMaxBackups: 10,
-		LogMaxAge:     7,
+///日志最大保存时间 单位天
+func SetMaxAgeTime(v int32) Option {
+	return func(o *Options) {
+		o.RotationTime = v
+	}
+}
+func newOptions(config map[string]interface{}, opts ...Option) (options *Options, err error) {
+	options = &Options{
+		FileName:     "log",
+		Loglevel:     DebugLevel,
+		RotationTime: 24,
+		MaxAgeTime:   7,
+		Encoder:      TextEncoder,
+		CallerSkip:   1,
 	}
 	if config != nil {
-		mapstructure.Decode(config, &options)
+		mapstructure.Decode(config, options)
 	}
 	for _, o := range opts {
-		o(&options)
+		o(options)
 	}
-	return options
+	if options.RotationTime <= 0 || options.MaxAgeTime <= 0 {
+		err = errors.New("log options RotationTime or MaxAgeTime is zero!")
+		return
+	}
+	return
 }
 
-func newOptionsByOption(opts ...Option) Options {
-	options := Options{
-		FileName:      "./lego.log",
-		Loglevel:      WarnLevel,
-		Debugmode:     false,
-		Loglayer:      2,
-		LogMaxSize:    1024,
-		LogMaxBackups: 10,
-		LogMaxAge:     7,
+func newOptionsByOption(opts ...Option) (options *Options, err error) {
+	options = &Options{
+		FileName:     "log",
+		Loglevel:     DebugLevel,
+		RotationTime: 24,
+		MaxAgeTime:   7,
+		Encoder:      TextEncoder,
+		CallerSkip:   1,
 	}
 	for _, o := range opts {
-		o(&options)
+		o(options)
 	}
-	return options
+	return
 }

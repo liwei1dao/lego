@@ -32,8 +32,11 @@ require (
 	github.com/hashicorp/go-sockaddr v1.0.2 // indirect
 	github.com/jlaffaye/ftp v0.0.0-20220309012535-813c8a838452
 	github.com/jmoiron/sqlx v1.3.1
+	github.com/jonboulle/clockwork v0.3.0 // indirect
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/json-iterator/go v1.1.12
+	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
+	github.com/lestrrat-go/strftime v1.0.6 // indirect
 	github.com/lib/pq v1.9.0 // indirect
 	github.com/liwei1dao/dm v0.0.0-20211103094420-938edf103cf0
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
@@ -45,6 +48,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/xid v1.3.0
 	github.com/satori/go.uuid v1.2.0
+	github.com/sirupsen/logrus v1.8.1
 	github.com/smallnest/rpcx v1.7.4
 	github.com/smartystreets/assertions v1.1.0 // indirect
 	github.com/tinylib/msgp v1.1.6
@@ -58,6 +62,7 @@ require (
 	golang.org/x/crypto v0.0.0-20220408190544-5352b0902921
 	golang.org/x/net v0.0.0-20220407224826-aac1ed45d8e3
 	golang.org/x/oauth2 v0.0.0-20210402161424-2e8d93401602
+	golang.org/x/sys v0.0.0-20220408201424-a24fb2fb8a0f
 	golang.org/x/text v0.3.7
 	gonum.org/v1/gonum v0.8.2
 	google.golang.org/api v0.44.0
