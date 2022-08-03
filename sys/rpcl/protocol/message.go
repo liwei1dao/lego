@@ -9,8 +9,8 @@ import (
 	"github.com/liwei1dao/lego/core"
 	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
 	"github.com/liwei1dao/lego/utils/codec"
+	"github.com/liwei1dao/lego/utils/pools"
 	"github.com/smallnest/rpcx/util"
-	"github.com/valyala/bytebufferpool"
 )
 
 var bufferPool = util.NewLimitedPool(512, 4096)
@@ -182,7 +182,7 @@ func (this Message) Clone() lcore.IMessage {
 }
 
 func (m Message) EncodeSlicePointer() *[]byte {
-	bb := bytebufferpool.Get()
+	bb := pools.BufferPoolGet()
 	encodeMetadata(m.metadata, bb)
 	fdata, _ := proto.Marshal(m.from)
 	meta := bb.Bytes()
@@ -226,7 +226,7 @@ func (m Message) EncodeSlicePointer() *[]byte {
 	binary.BigEndian.PutUint32((*data)[metaStart:metaStart+4], uint32(len(meta)))
 	copy((*data)[metaStart+4:], meta)
 
-	bytebufferpool.Put(bb)
+	bb.Free()
 
 	binary.BigEndian.PutUint32((*data)[payLoadStart:payLoadStart+4], uint32(len(payload)))
 	copy((*data)[payLoadStart+4:], payload)
@@ -243,7 +243,7 @@ func (m Message) WriteTo(w io.Writer) (int64, error) {
 		return n, err
 	}
 
-	bb := bytebufferpool.Get()
+	bb := pools.BufferPoolGet()
 	encodeMetadata(m.metadata, bb)
 	meta := bb.Bytes()
 
@@ -296,7 +296,7 @@ func (m Message) WriteTo(w io.Writer) (int64, error) {
 		return n, err
 	}
 
-	bytebufferpool.Put(bb)
+	bb.Free()
 
 	// write payload
 	err = binary.Write(w, binary.BigEndian, uint32(len(payload)))
@@ -312,7 +312,7 @@ func PutData(data *[]byte) {
 	bufferPool.Put(data)
 }
 
-func encodeMetadata(m map[string]string, bb *bytebufferpool.ByteBuffer) {
+func encodeMetadata(m map[string]string, bb *pools.Buffer) {
 	if len(m) == 0 {
 		return
 	}

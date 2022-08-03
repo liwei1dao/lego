@@ -10,7 +10,7 @@ import (
 	"unicode"
 	"unsafe"
 
-	"github.com/liwei1dao/lego/sys/codec/core"
+	"github.com/liwei1dao/lego/utils/codec/codecore"
 
 	"github.com/modern-go/reflect2"
 )
@@ -25,11 +25,11 @@ type Binding struct {
 	Field     reflect2.StructField
 	FromNames []string
 	ToNames   []string
-	Encoder   core.IEncoder
-	Decoder   core.IDecoder
+	Encoder   codecore.IEncoder
+	Decoder   codecore.IDecoder
 }
 
-func encoderOfStruct(ctx *core.Ctx, typ reflect2.Type) core.IEncoder {
+func encoderOfStruct(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
 	type bindingTo struct {
 		binding *Binding
 		toName  string
@@ -47,7 +47,7 @@ func encoderOfStruct(ctx *core.Ctx, typ reflect2.Type) core.IEncoder {
 				if old.toName != toName {
 					continue
 				}
-				old.ignored, new.ignored = resolveConflictBinding(ctx.Options(), old.binding, new.binding)
+				old.ignored, new.ignored = resolveConflictBinding(ctx.Config, old.binding, new.binding)
 			}
 			orderedBindings = append(orderedBindings, new)
 		}
@@ -64,10 +64,10 @@ func encoderOfStruct(ctx *core.Ctx, typ reflect2.Type) core.IEncoder {
 			})
 		}
 	}
-	return &structEncoder{ctx.ICodec, typ, finalOrderedFields}
+	return &structEncoder{typ, finalOrderedFields}
 }
 
-func decoderOfStruct(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
+func decoderOfStruct(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecoder {
 	bindings := map[string]*Binding{}
 	structDescriptor := describeStruct(ctx, typ)
 	for _, binding := range structDescriptor.Fields {
@@ -77,7 +77,7 @@ func decoderOfStruct(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
 				bindings[fromName] = binding
 				continue
 			}
-			ignoreOld, ignoreNew := resolveConflictBinding(ctx.Options(), old, binding)
+			ignoreOld, ignoreNew := resolveConflictBinding(ctx.Config, old, binding)
 			if ignoreOld {
 				delete(bindings, fromName)
 			}
@@ -91,25 +91,25 @@ func decoderOfStruct(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
 		fields[k] = binding.Decoder.(*structFieldDecoder)
 	}
 
-	if !ctx.Options().CaseSensitive {
+	if !ctx.Config.CaseSensitive {
 		for k, binding := range bindings {
 			if _, found := fields[strings.ToLower(k)]; !found {
 				fields[strings.ToLower(k)] = binding.Decoder.(*structFieldDecoder)
 			}
 		}
 	}
-	return createStructDecoder(ctx.ICodec, typ, fields)
+	return &structDecoder{ctx.Config, typ, fields}
 }
 
 //结构第编辑码构建
-func describeStruct(ctx *core.Ctx, typ reflect2.Type) *StructDescriptor {
+func describeStruct(ctx *codecore.Ctx, typ reflect2.Type) *StructDescriptor {
 	structType := typ.(*reflect2.UnsafeStructType)
 	embeddedBindings := []*Binding{}
 	bindings := []*Binding{}
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Field(i)
-		tag, hastag := field.Tag().Lookup(ctx.Options().TagKey)
-		if ctx.Options().OnlyTaggedField && !hastag && !field.Anonymous() {
+		tag, hastag := field.Tag().Lookup(ctx.Config.TagKey)
+		if ctx.Config.OnlyTaggedField && !hastag && !field.Anonymous() {
 			continue
 		}
 		if tag == "-" || field.Name() == "_" {
@@ -160,22 +160,22 @@ func describeStruct(ctx *core.Ctx, typ reflect2.Type) *StructDescriptor {
 	return createStructDescriptor(ctx, typ, bindings, embeddedBindings)
 }
 
-func createStructDescriptor(ctx *core.Ctx, typ reflect2.Type, bindings []*Binding, embeddedBindings []*Binding) *StructDescriptor {
+func createStructDescriptor(ctx *codecore.Ctx, typ reflect2.Type, bindings []*Binding, embeddedBindings []*Binding) *StructDescriptor {
 	structDescriptor := &StructDescriptor{
 		Type:   typ,
 		Fields: bindings,
 	}
-	processTags(structDescriptor, ctx.ICodec)
+	processTags(structDescriptor, ctx.Config)
 	allBindings := sortableBindings(append(embeddedBindings, structDescriptor.Fields...))
 	sort.Sort(allBindings)
 	structDescriptor.Fields = allBindings
 	return structDescriptor
 }
 
-func processTags(structDescriptor *StructDescriptor, codec core.ICodec) {
+func processTags(structDescriptor *StructDescriptor, config *codecore.Config) {
 	for _, binding := range structDescriptor.Fields {
 		shouldOmitEmpty := false
-		tagParts := strings.Split(binding.Field.Tag().Get(codec.Options().TagKey), ",")
+		tagParts := strings.Split(binding.Field.Tag().Get(config.TagKey), ",")
 		for _, tagPart := range tagParts[1:] {
 			if tagPart == "omitempty" {
 				shouldOmitEmpty = true
@@ -206,17 +206,9 @@ func calcFieldNames(originalFieldName string, tagProvidedFieldName string, whole
 	return fieldNames
 }
 
-func createStructDecoder(codec core.ICodec, typ reflect2.Type, fields map[string]*structFieldDecoder) core.IDecoder {
-	if codec.Options().DisallowUnknownFields {
-		return &structDecoder{typ: typ, fields: fields, disallowUnknownFields: true}
-	} else {
-		return &structDecoder{codec, typ, fields, false}
-	}
-}
-
-func resolveConflictBinding(opt *core.Options, old, new *Binding) (ignoreOld, ignoreNew bool) {
-	newTagged := new.Field.Tag().Get(opt.TagKey) != ""
-	oldTagged := old.Field.Tag().Get(opt.TagKey) != ""
+func resolveConflictBinding(config *codecore.Config, old, new *Binding) (ignoreOld, ignoreNew bool) {
+	newTagged := new.Field.Tag().Get(config.TagKey) != ""
+	oldTagged := old.Field.Tag().Get(config.TagKey) != ""
 	if newTagged {
 		if oldTagged {
 			if len(old.levels) > len(new.levels) {
@@ -245,7 +237,6 @@ func resolveConflictBinding(opt *core.Options, old, new *Binding) (ignoreOld, ig
 
 //结构对象 编解码-----------------------------------------------------------------------------------------------------------------------
 type structEncoder struct {
-	codec  core.ICodec
 	typ    reflect2.Type
 	fields []structFieldTo
 }
@@ -253,7 +244,7 @@ type structEncoder struct {
 func (codec *structEncoder) GetType() reflect.Kind {
 	return reflect.Struct
 }
-func (this *structEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (this *structEncoder) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	stream.WriteObjectStart()
 	isNotFirst := false
 	for _, field := range this.fields {
@@ -276,9 +267,8 @@ func (this *structEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	}
 }
 
-func (this *structEncoder) EncodeToMapJson(ptr unsafe.Pointer) (ret map[string]string, err error) {
+func (this *structEncoder) EncodeToMapJson(ptr unsafe.Pointer, w codecore.IWriter) (ret map[string]string, err error) {
 	ret = make(map[string]string)
-	stream := this.codec.BorrowStream()
 	for _, field := range this.fields {
 		if field.encoder.omitempty && field.encoder.IsEmpty(ptr) {
 			continue
@@ -286,13 +276,13 @@ func (this *structEncoder) EncodeToMapJson(ptr unsafe.Pointer) (ret map[string]s
 		if field.encoder.IsEmbeddedPtrNil(ptr) {
 			continue
 		}
-		stream.Reset(512)
-		field.encoder.Encode(ptr, stream)
-		if stream.Error() != nil && stream.Error() != io.EOF {
-			err = stream.Error()
+		w.Reset(512)
+		field.encoder.Encode(ptr, w)
+		if w.Error() != nil && w.Error() != io.EOF {
+			err = w.Error()
 			return
 		}
-		ret[field.toName] = BytesToString(stream.Buffer())
+		ret[field.toName] = BytesToString(w.Buffer())
 	}
 	return
 }
@@ -302,68 +292,67 @@ func (this *structEncoder) IsEmpty(ptr unsafe.Pointer) bool {
 }
 
 type structDecoder struct {
-	codec                 core.ICodec
-	typ                   reflect2.Type
-	fields                map[string]*structFieldDecoder
-	disallowUnknownFields bool
+	config *codecore.Config
+	typ    reflect2.Type
+	fields map[string]*structFieldDecoder
 }
 
 func (codec *structDecoder) GetType() reflect.Kind {
 	return reflect.Struct
 }
-func (this *structDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
-	if !extra.ReadObjectStart() {
+func (this *structDecoder) Decode(ptr unsafe.Pointer, r codecore.IReader) {
+	if !r.ReadObjectStart() {
 		return
 	}
-	this.decodeField(ptr, extra)
-	for extra.ReadMemberSplit() {
-		this.decodeField(ptr, extra)
+	this.decodeField(ptr, r)
+	for r.ReadMemberSplit() {
+		this.decodeField(ptr, r)
 	}
-	if extra.Error() != nil && extra.Error() != io.EOF && len(this.typ.Type1().Name()) != 0 {
-		extra.SetErr(fmt.Errorf("%v.%s", this.typ, extra.Error().Error()))
+	if r.Error() != nil && r.Error() != io.EOF && len(this.typ.Type1().Name()) != 0 {
+		r.SetErr(fmt.Errorf("%v.%s", this.typ, r.Error().Error()))
 	}
-	extra.ReadObjectEnd()
+	r.ReadObjectEnd()
 }
 
-func (this *structDecoder) decodeField(ptr unsafe.Pointer, extra core.IExtractor) {
+func (this *structDecoder) decodeField(ptr unsafe.Pointer, r codecore.IReader) {
 	var field string
 	var fieldDecoder *structFieldDecoder
 
-	field = extra.ReadString()
+	field = r.ReadString()
 	fieldDecoder = this.fields[field]
-	if fieldDecoder == nil && !this.codec.Options().CaseSensitive {
+	if fieldDecoder == nil && !this.config.CaseSensitive {
 		fieldDecoder = this.fields[strings.ToLower(field)]
 	}
 
 	if fieldDecoder == nil {
-		if this.disallowUnknownFields {
+		if this.config.DisallowUnknownFields {
 			msg := "found unknown field: " + field
-			extra.SetErr(fmt.Errorf("decodeField %s", msg))
+			r.SetErr(fmt.Errorf("decodeField %s", msg))
 			return
 		}
-		if !extra.ReadKVSplit() {
+		if !r.ReadKVSplit() {
 			return
 		}
-		extra.Skip() //跳过一个数据单元
+		r.Skip() //跳过一个数据单元
 		return
 	}
-	if !extra.ReadKVSplit() {
+	if !r.ReadKVSplit() {
 		return
 	}
-	fieldDecoder.Decode(ptr, extra)
+	fieldDecoder.Decode(ptr, r)
 }
 
 //解码对象从MapJson 中
-func (this *structDecoder) DecodeForMapJson(ptr unsafe.Pointer, extra map[string]string) (err error) {
+func (this *structDecoder) DecodeForMapJson(ptr unsafe.Pointer, r codecore.IReader, extra map[string]string) (err error) {
 	var fieldDecoder *structFieldDecoder
-	ext := this.codec.BorrowExtractor([]byte{})
+	ext := r.Get([]byte{})
 	for k, v := range extra {
 		fieldDecoder = this.fields[k]
-		if fieldDecoder == nil && !this.codec.Options().CaseSensitive {
+		if fieldDecoder == nil && !this.config.CaseSensitive {
 			fieldDecoder = this.fields[strings.ToLower(k)]
 		}
 		if fieldDecoder == nil {
-			if this.disallowUnknownFields {
+			if this.config.DisallowUnknownFields {
 				err = errors.New("found unknown field: " + k)
 				return
 			}
@@ -386,18 +375,18 @@ type structFieldTo struct {
 }
 type structFieldEncoder struct {
 	field        reflect2.StructField
-	fieldEncoder core.IEncoder
+	fieldEncoder codecore.IEncoder
 	omitempty    bool
 }
 
 func (this *structFieldEncoder) GetType() reflect.Kind {
 	return this.fieldEncoder.GetType()
 }
-func (encoder *structFieldEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (encoder *structFieldEncoder) Encode(ptr unsafe.Pointer, w codecore.IWriter) {
 	fieldPtr := encoder.field.UnsafeGet(ptr)
-	encoder.fieldEncoder.Encode(fieldPtr, stream)
-	if stream.Error() != nil && stream.Error() != io.EOF {
-		stream.SetErr(fmt.Errorf("%s: %s", encoder.field.Name(), stream.Error().Error()))
+	encoder.fieldEncoder.Encode(fieldPtr, w)
+	if w.Error() != nil && w.Error() != io.EOF {
+		w.SetErr(fmt.Errorf("%s: %s", encoder.field.Name(), w.Error().Error()))
 	}
 }
 
@@ -407,7 +396,7 @@ func (encoder *structFieldEncoder) IsEmpty(ptr unsafe.Pointer) bool {
 }
 
 func (encoder *structFieldEncoder) IsEmbeddedPtrNil(ptr unsafe.Pointer) bool {
-	isEmbeddedPtrNil, converted := encoder.fieldEncoder.(core.IsEmbeddedPtrNil)
+	isEmbeddedPtrNil, converted := encoder.fieldEncoder.(codecore.IsEmbeddedPtrNil)
 	if !converted {
 		return false
 	}
@@ -417,17 +406,17 @@ func (encoder *structFieldEncoder) IsEmbeddedPtrNil(ptr unsafe.Pointer) bool {
 
 type structFieldDecoder struct {
 	field        reflect2.StructField
-	fieldDecoder core.IDecoder
+	fieldDecoder codecore.IDecoder
 }
 
 func (this *structFieldDecoder) GetType() reflect.Kind {
 	return this.fieldDecoder.GetType()
 }
-func (decoder *structFieldDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (decoder *structFieldDecoder) Decode(ptr unsafe.Pointer, r codecore.IReader) {
 	fieldPtr := decoder.field.UnsafeGet(ptr)
-	decoder.fieldDecoder.Decode(fieldPtr, extra)
-	if extra.Error() != nil && extra.Error() != io.EOF {
-		extra.SetErr(fmt.Errorf("%s: %s", decoder.field.Name(), extra.Error().Error()))
+	decoder.fieldDecoder.Decode(fieldPtr, r)
+	if r.Error() != nil && r.Error() != io.EOF {
+		r.SetErr(fmt.Errorf("%s: %s", decoder.field.Name(), r.Error().Error()))
 	}
 }
 
@@ -438,8 +427,8 @@ type emptyStructEncoder struct {
 func (codec *emptyStructEncoder) GetType() reflect.Kind {
 	return reflect.Struct
 }
-func (encoder *emptyStructEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
-	stream.WriteEmptyObject()
+func (encoder *emptyStructEncoder) Encode(ptr unsafe.Pointer, w codecore.IWriter) {
+	w.WriteEmptyObject()
 }
 
 func (encoder *emptyStructEncoder) IsEmpty(ptr unsafe.Pointer) bool {

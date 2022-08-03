@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/liwei1dao/lego/sys/codec/core"
+	"github.com/liwei1dao/lego/utils/codec/codecore"
 
 	"github.com/modern-go/reflect2"
 )
@@ -35,7 +35,7 @@ func (this sortableBindings) Swap(i, j int) {
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------
-func EncoderOfType(ctx *core.Ctx, typ reflect2.Type) core.IEncoder {
+func EncoderOfType(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
 	encoder := ctx.Encoders[typ]
 	if encoder != nil {
 		return encoder
@@ -47,8 +47,8 @@ func EncoderOfType(ctx *core.Ctx, typ reflect2.Type) core.IEncoder {
 	return encoder
 }
 
-func _createEncoderOfType(ctx *core.Ctx, typ reflect2.Type) core.IEncoder {
-	var encoder core.IEncoder
+func _createEncoderOfType(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
+	var encoder codecore.IEncoder
 	encoder = createEncoderOfNative(ctx, typ)
 	if encoder != nil {
 		return encoder
@@ -72,7 +72,7 @@ func _createEncoderOfType(ctx *core.Ctx, typ reflect2.Type) core.IEncoder {
 	}
 }
 
-func DecoderOfType(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
+func DecoderOfType(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecoder {
 	decoder := ctx.Decoders[typ]
 	if decoder != nil {
 		return decoder
@@ -84,8 +84,8 @@ func DecoderOfType(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
 	return decoder
 }
 
-func _createDecoderOfType(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
-	var decoder core.IDecoder
+func _createDecoderOfType(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecoder {
+	var decoder codecore.IDecoder
 
 	decoder = createDecoderOfNative(ctx, typ)
 	if decoder != nil {
@@ -129,25 +129,25 @@ func StringToBytes(s string) []byte {
 
 //根节点 -------------------------------------------------------------------
 type rootDecoder struct {
-	decoder core.IDecoder
+	decoder codecore.IDecoder
 }
 
 func (this *rootDecoder) GetType() reflect.Kind {
 	return reflect.Ptr
 }
-func (this *rootDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
-	this.decoder.Decode(ptr, extra)
+func (this *rootDecoder) Decode(ptr unsafe.Pointer, r codecore.IReader) {
+	this.decoder.Decode(ptr, r)
 }
 
 type rootEncoder struct {
-	encoder core.IEncoder
+	encoder codecore.IEncoder
 }
 
 func (this *rootEncoder) GetType() reflect.Kind {
 	return reflect.Ptr
 }
-func (this *rootEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
-	this.encoder.Encode(ptr, stream)
+func (this *rootEncoder) Encode(ptr unsafe.Pointer, w codecore.IWriter) {
+	this.encoder.Encode(ptr, w)
 }
 
 func (this *rootEncoder) IsEmpty(ptr unsafe.Pointer) bool {
@@ -155,12 +155,12 @@ func (this *rootEncoder) IsEmpty(ptr unsafe.Pointer) bool {
 }
 
 //onePtrEncoder---------------------------------------------------------------
-func NewonePtrEncoder(encoder core.IEncoder) core.IEncoder {
+func NewonePtrEncoder(encoder codecore.IEncoder) codecore.IEncoder {
 	return &onePtrEncoder{encoder}
 }
 
 type onePtrEncoder struct {
-	encoder core.IEncoder
+	encoder codecore.IEncoder
 }
 
 func (this *onePtrEncoder) GetType() reflect.Kind {
@@ -171,16 +171,16 @@ func (this *onePtrEncoder) IsEmpty(ptr unsafe.Pointer) bool {
 	return this.encoder.IsEmpty(unsafe.Pointer(&ptr))
 }
 
-func (this *onePtrEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (this *onePtrEncoder) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	this.encoder.Encode(unsafe.Pointer(&ptr), stream)
 }
 
-func (this *onePtrEncoder) EncodeToMapJson(ptr unsafe.Pointer) (ret map[string]string, err error) {
-	if encoderMapJson, ok := this.encoder.(core.IEncoderMapJson); !ok {
+func (this *onePtrEncoder) EncodeToMapJson(ptr unsafe.Pointer, w codecore.IWriter) (ret map[string]string, err error) {
+	if encoderMapJson, ok := this.encoder.(codecore.IEncoderMapJson); !ok {
 		err = fmt.Errorf("encoder %T not support EncodeToMapJson", this.encoder)
 		return
 	} else {
-		return encoderMapJson.EncodeToMapJson(unsafe.Pointer(&ptr))
+		return encoderMapJson.EncodeToMapJson(unsafe.Pointer(&ptr), w)
 	}
 }
 
@@ -192,7 +192,7 @@ type lazyErrorDecoder struct {
 func (this *lazyErrorDecoder) GetType() reflect.Kind {
 	return reflect.Ptr
 }
-func (this *lazyErrorDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (this *lazyErrorDecoder) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 	if extra.Error() == nil {
 		extra.SetErr(this.err)
 	}
@@ -206,7 +206,7 @@ func (this *lazyErrorEncoder) GetType() reflect.Kind {
 	return reflect.Ptr
 }
 
-func (this *lazyErrorEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (this *lazyErrorEncoder) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	if ptr == nil {
 		stream.WriteNil()
 	} else if stream.Error() == nil {

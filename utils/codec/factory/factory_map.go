@@ -6,17 +6,16 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/liwei1dao/lego/sys/codec/core"
+	"github.com/liwei1dao/lego/utils/codec/codecore"
 
 	"github.com/modern-go/reflect2"
 )
 
-func decoderOfMap(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
+func decoderOfMap(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecoder {
 	mapType := typ.(*reflect2.UnsafeMapType)
 	keyDecoder := decoderOfMapKey(ctx.Append("[mapKey]"), mapType.Key())
 	elemDecoder := DecoderOfType(ctx.Append("[mapElem]"), mapType.Elem())
 	return &mapDecoder{
-		codec:       ctx.ICodec,
 		mapType:     mapType,
 		keyType:     mapType.Key(),
 		elemType:    mapType.Elem(),
@@ -25,17 +24,16 @@ func decoderOfMap(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
 	}
 }
 
-func encoderOfMap(ctx *core.Ctx, typ reflect2.Type) core.IEncoder {
+func encoderOfMap(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
 	mapType := typ.(*reflect2.UnsafeMapType)
 	return &mapEncoder{
-		codec:       ctx.ICodec,
 		mapType:     mapType,
 		keyEncoder:  encoderOfMapKey(ctx.Append("[mapKey]"), mapType.Key()),
 		elemEncoder: EncoderOfType(ctx.Append("[mapElem]"), mapType.Elem()),
 	}
 }
 
-func decoderOfMapKey(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
+func decoderOfMapKey(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecoder {
 	switch typ.Kind() {
 	case reflect.String:
 		return DecoderOfType(ctx, reflect2.DefaultTypeOfKind(reflect.String))
@@ -54,7 +52,7 @@ func decoderOfMapKey(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
 	}
 }
 
-func encoderOfMapKey(ctx *core.Ctx, typ reflect2.Type) core.IEncoder {
+func encoderOfMapKey(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
 	switch typ.Kind() {
 	case reflect.String:
 		return EncoderOfType(ctx, reflect2.DefaultTypeOfKind(reflect.String))
@@ -78,16 +76,15 @@ func encoderOfMapKey(ctx *core.Ctx, typ reflect2.Type) core.IEncoder {
 
 //Map--------------------------------------------------------------------------------------------------------------------------------------
 type mapEncoder struct {
-	codec       core.ICodec
 	mapType     *reflect2.UnsafeMapType
-	keyEncoder  core.IEncoder
-	elemEncoder core.IEncoder
+	keyEncoder  codecore.IEncoder
+	elemEncoder codecore.IEncoder
 }
 
 func (this *mapEncoder) GetType() reflect.Kind {
 	return reflect.Map
 }
-func (this *mapEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (this *mapEncoder) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	if *(*unsafe.Pointer)(ptr) == nil {
 		stream.WriteNil()
 		return
@@ -106,14 +103,17 @@ func (this *mapEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
 	stream.WriteObjectEnd()
 }
 
-func (this *mapEncoder) EncodeToMapJson(ptr unsafe.Pointer) (ret map[string]string, err error) {
+func (this *mapEncoder) EncodeToMapJson(ptr unsafe.Pointer, w codecore.IWriter) (ret map[string]string, err error) {
 	ret = make(map[string]string)
 	var (
 		k, v string
 	)
-
-	keystream := this.codec.BorrowStream()
-	elemstream := this.codec.BorrowStream()
+	keystream := w.Get()
+	elemstream := w.Get()
+	defer func() {
+		keystream.Free()
+		elemstream.Free()
+	}()
 	iter := this.mapType.UnsafeIterate(ptr)
 	for i := 0; iter.HasNext(); i++ {
 		key, elem := iter.UnsafeNext()
@@ -150,18 +150,17 @@ func (this *mapEncoder) IsEmpty(ptr unsafe.Pointer) bool {
 }
 
 type mapDecoder struct {
-	codec       core.ICodec
 	mapType     *reflect2.UnsafeMapType
 	keyType     reflect2.Type
 	elemType    reflect2.Type
-	keyDecoder  core.IDecoder
-	elemDecoder core.IDecoder
+	keyDecoder  codecore.IDecoder
+	elemDecoder codecore.IDecoder
 }
 
 func (codec *mapDecoder) GetType() reflect.Kind {
 	return reflect.Map
 }
-func (this *mapDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (this *mapDecoder) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 	mapType := this.mapType
 	if extra.ReadNil() {
 		*(*unsafe.Pointer)(ptr) = nil
@@ -200,9 +199,13 @@ func (this *mapDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 }
 
 //解码对象从MapJson 中
-func (this *mapDecoder) DecodeForMapJson(ptr unsafe.Pointer, extra map[string]string) (err error) {
-	keyext := this.codec.BorrowExtractor([]byte{})
-	elemext := this.codec.BorrowExtractor([]byte{})
+func (this *mapDecoder) DecodeForMapJson(ptr unsafe.Pointer, r codecore.IReader, extra map[string]string) (err error) {
+	keyext := r.Get([]byte{})
+	elemext := r.Get([]byte{})
+	defer func() {
+		keyext.Free()
+		elemext.Free()
+	}()
 	for k, v := range extra {
 		key := this.keyType.UnsafeNew()
 		if this.keyDecoder.GetType() != reflect.String {
@@ -233,13 +236,13 @@ func (this *mapDecoder) DecodeForMapJson(ptr unsafe.Pointer, extra map[string]st
 
 //NumericMap-------------------------------------------------------------------------------------------------------------------------------
 type numericMapKeyDecoder struct {
-	decoder core.IDecoder
+	decoder codecore.IDecoder
 }
 
 func (this *numericMapKeyDecoder) GetType() reflect.Kind {
 	return this.decoder.GetType()
 }
-func (this *numericMapKeyDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (this *numericMapKeyDecoder) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 	if !extra.ReadKeyStart() {
 		return
 	}
@@ -250,13 +253,13 @@ func (this *numericMapKeyDecoder) Decode(ptr unsafe.Pointer, extra core.IExtract
 }
 
 type numericMapKeyEncoder struct {
-	encoder core.IEncoder
+	encoder codecore.IEncoder
 }
 
 func (this *numericMapKeyEncoder) GetType() reflect.Kind {
 	return this.encoder.GetType()
 }
-func (this *numericMapKeyEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (this *numericMapKeyEncoder) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	stream.WriteKeyStart()
 	this.encoder.Encode(ptr, stream)
 	stream.WriteKeyEnd()
@@ -268,7 +271,7 @@ func (encoder *numericMapKeyEncoder) IsEmpty(ptr unsafe.Pointer) bool {
 
 //------------------------------------------------------------------------------------------------------------------
 type dynamicMapKeyEncoder struct {
-	ctx     *core.Ctx
+	ctx     *codecore.Ctx
 	valType reflect2.Type
 }
 
@@ -276,7 +279,7 @@ func (this *dynamicMapKeyEncoder) GetType() reflect.Kind {
 	return reflect.Interface
 }
 
-func (this *dynamicMapKeyEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (this *dynamicMapKeyEncoder) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	obj := this.valType.UnsafeIndirect(ptr)
 	encoderOfMapKey(this.ctx, reflect2.TypeOf(obj)).Encode(reflect2.PtrOf(obj), stream)
 }

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/sys/codec"
 	"github.com/liwei1dao/lego/sys/discovery"
 )
 
@@ -20,7 +19,6 @@ func Test_sys(t *testing.T) {
 		Id:   "gate_1",
 		Addr: "127.0.0.1:7851",
 	}
-	codec.OnInit(nil)
 	if sys, err := discovery.NewSys(
 		discovery.SetStoreType(discovery.StoreConsul),
 		discovery.SetEndpoints([]string{"10.0.0.9:8500"}),

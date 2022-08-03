@@ -1,31 +1,43 @@
-package render
+package json
 
 import (
 	"fmt"
+	"sync"
+
 	"io"
 	"math/big"
 	"reflect"
 	"unicode/utf16"
 
-	"github.com/liwei1dao/lego/sys/codec/core"
-	"github.com/liwei1dao/lego/sys/codec/utils"
-
+	"github.com/liwei1dao/lego/utils/codec"
+	"github.com/liwei1dao/lego/utils/codec/codecore"
+	"github.com/liwei1dao/lego/utils/codec/utils"
 	"github.com/modern-go/reflect2"
 )
 
-func NewExtractor(codec core.ICodec) *JsonExtractor {
-	return &JsonExtractor{
-		codec: codec,
-		buf:   nil,
-		head:  0,
-		tail:  0,
-		depth: 0,
-		err:   nil,
-	}
+var readerPool = &sync.Pool{
+	New: func() interface{} {
+		return &JsonReader{
+			buf:   nil,
+			head:  0,
+			tail:  0,
+			depth: 0,
+			err:   nil,
+		}
+	},
 }
 
-type JsonExtractor struct {
-	codec core.ICodec
+func BorrowReader(buf []byte) *JsonReader {
+	reader := readerPool.Get().(*JsonReader)
+	reader.ResetBytes(buf)
+	return reader
+}
+
+func ReturnReader(w *JsonReader) {
+	readerPool.Put(w)
+}
+
+type JsonReader struct {
 	buf   []byte
 	head  int
 	tail  int
@@ -33,17 +45,24 @@ type JsonExtractor struct {
 	err   error
 }
 
-func (this *JsonExtractor) ReadVal(obj interface{}) {
+func (this *JsonReader) Get(buf []byte) codecore.IReader {
+	return BorrowReader(buf)
+}
+func (this *JsonReader) Free() {
+	ReturnReader(this)
+}
+
+func (this *JsonReader) ReadVal(obj interface{}) {
 	depth := this.depth
 	cacheKey := reflect2.RTypeOf(obj)
-	decoder := this.codec.GetDecoderFromCache(cacheKey)
+	decoder := codec.GetDecoder(cacheKey)
 	if decoder == nil {
 		typ := reflect2.TypeOf(obj)
 		if typ == nil || typ.Kind() != reflect.Ptr {
 			this.reportError("ReadVal", "can only unmarshal into pointer")
 			return
 		}
-		decoder = this.codec.DecoderOf(typ)
+		decoder = codec.DecoderOf(typ, defconf)
 	}
 	ptr := reflect2.PtrOf(obj)
 	if ptr == nil {
@@ -56,35 +75,35 @@ func (this *JsonExtractor) ReadVal(obj interface{}) {
 		return
 	}
 }
-func (this *JsonExtractor) WhatIsNext() core.ValueType {
+func (this *JsonReader) WhatIsNext() codecore.ValueType {
 	valueType := valueTypes[this.nextToken()]
 	this.unreadByte()
 	return valueType
 }
-func (this *JsonExtractor) Read() interface{} {
+func (this *JsonReader) Read() interface{} {
 	valueType := this.WhatIsNext()
 	switch valueType {
-	case core.StringValue:
+	case codecore.StringValue:
 		return this.ReadString()
-	case core.NumberValue:
+	case codecore.NumberValue:
 		return this.ReadFloat64()
-	case core.NilValue:
+	case codecore.NilValue:
 		this.skipFourBytes('n', 'u', 'l', 'l')
 		return nil
-	case core.BoolValue:
+	case codecore.BoolValue:
 		return this.ReadBool()
-	case core.ArrayValue:
+	case codecore.ArrayValue:
 		arr := []interface{}{}
-		this.ReadArrayCB(func(extra core.IExtractor) bool {
+		this.ReadArrayCB(func(extra codecore.IReader) bool {
 			var elem interface{}
 			extra.ReadVal(&elem)
 			arr = append(arr, elem)
 			return true
 		})
 		return arr
-	case core.ObjectValue:
+	case codecore.ObjectValue:
 		obj := map[string]interface{}{}
-		this.ReadMapCB(func(extra core.IExtractor, field string) bool {
+		this.ReadMapCB(func(extra codecore.IReader, field string) bool {
 			var elem interface{}
 			this.ReadVal(&elem)
 			obj[field] = elem
@@ -96,7 +115,7 @@ func (this *JsonExtractor) Read() interface{} {
 		return nil
 	}
 }
-func (this *JsonExtractor) ReadNil() (ret bool) {
+func (this *JsonReader) ReadNil() (ret bool) {
 	c := this.nextToken()
 	if c == 'n' {
 		this.skipThreeBytes('u', 'l', 'l') // null
@@ -105,7 +124,7 @@ func (this *JsonExtractor) ReadNil() (ret bool) {
 	this.unreadByte()
 	return false
 }
-func (this *JsonExtractor) ReadArrayStart() (ret bool) {
+func (this *JsonReader) ReadArrayStart() (ret bool) {
 	c := this.nextToken()
 	if c == '[' {
 		return true
@@ -113,7 +132,7 @@ func (this *JsonExtractor) ReadArrayStart() (ret bool) {
 	this.reportError("ReadArrayStart", `expect [ but found `+string([]byte{c}))
 	return
 }
-func (this *JsonExtractor) CheckNextIsArrayEnd() (ret bool) {
+func (this *JsonReader) CheckNextIsArrayEnd() (ret bool) {
 	c := this.nextToken()
 	this.unreadByte()
 	if c == ']' {
@@ -121,7 +140,7 @@ func (this *JsonExtractor) CheckNextIsArrayEnd() (ret bool) {
 	}
 	return
 }
-func (this *JsonExtractor) ReadArrayEnd() (ret bool) {
+func (this *JsonReader) ReadArrayEnd() (ret bool) {
 	c := this.nextToken()
 	if c == ']' {
 		return true
@@ -129,7 +148,7 @@ func (this *JsonExtractor) ReadArrayEnd() (ret bool) {
 	this.reportError("ReadArrayEnd", `expect ] but found `+string([]byte{c}))
 	return
 }
-func (this *JsonExtractor) ReadObjectStart() (ret bool) {
+func (this *JsonReader) ReadObjectStart() (ret bool) {
 	c := this.nextToken()
 	if c == '{' {
 		return this.incrementDepth()
@@ -137,7 +156,7 @@ func (this *JsonExtractor) ReadObjectStart() (ret bool) {
 	this.reportError("ReadObjectStart", `expect { but found `+string([]byte{c}))
 	return
 }
-func (this *JsonExtractor) CheckNextIsObjectEnd() (ret bool) {
+func (this *JsonReader) CheckNextIsObjectEnd() (ret bool) {
 	c := this.nextToken()
 	this.unreadByte()
 	if c == '}' {
@@ -145,7 +164,7 @@ func (this *JsonExtractor) CheckNextIsObjectEnd() (ret bool) {
 	}
 	return
 }
-func (this *JsonExtractor) ReadObjectEnd() (ret bool) {
+func (this *JsonReader) ReadObjectEnd() (ret bool) {
 	c := this.nextToken()
 	if c == '}' {
 		return this.decrementDepth()
@@ -153,7 +172,7 @@ func (this *JsonExtractor) ReadObjectEnd() (ret bool) {
 	this.reportError("ReadObjectEnd", `expect } but found `+string([]byte{c}))
 	return
 }
-func (this *JsonExtractor) ReadMemberSplit() (ret bool) {
+func (this *JsonReader) ReadMemberSplit() (ret bool) {
 	c := this.nextToken()
 	if c == ',' {
 		return true
@@ -161,7 +180,7 @@ func (this *JsonExtractor) ReadMemberSplit() (ret bool) {
 	this.unreadByte()
 	return
 }
-func (this *JsonExtractor) ReadKVSplit() (ret bool) {
+func (this *JsonReader) ReadKVSplit() (ret bool) {
 	c := this.nextToken()
 	if c == ':' {
 		return true
@@ -169,7 +188,7 @@ func (this *JsonExtractor) ReadKVSplit() (ret bool) {
 	this.reportError("ReadKVSplit", `expect : but found `+string([]byte{c}))
 	return
 }
-func (this *JsonExtractor) ReadKeyStart() (ret bool) {
+func (this *JsonReader) ReadKeyStart() (ret bool) {
 	c := this.nextToken()
 	if c == '"' {
 		return true
@@ -177,7 +196,7 @@ func (this *JsonExtractor) ReadKeyStart() (ret bool) {
 	this.reportError("ReadKeyStart", `expect " but found `+string([]byte{c}))
 	return
 }
-func (this *JsonExtractor) ReadKeyEnd() (ret bool) {
+func (this *JsonReader) ReadKeyEnd() (ret bool) {
 	c := this.nextToken()
 	if c == '"' {
 		return true
@@ -185,7 +204,7 @@ func (this *JsonExtractor) ReadKeyEnd() (ret bool) {
 	this.reportError("ReadKeyEnd", `expect " but found `+string([]byte{c}))
 	return
 }
-func (this *JsonExtractor) Skip() {
+func (this *JsonReader) Skip() {
 	c := this.nextToken()
 	switch c {
 	case '"':
@@ -210,7 +229,7 @@ func (this *JsonExtractor) Skip() {
 		return
 	}
 }
-func (this *JsonExtractor) ReadBool() (ret bool) {
+func (this *JsonReader) ReadBool() (ret bool) {
 	c := this.nextToken()
 	if c == 't' {
 		this.skipThreeBytes('r', 'u', 'e')
@@ -223,7 +242,7 @@ func (this *JsonExtractor) ReadBool() (ret bool) {
 	this.reportError("ReadBool", "expect t or f, but found "+string([]byte{c}))
 	return
 }
-func (this *JsonExtractor) ReadInt8() (ret int8) {
+func (this *JsonReader) ReadInt8() (ret int8) {
 	var (
 		n   int
 		err error
@@ -235,7 +254,7 @@ func (this *JsonExtractor) ReadInt8() (ret int8) {
 	this.head += n
 	return
 }
-func (this *JsonExtractor) ReadInt16() (ret int16) {
+func (this *JsonReader) ReadInt16() (ret int16) {
 	var (
 		n   int
 		err error
@@ -247,7 +266,7 @@ func (this *JsonExtractor) ReadInt16() (ret int16) {
 	this.head += n
 	return
 }
-func (this *JsonExtractor) ReadInt32() (ret int32) {
+func (this *JsonReader) ReadInt32() (ret int32) {
 	var (
 		n   int
 		err error
@@ -259,7 +278,7 @@ func (this *JsonExtractor) ReadInt32() (ret int32) {
 	this.head += n
 	return
 }
-func (this *JsonExtractor) ReadInt64() (ret int64) {
+func (this *JsonReader) ReadInt64() (ret int64) {
 	var (
 		n   int
 		err error
@@ -271,7 +290,7 @@ func (this *JsonExtractor) ReadInt64() (ret int64) {
 	this.head += n
 	return
 }
-func (this *JsonExtractor) ReadUint8() (ret uint8) {
+func (this *JsonReader) ReadUint8() (ret uint8) {
 	var (
 		n   int
 		err error
@@ -283,7 +302,7 @@ func (this *JsonExtractor) ReadUint8() (ret uint8) {
 	this.head += n
 	return
 }
-func (this *JsonExtractor) ReadUint16() (ret uint16) {
+func (this *JsonReader) ReadUint16() (ret uint16) {
 	var (
 		n   int
 		err error
@@ -295,7 +314,7 @@ func (this *JsonExtractor) ReadUint16() (ret uint16) {
 	this.head += n
 	return
 }
-func (this *JsonExtractor) ReadUint32() (ret uint32) {
+func (this *JsonReader) ReadUint32() (ret uint32) {
 	var (
 		n   int
 		err error
@@ -307,7 +326,7 @@ func (this *JsonExtractor) ReadUint32() (ret uint32) {
 	this.head += n
 	return
 }
-func (this *JsonExtractor) ReadUint64() (ret uint64) {
+func (this *JsonReader) ReadUint64() (ret uint64) {
 	var (
 		n   int
 		err error
@@ -319,7 +338,7 @@ func (this *JsonExtractor) ReadUint64() (ret uint64) {
 	this.head += n
 	return
 }
-func (this *JsonExtractor) ReadFloat32() (ret float32) {
+func (this *JsonReader) ReadFloat32() (ret float32) {
 	var (
 		n   int
 		err error
@@ -331,7 +350,7 @@ func (this *JsonExtractor) ReadFloat32() (ret float32) {
 	this.head += n
 	return
 }
-func (this *JsonExtractor) ReadFloat64() (ret float64) {
+func (this *JsonReader) ReadFloat64() (ret float64) {
 	var (
 		n   int
 		err error
@@ -343,7 +362,7 @@ func (this *JsonExtractor) ReadFloat64() (ret float64) {
 	this.head += n
 	return
 }
-func (this *JsonExtractor) ReadString() (ret string) {
+func (this *JsonReader) ReadString() (ret string) {
 	c := this.nextToken()
 	if c == '"' {
 		for i := this.head; i < this.tail; i++ {
@@ -368,20 +387,20 @@ func (this *JsonExtractor) ReadString() (ret string) {
 	this.reportError("ReadString", `expects " or n, but found `+string([]byte{c}))
 	return
 }
-func (this *JsonExtractor) ResetBytes(d []byte) {
+func (this *JsonReader) ResetBytes(d []byte) {
 	this.buf = d
 	this.head = 0
 	this.tail = len(d)
 }
-func (this *JsonExtractor) Error() error {
+func (this *JsonReader) Error() error {
 	return this.err
 }
-func (this *JsonExtractor) SetErr(err error) {
+func (this *JsonReader) SetErr(err error) {
 	this.err = err
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------------
-func (this *JsonExtractor) readByte() (ret byte) {
+func (this *JsonReader) readByte() (ret byte) {
 	if this.head == this.tail {
 		return 0
 	}
@@ -389,7 +408,7 @@ func (this *JsonExtractor) readByte() (ret byte) {
 	this.head++
 	return ret
 }
-func (this *JsonExtractor) readStringSlowPath() (ret string) {
+func (this *JsonReader) readStringSlowPath() (ret string) {
 	var str []byte
 	var c byte
 	for this.err == nil {
@@ -407,7 +426,7 @@ func (this *JsonExtractor) readStringSlowPath() (ret string) {
 	this.reportError("readStringSlowPath", "unexpected end of input")
 	return
 }
-func (this *JsonExtractor) readEscapedChar(c byte, str []byte) []byte {
+func (this *JsonReader) readEscapedChar(c byte, str []byte) []byte {
 	switch c {
 	case 'u':
 		r := this.readU4()
@@ -466,7 +485,7 @@ func (this *JsonExtractor) readEscapedChar(c byte, str []byte) []byte {
 	}
 	return str
 }
-func (this *JsonExtractor) readU4() (ret rune) {
+func (this *JsonReader) readU4() (ret rune) {
 	for i := 0; i < 4; i++ {
 		c := this.readByte()
 		if this.err != nil {
@@ -485,7 +504,7 @@ func (this *JsonExtractor) readU4() (ret rune) {
 	}
 	return ret
 }
-func (this *JsonExtractor) nextToken() byte {
+func (this *JsonReader) nextToken() byte {
 	for i := this.head; i < this.tail; i++ {
 		c := this.buf[i]
 		switch c {
@@ -497,14 +516,14 @@ func (this *JsonExtractor) nextToken() byte {
 	}
 	return 0
 }
-func (this *JsonExtractor) unreadByte() {
+func (this *JsonReader) unreadByte() {
 	if this.err != nil {
 		return
 	}
 	this.head--
 	return
 }
-func (this *JsonExtractor) skipNumber() {
+func (this *JsonReader) skipNumber() {
 	if !this.trySkipNumber() {
 		this.unreadByte()
 		if this.err != nil && this.err != io.EOF {
@@ -517,7 +536,7 @@ func (this *JsonExtractor) skipNumber() {
 		}
 	}
 }
-func (this *JsonExtractor) ReadBigFloat() (ret *big.Float) {
+func (this *JsonReader) ReadBigFloat() (ret *big.Float) {
 	var (
 		n   int
 		err error
@@ -529,7 +548,7 @@ func (this *JsonExtractor) ReadBigFloat() (ret *big.Float) {
 	this.head += n
 	return
 }
-func (iter *JsonExtractor) trySkipNumber() bool {
+func (iter *JsonReader) trySkipNumber() bool {
 	dotFound := false
 	for i := iter.head; i < iter.tail; i++ {
 		c := iter.buf[i]
@@ -565,13 +584,13 @@ func (iter *JsonExtractor) trySkipNumber() bool {
 	}
 	return false
 }
-func (this *JsonExtractor) skipString() {
+func (this *JsonReader) skipString() {
 	if !this.trySkipString() {
 		this.unreadByte()
 		this.ReadString()
 	}
 }
-func (this *JsonExtractor) trySkipString() bool {
+func (this *JsonReader) trySkipString() bool {
 	for i := this.head; i < this.tail; i++ {
 		c := this.buf[i]
 		if c == '"' {
@@ -587,21 +606,21 @@ func (this *JsonExtractor) trySkipString() bool {
 	}
 	return false
 }
-func (this *JsonExtractor) skipObject() {
+func (this *JsonReader) skipObject() {
 	this.unreadByte()
-	this.ReadObjectCB(func(extra core.IExtractor, field string) bool {
+	this.ReadObjectCB(func(extra codecore.IReader, field string) bool {
 		extra.Skip()
 		return true
 	})
 }
-func (this *JsonExtractor) skipArray() {
+func (this *JsonReader) skipArray() {
 	this.unreadByte()
-	this.ReadArrayCB(func(extra core.IExtractor) bool {
+	this.ReadArrayCB(func(extra codecore.IReader) bool {
 		extra.Skip()
 		return true
 	})
 }
-func (this *JsonExtractor) skipThreeBytes(b1, b2, b3 byte) {
+func (this *JsonReader) skipThreeBytes(b1, b2, b3 byte) {
 	if this.readByte() != b1 {
 		this.reportError("skipThreeBytes", fmt.Sprintf("expect %s", string([]byte{b1, b2, b3})))
 		return
@@ -615,7 +634,7 @@ func (this *JsonExtractor) skipThreeBytes(b1, b2, b3 byte) {
 		return
 	}
 }
-func (this *JsonExtractor) skipFourBytes(b1, b2, b3, b4 byte) {
+func (this *JsonReader) skipFourBytes(b1, b2, b3, b4 byte) {
 	if this.readByte() != b1 {
 		this.reportError("skipFourBytes", fmt.Sprintf("expect %s", string([]byte{b1, b2, b3, b4})))
 		return
@@ -633,7 +652,7 @@ func (this *JsonExtractor) skipFourBytes(b1, b2, b3, b4 byte) {
 		return
 	}
 }
-func (this *JsonExtractor) reportError(operation string, msg string) {
+func (this *JsonReader) reportError(operation string, msg string) {
 	if this.err != nil {
 		if this.err != io.EOF {
 			return
@@ -660,7 +679,7 @@ func (this *JsonExtractor) reportError(operation string, msg string) {
 	this.err = fmt.Errorf("%s: %s, error found in #%v byte of ...|%s|..., bigger context ...|%s|...",
 		operation, msg, this.head-peekStart, parsing, context)
 }
-func (this *JsonExtractor) incrementDepth() (success bool) {
+func (this *JsonReader) incrementDepth() (success bool) {
 	this.depth++
 	if this.depth <= maxDepth {
 		return true
@@ -668,7 +687,7 @@ func (this *JsonExtractor) incrementDepth() (success bool) {
 	this.reportError("incrementDepth", "exceeded max depth")
 	return false
 }
-func (this *JsonExtractor) decrementDepth() (success bool) {
+func (this *JsonReader) decrementDepth() (success bool) {
 	this.depth--
 	if this.depth >= 0 {
 		return true
@@ -676,7 +695,7 @@ func (this *JsonExtractor) decrementDepth() (success bool) {
 	this.reportError("decrementDepth", "unexpected negative nesting")
 	return false
 }
-func (iter *JsonExtractor) ReadObjectCB(callback func(core.IExtractor, string) bool) bool {
+func (iter *JsonReader) ReadObjectCB(callback func(codecore.IReader, string) bool) bool {
 	c := iter.nextToken()
 	var field string
 	if c == '{' {
@@ -730,7 +749,7 @@ func (iter *JsonExtractor) ReadObjectCB(callback func(core.IExtractor, string) b
 	return false
 }
 
-func (iter *JsonExtractor) ReadMapCB(callback func(core.IExtractor, string) bool) bool {
+func (iter *JsonReader) ReadMapCB(callback func(codecore.IReader, string) bool) bool {
 	c := iter.nextToken()
 	if c == '{' {
 		if !iter.incrementDepth() {
@@ -785,7 +804,7 @@ func (iter *JsonExtractor) ReadMapCB(callback func(core.IExtractor, string) bool
 	return false
 }
 
-func (iter *JsonExtractor) ReadArrayCB(callback func(core.IExtractor) bool) (ret bool) {
+func (iter *JsonReader) ReadArrayCB(callback func(codecore.IReader) bool) (ret bool) {
 	c := iter.nextToken()
 	if c == '[' {
 		if !iter.incrementDepth() {

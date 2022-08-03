@@ -1,4 +1,4 @@
-package core
+package dcore
 
 import (
 	"crypto/tls"

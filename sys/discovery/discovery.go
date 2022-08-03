@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/sys/codec"
 	"github.com/liwei1dao/lego/sys/discovery/consul"
-	dcore "github.com/liwei1dao/lego/sys/discovery/core"
+	"github.com/liwei1dao/lego/sys/discovery/dcore"
 	"github.com/liwei1dao/lego/sys/log"
+	"github.com/liwei1dao/lego/utils/codec/json"
 )
 
 func newSys(options *Options) (sys *Discovery, err error) {
@@ -205,14 +205,14 @@ func (this *Discovery) Marshal(v interface{}) ([]byte, error) {
 	if this.options.Codec != nil {
 		return this.options.Codec.Marshal(v)
 	} else {
-		return codec.MarshalJson(v)
+		return json.Marshal(v)
 	}
 }
 func (this *Discovery) Unmarshal(data []byte, v interface{}) error {
 	if this.options.Codec != nil {
 		return this.options.Codec.Unmarshal(data, v)
 	} else {
-		return codec.UnmarshalJson(data, v)
+		return json.Unmarshal(data, v)
 	}
 }
 

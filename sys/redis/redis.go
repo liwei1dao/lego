@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/liwei1dao/lego/sys/codec"
 	"github.com/liwei1dao/lego/sys/redis/cluster"
 	"github.com/liwei1dao/lego/sys/redis/single"
+	"github.com/liwei1dao/lego/utils/codec/json"
 
 	"github.com/go-redis/redis/v8"
 )
@@ -375,41 +375,41 @@ func (this *Redis) Marshal(v interface{}) ([]byte, error) {
 	if this.options.Codec != nil {
 		return this.options.Codec.Marshal(v)
 	} else {
-		return codec.MarshalJson(v)
+		return json.Marshal(v)
 	}
 }
 func (this *Redis) Unmarshal(data []byte, v interface{}) error {
 	if this.options.Codec != nil {
 		return this.options.Codec.Unmarshal(data, v)
 	} else {
-		return codec.UnmarshalJson(data, v)
+		return json.Unmarshal(data, v)
 	}
 }
 func (this *Redis) MarshalMap(val interface{}) (ret map[string]string, err error) {
 	if this.options.Codec != nil {
 		return this.options.Codec.MarshalMap(val)
 	} else {
-		return codec.MarshalMapJson(val)
+		return json.MarshalMap(val)
 	}
 }
 func (this *Redis) UnmarshalMap(data map[string]string, val interface{}) (err error) {
 	if this.options.Codec != nil {
 		return this.options.Codec.UnmarshalMap(data, val)
 	} else {
-		return codec.UnmarshalMapJson(data, val)
+		return json.UnmarshalMap(data, val)
 	}
 }
 func (this *Redis) MarshalSlice(val interface{}) (ret []string, err error) {
 	if this.options.Codec != nil {
 		return this.options.Codec.MarshalSlice(val)
 	} else {
-		return codec.MarshalSliceJson(val)
+		return json.MarshalSlice(val)
 	}
 }
 func (this *Redis) UnmarshalSlice(data []string, val interface{}) (err error) {
 	if this.options.Codec != nil {
 		return this.options.Codec.UnmarshalSlice(data, val)
 	} else {
-		return codec.UnmarshalSliceJson(data, val)
+		return json.UnmarshalSlice(data, val)
 	}
 }

@@ -5,14 +5,14 @@ import (
 	"strconv"
 	"unsafe"
 
-	"github.com/liwei1dao/lego/sys/codec/core"
+	"github.com/liwei1dao/lego/utils/codec/codecore"
 
 	"github.com/modern-go/reflect2"
 )
 
 const ptrSize = 32 << uintptr(^uintptr(0)>>63) //计算int的大小 是32 还是64
 
-func createDecoderOfNative(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
+func createDecoderOfNative(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecoder {
 	typeName := typ.String()
 	switch typ.Kind() {
 	case reflect.String:
@@ -103,7 +103,7 @@ func createDecoderOfNative(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
 	return nil
 }
 
-func createEncoderOfNative(ctx *core.Ctx, typ reflect2.Type) core.IEncoder {
+func createEncoderOfNative(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
 	typeName := typ.String()
 	kind := typ.Kind()
 	switch kind {
@@ -201,11 +201,11 @@ type stringCodec struct {
 func (codec *stringCodec) GetType() reflect.Kind {
 	return reflect.String
 }
-func (codec *stringCodec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (codec *stringCodec) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 	*((*string)(ptr)) = extra.ReadString()
 }
 
-func (codec *stringCodec) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (codec *stringCodec) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	str := *((*string)(ptr))
 	stream.WriteString(str)
 }
@@ -221,13 +221,13 @@ func (codec *int8Codec) GetType() reflect.Kind {
 	return reflect.Int8
 }
 
-func (codec *int8Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (codec *int8Codec) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 	if !extra.ReadNil() {
 		*((*int8)(ptr)) = extra.ReadInt8()
 	}
 }
 
-func (codec *int8Codec) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (codec *int8Codec) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	stream.WriteInt8(*((*int8)(ptr)))
 }
 
@@ -241,13 +241,13 @@ type int16Codec struct {
 func (codec *int16Codec) GetType() reflect.Kind {
 	return reflect.Int16
 }
-func (codec *int16Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (codec *int16Codec) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 	if !extra.ReadNil() {
 		*((*int16)(ptr)) = extra.ReadInt16()
 	}
 }
 
-func (codec *int16Codec) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (codec *int16Codec) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	stream.WriteInt16(*((*int16)(ptr)))
 }
 
@@ -261,13 +261,13 @@ type int32Codec struct {
 func (codec *int32Codec) GetType() reflect.Kind {
 	return reflect.Int32
 }
-func (codec *int32Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (codec *int32Codec) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 	if !extra.ReadNil() {
 		*((*int32)(ptr)) = extra.ReadInt32()
 	}
 }
 
-func (codec *int32Codec) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (codec *int32Codec) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	stream.WriteInt32(*((*int32)(ptr)))
 }
 func (codec *int32Codec) IsEmpty(ptr unsafe.Pointer) bool {
@@ -280,13 +280,13 @@ type int64Codec struct {
 func (codec *int64Codec) GetType() reflect.Kind {
 	return reflect.Int64
 }
-func (codec *int64Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (codec *int64Codec) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 	if !extra.ReadNil() {
 		*((*int64)(ptr)) = extra.ReadInt64()
 	}
 }
 
-func (codec *int64Codec) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (codec *int64Codec) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	stream.WriteInt64(*((*int64)(ptr)))
 }
 
@@ -300,13 +300,13 @@ type uint8Codec struct {
 func (codec *uint8Codec) GetType() reflect.Kind {
 	return reflect.Uint8
 }
-func (codec *uint8Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (codec *uint8Codec) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 	if !extra.ReadNil() {
 		*((*uint8)(ptr)) = extra.ReadUint8()
 	}
 }
 
-func (codec *uint8Codec) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (codec *uint8Codec) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	stream.WriteUint8(*((*uint8)(ptr)))
 }
 
@@ -320,13 +320,13 @@ type uint16Codec struct {
 func (codec *uint16Codec) GetType() reflect.Kind {
 	return reflect.Uint16
 }
-func (codec *uint16Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (codec *uint16Codec) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 	if !extra.ReadNil() {
 		*((*uint16)(ptr)) = extra.ReadUint16()
 	}
 }
 
-func (codec *uint16Codec) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (codec *uint16Codec) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	stream.WriteUint16(*((*uint16)(ptr)))
 }
 
@@ -340,13 +340,13 @@ type uint32Codec struct {
 func (codec *uint32Codec) GetType() reflect.Kind {
 	return reflect.Uint32
 }
-func (codec *uint32Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (codec *uint32Codec) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 	if !extra.ReadNil() {
 		*((*uint32)(ptr)) = extra.ReadUint32()
 	}
 }
 
-func (codec *uint32Codec) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (codec *uint32Codec) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	stream.WriteUint32(*((*uint32)(ptr)))
 }
 func (codec *uint32Codec) IsEmpty(ptr unsafe.Pointer) bool {
@@ -359,13 +359,13 @@ type uint64Codec struct {
 func (codec *uint64Codec) GetType() reflect.Kind {
 	return reflect.Uint64
 }
-func (codec *uint64Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (codec *uint64Codec) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 	if !extra.ReadNil() {
 		*((*uint64)(ptr)) = extra.ReadUint64()
 	}
 }
 
-func (codec *uint64Codec) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (codec *uint64Codec) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	stream.WriteUint64(*((*uint64)(ptr)))
 }
 
@@ -379,13 +379,13 @@ type float32Codec struct {
 func (codec *float32Codec) GetType() reflect.Kind {
 	return reflect.Float32
 }
-func (codec *float32Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (codec *float32Codec) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 	if !extra.ReadNil() {
 		*((*float32)(ptr)) = extra.ReadFloat32()
 	}
 }
 
-func (codec *float32Codec) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (codec *float32Codec) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	stream.WriteFloat32(*((*float32)(ptr)))
 }
 
@@ -399,13 +399,13 @@ type float64Codec struct {
 func (codec *float64Codec) GetType() reflect.Kind {
 	return reflect.Float64
 }
-func (codec *float64Codec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (codec *float64Codec) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 	if !extra.ReadNil() {
 		*((*float64)(ptr)) = extra.ReadFloat64()
 	}
 }
 
-func (codec *float64Codec) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (codec *float64Codec) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	stream.WriteFloat64(*((*float64)(ptr)))
 }
 
@@ -419,13 +419,13 @@ type boolCodec struct {
 func (codec *boolCodec) GetType() reflect.Kind {
 	return reflect.Bool
 }
-func (codec *boolCodec) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (codec *boolCodec) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 	if !extra.ReadNil() {
 		*((*bool)(ptr)) = extra.ReadBool()
 	}
 }
 
-func (codec *boolCodec) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (codec *boolCodec) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	stream.WriteBool(*((*bool)(ptr)))
 }
 

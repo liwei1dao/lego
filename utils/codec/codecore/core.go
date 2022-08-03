@@ -1,19 +1,10 @@
-package core
+package codecore
 
 import (
 	"reflect"
 	"unsafe"
 
 	"github.com/modern-go/reflect2"
-)
-
-//数据类型
-type CodecType int8
-
-const (
-	Json  CodecType = iota //json 格式数据
-	Bytes                  //byte 字节流数据
-	Proto                  //proto google protobuff 数据
 )
 
 //结构值类型
@@ -37,18 +28,9 @@ const (
 )
 
 type (
-	ICodec interface {
-		Options() *Options
-		GetEncoderFromCache(cacheKey uintptr) IEncoder
-		GetDecoderFromCache(cacheKey uintptr) IDecoder
-		EncoderOf(typ reflect2.Type) IEncoder
-		DecoderOf(typ reflect2.Type) IDecoder
-		BorrowExtractor(buf []byte) IExtractor //借 提取器
-		ReturnExtractor(extra IExtractor)      //还 提取器
-		BorrowStream() IStream                 //借 输出对象
-		ReturnStream(stream IStream)           //换 输出对象
-	}
-	IExtractor interface {
+	IReader interface {
+		Get(buf []byte) IReader //借 提取器
+		Free()
 		ReadVal(obj interface{}) //读取指定类型对象
 		WhatIsNext() ValueType
 		Read() interface{}
@@ -80,7 +62,9 @@ type (
 		Error() error
 		SetErr(err error)
 	}
-	IStream interface {
+	IWriter interface {
+		Get() IWriter //借 输出对象
+		Free()
 		WriteVal(val interface{})        //写入一个对象
 		WriteNil()                       //写空 null
 		WriteEmptyArray()                //写空数组 []
@@ -112,37 +96,30 @@ type (
 		Error() error
 		SetErr(err error)
 	}
-	//Json 编码器
-	IEncoder interface {
-		GetType() reflect.Kind
-		IsEmpty(ptr unsafe.Pointer) bool
-		Encode(ptr unsafe.Pointer, stream IStream)
-	}
-	//MapJson 编码器
-	IEncoderMapJson interface {
-		EncodeToMapJson(ptr unsafe.Pointer) (ret map[string]string, err error)
-	}
-	//SliceJson 编码器
-	IEncoderSliceJson interface {
-		EncodeToSliceJson(ptr unsafe.Pointer) (ret []string, err error)
-	}
-
-	//Json 解码器
 	IDecoder interface {
 		GetType() reflect.Kind
-		Decode(ptr unsafe.Pointer, extra IExtractor)
+		Decode(ptr unsafe.Pointer, r IReader)
 	}
 	//MapJson 解码器
 	IDecoderMapJson interface {
-		DecodeForMapJson(ptr unsafe.Pointer, extra map[string]string) (err error)
+		DecodeForMapJson(ptr unsafe.Pointer, r IReader, extra map[string]string) (err error)
 	}
 	//MapJson 解码器
 	IDecoderSliceJson interface {
-		DecodeForSliceJson(ptr unsafe.Pointer, extra []string) (err error)
+		DecodeForSliceJson(ptr unsafe.Pointer, r IReader, extra []string) (err error)
 	}
-	//空校验
-	CheckIsEmpty interface {
+	IEncoder interface {
+		GetType() reflect.Kind
 		IsEmpty(ptr unsafe.Pointer) bool
+		Encode(ptr unsafe.Pointer, w IWriter)
+	}
+	//MapJson 编码器
+	IEncoderMapJson interface {
+		EncodeToMapJson(ptr unsafe.Pointer, w IWriter) (ret map[string]string, err error)
+	}
+	//SliceJson 编码器
+	IEncoderSliceJson interface {
+		EncodeToSliceJson(ptr unsafe.Pointer, w IWriter) (ret []string, err error)
 	}
 	//内嵌指针是否是空
 	IsEmbeddedPtrNil interface {
@@ -150,8 +127,16 @@ type (
 	}
 )
 
+//序列化配置
+type Config struct {
+	IndentionStep         int    //缩进步骤
+	OnlyTaggedField       bool   //仅仅处理标签字段
+	DisallowUnknownFields bool   //禁止未知字段
+	CaseSensitive         bool   //是否区分大小写
+	TagKey                string //标签
+}
 type Ctx struct {
-	ICodec
+	Config   *Config
 	Prefix   string
 	Encoders map[reflect2.Type]IEncoder
 	Decoders map[reflect2.Type]IDecoder
@@ -159,7 +144,6 @@ type Ctx struct {
 
 func (this *Ctx) Append(prefix string) *Ctx {
 	return &Ctx{
-		ICodec:   this.ICodec,
 		Prefix:   this.Prefix + " " + prefix,
 		Encoders: this.Encoders,
 		Decoders: this.Decoders,

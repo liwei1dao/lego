@@ -7,32 +7,31 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/liwei1dao/lego/sys/codec/core"
+	"github.com/liwei1dao/lego/utils/codec/codecore"
 
 	"github.com/modern-go/reflect2"
 )
 
-func decoderOfSlice(ctx *core.Ctx, typ reflect2.Type) core.IDecoder {
+func decoderOfSlice(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecoder {
 	sliceType := typ.(*reflect2.UnsafeSliceType)
 	decoder := DecoderOfType(ctx.Append("[sliceElem]"), sliceType.Elem())
-	return &sliceDecoder{ctx.ICodec, sliceType, decoder}
+	return &sliceDecoder{sliceType, decoder}
 }
-func encoderOfSlice(ctx *core.Ctx, typ reflect2.Type) core.IEncoder {
+func encoderOfSlice(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
 	sliceType := typ.(*reflect2.UnsafeSliceType)
 	encoder := EncoderOfType(ctx.Append("[sliceElem]"), sliceType.Elem())
-	return &sliceEncoder{ctx.ICodec, sliceType, encoder}
+	return &sliceEncoder{sliceType, encoder}
 }
 
 type sliceEncoder struct {
-	codec       core.ICodec
 	sliceType   *reflect2.UnsafeSliceType
-	elemEncoder core.IEncoder
+	elemEncoder codecore.IEncoder
 }
 
 func (codec *sliceEncoder) GetType() reflect.Kind {
 	return reflect.Slice
 }
-func (this *sliceEncoder) Encode(ptr unsafe.Pointer, stream core.IStream) {
+func (this *sliceEncoder) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	if this.sliceType.UnsafeIsNil(ptr) {
 		stream.WriteNil()
 		return
@@ -60,7 +59,7 @@ func (this *sliceEncoder) IsEmpty(ptr unsafe.Pointer) bool {
 }
 
 //编码对象到json数组
-func (this *sliceEncoder) EncodeToSliceJson(ptr unsafe.Pointer) (ret []string, err error) {
+func (this *sliceEncoder) EncodeToSliceJson(ptr unsafe.Pointer, w codecore.IWriter) (ret []string, err error) {
 	if this.sliceType.UnsafeIsNil(ptr) {
 		err = errors.New("val is nil")
 		return
@@ -70,30 +69,28 @@ func (this *sliceEncoder) EncodeToSliceJson(ptr unsafe.Pointer) (ret []string, e
 	if length == 0 {
 		return
 	}
-	stream := this.codec.BorrowStream()
 	for i := 1; i < length; i++ {
 		elemPtr := this.sliceType.UnsafeGetIndex(ptr, i)
-		this.elemEncoder.Encode(elemPtr, stream)
-		if stream.Error() != nil && stream.Error() != io.EOF {
-			err = stream.Error()
+		this.elemEncoder.Encode(elemPtr, w)
+		if w.Error() != nil && w.Error() != io.EOF {
+			err = w.Error()
 			return
 		}
-		ret[i] = BytesToString(stream.Buffer())
-		stream.Reset(512)
+		ret[i] = BytesToString(w.Buffer())
+		w.Reset(512)
 	}
 	return
 }
 
 type sliceDecoder struct {
-	codec       core.ICodec
 	sliceType   *reflect2.UnsafeSliceType
-	elemDecoder core.IDecoder
+	elemDecoder codecore.IDecoder
 }
 
 func (codec *sliceDecoder) GetType() reflect.Kind {
 	return reflect.Slice
 }
-func (this *sliceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
+func (this *sliceDecoder) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 	sliceType := this.sliceType
 	if extra.ReadNil() {
 		sliceType.UnsafeSetNil(ptr)
@@ -125,20 +122,19 @@ func (this *sliceDecoder) Decode(ptr unsafe.Pointer, extra core.IExtractor) {
 	}
 }
 
-func (this *sliceDecoder) DecodeForSliceJson(ptr unsafe.Pointer, data []string) (err error) {
+func (this *sliceDecoder) DecodeForSliceJson(ptr unsafe.Pointer, r codecore.IReader, data []string) (err error) {
 	sliceType := this.sliceType
 	if data == nil {
 		err = errors.New("extra is nil")
 		return
 	}
-	extra := this.codec.BorrowExtractor([]byte{})
 	sliceType.UnsafeGrow(ptr, len(data))
 	for i, v := range data {
 		elemPtr := sliceType.UnsafeGetIndex(ptr, i)
-		extra.ResetBytes(StringToBytes(v))
-		this.elemDecoder.Decode(elemPtr, extra)
-		if extra.Error() != nil && extra.Error() != io.EOF {
-			err = extra.Error()
+		r.ResetBytes(StringToBytes(v))
+		this.elemDecoder.Decode(elemPtr, r)
+		if r.Error() != nil && r.Error() != io.EOF {
+			err = r.Error()
 			return
 		}
 	}

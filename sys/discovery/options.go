@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/core"
-	dcore "github.com/liwei1dao/lego/sys/discovery/core"
+	"github.com/liwei1dao/lego/sys/discovery/dcore"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )

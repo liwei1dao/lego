@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/go-zookeeper/zk"
-	"github.com/liwei1dao/lego/sys/discovery/core"
+	"github.com/liwei1dao/lego/sys/discovery/dcore"
 )
 
 const (
@@ -20,21 +20,21 @@ type ZookeeperStore struct {
 	client  *zk.Conn
 }
 
-func (this *ZookeeperStore) Get(key string) (pair *core.KVPair, err error) {
+func (this *ZookeeperStore) Get(key string) (pair *dcore.KVPair, err error) {
 	resp, meta, err := this.client.Get(this.normalize(key))
 
 	if err != nil {
 		if err == zk.ErrNoNode {
-			return nil, core.ErrKeyNotFound
+			return nil, dcore.ErrKeyNotFound
 		}
 		return nil, err
 	}
 
 	if string(resp) == SOH {
-		return this.Get(core.Normalize(key))
+		return this.Get(dcore.Normalize(key))
 	}
 
-	pair = &core.KVPair{
+	pair = &dcore.KVPair{
 		Key:       key,
 		Value:     resp,
 		LastIndex: uint64(meta.Version),
@@ -43,7 +43,7 @@ func (this *ZookeeperStore) Get(key string) (pair *core.KVPair, err error) {
 	return pair, nil
 }
 
-func (this *ZookeeperStore) Put(key string, value []byte, opts *core.WriteOptions) error {
+func (this *ZookeeperStore) Put(key string, value []byte, opts *dcore.WriteOptions) error {
 	fkey := this.normalize(key)
 
 	exists, err := this.Exists(key)
@@ -53,9 +53,9 @@ func (this *ZookeeperStore) Put(key string, value []byte, opts *core.WriteOption
 
 	if !exists {
 		if opts != nil && opts.TTL > 0 {
-			this.createFullPath(core.SplitKey(strings.TrimSuffix(key, "/")), true)
+			this.createFullPath(dcore.SplitKey(strings.TrimSuffix(key, "/")), true)
 		} else {
-			this.createFullPath(core.SplitKey(strings.TrimSuffix(key, "/")), false)
+			this.createFullPath(dcore.SplitKey(strings.TrimSuffix(key, "/")), false)
 		}
 	}
 
@@ -66,7 +66,7 @@ func (this *ZookeeperStore) Put(key string, value []byte, opts *core.WriteOption
 func (this *ZookeeperStore) Delete(key string) error {
 	err := this.client.Delete(this.normalize(key), -1)
 	if err == zk.ErrNoNode {
-		return core.ErrKeyNotFound
+		return dcore.ErrKeyNotFound
 	}
 	return err
 }
@@ -79,13 +79,13 @@ func (this *ZookeeperStore) Exists(key string) (bool, error) {
 	return exists, nil
 }
 
-func (this *ZookeeperStore) Watch(key string, stopCh <-chan struct{}) (<-chan *core.KVPair, error) {
+func (this *ZookeeperStore) Watch(key string, stopCh <-chan struct{}) (<-chan *dcore.KVPair, error) {
 	pair, err := this.Get(key)
 	if err != nil {
 		return nil, err
 	}
 
-	watchCh := make(chan *core.KVPair)
+	watchCh := make(chan *dcore.KVPair)
 	go func() {
 		defer close(watchCh)
 		watchCh <- pair
@@ -109,29 +109,29 @@ func (this *ZookeeperStore) Watch(key string, stopCh <-chan struct{}) (<-chan *c
 
 	return watchCh, nil
 }
-func (this *ZookeeperStore) List(directory string) ([]*core.KVPair, error) {
+func (this *ZookeeperStore) List(directory string) ([]*dcore.KVPair, error) {
 	keys, stat, err := this.client.Children(this.normalize(directory))
 	if err != nil {
 		if err == zk.ErrNoNode {
-			return nil, core.ErrKeyNotFound
+			return nil, dcore.ErrKeyNotFound
 		}
 		return nil, err
 	}
 
-	kv := []*core.KVPair{}
+	kv := []*dcore.KVPair{}
 
 	// FIXME Costly Get request for each child key..
 	for _, key := range keys {
 		pair, err := this.Get(strings.TrimSuffix(directory, "/") + this.normalize(key))
 		if err != nil {
 			// If node is not found: List is out of date, retry
-			if err == core.ErrKeyNotFound {
+			if err == dcore.ErrKeyNotFound {
 				return this.List(directory)
 			}
 			return nil, err
 		}
 
-		kv = append(kv, &core.KVPair{
+		kv = append(kv, &dcore.KVPair{
 			Key:       key,
 			Value:     []byte(pair.Value),
 			LastIndex: uint64(stat.Version),
@@ -140,13 +140,13 @@ func (this *ZookeeperStore) List(directory string) ([]*core.KVPair, error) {
 
 	return kv, nil
 }
-func (this *ZookeeperStore) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*core.KVPair, error) {
+func (this *ZookeeperStore) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*dcore.KVPair, error) {
 	entries, err := this.List(directory)
 	if err != nil {
 		return nil, err
 	}
 
-	watchCh := make(chan []*core.KVPair)
+	watchCh := make(chan []*dcore.KVPair)
 	go func() {
 		defer close(watchCh)
 		watchCh <- entries
@@ -172,7 +172,7 @@ func (this *ZookeeperStore) WatchTree(directory string, stopCh <-chan struct{}) 
 }
 
 func (this *ZookeeperStore) normalize(key string) string {
-	key = core.Normalize(key)
+	key = dcore.Normalize(key)
 	return strings.TrimSuffix(key, "/")
 }
 
