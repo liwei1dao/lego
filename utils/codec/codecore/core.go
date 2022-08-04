@@ -28,9 +28,14 @@ const (
 )
 
 type (
+	IPools interface {
+		GetReader(buf []byte) IReader
+		PutReader(w IReader)
+		GetWriter() IWriter
+		PutWriter(w IWriter)
+	}
 	IReader interface {
-		Get(buf []byte) IReader //借 提取器
-		Free()
+		IPools
 		ReadVal(obj interface{}) //读取指定类型对象
 		WhatIsNext() ValueType
 		Read() interface{}
@@ -63,8 +68,7 @@ type (
 		SetErr(err error)
 	}
 	IWriter interface {
-		Get() IWriter //借 输出对象
-		Free()
+		IPools
 		WriteVal(val interface{})        //写入一个对象
 		WriteNil()                       //写空 null
 		WriteEmptyArray()                //写空数组 []
@@ -91,8 +95,9 @@ type (
 		WriteFloat64(val float64)
 		WriteString(val string)
 		WriteBytes(val []byte)
-		Reset(bufSize int)
+		Reset()
 		Buffer() []byte //返回缓存区数据
+		Buffered() int
 		Error() error
 		SetErr(err error)
 	}
@@ -129,6 +134,7 @@ type (
 
 //序列化配置
 type Config struct {
+	SortMapKeys           bool   //排序mapkey
 	IndentionStep         int    //缩进步骤
 	OnlyTaggedField       bool   //仅仅处理标签字段
 	DisallowUnknownFields bool   //禁止未知字段

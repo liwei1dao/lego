@@ -1,35 +1,13 @@
 package json
 
 import (
-	"sync"
-
 	"github.com/liwei1dao/lego/utils/codec"
 	"github.com/liwei1dao/lego/utils/codec/codecore"
 	"github.com/liwei1dao/lego/utils/codec/utils"
 	"github.com/modern-go/reflect2"
 )
 
-const defsize = 512
 const indentionStep = 1
-
-var writerPool = &sync.Pool{
-	New: func() interface{} {
-		return &JsonWriter{
-			buf:       make([]byte, 0, defsize),
-			err:       nil,
-			indention: 0,
-		}
-	},
-}
-
-func BorrowWriter() *JsonWriter {
-	writer := writerPool.Get().(*JsonWriter)
-	return writer
-}
-
-func ReturnWriter(stream *JsonWriter) {
-	writerPool.Put(stream)
-}
 
 type JsonWriter struct {
 	err       error
@@ -37,11 +15,17 @@ type JsonWriter struct {
 	indention int
 }
 
-func (this *JsonWriter) Get() codecore.IWriter {
-	return BorrowWriter()
+func (this *JsonWriter) GetReader(buf []byte) codecore.IReader {
+	return GetReader(buf)
 }
-func (this *JsonWriter) Free() {
-	ReturnWriter(this)
+func (this *JsonWriter) PutReader(r codecore.IReader) {
+	PutReader(r)
+}
+func (this *JsonWriter) GetWriter() codecore.IWriter {
+	return GetWriter()
+}
+func (this *JsonWriter) PutWriter(w codecore.IWriter) {
+	PutWriter(w)
 }
 
 //写入对象
@@ -167,8 +151,8 @@ func (this *JsonWriter) WriteString(val string) {
 func (this *JsonWriter) WriteBytes(val []byte) {
 	this.buf = append(this.buf, val...)
 }
-func (this *JsonWriter) Reset(bufSize int) {
-	this.buf = make([]byte, 0, bufSize)
+func (this *JsonWriter) Reset() {
+	this.buf = this.buf[:0]
 	this.err = nil
 	this.indention = 0
 	return
@@ -176,6 +160,10 @@ func (this *JsonWriter) Reset(bufSize int) {
 func (this *JsonWriter) Buffer() []byte {
 	return this.buf
 }
+func (this *JsonWriter) Buffered() int {
+	return len(this.buf)
+}
+
 func (this *JsonWriter) Error() error {
 	return this.err
 }

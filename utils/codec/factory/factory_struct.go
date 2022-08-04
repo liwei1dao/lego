@@ -276,7 +276,7 @@ func (this *structEncoder) EncodeToMapJson(ptr unsafe.Pointer, w codecore.IWrite
 		if field.encoder.IsEmbeddedPtrNil(ptr) {
 			continue
 		}
-		w.Reset(512)
+		w.Reset()
 		field.encoder.Encode(ptr, w)
 		if w.Error() != nil && w.Error() != io.EOF {
 			err = w.Error()
@@ -345,7 +345,7 @@ func (this *structDecoder) decodeField(ptr unsafe.Pointer, r codecore.IReader) {
 //解码对象从MapJson 中
 func (this *structDecoder) DecodeForMapJson(ptr unsafe.Pointer, r codecore.IReader, extra map[string]string) (err error) {
 	var fieldDecoder *structFieldDecoder
-	ext := r.Get([]byte{})
+	ext := r.GetReader([]byte{})
 	for k, v := range extra {
 		fieldDecoder = this.fields[k]
 		if fieldDecoder == nil && !this.config.CaseSensitive {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"sort"
 	"unsafe"
 
 	"github.com/liwei1dao/lego/utils/codec/codecore"
@@ -26,6 +27,13 @@ func decoderOfMap(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecoder {
 
 func encoderOfMap(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
 	mapType := typ.(*reflect2.UnsafeMapType)
+	if ctx.Config.SortMapKeys {
+		return &sortKeysMapEncoder{
+			mapType:     mapType,
+			keyEncoder:  encoderOfMapKey(ctx.Append("[mapKey]"), mapType.Key()),
+			elemEncoder: EncoderOfType(ctx.Append("[mapElem]"), mapType.Elem()),
+		}
+	}
 	return &mapEncoder{
 		mapType:     mapType,
 		keyEncoder:  encoderOfMapKey(ctx.Append("[mapKey]"), mapType.Key()),
@@ -75,6 +83,62 @@ func encoderOfMapKey(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
 }
 
 //Map--------------------------------------------------------------------------------------------------------------------------------------
+type sortKeysMapEncoder struct {
+	mapType     *reflect2.UnsafeMapType
+	keyEncoder  codecore.IEncoder
+	elemEncoder codecore.IEncoder
+}
+
+func (this *sortKeysMapEncoder) GetType() reflect.Kind {
+	return reflect.Map
+}
+func (encoder *sortKeysMapEncoder) Encode(ptr unsafe.Pointer, w codecore.IWriter) {
+	if *(*unsafe.Pointer)(ptr) == nil {
+		w.WriteNil()
+		return
+	}
+	w.WriteObjectStart()
+	mapIter := encoder.mapType.UnsafeIterate(ptr)
+	subStream := w.GetWriter()
+	subIter := w.GetReader(nil)
+	keyValues := encodedKeyValues{}
+	for mapIter.HasNext() {
+		key, elem := mapIter.UnsafeNext()
+		subStreamIndex := subStream.Buffered()
+		encoder.keyEncoder.Encode(key, subStream)
+		if subStream.Error() != nil && subStream.Error() != io.EOF && w.Error() == nil {
+			w.SetErr(subStream.Error())
+		}
+		encodedKey := subStream.Buffer()[subStreamIndex:]
+		subIter.ResetBytes(encodedKey)
+		decodedKey := subIter.ReadString()
+		subStream.WriteKVSplit()
+		encoder.elemEncoder.Encode(elem, subStream)
+		keyValues = append(keyValues, encodedKV{
+			key:      decodedKey,
+			keyValue: subStream.Buffer()[subStreamIndex:],
+		})
+	}
+	sort.Sort(keyValues)
+	for i, keyValue := range keyValues {
+		if i != 0 {
+			w.WriteMemberSplit()
+		}
+		w.WriteBytes(keyValue.keyValue)
+	}
+	if subStream.Error() != nil && w.Error() == nil {
+		w.SetErr(subStream.Error())
+	}
+	w.WriteObjectEnd()
+	w.PutWriter(subStream)
+	w.PutReader(subIter)
+}
+
+func (encoder *sortKeysMapEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+	iter := encoder.mapType.UnsafeIterate(ptr)
+	return !iter.HasNext()
+}
+
 type mapEncoder struct {
 	mapType     *reflect2.UnsafeMapType
 	keyEncoder  codecore.IEncoder
@@ -108,11 +172,11 @@ func (this *mapEncoder) EncodeToMapJson(ptr unsafe.Pointer, w codecore.IWriter) 
 	var (
 		k, v string
 	)
-	keystream := w.Get()
-	elemstream := w.Get()
+	keystream := w.GetWriter()
+	elemstream := w.GetWriter()
 	defer func() {
-		keystream.Free()
-		elemstream.Free()
+		w.PutWriter(keystream)
+		w.PutWriter(elemstream)
 	}()
 	iter := this.mapType.UnsafeIterate(ptr)
 	for i := 0; iter.HasNext(); i++ {
@@ -138,8 +202,8 @@ func (this *mapEncoder) EncodeToMapJson(ptr unsafe.Pointer, w codecore.IWriter) 
 			v = *((*string)(elem))
 		}
 		ret[k] = v
-		keystream.Reset(512)
-		elemstream.Reset(512)
+		keystream.Reset()
+		elemstream.Reset()
 	}
 	return
 }
@@ -200,11 +264,11 @@ func (this *mapDecoder) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 
 //解码对象从MapJson 中
 func (this *mapDecoder) DecodeForMapJson(ptr unsafe.Pointer, r codecore.IReader, extra map[string]string) (err error) {
-	keyext := r.Get([]byte{})
-	elemext := r.Get([]byte{})
+	keyext := r.GetReader([]byte{})
+	elemext := r.GetReader([]byte{})
 	defer func() {
-		keyext.Free()
-		elemext.Free()
+		r.PutReader(keyext)
+		r.PutReader(keyext)
 	}()
 	for k, v := range extra {
 		key := this.keyType.UnsafeNew()
@@ -288,3 +352,14 @@ func (this *dynamicMapKeyEncoder) IsEmpty(ptr unsafe.Pointer) bool {
 	obj := this.valType.UnsafeIndirect(ptr)
 	return encoderOfMapKey(this.ctx, reflect2.TypeOf(obj)).IsEmpty(reflect2.PtrOf(obj))
 }
+
+type encodedKeyValues []encodedKV
+
+type encodedKV struct {
+	key      string
+	keyValue []byte
+}
+
+func (sv encodedKeyValues) Len() int           { return len(sv) }
+func (sv encodedKeyValues) Swap(i, j int)      { sv[i], sv[j] = sv[j], sv[i] }
+func (sv encodedKeyValues) Less(i, j int) bool { return sv[i].key < sv[j].key }

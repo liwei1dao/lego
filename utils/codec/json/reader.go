@@ -2,7 +2,6 @@ package json
 
 import (
 	"fmt"
-	"sync"
 
 	"io"
 	"math/big"
@@ -15,28 +14,6 @@ import (
 	"github.com/modern-go/reflect2"
 )
 
-var readerPool = &sync.Pool{
-	New: func() interface{} {
-		return &JsonReader{
-			buf:   nil,
-			head:  0,
-			tail:  0,
-			depth: 0,
-			err:   nil,
-		}
-	},
-}
-
-func BorrowReader(buf []byte) *JsonReader {
-	reader := readerPool.Get().(*JsonReader)
-	reader.ResetBytes(buf)
-	return reader
-}
-
-func ReturnReader(w *JsonReader) {
-	readerPool.Put(w)
-}
-
 type JsonReader struct {
 	buf   []byte
 	head  int
@@ -45,13 +22,18 @@ type JsonReader struct {
 	err   error
 }
 
-func (this *JsonReader) Get(buf []byte) codecore.IReader {
-	return BorrowReader(buf)
+func (this *JsonReader) GetReader(buf []byte) codecore.IReader {
+	return GetReader(buf)
 }
-func (this *JsonReader) Free() {
-	ReturnReader(this)
+func (this *JsonReader) PutReader(r codecore.IReader) {
+	PutReader(r)
 }
-
+func (this *JsonReader) GetWriter() codecore.IWriter {
+	return GetWriter()
+}
+func (this *JsonReader) PutWriter(w codecore.IWriter) {
+	PutWriter(w)
+}
 func (this *JsonReader) ReadVal(obj interface{}) {
 	depth := this.depth
 	cacheKey := reflect2.RTypeOf(obj)
