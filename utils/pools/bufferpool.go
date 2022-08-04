@@ -2,7 +2,9 @@ package pools
 
 import (
 	"io"
+	"strconv"
 	"sync"
+	"time"
 )
 
 /*
@@ -92,7 +94,25 @@ func (b *Buffer) ReadFrom(r io.Reader) (int64, error) {
 func (b *Buffer) AppendByte(v byte) {
 	b.bs = append(b.bs, v)
 }
+func (b *Buffer) AppendInt(i int64) {
+	b.bs = strconv.AppendInt(b.bs, i, 10)
+}
+func (b *Buffer) AppendUint(i uint64) {
+	b.bs = strconv.AppendUint(b.bs, i, 10)
+}
+func (b *Buffer) AppendFloat(f float64, bitSize int) {
+	b.bs = strconv.AppendFloat(b.bs, f, 'f', -1, bitSize)
+}
+func (b *Buffer) AppendBool(v bool) {
+	b.bs = strconv.AppendBool(b.bs, v)
+}
+func (b *Buffer) AppendTime(t time.Time, layout string) {
+	b.bs = t.AppendFormat(b.bs, layout)
+}
 func (b *Buffer) AppendString(s string) {
+	b.bs = append(b.bs, s...)
+}
+func (b *Buffer) AppendBytes(s []byte) {
 	b.bs = append(b.bs, s...)
 }
 func (b *Buffer) Write(p []byte) (int, error) {

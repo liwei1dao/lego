@@ -77,7 +77,7 @@ func (this *sliceEncoder) EncodeToSliceJson(ptr unsafe.Pointer, w codecore.IWrit
 			return
 		}
 		ret[i] = BytesToString(w.Buffer())
-		w.Reset(512)
+		w.Reset()
 	}
 	return
 }

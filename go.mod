@@ -34,6 +34,7 @@ require (
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/liwei1dao/dm v0.0.0-20211103094420-938edf103cf0
 	github.com/modern-go/reflect2 v1.0.2
+	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/nats-io/nats.go v1.16.0
 	github.com/pkg/sftp v1.13.5
 	github.com/robfig/cron/v3 v3.0.1
@@ -43,10 +44,10 @@ require (
 	github.com/tinylib/msgp v1.1.6
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/ugorji/go/codec v1.2.7
-	github.com/valyala/bytebufferpool v1.0.0
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	github.com/wolfogre/go-pprof-practice v0.0.0-20220519102209-aa4ca213af99
 	go.mongodb.org/mongo-driver v1.10.0
+	go.uber.org/multierr v1.6.0
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
 	golang.org/x/net v0.0.0-20220728211354-c7608f3a8462
 	golang.org/x/oauth2 v0.0.0-20220722155238-128564f6959c
