@@ -11,7 +11,7 @@ type Option func(*Options)
 type Options struct {
 	CacheMaxSzie int64
 	Debug        bool //日志是否开启
-	Log          log.ILog
+	Log          log.Ilogf
 }
 
 func SetCacheMaxSzie(v int64) Option {
@@ -25,7 +25,7 @@ func SetDebug(v bool) Option {
 		o.Debug = v
 	}
 }
-func SetLog(v log.ILog) Option {
+func SetLog(v log.Ilogf) Option {
 	return func(o *Options) {
 		o.Log = v
 	}
@@ -42,7 +42,7 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 		o(options)
 	}
 	if options.Debug && options.Log == nil {
-		if options.Log = log.Clone(2); options.Log == nil {
+		if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.Blockcache", 2)); options.Log == nil {
 			err = errors.New("log is nil")
 		}
 	}
@@ -57,9 +57,10 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 		o(options)
 	}
 	if options.Debug && options.Log == nil {
-		if options.Log = log.Clone(2); options.Log == nil {
+		if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.Blockcache", 2)); options.Log == nil {
 			err = errors.New("log is nil")
 		}
+
 	}
 	return
 }

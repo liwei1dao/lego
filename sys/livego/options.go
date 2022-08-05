@@ -31,7 +31,7 @@ type Options struct {
 	Timeout         int      //单位秒
 	ConnBuffSzie    int      //连接对象读写缓存
 	Debug           bool     //日志是否开启
-	Log             log.ILog
+	Log             log.ILogger
 }
 
 func SetAppname(v string) Option {
@@ -107,7 +107,7 @@ func SetDebug(v bool) Option {
 		o.Debug = v
 	}
 }
-func SetLog(v log.ILog) Option {
+func SetLog(v log.ILogger) Option {
 	return func(o *Options) {
 		o.Log = v
 	}
@@ -118,7 +118,6 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 		RTMPAddr:     ":1935",
 		Timeout:      5,
 		ConnBuffSzie: 4 * 1024,
-		Debug:        true,
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
@@ -127,7 +126,7 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 		o(options)
 	}
 	if options.Debug && options.Log == nil {
-		if options.Log = log.Clone(2); options.Log == nil {
+		if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.discovery", 2)); options.Log == nil {
 			err = errors.New("log is nil")
 		}
 	}
@@ -140,13 +139,12 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 		RTMPAddr:     ":1935",
 		Timeout:      5,
 		ConnBuffSzie: 4 * 1024,
-		Debug:        true,
 	}
 	for _, o := range opts {
 		o(options)
 	}
 	if options.Debug && options.Log == nil {
-		if options.Log = log.Clone(2); options.Log == nil {
+		if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.discovery", 2)); options.Log == nil {
 			err = errors.New("log is nil")
 		}
 	}

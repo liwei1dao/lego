@@ -16,6 +16,7 @@ import (
 
 	"github.com/liwei1dao/lego/sys/gin/binding"
 	"github.com/liwei1dao/lego/sys/gin/render"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 const (
@@ -30,17 +31,17 @@ const (
 )
 const abortIndex int8 = math.MaxInt8 >> 1
 
-func newContext(sys ISys, engine *Engine, params *Params, skippedNodes *[]skippedNode) *Context {
+func newContext(log log.ILogger, engine *Engine, params *Params, skippedNodes *[]skippedNode) *Context {
 	return &Context{
 		engine:       engine,
 		params:       params,
 		skippedNodes: skippedNodes,
-		writermem:    ResponseWriter{log: sys},
+		writermem:    ResponseWriter{log: log},
 	}
 }
 
 type Context struct {
-	Sys          ISys
+	Log          log.ILogger
 	engine       *Engine
 	writermem    ResponseWriter
 	Request      *http.Request
@@ -351,7 +352,7 @@ func (this *Context) initFormCache() {
 		req := this.Request
 		if err := req.ParseMultipartForm(this.engine.MaxMultipartMemory); err != nil {
 			if !errors.Is(err, http.ErrNotMultipart) {
-				this.Sys.Errorf("error on parse multipart form array: %v", err)
+				this.Log.Errorf("error on parse multipart form array: %v", err)
 			}
 		}
 		this.formCache = req.PostForm

@@ -1,133 +1,76 @@
 package log
 
 import (
-	"context"
-	"io"
+	"fmt"
 	"os"
-	"sync"
 	"time"
 
-	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
+	"github.com/liwei1dao/lego/utils/pools"
 )
 
-type MutexWrap struct {
-	lock     sync.Mutex
-	disabled bool
-}
-
-func (mw *MutexWrap) Lock() {
-	if !mw.disabled {
-		mw.lock.Lock()
-	}
-}
-
-func (mw *MutexWrap) Unlock() {
-	if !mw.disabled {
-		mw.lock.Unlock()
-	}
-}
-
-func (mw *MutexWrap) Disable() {
-	mw.disabled = true
-}
-
 func newSys(options *Options) (sys *Logger, err error) {
-	sys = &Logger{
-		Out:          os.Stderr,
-		Level:        options.Loglevel,
-		Skip:         options.CallerSkip,
-		ExitFunc:     os.Exit,
-		ReportCaller: options.ReportCaller,
+	hook := LogFileOut{
+		Filename:   options.FileName,                               //日志文件路径
+		MaxAge:     options.MaxAgeTime,                             //备份日志保存天数
+		CupTime:    time.Duration(options.CupTimeTime) * time.Hour, //日志切割间隔时间
+		Compress:   options.Compress,                               //是否压缩 disabled by default
+		MaxBackups: options.MaxBackups,                             //最大备份数
+		LocalTime:  true,                                           //使用本地时间
 	}
-	var cstSh, _ = time.LoadLocation("Asia/Shanghai") //上海
-	fileSuffix := time.Now().In(cstSh).Format("2006-01-02") + ".log"
-
-	writer, _ := rotatelogs.New(
-		options.FileName+"-"+fileSuffix,
-		rotatelogs.WithLinkName(options.FileName+".log"),
-		rotatelogs.WithMaxAge(time.Duration(options.MaxAgeTime)*time.Hour*24),      //设置保存时间
-		rotatelogs.WithRotationTime(time.Duration(options.RotationTime)*time.Hour), //设置日志分割的时间，隔多久分割一次
-	)
-	sys.Out = writer
-	if options.Encoder == TextEncoder {
-		sys.Formatter = &TextFormatter{
-			TimestampFormat: "2006-01-02 15:03:04",
-		}
-	} else {
-		sys.Formatter = &JSONFormatter{
-			TimestampFormat: "2006-01-02 15:03:04",
-		}
+	if err = hook.openNew(); err != nil {
+		return
+	}
+	out := make(writeTree, 0, 2)
+	out = append(out, AddSync(&hook))
+	if options.IsDebug {
+		out = append(out, Lock(os.Stdout))
+	}
+	sys = &Logger{
+		config:     NewDefEncoderConfig(),
+		formatter:  NewConsoleEncoder(),
+		out:        out,
+		level:      options.Loglevel,
+		addCaller:  options.ReportCaller,
+		callerSkip: options.CallerSkip,
+		addStack:   ErrorLevel,
 	}
 	return
 }
 
 type Logger struct {
-	Out          io.Writer
-	Formatter    Formatter
-	Level        Loglevel
-	Skip         int
-	mu           MutexWrap
-	entryPool    sync.Pool
-	ReportCaller bool
-	ExitFunc     exitFunc
+	config     *EncoderConfig //编码配置
+	level      LevelEnabler   //日志输出级别
+	formatter  Formatter      //日志格式化
+	name       string         //日志标签
+	out        IWrite         //日志输出
+	addCaller  bool           //是否打印堆栈信息
+	addStack   LevelEnabler   //堆栈信息输出级别
+	callerSkip int            //堆栈输出深度
 }
 
-func (logger *Logger) newEntry() *Entry {
-	entry, ok := logger.entryPool.Get().(*Entry)
-	if ok {
-		return entry
+func (this *Logger) Clone(name string, skip int) ILogger {
+	return &Logger{
+		config:     this.config,
+		formatter:  this.formatter,
+		name:       name,
+		out:        this.out,
+		level:      this.level,
+		addCaller:  this.addCaller,
+		callerSkip: skip,
+		addStack:   this.addStack,
 	}
-	return NewEntry(logger, logger.Skip)
-}
-func (logger *Logger) releaseEntry(entry *Entry) {
-	entry.Data = map[string]interface{}{}
-	logger.entryPool.Put(entry)
 }
 
-func (this *Logger) Clone(skip int) ILog {
-	return NewEntry(this, skip)
+func (this *Logger) Enabled(lvl Loglevel) bool {
+	return this.level.Enabled(lvl)
 }
-
-func (logger *Logger) WithField(key string, value interface{}) *Entry {
-	entry := logger.newEntry()
-	defer logger.releaseEntry(entry)
-	return entry.WithField(key, value)
-}
-func (logger *Logger) WithFields(fields ...Field) *Entry {
-	entry := logger.newEntry()
-	defer logger.releaseEntry(entry)
-	return entry.WithFields(fields...)
-}
-func (logger *Logger) WithError(err error) *Entry {
-	entry := logger.newEntry()
-	defer logger.releaseEntry(entry)
-	return entry.WithError(err)
-}
-func (logger *Logger) WithContext(ctx context.Context) *Entry {
-	entry := logger.newEntry()
-	defer logger.releaseEntry(entry)
-	return entry.WithContext(ctx)
-}
-func (logger *Logger) WithTime(t time.Time) *Entry {
-	entry := logger.newEntry()
-	defer logger.releaseEntry(entry)
-	return entry.WithTime(t)
-}
-func (logger *Logger) Exit(code int) {
-	runHandlers()
-	if logger.ExitFunc == nil {
-		logger.ExitFunc = os.Exit
-	}
-	logger.ExitFunc(code)
-}
-func (logger *Logger) IsLevelEnabled(level Loglevel) bool {
-	return logger.Level >= level
-}
-
 func (this *Logger) Debug(msg string, args ...Field) {
 	this.Log(DebugLevel, msg, args...)
 }
 func (this *Logger) Info(msg string, args ...Field) {
+	this.Log(InfoLevel, msg, args...)
+}
+func (this *Logger) Print(msg string, args ...Field) {
 	this.Log(InfoLevel, msg, args...)
 }
 func (this *Logger) Warn(msg string, args ...Field) {
@@ -141,14 +84,20 @@ func (this *Logger) Panic(msg string, args ...Field) {
 }
 func (this *Logger) Fatal(msg string, args ...Field) {
 	this.Log(FatalLevel, msg, args...)
+	os.Exit(1)
 }
 func (this *Logger) Log(level Loglevel, msg string, args ...Field) {
-	this.WithFields(args...).Log(level, msg)
+	if this.level.Enabled(level) {
+		this.log(level, msg, args...)
+	}
 }
 func (this *Logger) Debugf(format string, args ...interface{}) {
 	this.Logf(DebugLevel, format, args...)
 }
 func (this *Logger) Infof(format string, args ...interface{}) {
+	this.Logf(InfoLevel, format, args...)
+}
+func (this *Logger) Printf(format string, args ...interface{}) {
 	this.Logf(InfoLevel, format, args...)
 }
 func (this *Logger) Warnf(format string, args ...interface{}) {
@@ -159,15 +108,14 @@ func (this *Logger) Errorf(format string, args ...interface{}) {
 }
 func (this *Logger) Fatalf(format string, args ...interface{}) {
 	this.Logf(FatalLevel, format, args...)
+	os.Exit(1)
 }
 func (this *Logger) Panicf(format string, args ...interface{}) {
 	this.Logf(PanicLevel, format, args...)
 }
-func (logger *Logger) Logf(level Loglevel, format string, args ...interface{}) {
-	if logger.IsLevelEnabled(level) {
-		entry := logger.newEntry()
-		entry.Logf(level, format, args...)
-		logger.releaseEntry(entry)
+func (this *Logger) Logf(level Loglevel, format string, args ...interface{}) {
+	if this.level.Enabled(level) {
+		this.log(level, fmt.Sprintf(format, args...))
 	}
 }
 func (this *Logger) Debugln(args ...interface{}) {
@@ -177,9 +125,7 @@ func (this *Logger) Infoln(args ...interface{}) {
 	this.Logln(InfoLevel, args...)
 }
 func (this *Logger) Println(args ...interface{}) {
-	entry := this.newEntry()
-	entry.Println(args...)
-	this.releaseEntry(entry)
+	this.Logln(InfoLevel, args...)
 }
 func (this *Logger) Warnln(args ...interface{}) {
 	this.Logln(WarnLevel, args...)
@@ -189,14 +135,93 @@ func (this *Logger) Errorln(args ...interface{}) {
 }
 func (this *Logger) Fatalln(args ...interface{}) {
 	this.Logln(FatalLevel, args...)
+	os.Exit(1)
 }
 func (this *Logger) Panicln(args ...interface{}) {
 	this.Logln(PanicLevel, args...)
 }
 func (this *Logger) Logln(level Loglevel, args ...interface{}) {
-	if this.IsLevelEnabled(level) {
-		entry := this.newEntry()
-		entry.Logln(level, args...)
-		this.releaseEntry(entry)
+	if this.level.Enabled(level) {
+		this.log(level, this.sprintlnn(args...))
 	}
+}
+
+func (this *Logger) log(level Loglevel, msg string, args ...Field) {
+	entry := this.check(level, msg, args...)
+	this.write(entry)
+	if level <= PanicLevel {
+		panic(entry)
+	}
+	putEntry(entry)
+}
+
+func (this *Logger) check(level Loglevel, msg string, args ...Field) (entry *Entry) {
+	entry = getEntry()
+	entry.Name = this.name
+	entry.Time = time.Now()
+	entry.Level = level
+	entry.Message = msg
+	entry.WithFields(args...)
+	addStack := this.addStack.Enabled(level)
+	if !this.addCaller && !addStack {
+		return
+	}
+
+	stackDepth := stacktraceFirst
+	stack := captureStacktrace(this.callerSkip+callerSkipOffset, stackDepth)
+	defer stack.Free()
+	if stack.Count() == 0 {
+		if this.addCaller {
+			if entry.Err != "" {
+				entry.Err = entry.Err + ",error: failed to get caller"
+			} else {
+				entry.Err = "error:failed to get caller"
+			}
+		}
+		return
+	}
+	frame, more := stack.Next()
+	if this.addCaller {
+		entry.Caller.Defined = frame.PC != 0
+		entry.Caller.PC = frame.PC
+		entry.Caller.File = frame.File
+		entry.Caller.Line = frame.Line
+		entry.Caller.Function = frame.Function
+	}
+	if addStack {
+		buffer := pools.BufferPoolGet()
+		defer buffer.Free()
+
+		stackfmt := newStackFormatter(buffer)
+
+		stackfmt.FormatFrame(frame)
+		if more {
+			stackfmt.FormatStack(stack)
+		}
+		entry.Caller.Stack = buffer.String()
+	}
+	return
+}
+
+func (this *Logger) write(entry *Entry) {
+	buf, err := this.formatter.Format(this.config, entry)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to obtain reader, %v\n", err)
+		return
+	}
+	err = this.out.WriteTo(buf.Bytes())
+	buf.Free()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to obtain write, %v\n", err)
+		return
+	}
+	if entry.Level < ErrorLevel {
+		this.out.Sync()
+	}
+	return
+}
+
+func (this *Logger) sprintlnn(args ...interface{}) string {
+	msg := fmt.Sprintln(args...)
+	return msg[:len(msg)-1]
 }

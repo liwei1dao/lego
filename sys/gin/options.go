@@ -13,7 +13,7 @@ type Options struct {
 	CertFile   string //tls文件
 	KeyFile    string //tls文件
 	Debug      bool   //日志是否开启
-	Log        log.ILog
+	Log        log.ILogger
 }
 
 func SetListenPort(v int) Option {
@@ -40,7 +40,7 @@ func SetDebug(v bool) Option {
 	}
 }
 
-func SetLog(v log.ILog) Option {
+func SetLog(v log.ILogger) Option {
 	return func(o *Options) {
 		o.Log = v
 	}
@@ -60,7 +60,7 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 		o(options)
 	}
 	if options.Debug && options.Log == nil {
-		if options.Log = log.Clone(2); options.Log == nil {
+		if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.discovery", 2)); options.Log == nil {
 			err = errors.New("log is nil")
 		}
 	}
@@ -78,7 +78,7 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 		o(options)
 	}
 	if options.Debug && options.Log == nil {
-		if options.Log = log.Clone(2); options.Log == nil {
+		if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.discovery", 2)); options.Log == nil {
 			err = errors.New("log is nil")
 		}
 	}

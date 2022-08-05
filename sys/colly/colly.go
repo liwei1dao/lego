@@ -64,35 +64,3 @@ func (this *Colly) PostRaw(url string, requestData []byte) error {
 func (this *Colly) Visit(url string) error {
 	return this.colly.Visit(url)
 }
-
-///日志***********************************************************************
-func (this *Colly) Debugf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Debugf("[SYS Colly] "+format, a...)
-	}
-}
-func (this *Colly) Infof(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Infof("[SYS Colly] "+format, a...)
-	}
-}
-func (this *Colly) Warnf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Warnf("[SYS Colly] "+format, a...)
-	}
-}
-func (this *Colly) Errorf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Errorf("[SYS Colly] "+format, a...)
-	}
-}
-func (this *Colly) Panicf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Panicf("[SYS Colly] "+format, a...)
-	}
-}
-func (this *Colly) Fatalf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Fatalf("[SYS Colly] "+format, a...)
-	}
-}

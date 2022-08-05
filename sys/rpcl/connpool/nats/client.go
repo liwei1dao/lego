@@ -49,7 +49,7 @@ func (this *Client) Start() {
 func (this *Client) Write(msg []byte) (err error) {
 	err = this.conn.Publish(this.node.GetNodePath(), msg)
 	if err != nil {
-		this.pool.sys.Errorf("send msg err:%v", err)
+		this.pool.log.Errorf("send msg err:%v", err)
 	}
 	err = this.conn.Flush()
 	return
@@ -81,11 +81,11 @@ locp:
 		select {
 		case <-timer.C:
 			if err = this.Write(this.pool.sys.Heartbeat()); err != nil {
-				this.pool.sys.Errorf("err:%v", err)
+				this.pool.log.Errorf("err:%v", err)
 				go this.pool.CloseClient(this.node)
 			}
 			if atomic.LoadInt32(&this.hbeat) > 3 {
-				this.pool.sys.Errorf("heartbeat exception !")
+				this.pool.log.Errorf("heartbeat exception !")
 				go this.pool.CloseClient(this.node)
 			}
 		case <-this.closeSignal:

@@ -71,7 +71,7 @@ func Logger(SkipPaths []string) engine.HandlerFunc {
 				path = path + "?" + raw
 			}
 			param.Path = path
-			c.Sys.Debugf(fmt.Sprintf("[FORMATTER TEST] %v | %3d | %13v | %15s | %-7s %s\n%s",
+			c.Log.Debugf(fmt.Sprintf("[FORMATTER TEST] %v | %3d | %13v | %15s | %-7s %s\n%s",
 				param.TimeStamp.Format("2006/01/02 - 15:04:05"),
 				param.StatusCode,
 				param.Latency,

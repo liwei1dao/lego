@@ -28,7 +28,7 @@ type Reader struct {
 func (this *Reader) Read(p *core.Packet) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			this.conn.Sys().Warnf("rtmp read packet panic:%v", r)
+			this.conn.Log().Warnf("rtmp read packet panic:%v", r)
 		}
 	}()
 
@@ -65,7 +65,7 @@ func (this *Reader) Info() (ret core.Info) {
 	ret.URL = URL
 	_url, err := url.Parse(URL)
 	if err != nil {
-		this.conn.Sys().Warnf("err:%v", err)
+		this.conn.Log().Warnf("err:%v", err)
 	}
 	ret.Key = strings.TrimLeft(_url.Path, "/")
 	return
@@ -97,6 +97,6 @@ func (this *Reader) SaveStatics(streamid uint32, length uint64, isVideoFlag bool
 }
 
 func (this *Reader) Close(err error) {
-	this.conn.Sys().Debugf("publisher %v  closed: ", this.Info(), err)
+	this.conn.Log().Debugf("publisher %v  closed: ", this.Info(), err)
 	this.conn.Close(err)
 }

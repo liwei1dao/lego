@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/sys/log"
 )
 
 var (
@@ -83,7 +82,6 @@ const (
 
 //系统对象
 type ISys interface {
-	log.Ilogf
 	ServiceNode() *core.ServiceNode                                        //服务节点路径
 	Heartbeat() []byte                                                     //心跳包数据 可以复用
 	Handle(client IConnClient, message IMessage)                           //接收到远程消息

@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/liwei1dao/lego/sys/livego/core"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 var (
@@ -24,9 +25,10 @@ var crossdomainxml = []byte(`<?xml version="1.0" ?>
 	<allow-http-request-headers-from domain="*" headers="*"/>
 </cross-domain-policy>`)
 
-func NewServer(sys core.ISys) (server *Server, err error) {
+func NewServer(sys core.ISys, log log.ILogger) (server *Server, err error) {
 	server = &Server{
 		sys:   sys,
+		log:   log,
 		conns: &sync.Map{},
 	}
 	err = server.init()
@@ -35,6 +37,7 @@ func NewServer(sys core.ISys) (server *Server, err error) {
 
 type Server struct {
 	sys      core.ISys
+	log      log.ILogger
 	listener net.Listener
 	conns    *sync.Map
 }
@@ -44,16 +47,16 @@ func (this *Server) init() (err error) {
 		hlsListen net.Listener
 	)
 	if hlsListen, err = net.Listen("tcp", this.sys.GetHLSAddr()); err != nil {
-		this.sys.Errorf("Hls server init err:%v", err)
+		this.log.Errorf("Hls server init err:%v", err)
 		return
 	}
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				this.sys.Errorf("HLS server panic: ", r)
+				this.log.Errorf("HLS server panic: ", r)
 			}
 		}()
-		this.sys.Infof("HLS listen On ", this.sys.GetHLSAddr())
+		this.log.Infof("HLS listen On ", this.sys.GetHLSAddr())
 		this.Serve(hlsListen)
 	}()
 	return
@@ -96,7 +99,7 @@ func (this *Server) handle(w http.ResponseWriter, r *http.Request) {
 		}
 		body, err := tsCache.GenM3U8PlayList()
 		if err != nil {
-			this.sys.Debugf("GenM3U8PlayList error:%v", err)
+			this.log.Debugf("GenM3U8PlayList error:%v", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -116,7 +119,7 @@ func (this *Server) handle(w http.ResponseWriter, r *http.Request) {
 		tsCache := conn.GetCacheInc()
 		item, err := tsCache.GetItem(r.URL.Path)
 		if err != nil {
-			this.sys.Debugf("GetItem error:%v", err)
+			this.log.Debugf("GetItem error:%v", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -131,8 +134,8 @@ func (this *Server) GetWriter(info core.Info) core.WriteCloser {
 	var s *Source
 	v, ok := this.conns.Load(info.Key)
 	if !ok {
-		this.sys.Debugf("new hls source")
-		s = NewSource(this.sys, info)
+		this.log.Debugf("new hls source")
+		s = NewSource(this.sys, this.log, info)
 		this.conns.Store(info.Key, s)
 	} else {
 		s = v.(*Source)

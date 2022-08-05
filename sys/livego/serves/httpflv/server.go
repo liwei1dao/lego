@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/liwei1dao/lego/sys/livego/core"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 type stream struct {
@@ -19,7 +20,7 @@ type streams struct {
 	Players    []stream `json:"players"`
 }
 
-func NewServer(sys core.ISys) (server *Server, err error) {
+func NewServer(sys core.ISys, log log.ILogger) (server *Server, err error) {
 	server = &Server{
 		sys: sys,
 	}
@@ -29,21 +30,22 @@ func NewServer(sys core.ISys) (server *Server, err error) {
 
 type Server struct {
 	sys core.ISys
+	log log.ILogger
 }
 
 func (this *Server) init() (err error) {
 	var flvListen net.Listener
 	if flvListen, err = net.Listen("tcp", this.sys.GetHTTPFLVAddr()); err != nil {
-		this.sys.Errorf("HttpFlvServer init err%v", err)
+		this.log.Errorf("HttpFlvServer init err%v", err)
 	}
 
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				this.sys.Errorf("HTTP-FLV server panic: ", r)
+				this.log.Errorf("HTTP-FLV server panic: ", r)
 			}
 		}()
-		this.sys.Infof("HTTP-FLV listen On ", this.sys.GetHTTPFLVAddr())
+		this.log.Infof("HTTP-FLV listen On ", this.sys.GetHTTPFLVAddr())
 		this.Serve(flvListen)
 	}()
 	return
@@ -66,7 +68,7 @@ func (this *Server) Serve(l net.Listener) error {
 func (this *Server) handleConn(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if r := recover(); r != nil {
-			this.sys.Errorf("http flv handleConn panic:%v", r)
+			this.log.Errorf("http flv handleConn panic:%v", r)
 		}
 	}()
 
@@ -78,7 +80,7 @@ func (this *Server) handleConn(w http.ResponseWriter, r *http.Request) {
 	}
 	path := strings.TrimSuffix(strings.TrimLeft(u, "/"), ".flv")
 	paths := strings.SplitN(path, "/", 2)
-	this.sys.Debugf("url:%s path:%s paths:%s", u, path, paths)
+	this.log.Debugf("url:%s path:%s paths:%s", u, path, paths)
 
 	if len(paths) != 2 {
 		http.Error(w, "invalid path", http.StatusBadRequest)
@@ -105,7 +107,7 @@ func (this *Server) handleConn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	writer := NewFLVWriter(this.sys, paths[0], paths[1], url, w)
+	writer := NewFLVWriter(this.sys, this.log, paths[0], paths[1], url, w)
 
 	this.sys.HandleWriter(writer)
 	writer.Wait()

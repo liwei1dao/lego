@@ -16,7 +16,7 @@ func newSys(options *Options) (sys *Gin, err error) {
 	sys = &Gin{
 		options: options,
 	}
-	sys.engine = engine.NewEngine(sys)
+	sys.engine = engine.NewEngine(options.Log)
 	///添加基础中间件
 	sys.engine.Use(logger.Logger([]string{}), recovery.Recovery())
 	if options.CertFile != "" && options.KeyFile != "" {
@@ -36,7 +36,7 @@ type Gin struct {
 func (this *Gin) Run(listenPort int) (err error) {
 	defer func() {
 		if err != nil {
-			this.Errorf("Run err:%v", err)
+			this.options.Log.Errorf("Run err:%v", err)
 		}
 	}()
 	// if this.engine.IsUnsafeTrustedProxies() {
@@ -44,14 +44,14 @@ func (this *Gin) Run(listenPort int) (err error) {
 	// 		"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
 
 	// }
-	this.Debugf("Listening and serving HTTP on:%d", listenPort)
+	this.options.Log.Debugf("Listening and serving HTTP on:%d", listenPort)
 	this.server = &http.Server{
 		Addr:    fmt.Sprintf(":%d", listenPort),
 		Handler: this.engine.Handler(),
 	}
 	go func() {
 		if err := this.server.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
-			this.Errorf("Run err:%v", err)
+			this.options.Log.Errorln(err)
 		}
 	}()
 	// err = http.ListenAndServe(fmt.Sprintf(":%d", this.options.ListenPort), this.Handler())
@@ -59,10 +59,10 @@ func (this *Gin) Run(listenPort int) (err error) {
 }
 
 func (this *Gin) RunTLS(listenPort int, certFile, keyFile string) (err error) {
-	this.Debugf("Listening and serving HTTPS on :%d", listenPort)
+	this.options.Log.Debugf("Listening and serving HTTPS on :%d", listenPort)
 	defer func() {
 		if err != nil {
-			this.Errorf("RunTLS err:%v", err)
+			this.options.Log.Errorln(err)
 		}
 	}()
 
@@ -76,7 +76,7 @@ func (this *Gin) RunTLS(listenPort int, certFile, keyFile string) (err error) {
 	}
 	go func() {
 		if err := this.server.ListenAndServeTLS(certFile, keyFile); err != nil && errors.Is(err, http.ErrServerClosed) {
-			this.Errorf("listen err:%s", err)
+			this.options.Log.Errorln(err)
 		}
 	}()
 	// err = http.ListenAndServeTLS(addr, certFile, keyFile, this.Handler())
@@ -84,10 +84,10 @@ func (this *Gin) RunTLS(listenPort int, certFile, keyFile string) (err error) {
 }
 
 func (this *Gin) RunListener(listener net.Listener) (err error) {
-	this.Debugf("Listening and serving HTTP on listener what's bind with address@%s", listener.Addr())
+	this.options.Log.Debugf("Listening and serving HTTP on listener what's bind with address@%s", listener.Addr())
 	defer func() {
 		if err != nil {
-			this.Errorf("Run err:%v", err)
+			this.options.Log.Errorln(err)
 		}
 
 	}()
@@ -102,7 +102,7 @@ func (this *Gin) RunListener(listener net.Listener) (err error) {
 
 func (this *Gin) Close() (err error) {
 	if err = this.server.Shutdown(context.Background()); err != nil {
-		this.Errorf("Close err:%v", err)
+		this.options.Log.Errorln(err)
 	}
 	this.server.Close()
 	return
@@ -153,40 +153,4 @@ func (this *Gin) Static(relativePath string, root string) engine.IRoutes {
 
 func (this *Gin) StaticFS(relativePath string, fs http.FileSystem) engine.IRoutes {
 	return this.engine.StaticFS(relativePath, fs)
-}
-
-///日志***********************************************************************
-func (this *Gin) Debug() bool {
-	return this.options.Debug
-}
-
-func (this *Gin) Debugf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Debugf("[SYS Gin] "+format, a...)
-	}
-}
-func (this *Gin) Infof(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Infof("[SYS Gin] "+format, a...)
-	}
-}
-func (this *Gin) Warnf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Warnf("[SYS Gin] "+format, a...)
-	}
-}
-func (this *Gin) Errorf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Errorf("[SYS Gin] "+format, a...)
-	}
-}
-func (this *Gin) Panicf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Panicf("[SYS Gin] "+format, a...)
-	}
-}
-func (this *Gin) Fatalf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Fatalf("[SYS Gin] "+format, a...)
-	}
 }

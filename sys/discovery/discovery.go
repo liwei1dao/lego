@@ -61,7 +61,7 @@ func (this *Discovery) Start() (err error) {
 	)
 	ps, err = this.store.List(this.options.BasePath)
 	if err != nil && err != dcore.ErrKeyNotFound {
-		this.Errorf("cannot get services of from registry: %v, err: %v", this.options.BasePath, err)
+		this.options.Log.Errorf("cannot get services of from registry: %v, err: %v", this.options.BasePath, err)
 		return err
 	}
 
@@ -74,7 +74,7 @@ func (this *Discovery) Start() (err error) {
 		// k := strings.TrimPrefix(p.Key, prefix)
 		pair := &core.ServiceNode{}
 		if err = this.Unmarshal(p.Value, pair); err != nil {
-			this.Errorf("err:%v", err)
+			this.options.Log.Errorln(err)
 		}
 		pairs = append(pairs, pair)
 	}
@@ -105,7 +105,7 @@ func (this *Discovery) Start() (err error) {
 					}
 				}
 			}
-			this.Debugf("close Timed registration coroutine")
+			this.options.Log.Debug("close Timed registration coroutine")
 		}()
 	}
 	go this.watch()
@@ -116,7 +116,7 @@ func (this *Discovery) Close() error {
 	_ = this.store.Delete(this.options.BasePath)
 	this.stopregisterSignal <- struct{}{}
 	this.stopwatchSignal <- struct{}{}
-	this.Debugf("Stop End !")
+	this.options.Log.Debug("Stop End !")
 	return nil
 }
 
@@ -145,7 +145,7 @@ func (this *Discovery) watch() {
 			if max := 30 * time.Second; tempDelay > max {
 				tempDelay = max
 			}
-			this.Warnf("can not watchtree (with retry %d, sleep %v): %s: %v", retry, tempDelay, this.options.BasePath, err)
+			this.options.Log.Warnf("can not watchtree (with retry %d, sleep %v): %s: %v", retry, tempDelay, this.options.BasePath, err)
 			time.Sleep(tempDelay)
 			continue
 		}
@@ -153,7 +153,7 @@ func (this *Discovery) watch() {
 	}
 
 	if err != nil {
-		this.Errorf("can't watch %s: %v", this.options.BasePath, err)
+		this.options.Log.Errorf("can't watch %s: %v", this.options.BasePath, err)
 		return
 	}
 
@@ -173,7 +173,7 @@ func (this *Discovery) watch() {
 			// k := strings.TrimPrefix(p.Key, prefix)
 			pair := &core.ServiceNode{}
 			if err = this.Unmarshal(p.Value, pair); err != nil {
-				this.Errorf("err:%v", err)
+				this.options.Log.Errorln(err)
 			}
 			pairs = append(pairs, pair)
 		}
@@ -191,13 +191,13 @@ func (this *Discovery) watch() {
 				select {
 				case ch <- pairs:
 				case <-time.After(time.Minute):
-					this.Warnf("chan is full and new change has been dropped")
+					this.options.Log.Warn("chan is full and new change has been dropped")
 				}
 			}()
 		}
 		this.mu.Unlock()
 	}
-	this.Infof("close watch coroutine")
+	this.options.Log.Info("close watch coroutine")
 }
 
 ///编解码***********************************************************************
@@ -213,37 +213,5 @@ func (this *Discovery) Unmarshal(data []byte, v interface{}) error {
 		return this.options.Codec.Unmarshal(data, v)
 	} else {
 		return json.Unmarshal(data, v)
-	}
-}
-
-///日志***********************************************************************
-func (this *Discovery) Debugf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Debugf("[SYS BlockCache] "+format, a...)
-	}
-}
-func (this *Discovery) Infof(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Infof("[SYS BlockCache] "+format, a...)
-	}
-}
-func (this *Discovery) Warnf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Warnf("[SYS BlockCache] "+format, a...)
-	}
-}
-func (this *Discovery) Errorf(format string, a ...interface{}) {
-	if this.options.Log != nil {
-		this.options.Log.Errorf("[SYS BlockCache] "+format, a...)
-	}
-}
-func (this *Discovery) Panicf(format string, a ...interface{}) {
-	if this.options.Log != nil {
-		this.options.Log.Panicf("[SYS BlockCache] "+format, a...)
-	}
-}
-func (this *Discovery) Fatalf(format string, a ...interface{}) {
-	if this.options.Log != nil {
-		this.options.Log.Fatalf("[SYS BlockCache] "+format, a...)
 	}
 }

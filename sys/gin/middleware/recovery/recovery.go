@@ -73,13 +73,10 @@ func CustomRecoveryWithWriter(handle RecoveryFunc) engine.HandlerFunc {
 				}
 				headersToStr := strings.Join(headers, "\r\n")
 				if brokenPipe {
-					c.Sys.Errorf("%s\n%s%s", err, headersToStr, reset)
-				} else if c.Sys.Debug() {
-					c.Sys.Errorf("[Recovery] %s panic recovered:\n%s\n%s\n%s%s",
-						timeFormat(time.Now()), headersToStr, err, stack, reset)
+					c.Log.Errorf("%s\n%s%s", err, headersToStr, reset)
 				} else {
-					c.Sys.Errorf("[Recovery] %s panic recovered:\n%s\n%s%s",
-						timeFormat(time.Now()), err, stack, reset)
+					c.Log.Errorf("[Recovery] %s panic recovered:\n%s\n%s\n%s%s",
+						timeFormat(time.Now()), headersToStr, err, stack, reset)
 				}
 
 				if brokenPipe {

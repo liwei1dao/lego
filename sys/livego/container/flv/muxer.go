@@ -10,6 +10,7 @@ import (
 	"github.com/liwei1dao/lego/sys/livego/codec"
 	"github.com/liwei1dao/lego/sys/livego/core"
 	"github.com/liwei1dao/lego/sys/livego/utils/pio"
+	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/container/id"
 )
 
@@ -21,20 +22,22 @@ const (
 	headerLen = 11
 )
 
-func NewFlvDvr(sys core.ISys) *FlvDvr {
+func NewFlvDvr(sys core.ISys, log log.ILogger) *FlvDvr {
 	return &FlvDvr{
 		sys: sys,
+		log: log,
 	}
 }
 
 type FlvDvr struct {
 	sys core.ISys
+	log log.ILogger
 }
 
 func (this *FlvDvr) GetWriter(info core.Info) core.WriteCloser {
 	paths := strings.SplitN(info.Key, "/", 2)
 	if len(paths) != 2 {
-		this.sys.Warnf("invalid info")
+		this.log.Warnf("invalid info")
 		return nil
 	}
 
@@ -42,20 +45,20 @@ func (this *FlvDvr) GetWriter(info core.Info) core.WriteCloser {
 
 	err := os.MkdirAll(path.Join(flvDir, paths[0]), 0755)
 	if err != nil {
-		this.sys.Errorf("mkdir error: ", err)
+		this.log.Errorf("mkdir error: ", err)
 		return nil
 	}
 
 	fileName := fmt.Sprintf("%s_%d.%s", path.Join(flvDir, info.Key), time.Now().Unix(), "flv")
-	this.sys.Debugf("flv dvr save stream to: ", fileName)
+	this.log.Debugf("flv dvr save stream to: ", fileName)
 	w, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0755)
 	if err != nil {
-		this.sys.Errorf("open file error: ", err)
+		this.log.Errorf("open file error: ", err)
 		return nil
 	}
 
 	writer := NewFLVWriter(paths[0], paths[1], info.URL, w)
-	this.sys.Debugf("new flv dvr: ", writer.Info())
+	this.log.Debugf("new flv dvr: ", writer.Info())
 	return writer
 }
 

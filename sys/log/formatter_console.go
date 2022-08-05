@@ -45,6 +45,14 @@ func (this *ConsoleFormatter) Format(config *EncoderConfig, entry *Entry) (*pool
 			line.AppendString(entry.Caller.Function)
 		}
 	}
+	if entry.Name != "" {
+		if !isfirst {
+			line.AppendString(config.ConsoleSeparator)
+		}
+		isfirst = false
+		line.AppendString(entry.Name)
+	}
+
 	if config.MessageKey != "" {
 		if !isfirst {
 			line.AppendString(config.ConsoleSeparator)

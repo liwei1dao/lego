@@ -45,35 +45,3 @@ func (this *CacheGo) run() {
 func (this *CacheGo) Clsoe() {
 	this.stop <- true
 }
-
-///日志***********************************************************************
-func (this *CacheGo) Debugf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Debugf("[SYS CacheGo] "+format, a...)
-	}
-}
-func (this *CacheGo) Infof(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Infof("[SYS CacheGo] "+format, a...)
-	}
-}
-func (this *CacheGo) Warnf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Warnf("[SYS CacheGo] "+format, a...)
-	}
-}
-func (this *CacheGo) Errorf(format string, a ...interface{}) {
-	if this.options.Log != nil {
-		this.options.Log.Errorf("[SYS CacheGo] "+format, a...)
-	}
-}
-func (this *CacheGo) Panicf(format string, a ...interface{}) {
-	if this.options.Log != nil {
-		this.options.Log.Panicf("[SYS CacheGo] "+format, a...)
-	}
-}
-func (this *CacheGo) Fatalf(format string, a ...interface{}) {
-	if this.options.Log != nil {
-		this.options.Log.Fatalf("[SYS CacheGo] "+format, a...)
-	}
-}

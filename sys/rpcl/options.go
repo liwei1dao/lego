@@ -1,6 +1,8 @@
 package rpcl
 
 import (
+	"errors"
+
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/discovery"
 	"github.com/liwei1dao/lego/sys/log"
@@ -23,7 +25,7 @@ type Options struct {
 	DiscoveryEndpoints []string            //服务发现节点
 	DiscoveryInterval  int32               //发现间隔 单位秒
 	Debug              bool                //日志是否开启
-	Log                log.ILog
+	Log                log.ILogger
 }
 
 func SetServiceNode(v *core.ServiceNode) Option {
@@ -48,33 +50,37 @@ func SetDebug(v bool) Option {
 	}
 }
 
-func SetLog(v log.ILog) Option {
+func SetLog(v log.ILogger) Option {
 	return func(o *Options) {
 		o.Log = v
 	}
 }
 
 func newOptions(config map[string]interface{}, opts ...Option) (options *Options, err error) {
-	options = &Options{
-		Debug: true,
-		Log:   log.Clone(2),
-	}
+	options = &Options{}
 	if config != nil {
 		mapstructure.Decode(config, options)
 	}
 	for _, o := range opts {
 		o(options)
 	}
+	if options.Debug && options.Log == nil {
+		if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.rpc", 2)); options.Log == nil {
+			err = errors.New("log is nil")
+		}
+	}
 	return
 }
 
 func newOptionsByOption(opts ...Option) (options *Options, err error) {
-	options = &Options{
-		Debug: true,
-		Log:   log.Clone(2),
-	}
+	options = &Options{}
 	for _, o := range opts {
 		o(options)
+	}
+	if options.Debug && options.Log == nil {
+		if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.rpc", 2)); options.Log == nil {
+			err = errors.New("log is nil")
+		}
 	}
 	return
 }

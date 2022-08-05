@@ -2,7 +2,6 @@ package kafka
 
 import (
 	"github.com/Shopify/sarama"
-	"github.com/liwei1dao/lego/sys/log"
 )
 
 type (
@@ -12,7 +11,6 @@ type (
 		Consumer_Close() error
 	}
 	ISys interface {
-		log.Ilogf
 		Topics() ([]string, error)
 		Partitions(topic string) ([]int32, error)
 		GetOffset(topic string, partitionID int32, time int64) (int64, error)

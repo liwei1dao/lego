@@ -5,7 +5,22 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
+	"github.com/liwei1dao/lego/sys/log"
 )
+
+type logger struct {
+	log log.ILogger
+}
+
+func (this *logger) Print(v ...interface{}) {
+	this.log.Panicln(v...)
+}
+func (this *logger) Printf(format string, v ...interface{}) {
+	this.log.Printf(format, v...)
+}
+func (this *logger) Println(v ...interface{}) {
+	this.log.Panicln(v...)
+}
 
 func newSys(options *Options) (sys *Kafka, err error) {
 	sys = &Kafka{options: options}
@@ -26,7 +41,7 @@ func (this *Kafka) init() (err error) {
 		version sarama.KafkaVersion
 	)
 	if this.options.Debug {
-		sarama.Logger = this
+		sarama.Logger = &logger{log: this.options.Log}
 	}
 	config := sarama.NewConfig()
 	version, err = sarama.ParseKafkaVersion(this.options.Version)
@@ -83,11 +98,11 @@ func (this *Kafka) init() (err error) {
 	}
 	if this.options.StartType == Consumer || this.options.StartType == All || this.options.StartType == SyncproducerAndConsumer || this.options.StartType == AsyncproducerAndConsumer {
 		if this.options.GroupId != "" {
-			if this.consumer, err = newConsumerGroup(this, this.options.Hosts, this.options.GroupId, this.options.Topics, config); err != nil {
+			if this.consumer, err = newConsumerGroup(this, this.options.Log, this.options.Hosts, this.options.GroupId, this.options.Topics, config); err != nil {
 				return
 			}
 		} else {
-			if this.consumer, err = newConsumer(this, this.options.Hosts, this.options.Topics[0], config); err != nil {
+			if this.consumer, err = newConsumer(this, this.options.Log, this.options.Hosts, this.options.Topics[0], config); err != nil {
 				return
 			}
 		}
@@ -192,71 +207,23 @@ func (this *Kafka) Consumer_Close() (err error) {
 func (this *Kafka) Close() (err error) {
 	if this.client != nil {
 		if err = this.client.Close(); err != nil {
-			this.Errorf("client Close err:%v", err)
+			this.options.Log.Errorf("client Close err:%v", err)
 		}
 	}
 	if this.syncproducer != nil {
 		if err = this.syncproducer.Close(); err != nil {
-			this.Errorf("syncproducer Close err:%v", err)
+			this.options.Log.Errorf("syncproducer Close err:%v", err)
 		}
 	}
 	if this.asyncproducer != nil {
 		if err = this.asyncproducer.Close(); err != nil {
-			this.Errorf("asyncproducer Close err:%v", err)
+			this.options.Log.Errorf("asyncproducer Close err:%v", err)
 		}
 	}
 	if this.consumer != nil {
 		if err = this.consumer.Consumer_Close(); err != nil {
-			this.Errorf("consumer Close err:%v", err)
+			this.options.Log.Errorf("consumer Close err:%v", err)
 		}
 	}
 	return
-}
-
-///日志***********************************************************************
-func (this *Kafka) Debugf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Debugf("[SYS Kafka] "+format, a...)
-	}
-}
-func (this *Kafka) Infof(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Infof("[SYS Kafka] "+format, a...)
-	}
-}
-func (this *Kafka) Warnf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Warnf("[SYS Kafka] "+format, a...)
-	}
-}
-func (this *Kafka) Errorf(format string, a ...interface{}) {
-	if this.options.Log != nil {
-		this.options.Log.Errorf("[SYS Kafka] "+format, a...)
-	}
-}
-func (this *Kafka) Panicf(format string, a ...interface{}) {
-	if this.options.Log != nil {
-		this.options.Log.Panicf("[SYS Kafka] "+format, a...)
-	}
-}
-func (this *Kafka) Fatalf(format string, a ...interface{}) {
-	if this.options.Log != nil {
-		this.options.Log.Fatalf("[SYS Kafka] "+format, a...)
-	}
-}
-
-func (this *Kafka) Print(v ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Warnf("[SYS Kafka] ", v...)
-	}
-}
-func (this *Kafka) Printf(format string, v ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Warnf("[SYS Kafka] "+format, v...)
-	}
-}
-func (this *Kafka) Println(v ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Warnf("[SYS Kafka] ", v...)
-	}
 }

@@ -33,7 +33,7 @@ type Options struct {
 	Config         *dcore.Config     //连接配置
 	Codec          ICodec            //编解码工具
 	Debug          bool              //日志是否开启
-	Log            log.ILog
+	Log            log.ILogger
 }
 
 func SetBasePath(v string) Option {
@@ -76,7 +76,7 @@ func SetDebug(v bool) Option {
 		o.Debug = v
 	}
 }
-func SetLog(v log.ILog) Option {
+func SetLog(v log.ILogger) Option {
 	return func(o *Options) {
 		o.Log = v
 	}
@@ -93,7 +93,7 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 		o(options)
 	}
 	if options.Debug && options.Log == nil {
-		if options.Log = log.Clone(2); options.Log == nil {
+		if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.discovery", 2)); options.Log == nil {
 			err = errors.New("log is nil")
 		}
 	}
@@ -114,7 +114,7 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 	}
 
 	if options.Debug && options.Log == nil {
-		if options.Log = log.Clone(2); options.Log == nil {
+		if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.discovery", 2)); options.Log == nil {
 			err = errors.New("log is nil")
 		}
 	}

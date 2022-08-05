@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/liwei1dao/lego/sys/livego/codec"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 var (
@@ -75,8 +76,12 @@ type ConnServer struct {
 func (this *ConnServer) IsPublisher() bool {
 	return this.isPublisher
 }
+
 func (this *ConnServer) Sys() ISys {
 	return this.conn.Sys()
+}
+func (this *ConnServer) Log() log.ILogger {
+	return this.conn.Log()
 }
 
 func (this *ConnServer) GetInfo() (app string, name string, url string) {
@@ -123,7 +128,7 @@ func (this *ConnServer) handleCmdMsg(c *ChunkStream) error {
 			}
 			this.done = true
 			this.isPublisher = true
-			this.conn.Sys().Debugf("handle publish req done")
+			this.conn.Log().Debugf("handle publish req done")
 		case cmdPlay:
 			if err = this.publishOrPlay(vs[1:]); err != nil {
 				return err
@@ -133,7 +138,7 @@ func (this *ConnServer) handleCmdMsg(c *ChunkStream) error {
 			}
 			this.done = true
 			this.isPublisher = false
-			this.conn.Sys().Debugf("handle play req done")
+			this.conn.Log().Debugf("handle play req done")
 		case cmdFcpublish:
 			this.fcPublish(vs)
 		case cmdReleaseStream:
@@ -141,7 +146,7 @@ func (this *ConnServer) handleCmdMsg(c *ChunkStream) error {
 		case cmdFCUnpublish:
 		case cmdDeleteStream:
 		default:
-			this.conn.Sys().Debugf("no support command=", vs[0].(string))
+			this.conn.Log().Debugf("no support command=", vs[0].(string))
 		}
 	}
 

@@ -47,7 +47,7 @@ type Options struct {
 	Sasl_Mechanism            sarama.SASLMechanism    //认证方法
 	Sasl_GSSAPI               sarama.GSSAPIConfig     //认证配置
 	Debug                     bool                    //日志是否开启
-	Log                       log.ILog
+	Log                       log.ILogger
 }
 
 ///kafka启动类型
@@ -235,8 +235,6 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 		Consumer_Assignor:         "range",
 		Consumer_Offsets_Initial:  sarama.OffsetOldest,
 		Sasl_Enable:               false,
-		Debug:                     true,
-		Log:                       log.Clone(2),
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
@@ -245,7 +243,7 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 		o(options)
 	}
 	if options.Debug && options.Log == nil {
-		if options.Log = log.Clone(2); options.Log == nil {
+		if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.discovery", 2)); options.Log == nil {
 			err = errors.New("log is nil")
 		}
 	}
@@ -269,14 +267,12 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 		Consumer_Assignor:         "range",
 		Consumer_Offsets_Initial:  sarama.OffsetOldest,
 		Sasl_Enable:               false,
-		Debug:                     true,
-		Log:                       log.Clone(2),
 	}
 	for _, o := range opts {
 		o(options)
 	}
 	if options.Debug && options.Log == nil {
-		if options.Log = log.Clone(2); options.Log == nil {
+		if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.discovery", 2)); options.Log == nil {
 			err = errors.New("log is nil")
 		}
 	}

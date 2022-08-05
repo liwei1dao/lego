@@ -7,14 +7,16 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/log"
 	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
 	"github.com/liwei1dao/lego/sys/rpcl/protocol"
 	"github.com/nats-io/nats.go"
 )
 
-func NewKafkaConnPool(sys lcore.ISys, config *lcore.Config) (cpool *NatsConnPool, err error) {
+func NewKafkaConnPool(sys lcore.ISys, log log.ILogger, config *lcore.Config) (cpool *NatsConnPool, err error) {
 	cpool = &NatsConnPool{
 		sys:    sys,
+		log:    log,
 		config: config,
 	}
 	err = cpool.init()
@@ -23,6 +25,7 @@ func NewKafkaConnPool(sys lcore.ISys, config *lcore.Config) (cpool *NatsConnPool
 
 type NatsConnPool struct {
 	sys         lcore.ISys
+	log         log.ILogger
 	config      *lcore.Config
 	conn        *nats.Conn
 	subs        *nats.Subscription
@@ -95,14 +98,14 @@ locp:
 			break locp
 		}
 		if message, err = protocol.Read(bytes.NewReader(m.Data)); err != nil {
-			this.sys.Errorf("err:%v", err)
+			this.log.Errorf("err:%v", err)
 			continue
 		}
 		if client, err = this.GetClient(message.From()); err != nil {
-			this.sys.Errorf("err:%v", err)
+			this.log.Errorf("err:%v", err)
 			continue
 		}
 		go this.sys.Handle(client, message)
 	}
-	this.sys.Warnf("connpool nats service run() exit!:%v", err)
+	this.log.Warnf("connpool nats service run() exit!:%v", err)
 }

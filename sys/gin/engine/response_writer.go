@@ -33,7 +33,7 @@ type IResponseWriter interface {
 }
 type ResponseWriter struct {
 	http.ResponseWriter
-	log    log.Ilogf
+	log    log.ILogger
 	size   int
 	status int
 }

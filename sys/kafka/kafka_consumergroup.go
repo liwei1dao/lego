@@ -6,11 +6,12 @@ import (
 	"sync"
 
 	"github.com/Shopify/sarama"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 // type MessagChan <-chan *sarama.ConsumerMessage
 
-func newConsumerGroup(sys ISys, brokers []string, group string, topics []string, config *sarama.Config) (kcgroup *KafkaConsumerGroup, err error) {
+func newConsumerGroup(sys ISys, log log.ILogger, brokers []string, group string, topics []string, config *sarama.Config) (kcgroup *KafkaConsumerGroup, err error) {
 	var (
 		cgroup sarama.ConsumerGroup
 	)
@@ -21,6 +22,7 @@ func newConsumerGroup(sys ISys, brokers []string, group string, topics []string,
 	ctx, cancel := context.WithTimeout(context.Background(), config.Net.DialTimeout)
 	kcgroup = &KafkaConsumerGroup{
 		sys:      sys,
+		log:      log,
 		cgroup:   cgroup,
 		ready:    make(chan bool),
 		topics:   topics,
@@ -41,6 +43,7 @@ func newConsumerGroup(sys ISys, brokers []string, group string, topics []string,
 
 type KafkaConsumerGroup struct {
 	sys      ISys
+	log      log.ILogger
 	ready    chan bool
 	topics   []string
 	cgroup   sarama.ConsumerGroup
@@ -72,10 +75,10 @@ func (this *KafkaConsumerGroup) run() {
 locp:
 	for {
 		if err := this.cgroup.Consume(this.ctx, this.topics, this); err != nil {
-			this.sys.Errorf("Error from consumer: %v", err)
+			this.log.Errorf("Error from consumer: %v", err)
 		}
 		if this.ctx.Err() != nil {
-			this.sys.Errorf("Error from consumer: %v", this.ctx.Err())
+			this.log.Errorf("Error from consumer: %v", this.ctx.Err())
 			break locp
 		}
 		this.ready = make(chan bool)
@@ -95,12 +98,12 @@ func (this *KafkaConsumerGroup) Cleanup(sarama.ConsumerGroupSession) error {
 
 // ConsumeClaim must start a consumer loop of ConsumerGroupClaim's Messages().
 func (this *KafkaConsumerGroup) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
-	this.sys.Debugf("KafkaConsumerGroup ConsumeClaim Start:%s\n", session.MemberID())
+	this.log.Debugf("KafkaConsumerGroup ConsumeClaim Start:%s\n", session.MemberID())
 	for message := range claim.Messages() {
 		// log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
 		this.messages <- message
 		session.MarkMessage(message, "")
 	}
-	this.sys.Debugf("KafkaConsumerGroup ConsumeClaim End:%s", session.MemberID())
+	this.log.Debugf("KafkaConsumerGroup ConsumeClaim End:%s", session.MemberID())
 	return nil
 }

@@ -47,21 +47,21 @@ type LiveGo struct {
 
 func (this *LiveGo) init() (err error) {
 	if this.options.Hls {
-		if this.hlsServer, err = hls.NewServer(this); err != nil {
+		if this.hlsServer, err = hls.NewServer(this, this.options.Log); err != nil {
 			return
 		}
 	}
 	if this.options.Flv {
-		if this.httpflvServer, err = httpflv.NewServer(this); err != nil {
+		if this.httpflvServer, err = httpflv.NewServer(this, this.options.Log); err != nil {
 			return
 		}
 	}
 	if this.options.Api {
-		if this.apiServer, err = api.NewServer(this); err != nil {
+		if this.apiServer, err = api.NewServer(this, this.options.Log); err != nil {
 			return
 		}
 	}
-	if this.rtmpServer, err = rtmp.NewServer(this, this.hlsServer); err != nil {
+	if this.rtmpServer, err = rtmp.NewServer(this, this.options.Log, this.hlsServer); err != nil {
 		return
 	}
 	return
@@ -93,20 +93,20 @@ func (this *LiveGo) CheckAlive() {
 //读处理
 func (this *LiveGo) HandleReader(r core.ReadCloser) {
 	info := r.Info()
-	this.Debugf("HandleReader: info[%v]", info)
+	this.options.Log.Debugf("HandleReader: info[%v]", info)
 	var stm *core.Stream
 	i, ok := this.streams.Load(info.Key)
 	if stm, ok = i.(*core.Stream); ok {
 		stm.TransStop()
 		id := stm.ID()
 		if id != core.EmptyID && id != info.UID {
-			ns := core.NewStream()
+			ns := core.NewStream(this, this.options.Log)
 			stm.Copy(ns)
 			stm = ns
 			this.streams.Store(info.Key, ns)
 		}
 	} else {
-		stm = core.NewStream()
+		stm = core.NewStream(this, this.options.Log)
 		this.streams.Store(info.Key, stm)
 		stm.SetInfo(info)
 	}
@@ -116,13 +116,13 @@ func (this *LiveGo) HandleReader(r core.ReadCloser) {
 //写处理
 func (this *LiveGo) HandleWriter(w core.WriteCloser) {
 	info := w.Info()
-	this.Debugf("HandleWriter: info[%v]", info)
+	this.options.Log.Debugf("HandleWriter: info[%v]", info)
 
 	var s *core.Stream
 	item, ok := this.streams.Load(info.Key)
 	if !ok {
-		this.Debugf("HandleWriter: not found create new info[%v]", info)
-		s = core.NewStream()
+		this.options.Log.Debugf("HandleWriter: not found create new info[%v]", info)
+		s = core.NewStream(this, this.options.Log)
 		this.streams.Store(info.Key, s)
 		s.SetInfo(info)
 	} else {
@@ -203,38 +203,6 @@ func (this *LiveGo) GetDebug() bool {
 	return this.options.Debug
 }
 
-///日志***********************************************************************
-func (this *LiveGo) Debugf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Debugf("[SYS LiveGo] "+format, a...)
-	}
-}
-func (this *LiveGo) Infof(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Infof("[SYS LiveGo] "+format, a...)
-	}
-}
-func (this *LiveGo) Warnf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Warnf("[SYS LiveGo] "+format, a...)
-	}
-}
-func (this *LiveGo) Errorf(format string, a ...interface{}) {
-	if this.options.Log != nil {
-		this.options.Log.Errorf("[SYS LiveGo] "+format, a...)
-	}
-}
-func (this *LiveGo) Panicf(format string, a ...interface{}) {
-	if this.options.Log != nil {
-		this.options.Log.Panicf("[SYS LiveGo] "+format, a...)
-	}
-}
-func (this *LiveGo) Fatalf(format string, a ...interface{}) {
-	if this.options.Log != nil {
-		this.options.Log.Fatalf("[SYS LiveGo] "+format, a...)
-	}
-}
-
 ///房间***********************************************************************
 func (this *LiveGo) SetKey(channel string) (key string, err error) {
 	key = id.NewXId()
@@ -285,10 +253,10 @@ func (this *LiveGo) DeleteKey(key string) (ok bool) {
 func (this *LiveGo) GetAndCreateStaticPushObject(rtmpurl string) (pushobj *core.StaticPush) {
 	this.mapLock.RLock()
 	staticpush, ok := this.staticPushMap[rtmpurl]
-	this.Debugf("GetAndCreateStaticPushObject: %s, return %v", rtmpurl, ok)
+	this.options.Log.Debugf("GetAndCreateStaticPushObject: %s, return %v", rtmpurl, ok)
 	if !ok {
 		this.mapLock.RUnlock()
-		newStaticpush := core.NewStaticPush(rtmpurl)
+		newStaticpush := core.NewStaticPush(this, this.options.Log, rtmpurl)
 		this.mapLock.Lock()
 		this.staticPushMap[rtmpurl] = newStaticpush
 		this.mapLock.Unlock()
@@ -313,13 +281,13 @@ func (this *LiveGo) ReleaseStaticPushObject(rtmpurl string) {
 	this.mapLock.RLock()
 	if _, ok := this.staticPushMap[rtmpurl]; ok {
 		this.mapLock.RUnlock()
-		this.Debugf("ReleaseStaticPushObject %s ok", rtmpurl)
+		this.options.Log.Debugf("ReleaseStaticPushObject %s ok", rtmpurl)
 		this.mapLock.Lock()
 		delete(this.staticPushMap, rtmpurl)
 		this.mapLock.Unlock()
 	} else {
 		this.mapLock.RUnlock()
-		this.Debugf("ReleaseStaticPushObject: not find %s", rtmpurl)
+		this.options.Log.Debugf("ReleaseStaticPushObject: not find %s", rtmpurl)
 	}
 	return
 }

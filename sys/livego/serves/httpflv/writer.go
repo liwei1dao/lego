@@ -8,6 +8,7 @@ import (
 	"github.com/liwei1dao/lego/sys/livego/codec"
 	"github.com/liwei1dao/lego/sys/livego/core"
 	"github.com/liwei1dao/lego/sys/livego/utils/pio"
+	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/container/id"
 )
 
@@ -16,9 +17,10 @@ const (
 	maxQueueNum = 1024
 )
 
-func NewFLVWriter(sys core.ISys, app, title, url string, ctx http.ResponseWriter) *FLVWriter {
+func NewFLVWriter(sys core.ISys, log log.ILogger, app, title, url string, ctx http.ResponseWriter) *FLVWriter {
 	ret := &FLVWriter{
 		sys:         sys,
+		log:         log,
 		Uid:         id.NewXId(),
 		app:         app,
 		title:       title,
@@ -31,18 +33,18 @@ func NewFLVWriter(sys core.ISys, app, title, url string, ctx http.ResponseWriter
 	}
 
 	if _, err := ret.ctx.Write([]byte{0x46, 0x4c, 0x56, 0x01, 0x05, 0x00, 0x00, 0x00, 0x09}); err != nil {
-		ret.sys.Errorf("Error on response writer")
+		ret.log.Errorf("Error on response writer")
 		ret.closed = true
 	}
 	pio.PutI32BE(ret.buf[:4], 0)
 	if _, err := ret.ctx.Write(ret.buf[:4]); err != nil {
-		ret.sys.Errorf("Error on response writer")
+		ret.log.Errorf("Error on response writer")
 		ret.closed = true
 	}
 	go func() {
 		err := ret.SendPacket()
 		if err != nil {
-			ret.sys.Debugf("SendPacket error:%v", err)
+			ret.log.Debugf("SendPacket error:%v", err)
 			ret.closed = true
 		}
 
@@ -52,6 +54,7 @@ func NewFLVWriter(sys core.ISys, app, title, url string, ctx http.ResponseWriter
 
 type FLVWriter struct {
 	sys core.ISys
+	log log.ILogger
 	Uid string
 	core.RWBaser
 	app, title, url string
@@ -63,14 +66,14 @@ type FLVWriter struct {
 }
 
 func (this *FLVWriter) DropPacket(pktQue chan *core.Packet, info core.Info) {
-	this.sys.Warnf("[%v] packet queue max!!!", info)
+	this.log.Warnf("[%v] packet queue max!!!", info)
 	for i := 0; i < maxQueueNum-84; i++ {
 		tmpPkt, ok := <-pktQue
 		if ok && tmpPkt.IsVideo {
 			videoPkt, ok := tmpPkt.Header.(core.VideoPacketHeader)
 			// dont't drop sps config and dont't drop key frame
 			if ok && (videoPkt.IsSeq() || videoPkt.IsKeyFrame()) {
-				this.sys.Debugf("insert keyframe to queue")
+				this.log.Debugf("insert keyframe to queue")
 				pktQue <- tmpPkt
 			}
 
@@ -82,11 +85,11 @@ func (this *FLVWriter) DropPacket(pktQue chan *core.Packet, info core.Info) {
 		}
 		// try to don't drop audio
 		if ok && tmpPkt.IsAudio {
-			this.sys.Debugf("insert audio to queue")
+			this.log.Debugf("insert audio to queue")
 			pktQue <- tmpPkt
 		}
 	}
-	this.sys.Debugf("packet queue len: ", len(pktQue))
+	this.log.Debugf("packet queue len: ", len(pktQue))
 }
 func (this *FLVWriter) SendPacket() error {
 	for {
@@ -169,7 +172,7 @@ func (this *FLVWriter) Wait() {
 }
 
 func (this *FLVWriter) Close(error) {
-	this.sys.Debugf("http flv closed")
+	this.log.Debugf("http flv closed")
 	if !this.closed {
 		close(this.packetQueue)
 		close(this.closedChan)

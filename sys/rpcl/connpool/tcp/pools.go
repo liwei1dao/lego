@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/log"
 	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
 )
 
@@ -19,9 +20,10 @@ const (
 	WriteChanSize = 1024 * 1024
 )
 
-func NewTcpConnPool(sys lcore.ISys, config *lcore.Config) (cpool *TcpConnPool, err error) {
+func NewTcpConnPool(sys lcore.ISys, log log.ILogger, config *lcore.Config) (cpool *TcpConnPool, err error) {
 	cpool = &TcpConnPool{
 		sys:    sys,
+		log:    log,
 		config: config,
 	}
 	return
@@ -29,6 +31,7 @@ func NewTcpConnPool(sys lcore.ISys, config *lcore.Config) (cpool *TcpConnPool, e
 
 type TcpConnPool struct {
 	sys         lcore.ISys
+	log         log.ILogger
 	config      *lcore.Config
 	doneChan    chan struct{}
 	clientMapMu sync.RWMutex
@@ -40,7 +43,7 @@ func (this *TcpConnPool) Start() (err error) {
 		ln net.Listener
 	)
 	if ln, err = net.Listen("tcp", this.config.Endpoints[0]); err != nil {
-		this.sys.Errorf("err:%v", err)
+		this.log.Errorf("err:%v", err)
 	}
 	go this.serveListener(ln)
 	return

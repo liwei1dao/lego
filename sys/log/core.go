@@ -14,27 +14,17 @@ type (
 		Key   string
 		Value interface{}
 	}
-	Fields    map[string]interface{}
-	exitFunc  func(int)
-	Formatter interface {
-		Format(*Entry) ([]byte, error)
-	}
-	Ilogf interface {
+	Fields []Field
+	Ilogf  interface {
 		Debugf(format string, args ...interface{})
 		Infof(format string, args ...interface{})
+		Printf(format string, args ...interface{})
 		Warnf(format string, args ...interface{})
 		Errorf(format string, args ...interface{})
 		Fatalf(format string, args ...interface{})
 		Panicf(format string, args ...interface{})
 	}
-	ILog interface {
-		Debug(msg string, args ...Field)
-		Info(msg string, args ...Field)
-		Warn(msg string, args ...Field)
-		Error(msg string, args ...Field)
-		Fatal(msg string, args ...Field)
-		Panic(msg string, args ...Field)
-		Ilogf
+	IlogIn interface {
 		Debugln(args ...interface{})
 		Infoln(args ...interface{})
 		Println(args ...interface{})
@@ -43,9 +33,24 @@ type (
 		Fatalln(args ...interface{})
 		Panicln(args ...interface{})
 	}
-	ISys interface {
-		Clone(skip int) ILog
+	ILog interface {
+		Debug(msg string, args ...Field)
+		Info(msg string, args ...Field)
+		Print(msg string, args ...Field)
+		Warn(msg string, args ...Field)
+		Error(msg string, args ...Field)
+		Fatal(msg string, args ...Field)
+		Panic(msg string, args ...Field)
+	}
+	ILogger interface {
+		Enabled(lvl Loglevel) bool
+		Ilogf
+		IlogIn
 		ILog
+	}
+	ISys interface {
+		Clone(name string, skip int) ILogger
+		ILogger
 	}
 )
 
@@ -70,8 +75,8 @@ func NewSys(opt ...Option) (sys ISys, err error) {
 	sys, err = newSys(option)
 	return
 }
-func Clone(skip int) ILog {
-	return defsys.Clone(skip)
+func Clone(name string, skip int) ILogger {
+	return defsys.Clone(name, skip)
 }
 func Debug(msg string, args ...Field) {
 	defsys.Debug(msg, args...)

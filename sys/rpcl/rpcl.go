@@ -33,7 +33,7 @@ func newSys(options *Options) (sys *RPCL, err error) {
 		options.ServiceNode.Addr = options.MessageEndpoints[0]
 	}
 
-	if sys.cpool, err = connpool.NewConnPool(sys, &lcore.Config{
+	if sys.cpool, err = connpool.NewConnPool(sys, options.Log, &lcore.Config{
 		ConnectType: options.ConnectType,
 		Endpoints:   options.MessageEndpoints,
 	}); err != nil {
@@ -146,7 +146,7 @@ func (this *RPCL) Call(ctx context.Context, servicePath string, serviceMethod st
 		this.pendingmutex.Unlock()
 		if call != nil {
 			call.Error = ctx.Err()
-			call.done(this)
+			call.done(this.options.Log)
 		}
 		return ctx.Err()
 	case call := <-call.Done:
@@ -208,7 +208,7 @@ func (this *RPCL) Handle(client lcore.IConnClient, message lcore.IMessage) {
 			call := this.pending[seq]
 			delete(this.pending, seq)
 			this.pendingmutex.Unlock()
-			call.done(this)
+			call.done(this.options.Log)
 			return
 		}
 		this.handleresponse(lcore.NewContext(context.Background()), message)
@@ -436,7 +436,7 @@ func (this *RPCL) handleresponse(ctx context.Context, res lcore.IMessage) {
 			if codec != nil {
 				_ = codec.Unmarshal(data, call.Reply)
 			}
-			call.done(this)
+			call.done(this.options.Log)
 		}
 	default:
 		data := res.Payload()
@@ -454,7 +454,7 @@ func (this *RPCL) handleresponse(ctx context.Context, res lcore.IMessage) {
 		if len(res.Metadata()) > 0 {
 			call.ResMetadata = res.Metadata()
 		}
-		call.done(this)
+		call.done(this.options.Log)
 	}
 }
 
@@ -557,7 +557,7 @@ func (this *RPCL) ShakehandsRequest(ctx context.Context, client lcore.IConnClien
 		this.pendingmutex.Unlock()
 		if call != nil {
 			call.Error = ctx.Err()
-			call.done(this)
+			call.done(this.options.Log)
 		}
 		return ctx.Err()
 	case call := <-call.Done:

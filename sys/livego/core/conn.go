@@ -7,6 +7,7 @@ import (
 
 	"github.com/liwei1dao/lego/sys/livego/utils/pio"
 	"github.com/liwei1dao/lego/sys/livego/utils/pool"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 const (
@@ -29,9 +30,10 @@ const (
 	pingResponse     uint32 = 7
 )
 
-func NewConn(c net.Conn, sys ISys) *Conn {
+func NewConn(c net.Conn, sys ISys, log log.ILogger) *Conn {
 	return &Conn{
 		sys:             sys,
+		log:             log,
 		Conn:            c,
 		timeout:         time.Second * time.Duration(sys.GetTimeout()),
 		chunkSize:       128,
@@ -44,6 +46,7 @@ func NewConn(c net.Conn, sys ISys) *Conn {
 type Conn struct {
 	net.Conn
 	sys                 ISys
+	log                 log.ILogger
 	rw                  *ReadWriter
 	timeout             time.Duration
 	chunkSize           uint32
@@ -57,6 +60,9 @@ type Conn struct {
 
 func (this *Conn) Sys() ISys {
 	return this.sys
+}
+func (this *Conn) Log() log.ILogger {
+	return this.log
 }
 
 func (conn *Conn) NewAck(size uint32) ChunkStream {

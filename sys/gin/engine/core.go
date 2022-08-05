@@ -2,8 +2,6 @@ package engine
 
 import (
 	"net/http"
-
-	"github.com/liwei1dao/lego/sys/log"
 )
 
 type HandlerFunc func(*Context)
@@ -24,11 +22,6 @@ type RouteInfo struct {
 }
 
 type RoutesInfo []RouteInfo
-
-type ISys interface {
-	log.Ilogf
-	Debug() bool
-}
 
 type IRoutes interface {
 	Group(relativePath string, handlers ...HandlerFunc) IRoutes

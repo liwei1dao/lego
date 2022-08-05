@@ -116,6 +116,7 @@ type Handler interface {
 
 type GetSys interface {
 	Sys() ISys
+	Log() log.ILogger
 }
 
 type GetInFo interface {
@@ -135,7 +136,6 @@ type StreamReadWriteCloser interface {
 }
 
 type ISys interface {
-	log.Ilogf
 	ISysOptions
 	Handler
 	IStaticPushMnager

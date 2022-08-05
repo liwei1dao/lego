@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+
+	"github.com/liwei1dao/lego/sys/log"
 )
 
-func NewStream() *Stream {
+func NewStream(sys ISys, log log.ILogger) *Stream {
 	return &Stream{
-		ws: &sync.Map{},
+		sys: sys,
+		log: log,
+		ws:  &sync.Map{},
 	}
 }
 
@@ -23,6 +27,7 @@ func (this *PackWriterCloser) GetWriter() WriteCloser {
 
 type Stream struct {
 	sys     ISys
+	log     log.ILogger
 	isStart bool
 	cache   *Cache
 	r       ReadCloser
@@ -88,7 +93,7 @@ func (this *Stream) CheckAlive() (n int) {
 		if v.w != nil {
 			//Alive from RWBaser, check last frame now - timestamp, if > timeout then Remove it
 			if !v.w.Alive() {
-				this.sys.Debugf("[SYS LiveGo] write timeout remove")
+				this.log.Debugf("[SYS LiveGo] write timeout remove")
 				this.ws.Delete(key)
 				v.w.Close(fmt.Errorf("write timeout"))
 				return true
@@ -105,7 +110,7 @@ func (this *Stream) TransStart() {
 	this.isStart = true
 	var p Packet
 
-	this.sys.Debugf("[SYS LiveGo] TransStart: %v", this.info)
+	this.log.Debugf("[SYS LiveGo] TransStart: %v", this.info)
 
 	this.StartStaticPush()
 
@@ -132,7 +137,7 @@ func (this *Stream) TransStart() {
 			if !v.init {
 				//log.Debugf("cache.send: %v", v.w.Info())
 				if err = this.cache.Send(v.w); err != nil {
-					this.sys.Debugf("[SYS LiveGo] [%s] send cache packet error: %v, remove", v.w.Info(), err)
+					this.log.Debugf("[SYS LiveGo] [%s] send cache packet error: %v, remove", v.w.Info(), err)
 					this.ws.Delete(key)
 					return true
 				}
@@ -142,7 +147,7 @@ func (this *Stream) TransStart() {
 				//writeType := reflect.TypeOf(v.w)
 				//log.Debugf("w.Write: type=%v, %v", writeType, v.w.Info())
 				if err = v.w.Write(&newPacket); err != nil {
-					this.sys.Debugf("[SYS LiveGo] [%s] write packet error: %v, remove", v.w.Info(), err)
+					this.log.Debugf("[SYS LiveGo] [%s] write packet error: %v, remove", v.w.Info(), err)
 					this.ws.Delete(key)
 				}
 			}
@@ -152,7 +157,7 @@ func (this *Stream) TransStart() {
 }
 
 func (this *Stream) TransStop() {
-	this.sys.Debugf("[SYS LiveGo] TransStop: %s", this.info.Key)
+	this.log.Debugf("[SYS LiveGo] TransStop: %s", this.info.Key)
 
 	if this.isStart && this.r != nil {
 		this.r.Close(fmt.Errorf("stop old"))
@@ -185,7 +190,7 @@ func (this *Stream) IsSendStaticPush() bool {
 		if (staticpushObj != nil) && (err == nil) {
 			return true
 		} else {
-			this.sys.Debugf("[SYS LiveGo] SendStaticPush GetStaticPushObject %s error", pushurl)
+			this.log.Debugf("[SYS LiveGo] SendStaticPush GetStaticPushObject %s error", pushurl)
 		}
 	}
 	return false
@@ -209,26 +214,26 @@ func (this *Stream) StartStaticPush() {
 	streamname := key[index+1:]
 	appname := dscr[0]
 
-	this.sys.Debugf("[SYS LiveGo] StartStaticPush: current streamname=%s， appname=%s", streamname, appname)
+	this.log.Debugf("[SYS LiveGo] StartStaticPush: current streamname=%s， appname=%s", streamname, appname)
 	pushurllist := this.sys.GetStaticPush()
 	if pushurllist == nil || len(pushurllist) < 1 {
-		this.sys.Debugf("StartStaticPush: GetStaticPushList error")
+		this.log.Debugf("StartStaticPush: GetStaticPushList error")
 		return
 	}
 
 	for _, pushurl := range pushurllist {
 		pushurl := pushurl + "/" + streamname
-		this.sys.Debugf("[SYS LiveGo] StartStaticPush: static pushurl=%s", pushurl)
+		this.log.Debugf("[SYS LiveGo] StartStaticPush: static pushurl=%s", pushurl)
 
 		staticpushObj := this.sys.GetAndCreateStaticPushObject(pushurl)
 		if staticpushObj != nil {
 			if err := staticpushObj.Start(); err != nil {
-				this.sys.Errorf("[SYS LiveGo] StartStaticPush: staticpushObj.Start %s error=%v", pushurl, err)
+				this.log.Errorf("[SYS LiveGo] StartStaticPush: staticpushObj.Start %s error=%v", pushurl, err)
 			} else {
-				this.sys.Debugf("[SYS LiveGo] StartStaticPush: staticpushObj.Start %s ok", pushurl)
+				this.log.Debugf("[SYS LiveGo] StartStaticPush: staticpushObj.Start %s ok", pushurl)
 			}
 		} else {
-			this.sys.Debugf("[SYS LiveGo] StartStaticPush GetStaticPushObject %s error", pushurl)
+			this.log.Debugf("[SYS LiveGo] StartStaticPush GetStaticPushObject %s error", pushurl)
 		}
 	}
 }
@@ -262,17 +267,14 @@ func (this *Stream) SendStaticPush(packet Packet) {
 			staticpushObj.WriteAvPacket(&packet)
 			//log.Debugf("SendStaticPush: WriteAvPacket %s ", pushurl)
 		} else {
-			this.sys.Debugf("SendStaticPush GetStaticPushObject %s error", pushurl)
+			this.log.Debugf("SendStaticPush GetStaticPushObject %s error", pushurl)
 		}
 	}
 }
 
 func (this *Stream) StopStaticPush() {
 	key := this.info.Key
-	if this.sys.GetDebug() {
-		this.sys.Debugf("StopStaticPush......%s", key)
-	}
-
+	this.log.Debugf("StopStaticPush......%s", key)
 	dscr := strings.Split(key, "/")
 	if len(dscr) < 1 {
 		return
@@ -286,24 +288,24 @@ func (this *Stream) StopStaticPush() {
 	streamname := key[index+1:]
 	appname := dscr[0]
 
-	this.sys.Debugf("StopStaticPush: current streamname=%s， appname=%s", streamname, appname)
+	this.log.Debugf("StopStaticPush: current streamname=%s， appname=%s", streamname, appname)
 	pushurllist := this.sys.GetStaticPush()
 	if pushurllist == nil || len(pushurllist) < 1 {
-		this.sys.Debugf("StopStaticPush: GetStaticPushList error: no pushurllist")
+		this.log.Debugf("StopStaticPush: GetStaticPushList error: no pushurllist")
 		return
 	}
 
 	for _, pushurl := range pushurllist {
 		pushurl := pushurl + "/" + streamname
-		this.sys.Debugf("StopStaticPush: static pushurl=%s", pushurl)
+		this.log.Debugf("StopStaticPush: static pushurl=%s", pushurl)
 
 		staticpushObj, err := this.sys.GetStaticPushObject(pushurl)
 		if (staticpushObj != nil) && (err == nil) {
 			staticpushObj.Stop()
 			this.sys.ReleaseStaticPushObject(pushurl)
-			this.sys.Debugf("StopStaticPush: staticpushObj.Stop %s ", pushurl)
+			this.log.Debugf("StopStaticPush: staticpushObj.Stop %s ", pushurl)
 		} else {
-			this.sys.Debugf("StopStaticPush GetStaticPushObject %s error", pushurl)
+			this.log.Debugf("StopStaticPush GetStaticPushObject %s error", pushurl)
 		}
 	}
 }
@@ -311,7 +313,7 @@ func (this *Stream) StopStaticPush() {
 func (this *Stream) closeInter() {
 	if this.r != nil {
 		this.StopStaticPush()
-		this.sys.Debugf("[%v] publisher closed", this.r.Info())
+		this.log.Debugf("[%v] publisher closed", this.r.Info())
 	}
 
 	this.ws.Range(func(key, val interface{}) bool {
@@ -320,7 +322,7 @@ func (this *Stream) closeInter() {
 			v.w.Close(fmt.Errorf("closed"))
 			if v.w.Info().IsInterval() {
 				this.ws.Delete(key)
-				this.sys.Debugf("[%v] player closed and remove\n", v.w.Info())
+				this.log.Debugf("[%v] player closed and remove\n", v.w.Info())
 			}
 		}
 		return true

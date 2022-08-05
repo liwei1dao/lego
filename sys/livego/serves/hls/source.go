@@ -9,6 +9,7 @@ import (
 	"github.com/liwei1dao/lego/sys/livego/container/ts"
 	"github.com/liwei1dao/lego/sys/livego/core"
 	"github.com/liwei1dao/lego/sys/livego/parser"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 const (
@@ -22,10 +23,11 @@ const (
 	h264_default_hz uint64 = 90
 )
 
-func NewSource(sys core.ISys, info core.Info) *Source {
+func NewSource(sys core.ISys, log log.ILogger, info core.Info) *Source {
 	info.Inter = true
 	s := &Source{
 		sys:         sys,
+		log:         log,
 		info:        info,
 		align:       &align{},
 		stat:        newStatus(),
@@ -41,7 +43,7 @@ func NewSource(sys core.ISys, info core.Info) *Source {
 	go func() {
 		err := s.SendPacket()
 		if err != nil {
-			s.sys.Debugf("send packet error:%v", err)
+			s.log.Debugf("send packet error:%v", err)
 			s.closed = true
 		}
 	}()
@@ -51,6 +53,7 @@ func NewSource(sys core.ISys, info core.Info) *Source {
 type Source struct {
 	core.RWBaser
 	sys         core.ISys
+	log         log.ILogger
 	seq         int
 	info        core.Info
 	stat        *status
@@ -68,7 +71,7 @@ type Source struct {
 }
 
 func (this *Source) DropPacket(pktQue chan *core.Packet, info core.Info) {
-	this.sys.Warnf("[%v] packet queue max!!!", info)
+	this.log.Warnf("[%v] packet queue max!!!", info)
 	for i := 0; i < maxQueueNum-84; i++ {
 		tmpPkt, ok := <-pktQue
 		// try to don't drop audio
@@ -92,7 +95,7 @@ func (this *Source) DropPacket(pktQue chan *core.Packet, info core.Info) {
 		}
 
 	}
-	this.sys.Debugf("packet queue len:%d", len(pktQue))
+	this.log.Debugf("packet queue len:%d", len(pktQue))
 }
 func (this *Source) Write(p *core.Packet) (err error) {
 	err = nil
@@ -119,7 +122,7 @@ func (this *Source) Info() (ret core.Info) {
 	return this.info
 }
 func (this *Source) Close(err error) {
-	this.sys.Debugf("hls source closed:%v", this.info)
+	this.log.Debugf("hls source closed:%v", this.info)
 	if !this.closed && !this.sys.GetHLSKeepAfterEnd() {
 		this.cleanup()
 	}
@@ -155,13 +158,13 @@ func (this *Source) muxAudio(limit byte) error {
 
 func (this *Source) SendPacket() error {
 	defer func() {
-		this.sys.Debugf("[%v] hls sender stop", this.info)
+		this.log.Debugf("[%v] hls sender stop", this.info)
 		if r := recover(); r != nil {
-			this.sys.Warnf("hls SendPacket panic: ", r)
+			this.log.Warnf("hls SendPacket panic: ", r)
 		}
 	}()
 
-	this.sys.Debugf("[%v] hls sender start", this.info)
+	this.log.Debugf("[%v] hls sender start", this.info)
 	for {
 		if this.closed {
 			return fmt.Errorf("closed")
@@ -175,17 +178,17 @@ func (this *Source) SendPacket() error {
 
 			err := this.demuxer.Demux(p)
 			if err == flv.ErrAvcEndSEQ {
-				this.sys.Warnf("hls err:%v", err)
+				this.log.Warnf("hls err:%v", err)
 				continue
 			} else {
 				if err != nil {
-					this.sys.Warnf("hls err:%v", err)
+					this.log.Warnf("hls err:%v", err)
 					return err
 				}
 			}
 			compositionTime, isSeq, err := this.parse(p)
 			if err != nil {
-				this.sys.Warnf("hls err:%v", err)
+				this.log.Warnf("hls err:%v", err)
 			}
 			if err != nil || isSeq {
 				continue

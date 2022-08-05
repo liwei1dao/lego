@@ -9,6 +9,7 @@ import (
 
 	"github.com/liwei1dao/lego/sys/livego/core"
 	"github.com/liwei1dao/lego/sys/livego/serves/rtmp"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 type Response struct {
@@ -24,9 +25,10 @@ func (this *Response) SendJson() (int, error) {
 	return this.w.Write(resp)
 }
 
-func NewServer(sys core.ISys) (server *Server, err error) {
+func NewServer(sys core.ISys, log log.ILogger) (server *Server, err error) {
 	server = &Server{
 		sys: sys,
+		log: log,
 	}
 	err = server.init()
 	return
@@ -34,6 +36,7 @@ func NewServer(sys core.ISys) (server *Server, err error) {
 
 type Server struct {
 	sys     core.ISys
+	log     log.ILogger
 	session map[string]*core.RtmpRelay
 }
 
@@ -44,16 +47,16 @@ func (this *Server) init() (err error) {
 	if this.sys.GetApiAddr() != "" {
 		opListen, err = net.Listen("tcp", this.sys.GetApiAddr())
 		if err != nil {
-			this.sys.Errorf("init ApiServer err:%v", err)
+			this.log.Errorf("init ApiServer err:%v", err)
 			return
 		}
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
-					this.sys.Errorf("HTTP-API server panic: ", r)
+					this.log.Errorf("HTTP-API server panic: ", r)
 				}
 			}()
-			this.sys.Infof("HTTP-API listen On ", this.sys.GetApiAddr())
+			this.log.Infof("HTTP-API listen On ", this.sys.GetApiAddr())
 			this.Serve(opListen)
 		}()
 	} else {
@@ -110,7 +113,7 @@ func (this *Server) handlePush(w http.ResponseWriter, req *http.Request) {
 	name := req.Form.Get("name")
 	url := req.Form.Get("url")
 
-	this.sys.Debugf("control push: oper=%v, app=%v, name=%v, url=%v", oper, app, name, url)
+	this.log.Debugf("control push: oper=%v, app=%v, name=%v, url=%v", oper, app, name, url)
 	if (len(app) <= 0) || (len(name) <= 0) || (len(url) <= 0) {
 		res.Data = "control push parameter error, please check them."
 		return
@@ -127,16 +130,16 @@ func (this *Server) handlePush(w http.ResponseWriter, req *http.Request) {
 			res.Data = retString
 			return
 		}
-		this.sys.Debugf("rtmprelay stop push %s from %s", remoteurl, localurl)
+		this.log.Debugf("rtmprelay stop push %s from %s", remoteurl, localurl)
 		pushRtmprelay.Stop()
 
 		delete(this.session, keyString)
 		retString = fmt.Sprintf("<h1>push url stop %s ok</h1></br>", url)
 		res.Data = retString
-		this.sys.Debugf("push stop return %s", retString)
+		this.log.Debugf("push stop return %s", retString)
 	} else {
-		pushRtmprelay := core.NewRtmpRelay(this.sys, localurl, remoteurl)
-		this.sys.Debugf("rtmprelay start push %s from %s", remoteurl, localurl)
+		pushRtmprelay := core.NewRtmpRelay(this.sys, this.log, localurl, remoteurl)
+		this.log.Debugf("rtmprelay start push %s from %s", remoteurl, localurl)
 		err = pushRtmprelay.Start()
 		if err != nil {
 			retString = fmt.Sprintf("push error=%v", err)
@@ -146,7 +149,7 @@ func (this *Server) handlePush(w http.ResponseWriter, req *http.Request) {
 		}
 
 		res.Data = retString
-		this.sys.Debugf("push start return %s", retString)
+		this.log.Debugf("push start return %s", retString)
 	}
 }
 
@@ -174,7 +177,7 @@ func (this *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 	name := req.Form.Get("name")
 	url := req.Form.Get("url")
 
-	this.sys.Debugf("control pull: oper=%v, app=%v, name=%v, url=%v", oper, app, name, url)
+	this.log.Debugf("control pull: oper=%v, app=%v, name=%v, url=%v", oper, app, name, url)
 	if (len(app) <= 0) || (len(name) <= 0) || (len(url) <= 0) {
 		res.Status = 400
 		res.Data = "control push parameter error, please check them."
@@ -194,17 +197,17 @@ func (this *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 			res.Data = retString
 			return
 		}
-		this.sys.Debugf("rtmprelay stop push %s from %s", remoteurl, localurl)
+		this.log.Debugf("rtmprelay stop push %s from %s", remoteurl, localurl)
 		pullRtmprelay.Stop()
 
 		delete(this.session, keyString)
 		retString = fmt.Sprintf("<h1>push url stop %s ok</h1></br>", url)
 		res.Status = 400
 		res.Data = retString
-		this.sys.Debugf("pull stop return %s", retString)
+		this.log.Debugf("pull stop return %s", retString)
 	} else {
-		pullRtmprelay := core.NewRtmpRelay(this.sys, localurl, remoteurl)
-		this.sys.Debugf("rtmprelay start push %s from %s", remoteurl, localurl)
+		pullRtmprelay := core.NewRtmpRelay(this.sys, this.log, localurl, remoteurl)
+		this.log.Debugf("rtmprelay start push %s from %s", remoteurl, localurl)
 		err = pullRtmprelay.Start()
 		if err != nil {
 			res.Status = 400
@@ -215,7 +218,7 @@ func (this *Server) handlePull(w http.ResponseWriter, req *http.Request) {
 		}
 
 		res.Data = retString
-		this.sys.Debugf("pull start return %s", retString)
+		this.log.Debugf("pull start return %s", retString)
 	}
 }
 

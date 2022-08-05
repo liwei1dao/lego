@@ -59,7 +59,7 @@ func (this *Cache) run() {
 	for v := range this.inpip {
 		siez := int64(unsafe.Sizeof(v))
 		if siez > this.options.CacheMaxSzie { //异常数据
-			this.Errorf("item size:%d large CacheMaxSzie:%d", siez, this.options.CacheMaxSzie)
+			this.options.Log.Errorf("item size:%d large CacheMaxSzie:%d", siez, this.options.CacheMaxSzie)
 			continue
 		} else if siez > atomic.LoadInt64(&this.free) { //空间不足
 			atomic.StoreInt32(&this.instate, 1)
@@ -102,33 +102,3 @@ func (this *Cache) run() {
 }
 
 ///日志***********************************************************************
-func (this *Cache) Debugf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Debugf("[SYS BlockCache] "+format, a...)
-	}
-}
-func (this *Cache) Infof(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Infof("[SYS BlockCache] "+format, a...)
-	}
-}
-func (this *Cache) Warnf(format string, a ...interface{}) {
-	if this.options.Debug {
-		this.options.Log.Warnf("[SYS BlockCache] "+format, a...)
-	}
-}
-func (this *Cache) Errorf(format string, a ...interface{}) {
-	if this.options.Log != nil {
-		this.options.Log.Errorf("[SYS BlockCache] "+format, a...)
-	}
-}
-func (this *Cache) Panicf(format string, a ...interface{}) {
-	if this.options.Log != nil {
-		this.options.Log.Panicf("[SYS BlockCache] "+format, a...)
-	}
-}
-func (this *Cache) Fatalf(format string, a ...interface{}) {
-	if this.options.Log != nil {
-		this.options.Log.Fatalf("[SYS BlockCache] "+format, a...)
-	}
-}

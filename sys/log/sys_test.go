@@ -13,7 +13,7 @@ type TestData struct {
 }
 
 func Test_sys(t *testing.T) {
-	if sys, err := log.NewSys(log.SetFileName("log"), log.SetEncoder(log.TextEncoder)); err != nil {
+	if sys, err := log.NewSys(log.SetFileName("log.log"), log.SetEncoder(log.TextEncoder)); err != nil {
 		fmt.Println(err)
 		return
 	} else {

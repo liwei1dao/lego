@@ -55,7 +55,7 @@ func (this *Client) Start() {
 func (this *Client) Write(msg []byte) (err error) {
 	_, err = this.conn.Write(msg)
 	if err != nil {
-		this.pool.sys.Errorf("send msg err:%v", err)
+		this.pool.log.Errorf("send msg err:%v", err)
 	}
 	return
 }
@@ -75,9 +75,9 @@ func (this *Client) serveConn() {
 				ss = size
 			}
 			buf = buf[:ss]
-			this.pool.sys.Errorf("serving %s panic error: %s, stack:\n %s", this.conn.RemoteAddr(), err, buf)
+			this.pool.log.Errorf("serving %s panic error: %s, stack:\n %s", this.conn.RemoteAddr(), err, buf)
 		}
-		this.pool.sys.Debugf("server closed conn: %v", this.conn.RemoteAddr().String())
+		this.pool.log.Debugf("server closed conn: %v", this.conn.RemoteAddr().String())
 	}()
 
 	if tlsConn, ok := this.conn.(*tls.Conn); ok {
@@ -88,7 +88,7 @@ func (this *Client) serveConn() {
 			this.conn.SetWriteDeadline(time.Now().Add(d))
 		}
 		if err := tlsConn.Handshake(); err != nil {
-			this.pool.sys.Errorf("rpcx: TLS handshake error from %s: %v", this.conn.RemoteAddr(), err)
+			this.pool.log.Errorf("rpcx: TLS handshake error from %s: %v", this.conn.RemoteAddr(), err)
 			return
 		}
 	}
@@ -102,7 +102,7 @@ func (this *Client) serveConn() {
 		req := protocol.GetPooledMsg()
 		err := req.Decode(r)
 		if err != nil {
-			this.pool.sys.Errorf("err:%v", err)
+			this.pool.log.Errorf("err:%v", err)
 			return
 		}
 		go this.pool.sys.Handle(this, req)
@@ -120,11 +120,11 @@ locp:
 		select {
 		case <-timer.C:
 			if err = this.Write(this.pool.sys.Heartbeat()); err != nil {
-				this.pool.sys.Errorf("err:%v", err)
+				this.pool.log.Errorf("err:%v", err)
 				go this.pool.CloseClient(this.node)
 			}
 			if atomic.LoadInt32(&this.hbeat) > 3 {
-				this.pool.sys.Errorf("heartbeat exception !")
+				this.pool.log.Errorf("heartbeat exception !")
 				go this.pool.CloseClient(this.node)
 			}
 		case <-this.closeSignal:

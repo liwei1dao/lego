@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/liwei1dao/lego/sys/livego/codec"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 var (
@@ -28,14 +29,16 @@ var (
 	ErrFail = fmt.Errorf("respone err")
 )
 
-func NewConnClient(sys ISys) *ConnClient {
+func NewConnClient(sys ISys, log log.ILogger) *ConnClient {
 	return &ConnClient{
 		sys: sys,
+		log: log,
 	}
 }
 
 type ConnClient struct {
 	sys        ISys
+	log        log.ILogger
 	transID    int
 	streamid   uint32
 	url        string
@@ -92,9 +95,9 @@ func (this *ConnClient) Start(url string, method string) error {
 		port = ":" + port
 	}
 	ips, err := net.LookupIP(host)
-	this.sys.Debugf("ips: %v, host: %v", ips, host)
+	this.log.Debugf("ips: %v, host: %v", ips, host)
 	if err != nil {
-		this.sys.Errorf("err:%v", err)
+		this.log.Errorf("err:%v", err)
 		return err
 	}
 	remoteIP = ips[rand.Intn(len(ips))].String()
@@ -104,15 +107,15 @@ func (this *ConnClient) Start(url string, method string) error {
 
 	local, err := net.ResolveTCPAddr("tcp", localIP)
 	if err != nil {
-		this.sys.Errorf("err:%v", err)
+		this.log.Errorf("err:%v", err)
 		return err
 	}
 	if this.sys.GetDebug() {
-		this.sys.Debugf("remoteIP:%v", remoteIP)
+		this.log.Debugf("remoteIP:%v", remoteIP)
 	}
 	remote, err := net.ResolveTCPAddr("tcp", remoteIP)
 	if err != nil {
-		this.sys.Errorf("err:%v", err)
+		this.log.Errorf("err:%v", err)
 		return err
 	}
 
@@ -122,7 +125,7 @@ func (this *ConnClient) Start(url string, method string) error {
 		if this.sys.GetEnableTLSVerify() {
 			roots, err := x509.SystemCertPool()
 			if err != nil {
-				this.sys.Errorf("err:%v", err)
+				this.log.Errorf("err:%v", err)
 				return err
 			}
 			config.RootCAs = roots
@@ -132,34 +135,34 @@ func (this *ConnClient) Start(url string, method string) error {
 
 		conn, err = tls.Dial("tcp", remoteIP, &config)
 		if err != nil {
-			this.sys.Errorf("err:%v", err)
+			this.log.Errorf("err:%v", err)
 			return err
 		}
 	} else {
 		conn, err = net.DialTCP("tcp", local, remote)
 		if err != nil {
-			this.sys.Errorf(" err:%v", err)
+			this.log.Errorf(" err:%v", err)
 			return err
 		}
 	}
 
-	this.sys.Debugf(" connection:", "local:", conn.LocalAddr(), "remote:", conn.RemoteAddr())
-	this.conn = NewConn(conn, this.sys)
-	this.sys.Debugf(" HandshakeClient....")
+	this.log.Debugf(" connection:", "local:", conn.LocalAddr(), "remote:", conn.RemoteAddr())
+	this.conn = NewConn(conn, this.sys, this.log)
+	this.log.Debugf(" HandshakeClient....")
 	if err := this.conn.HandshakeClient(); err != nil {
 		return err
 	}
 
-	this.sys.Debugf(" writeConnectMsg....")
+	this.log.Debugf(" writeConnectMsg....")
 	if err := this.writeConnectMsg(); err != nil {
 		return err
 	}
-	this.sys.Debugf(" writeCreateStreamMsg....")
+	this.log.Debugf(" writeCreateStreamMsg....")
 	if err := this.writeCreateStreamMsg(); err != nil {
-		this.sys.Errorf(" writeCreateStreamMsg error", err)
+		this.log.Errorf(" writeCreateStreamMsg error", err)
 		return err
 	}
-	this.sys.Debugf(" method control:", method, PUBLISH, PLAY)
+	this.log.Debugf(" method control:", method, PUBLISH, PLAY)
 	if method == PUBLISH {
 		if err := this.writePublishMsg(); err != nil {
 			return err
@@ -210,7 +213,7 @@ func (this *ConnClient) readRespMsg() error {
 		case 20, 17:
 			r := bytes.NewReader(rc.Data)
 			vs, _ := this.decoder.DecodeBatch(r, codec.AMF0)
-			this.sys.Debugf("readRespMsg: vs=%v", vs)
+			this.log.Debugf("readRespMsg: vs=%v", vs)
 			for k, v := range vs {
 				switch v.(type) {
 				case string:
@@ -291,7 +294,7 @@ func (this *ConnClient) writeConnectMsg() error {
 	event["flashVer"] = "FMS.3.1"
 	event["tcUrl"] = this.tcurl
 	this.curcmdName = cmdConnect
-	this.sys.Debugf(" writeConnectMsg: connClient.transID=%d, event=%v", this.transID, event)
+	this.log.Debugf(" writeConnectMsg: connClient.transID=%d, event=%v", this.transID, event)
 	if err := this.writeMsg(cmdConnect, this.transID, event); err != nil {
 		return err
 	}
@@ -301,7 +304,7 @@ func (this *ConnClient) writeConnectMsg() error {
 func (this *ConnClient) writeCreateStreamMsg() error {
 	this.transID++
 	this.curcmdName = cmdCreateStream
-	this.sys.Debugf(" writeCreateStreamMsg: this.transID=%d", this.transID)
+	this.log.Debugf(" writeCreateStreamMsg: this.transID=%d", this.transID)
 	if err := this.writeMsg(cmdCreateStream, this.transID, nil); err != nil {
 		return err
 	}
@@ -312,7 +315,7 @@ func (this *ConnClient) writeCreateStreamMsg() error {
 			return err
 		}
 		if err == ErrFail {
-			this.sys.Errorf(" writeCreateStreamMsg readRespMsg err=%v", err)
+			this.log.Errorf(" writeCreateStreamMsg readRespMsg err=%v", err)
 			return err
 		}
 	}
@@ -330,7 +333,7 @@ func (this *ConnClient) writePublishMsg() error {
 func (this *ConnClient) writePlayMsg() error {
 	this.transID++
 	this.curcmdName = cmdPlay
-	this.sys.Debugf("writePlayMsg: connClient.transID=%d, cmdPlay=%v, connClient.title=%v",
+	this.log.Debugf("writePlayMsg: connClient.transID=%d, cmdPlay=%v, connClient.title=%v",
 		this.transID, cmdPlay, this.title)
 	if err := this.writeMsg(cmdPlay, 0, nil, this.title); err != nil {
 		return err

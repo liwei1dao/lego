@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/liwei1dao/lego/sys/gin/render"
+	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/codec"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -32,14 +33,14 @@ var defaultTrustedCIDRs = []*net.IPNet{
 	},
 }
 
-func NewEngine(sys ISys) (engine *Engine) {
+func NewEngine(log log.ILogger) (engine *Engine) {
 	engine = &Engine{
 		RouterGroup: RouterGroup{
 			Handlers: nil,
 			basePath: "/",
 			root:     true,
 		},
-		sys:                    sys,
+		log:                    log,
 		FuncMap:                template.FuncMap{},
 		RedirectTrailingSlash:  true,
 		RedirectFixedPath:      false,
@@ -71,7 +72,7 @@ var mimePlain = []string{MIMEPlain}
 
 type Engine struct {
 	RouterGroup
-	sys        ISys
+	log        log.ILogger
 	UseRawPath bool
 	/*
 		如果启用，路由器尝试修复当前请求路径，如果没有
@@ -193,7 +194,7 @@ func (this *Engine) LoadHTMLGlob(pattern string) {
 	right := this.delims.Right
 	templ := template.Must(template.New("").Delims(left, right).Funcs(this.FuncMap).ParseGlob(pattern))
 
-	if this.sys.Debug() {
+	if this.log.Enabled(log.DebugLevel) {
 		this.debugPrintLoadTemplate(templ)
 		this.HTMLRender = render.HTMLDebug{Glob: pattern, FuncMap: this.FuncMap, Delims: this.delims}
 		return
@@ -207,7 +208,7 @@ LoadHTMLFiles 加载一段 HTML 文件
 并将结果与 HTML 渲染器相关联。
 */
 func (this *Engine) LoadHTMLFiles(files ...string) {
-	if this.sys.Debug() {
+	if this.log.Enabled(log.DebugLevel) {
 		this.HTMLRender = render.HTMLDebug{Files: files, FuncMap: this.FuncMap, Delims: this.delims}
 		return
 	}
@@ -217,7 +218,7 @@ func (this *Engine) LoadHTMLFiles(files ...string) {
 
 func (this *Engine) SetHTMLTemplate(templ *template.Template) {
 	if len(this.trees) > 0 {
-		this.sys.Warnf(`Since SetHTMLTemplate() is NOT thread-safe. It should only be called
+		this.log.Warnf(`Since SetHTMLTemplate() is NOT thread-safe. It should only be called
 			at initialization. ie. before any route is registered or the router is listening in a socket:
 				router := gin.Default()
 				router.SetHTMLTemplate(template) // << good place
@@ -269,10 +270,10 @@ func (this *Engine) addRoute(method, path string, handlers HandlersChain) {
 	assert1(path[0] == '/', "path must begin with '/'")
 	assert1(method != "", "HTTP method can not be empty")
 	assert1(len(handlers) > 0, "there must be at least one handler")
-	if this.sys.Debug() {
+	if this.log.Enabled(log.DebugLevel) {
 		nuHandlers := len(handlers)
 		handlerName := nameOfFunction(handlers.Last())
-		this.sys.Debugf("%s:%s --> %s handlers:%d", method, path, handlerName, nuHandlers)
+		this.log.Debugf("%s:%s --> %s handlers:%d", method, path, handlerName, nuHandlers)
 	}
 	root := this.trees.get(method)
 	if root == nil {
@@ -405,7 +406,7 @@ func (this *Engine) serveError(c *Context, code int, defaultMessage []byte) {
 		c.writermem.Header()["Content-Type"] = mimePlain
 		_, err := c.Writer.Write(defaultMessage)
 		if err != nil {
-			this.sys.Errorf("[SYS-Gin] cannot write message to writer during serve error: %v", err)
+			this.log.Errorf("[SYS-Gin] cannot write message to writer during serve error: %v", err)
 		}
 		return
 	}
@@ -446,7 +447,7 @@ func (this *Engine) redirectRequest(c *Context) {
 	if req.Method != http.MethodGet {
 		code = http.StatusTemporaryRedirect
 	}
-	this.sys.Debugf("redirecting request %d: %s --> %s", code, rPath, rURL)
+	this.log.Debugf("redirecting request %d: %s --> %s", code, rPath, rURL)
 	http.Redirect(c.Writer, req, rURL, code)
 	c.writermem.WriteHeaderNow()
 }
@@ -489,22 +490,21 @@ func (this *Engine) prepareTrustedCIDRs() ([]*net.IPNet, error) {
 func (this *Engine) allocateContext() *Context {
 	v := make(Params, 0, this.maxParams)
 	skippedNodes := make([]skippedNode, 0, this.maxSections)
-	return &Context{Sys: this.sys, engine: this, params: &v, skippedNodes: &skippedNodes}
+	return &Context{Log: this.log, engine: this, params: &v, skippedNodes: &skippedNodes}
 }
 
 //日志接口-------------------------------------------------------------
 func (this *Engine) debugPrintLoadTemplate(tmpl *template.Template) {
-	if this.sys.Debug() {
-		var buf strings.Builder
-		for _, tmpl := range tmpl.Templates() {
-			buf.WriteString("\t- ")
-			buf.WriteString(tmpl.Name())
-			buf.WriteString("\n")
-		}
-		format := "Loaded HTML Templates (%d): \n%s\n"
-		if !strings.HasSuffix(format, "\n") {
-			format += "\n"
-		}
-		this.sys.Debugf(format, len(tmpl.Templates()), buf.String())
+	var buf strings.Builder
+	for _, tmpl := range tmpl.Templates() {
+		buf.WriteString("\t- ")
+		buf.WriteString(tmpl.Name())
+		buf.WriteString("\n")
 	}
+	format := "Loaded HTML Templates (%d): \n%s\n"
+	if !strings.HasSuffix(format, "\n") {
+		format += "\n"
+	}
+	this.log.Debugf(format, len(tmpl.Templates()), buf.String())
+
 }

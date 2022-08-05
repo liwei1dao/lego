@@ -5,11 +5,13 @@ import (
 	"sync"
 
 	"github.com/Shopify/sarama"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
-func newConsumer(sys ISys, brokers []string, topic string, config *sarama.Config) (consumer *KafkaConsumer, err error) {
+func newConsumer(sys ISys, log log.ILogger, brokers []string, topic string, config *sarama.Config) (consumer *KafkaConsumer, err error) {
 	consumer = &KafkaConsumer{
 		sys:      sys,
+		log:      log,
 		topic:    topic,
 		messages: make(chan *sarama.ConsumerMessage, 10),
 		errors:   make(chan error, 0),
@@ -17,13 +19,13 @@ func newConsumer(sys ISys, brokers []string, topic string, config *sarama.Config
 	//创建消费者
 	consumer.consumer, err = sarama.NewConsumer(brokers, config)
 	if err != nil {
-		sys.Errorf("fail to start consumer, err:%v\n", err)
+		log.Errorf("fail to start consumer, err:%v\n", err)
 		return
 	}
 	//获取主题分区
 	consumer.partitionList, err = consumer.consumer.Partitions(topic) // 根据topic取到所有的分区
 	if err != nil {
-		sys.Errorf("fail to get list of partition:err%v\n", err)
+		log.Errorf("fail to get list of partition:err%v\n", err)
 		return
 	}
 	consumer.pc = make([]sarama.PartitionConsumer, len(consumer.partitionList))
@@ -33,6 +35,7 @@ func newConsumer(sys ISys, brokers []string, topic string, config *sarama.Config
 
 type KafkaConsumer struct {
 	sys           ISys
+	log           log.ILogger
 	consumer      sarama.Consumer
 	wg            sync.WaitGroup
 	topic         string
@@ -67,7 +70,7 @@ func (this *KafkaConsumer) run() {
 		pc, err := this.consumer.ConsumePartition(this.topic, int32(partition), sarama.OffsetNewest)
 		//pc, err := consumer.ConsumePartition("web_log", int32(partition), 90)
 		if err != nil {
-			this.sys.Errorf("failed to start consumer for partition %d,err:%v\n", partition, err)
+			this.log.Errorf("failed to start consumer for partition %d,err:%v\n", partition, err)
 			return
 		}
 		this.pc[i] = pc

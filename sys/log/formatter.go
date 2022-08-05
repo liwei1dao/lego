@@ -1,51 +1,70 @@
 package log
 
-import "time"
+import (
+	"sync"
+	"time"
 
-const (
-	defaultTimestampFormat = time.RFC3339
-	FieldKeyMsg            = "msg"
-	FieldKeyLevel          = "level"
-	FieldKeyTime           = "time"
-	FieldKeyLogrusError    = "logrus_error"
-	FieldKeyFunc           = "func"
-	FieldKeyFile           = "file"
+	"github.com/liwei1dao/lego/utils/pools"
 )
 
-func prefixFieldClashes(data Fields, fieldMap FieldMap, reportCaller bool) {
-	timeKey := fieldMap.resolve(FieldKeyTime)
-	if t, ok := data[timeKey]; ok {
-		data["fields."+timeKey] = t
-		delete(data, timeKey)
-	}
+var _fieldsPool = sync.Pool{
+	New: func() interface{} {
+		return make(Fields, 0, 6)
+	},
+}
 
-	msgKey := fieldMap.resolve(FieldKeyMsg)
-	if m, ok := data[msgKey]; ok {
-		data["fields."+msgKey] = m
-		delete(data, msgKey)
-	}
+func getFields() Fields {
+	return _fieldsPool.Get().(Fields)
+}
 
-	levelKey := fieldMap.resolve(FieldKeyLevel)
-	if l, ok := data[levelKey]; ok {
-		data["fields."+levelKey] = l
-		delete(data, levelKey)
-	}
+func putFields(fields Fields) {
+	fields = fields[:0]
+	_fieldsPool.Put(fields)
+}
 
-	logrusErrKey := fieldMap.resolve(FieldKeyLogrusError)
-	if l, ok := data[logrusErrKey]; ok {
-		data["fields."+logrusErrKey] = l
-		delete(data, logrusErrKey)
+func NewDefEncoderConfig() *EncoderConfig {
+	return &EncoderConfig{
+		TimeKey:          "ts",
+		LevelKey:         "level",
+		CallerKey:        "caller",
+		MessageKey:       "msg",
+		StacktraceKey:    "stacktrace",
+		ConsoleSeparator: "\t",
+		EncodeTime:       DefTimeEncoder,
+		EncodeLevel:      LowercaseLevelEncoder,
+		EncodeCaller:     ShortCallerEncoder,
 	}
+}
 
-	// If reportCaller is not set, 'func' will not conflict.
-	if reportCaller {
-		funcKey := fieldMap.resolve(FieldKeyFunc)
-		if l, ok := data[funcKey]; ok {
-			data["fields."+funcKey] = l
-		}
-		fileKey := fieldMap.resolve(FieldKeyFile)
-		if l, ok := data[fileKey]; ok {
-			data["fields."+fileKey] = l
-		}
-	}
+type TimeEncoder func(time.Time) string
+type LevelEncoder func(Loglevel) string
+type CallerEncoder func(EntryCaller) string
+
+func DefTimeEncoder(t time.Time) string {
+	return t.Format("2006/01/02 15:04:05.000")
+}
+
+func LowercaseLevelEncoder(l Loglevel) string {
+	return l.String()
+}
+
+func ShortCallerEncoder(caller EntryCaller) string {
+	return caller.TrimmedPath()
+}
+
+type EncoderConfig struct {
+	MessageKey       string `json:"messageKey" yaml:"messageKey"`
+	LevelKey         string `json:"levelKey" yaml:"levelKey"`
+	TimeKey          string `json:"timeKey" yaml:"timeKey"`
+	CallerKey        string `json:"callerKey" yaml:"callerKey"`
+	FunctionKey      string `json:"functionKey" yaml:"functionKey"`
+	StacktraceKey    string `json:"stacktraceKey" yaml:"stacktraceKey"`
+	ConsoleSeparator string `json:"consoleSeparator" yaml:"consoleSeparator"`
+	EncodeTime       TimeEncoder
+	EncodeLevel      LevelEncoder
+	EncodeCaller     CallerEncoder
+}
+
+type Formatter interface {
+	Format(config *EncoderConfig, entry *Entry) (*pools.Buffer, error)
 }
