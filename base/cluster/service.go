@@ -87,35 +87,36 @@ func (this *ClusterService) Destroy() (err error) {
 
 //注册服务对象
 func (this *ClusterService) Register(rcvr interface{}) (err error) {
-	return
+	return rpc.Register(rcvr)
 }
 
 //注册服务方法
 func (this *ClusterService) RegisterFunction(fn interface{}) (err error) {
-	return
+	return rpc.RegisterFunction(fn)
 }
 
 //注册服务方法 自定义服务名
 func (this *ClusterService) RegisterFunctionName(name string, fn interface{}) (err error) {
-	return
+	return rpc.RegisterFunctionName(name, fn)
 }
 
 //调用远端服务接口 同步
 func (this *ClusterService) RpcCall(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}) (err error) {
+	err = rpc.Call(ctx, servicePath, serviceMethod, args, reply)
 	return
 }
 
 //调用远端服务接口 异步
-func (this *ClusterService) RpcGo(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}, done chan *rpc.MessageCall) (call *rpc.MessageCall, err error) {
-	return
+func (this *ClusterService) RpcGo(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}) (call *rpc.MessageCall, err error) {
+	return rpc.Go(ctx, servicePath, serviceMethod, args, reply)
 }
 
 //调用远端服务接口 无回应
 func (this *ClusterService) RpcNoCall(ctx context.Context, servicePath, serviceMethod string, args interface{}) (err error) {
-	return
+	return rpc.GoNR(ctx, servicePath, serviceMethod, args)
 }
 
 //广播调用远端服务接口
 func (this *ClusterService) Broadcast(ctx context.Context, servicePath, serviceMethod string, args interface{}) (err error) {
-	return
+	return rpc.Broadcast(ctx, servicePath, serviceMethod, args)
 }
