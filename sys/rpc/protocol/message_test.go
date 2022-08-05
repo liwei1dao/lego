@@ -5,24 +5,24 @@ import (
 	"fmt"
 	"testing"
 
-	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
+	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
 
 func TestMessage(t *testing.T) {
 	req := NewMessage()
 	req.SetVersion(1)
 	fmt.Printf("%b\n", req.Header[2])
-	req.SetMessageType(lcore.Response)
+	req.SetMessageType(rpccore.Response)
 	fmt.Printf("%b\n", req.Header[2])
 	req.SetHeartbeat(true)
 	fmt.Printf("%b\n", req.Header[2])
 	req.SetOneway(true)
 	fmt.Printf("%b\n", req.Header[2])
-	req.SetCompressType(lcore.CompressGzip)
+	req.SetCompressType(rpccore.CompressGzip)
 	fmt.Printf("%b\n", req.Header[2])
-	req.SetMessageStatusType(lcore.Error)
+	req.SetMessageStatusType(rpccore.Error)
 	fmt.Printf("%b\n", req.Header[2])
-	req.SetSerializeType(lcore.ProtoBuffer)
+	req.SetSerializeType(rpccore.ProtoBuffer)
 	fmt.Printf("%b\n", req.Header[2])
 
 	req.SetSeq(1234567890)
@@ -48,7 +48,7 @@ func TestMessage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	res.SetMessageType(lcore.Response)
+	res.SetMessageType(rpccore.Response)
 
 	if res.Version() != 0 {
 		t.Errorf("expect 0 but got %d", res.Version())

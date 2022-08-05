@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/core"
-	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
+	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 	"github.com/nats-io/nats.go"
 )
 
-func newClient(pool *NatsConnPool, config *lcore.Config, snode *core.ServiceNode) (client *Client, err error) {
+func newClient(pool *NatsConnPool, config *rpccore.Config, snode *core.ServiceNode) (client *Client, err error) {
 	client = &Client{
 		pool:   pool,
 		config: config,
@@ -26,7 +26,7 @@ func newClient(pool *NatsConnPool, config *lcore.Config, snode *core.ServiceNode
 
 type Client struct {
 	pool        *NatsConnPool
-	config      *lcore.Config
+	config      *rpccore.Config
 	node        *core.ServiceNode
 	conn        *nats.Conn
 	closeSignal chan bool

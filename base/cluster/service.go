@@ -10,7 +10,7 @@ import (
 	"github.com/liwei1dao/lego/sys/cron"
 	"github.com/liwei1dao/lego/sys/event"
 	"github.com/liwei1dao/lego/sys/log"
-	"github.com/liwei1dao/lego/sys/rpcl"
+	"github.com/liwei1dao/lego/sys/rpc"
 )
 
 type ClusterService struct {
@@ -64,20 +64,20 @@ func (this *ClusterService) InitSys() {
 	} else {
 		log.Infof("Sys event Init success !")
 	}
-	if err := rpcl.OnInit(this.option.Setting.Sys["rpcl"], rpcl.SetServiceNode(this.serviceNode)); err != nil {
+	if err := rpc.OnInit(this.option.Setting.Sys["rpc"], rpc.SetServiceNode(this.serviceNode)); err != nil {
 		log.Panicf(fmt.Sprintf("初始化rpc系统 err:%v", err))
 	} else {
 		log.Infof("Sys rpc Init success !")
 	}
 	event.Register(core.Event_ServiceStartEnd, func() { //阻塞 先注册服务集群 保证其他服务能及时发现
-		if err := rpcl.Start(); err != nil {
+		if err := rpc.Start(); err != nil {
 			log.Panicf(fmt.Sprintf("启动RPC失败 err:%v", err))
 		}
 	})
 }
 
 func (this *ClusterService) Destroy() (err error) {
-	if err = rpcl.Close(); err != nil {
+	if err = rpc.Close(); err != nil {
 		return
 	}
 	cron.Close()
@@ -106,7 +106,7 @@ func (this *ClusterService) RpcCall(ctx context.Context, servicePath, serviceMet
 }
 
 //调用远端服务接口 异步
-func (this *ClusterService) RpcGo(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}, done chan *rpcl.MessageCall) (call *rpcl.MessageCall, err error) {
+func (this *ClusterService) RpcGo(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}, done chan *rpc.MessageCall) (call *rpc.MessageCall, err error) {
 	return
 }
 

@@ -2,11 +2,10 @@ package kafka
 
 import (
 	"github.com/liwei1dao/lego/sys/kafka"
-	"github.com/liwei1dao/lego/sys/rpcl/core"
-	gcore "github.com/liwei1dao/lego/sys/rpcl/core"
+	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
 
-func newService(sys core.ISys, config *gcore.Config) (service *Service, err error) {
+func newService(sys rpccore.ISys, config *rpccore.Config) (service *Service, err error) {
 	service = &Service{
 		sys: sys,
 	}
@@ -22,7 +21,7 @@ func newService(sys core.ISys, config *gcore.Config) (service *Service, err erro
 }
 
 type Service struct {
-	sys   core.ISys
+	sys   rpccore.ISys
 	kafka kafka.ISys
 }
 

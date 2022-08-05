@@ -4,18 +4,18 @@ import (
 	"fmt"
 
 	"github.com/liwei1dao/lego/sys/log"
-	"github.com/liwei1dao/lego/sys/rpcl/connpool/kafka"
-	"github.com/liwei1dao/lego/sys/rpcl/connpool/tcp"
-	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
+	"github.com/liwei1dao/lego/sys/rpc/connpool/kafka"
+	"github.com/liwei1dao/lego/sys/rpc/connpool/tcp"
+	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
 
 //创建连接池对象
-func NewConnPool(sys lcore.ISys, log log.ILogger, config *lcore.Config) (comm lcore.IConnPool, err error) {
+func NewConnPool(sys rpccore.ISys, log log.ILogger, config *rpccore.Config) (comm rpccore.IConnPool, err error) {
 	switch config.ConnectType {
-	case lcore.Tcp:
+	case rpccore.Tcp:
 		comm, err = tcp.NewTcpConnPool(sys, log, config)
 		break
-	case lcore.Kafka:
+	case rpccore.Kafka:
 		comm, err = kafka.NewKafkaConnPool(sys, log, config)
 		break
 	default:

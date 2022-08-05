@@ -1,4 +1,4 @@
-package rpcl
+package rpc
 
 import (
 	"reflect"
@@ -6,18 +6,18 @@ import (
 	"unicode/utf8"
 
 	"github.com/liwei1dao/lego/core"
-	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
-	"github.com/liwei1dao/lego/sys/rpcl/protocol"
+	"github.com/liwei1dao/lego/sys/rpc/protocol"
+	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
 
 //获取心跳消息包
 func getHeartbeat(node core.ServiceNode) []byte {
 	req := protocol.GetPooledMsg()
-	req.SetMessageType(lcore.Request)
+	req.SetMessageType(rpccore.Request)
 	req.SetHeartbeat(true)
 	req.SetOneway(true)
 	req.SetServiceMethod("")
-	codec := codecs[lcore.ProtoBuffer]
+	codec := codecs[rpccore.ProtoBuffer]
 	data, _ := codec.Marshal(node)
 	req.SetPayload(data)
 	allData := req.EncodeSlicePointer()
@@ -29,12 +29,12 @@ func getHeartbeat(node core.ServiceNode) []byte {
 }
 
 //设置消息错误信息
-func handleError(res lcore.IMessage, err error) (lcore.IMessage, error) {
-	res.SetMessageStatusType(lcore.Error)
+func handleError(res rpccore.IMessage, err error) (rpccore.IMessage, error) {
+	res.SetMessageStatusType(rpccore.Error)
 	if res.Metadata() == nil {
 		res.SetMetadata(make(map[string]string))
 	}
-	res.Metadata()[lcore.ServiceError] = err.Error()
+	res.Metadata()[rpccore.ServiceError] = err.Error()
 	return res, err
 }
 

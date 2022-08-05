@@ -2,6 +2,7 @@ package log_test
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/liwei1dao/lego/sys/log"
@@ -12,11 +13,27 @@ type TestData struct {
 	Age  int32
 }
 
-func Test_sys(t *testing.T) {
-	if sys, err := log.NewSys(log.SetFileName("log.log"), log.SetEncoder(log.TextEncoder)); err != nil {
+var sys log.ISys
+
+func TestMain(m *testing.M) {
+	var err error
+	if sys, err = log.NewSys(
+		log.SetFileName("log.log"),
+		log.SetIsDebug(false),
+		log.SetEncoder(log.TextEncoder),
+	); err != nil {
 		fmt.Println(err)
 		return
-	} else {
-		sys.Debug("妈妈咪呀!", log.Field{"num", &TestData{Name: "lala", Age: 165}})
+	}
+	defer os.Exit(m.Run())
+}
+func Test_sys(t *testing.T) {
+
+}
+
+//性能测试
+func Benchmark_Ability(b *testing.B) {
+	for i := 0; i < b.N; i++ { //use b.N for looping
+		sys.Error("妈妈咪呀!")
 	}
 }

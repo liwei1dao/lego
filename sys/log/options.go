@@ -34,6 +34,13 @@ func SetFileName(v string) Option {
 	}
 }
 
+//是否是开发模式
+func SetIsDebug(v bool) Option {
+	return func(o *Options) {
+		o.IsDebug = v
+	}
+}
+
 ///日志输出级别 debug info warning error fatal panic
 func SetLoglevel(v Loglevel) Option {
 	return func(o *Options) {

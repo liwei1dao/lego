@@ -8,12 +8,12 @@ import (
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
-	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
-	"github.com/liwei1dao/lego/sys/rpcl/protocol"
+	"github.com/liwei1dao/lego/sys/rpc/protocol"
+	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 	"github.com/nats-io/nats.go"
 )
 
-func NewKafkaConnPool(sys lcore.ISys, log log.ILogger, config *lcore.Config) (cpool *NatsConnPool, err error) {
+func NewKafkaConnPool(sys rpccore.ISys, log log.ILogger, config *rpccore.Config) (cpool *NatsConnPool, err error) {
 	cpool = &NatsConnPool{
 		sys:    sys,
 		log:    log,
@@ -24,13 +24,13 @@ func NewKafkaConnPool(sys lcore.ISys, log log.ILogger, config *lcore.Config) (cp
 }
 
 type NatsConnPool struct {
-	sys         lcore.ISys
+	sys         rpccore.ISys
 	log         log.ILogger
-	config      *lcore.Config
+	config      *rpccore.Config
 	conn        *nats.Conn
 	subs        *nats.Subscription
 	clientMapMu sync.RWMutex
-	clients     map[string]lcore.IConnClient
+	clients     map[string]rpccore.IConnClient
 }
 
 func (this *NatsConnPool) init() (err error) {
@@ -40,7 +40,7 @@ func (this *NatsConnPool) init() (err error) {
 	this.subs, err = this.conn.SubscribeSync(this.sys.ServiceNode().GetNodePath())
 	return
 }
-func (this *NatsConnPool) GetClient(node *core.ServiceNode) (client lcore.IConnClient, err error) {
+func (this *NatsConnPool) GetClient(node *core.ServiceNode) (client rpccore.IConnClient, err error) {
 	var (
 		ok bool
 	)
@@ -68,7 +68,7 @@ func (this *NatsConnPool) Close() (err error) {
 }
 func (this *NatsConnPool) CloseClient(node *core.ServiceNode) (err error) {
 	var (
-		client lcore.IConnClient
+		client rpccore.IConnClient
 		ok     bool
 	)
 	this.clientMapMu.RLock()
@@ -87,7 +87,7 @@ func (this *NatsConnPool) run() {
 		err     error
 		m       *nats.Msg
 		message *protocol.Message
-		client  lcore.IConnClient
+		client  rpccore.IConnClient
 	)
 locp:
 	for {

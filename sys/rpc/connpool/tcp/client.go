@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/core"
-	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
-	"github.com/liwei1dao/lego/sys/rpcl/protocol"
+	"github.com/liwei1dao/lego/sys/rpc/protocol"
+	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
 
-func newClient(pool *TcpConnPool, config *lcore.Config, conn net.Conn) (client *Client, err error) {
+func newClient(pool *TcpConnPool, config *rpccore.Config, conn net.Conn) (client *Client, err error) {
 	client = &Client{
 		pool:   pool,
 		config: config,
@@ -28,7 +28,7 @@ func newClient(pool *TcpConnPool, config *lcore.Config, conn net.Conn) (client *
 
 type Client struct {
 	pool        *TcpConnPool
-	config      *lcore.Config
+	config      *rpccore.Config
 	node        *core.ServiceNode
 	conn        net.Conn
 	closeSignal chan bool

@@ -1,4 +1,4 @@
-package rpcl
+package rpc
 
 import (
 	"context"
@@ -12,28 +12,28 @@ import (
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/discovery"
-	"github.com/liwei1dao/lego/sys/rpcl/connpool"
-	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
-	"github.com/liwei1dao/lego/sys/rpcl/protocol"
-	"github.com/liwei1dao/lego/sys/rpcl/selector"
+	"github.com/liwei1dao/lego/sys/rpc/connpool"
+	"github.com/liwei1dao/lego/sys/rpc/protocol"
+	"github.com/liwei1dao/lego/sys/rpc/rpccore"
+	"github.com/liwei1dao/lego/sys/rpc/selector"
 )
 
 var TypeOfError = reflect.TypeOf((*error)(nil)).Elem()
 var TypeOfContext = reflect.TypeOf((*context.Context)(nil)).Elem()
 
-func newSys(options *Options) (sys *RPCL, err error) {
-	sys = &RPCL{
+func newSys(options *Options) (sys *rpc, err error) {
+	sys = &rpc{
 		options:    options,
 		serviceMap: make(map[string]*Server),
 		seq:        0,
 		pending:    make(map[uint64]*MessageCall),
 	}
 
-	if options.ConnectType == lcore.Tcp {
+	if options.ConnectType == rpccore.Tcp {
 		options.ServiceNode.Addr = options.MessageEndpoints[0]
 	}
 
-	if sys.cpool, err = connpool.NewConnPool(sys, options.Log, &lcore.Config{
+	if sys.cpool, err = connpool.NewConnPool(sys, options.Log, &rpccore.Config{
 		ConnectType: options.ConnectType,
 		Endpoints:   options.MessageEndpoints,
 	}); err != nil {
@@ -45,7 +45,7 @@ func newSys(options *Options) (sys *RPCL, err error) {
 		discovery.SetStoreType(options.DiscoveryStoreType),
 		discovery.SetEndpoints(options.DiscoveryEndpoints),
 		discovery.SetUpdateInterval(time.Duration(options.DiscoveryInterval)*time.Second),
-		discovery.SetCodec(codecs[lcore.JSON]),
+		discovery.SetCodec(codecs[rpccore.JSON]),
 		discovery.SetLog(options.Log),
 	); err != nil {
 		return
@@ -54,11 +54,11 @@ func newSys(options *Options) (sys *RPCL, err error) {
 	return
 }
 
-type RPCL struct {
+type rpc struct {
 	options      *Options
-	cpool        lcore.IConnPool
+	cpool        rpccore.IConnPool
 	discovery    discovery.ISys
-	selector     lcore.ISelector
+	selector     rpccore.ISelector
 	heartbeat    []byte
 	serviceMapMu sync.RWMutex
 	serviceMap   map[string]*Server
@@ -67,12 +67,12 @@ type RPCL struct {
 	pending      map[uint64]*MessageCall
 }
 
-func (this *RPCL) Heartbeat() []byte {
+func (this *rpc) Heartbeat() []byte {
 	return this.heartbeat
 }
 
 //启动系统
-func (this *RPCL) Start() (err error) {
+func (this *rpc) Start() (err error) {
 	if err = this.cpool.Start(); err != nil {
 		return
 	}
@@ -89,7 +89,7 @@ func (this *RPCL) Start() (err error) {
 }
 
 //关闭系统
-func (this *RPCL) Close() (err error) {
+func (this *rpc) Close() (err error) {
 	if err = this.discovery.Close(); err != nil {
 		return
 	}
@@ -99,39 +99,39 @@ func (this *RPCL) Close() (err error) {
 	return
 }
 
-func (this *RPCL) ServiceNode() *core.ServiceNode {
+func (this *rpc) ServiceNode() *core.ServiceNode {
 	return this.options.ServiceNode
 }
 
 //注册服务 批量注册
-func (this *RPCL) Register(rcvr interface{}) (err error) {
+func (this *rpc) Register(rcvr interface{}) (err error) {
 	err = this.register(rcvr)
 	return
 }
 
 //注册服务
-func (this *RPCL) RegisterFunction(fn interface{}) (err error) {
+func (this *rpc) RegisterFunction(fn interface{}) (err error) {
 	err = this.registerFunction(fn, "", false)
 	return
 }
 
 //注册服务
-func (this *RPCL) RegisterFunctionName(name string, fn interface{}) (err error) {
+func (this *rpc) RegisterFunctionName(name string, fn interface{}) (err error) {
 	err = this.registerFunction(fn, name, true)
 	return
 }
 
 //注销服务
-func (this *RPCL) UnRegister(name string) {
+func (this *rpc) UnRegister(name string) {
 	this.serviceMapMu.Lock()
 	delete(this.serviceMap, name)
 	this.serviceMapMu.Unlock()
 }
 
 //同步执行
-func (this *RPCL) Call(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (err error) { //同步调用 等待结果
+func (this *rpc) Call(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (err error) { //同步调用 等待结果
 	seq := new(uint64)
-	ctx = lcore.WithValue(ctx, lcore.CallSeqKey, seq)
+	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
 	this.Debugf("client.Call for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
 	defer func() {
 		this.Debugf("client.Call done for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
@@ -156,9 +156,9 @@ func (this *RPCL) Call(ctx context.Context, servicePath string, serviceMethod st
 }
 
 //异步执行 异步返回
-func (this *RPCL) Go(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) { //异步调用 异步返回
+func (this *rpc) Go(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) { //异步调用 异步返回
 	seq := new(uint64)
-	ctx = lcore.WithValue(ctx, lcore.CallSeqKey, seq)
+	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
 	this.Debugf("client.Go for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
 	defer func() {
 		this.Debugf("client.Go done for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
@@ -168,11 +168,11 @@ func (this *RPCL) Go(ctx context.Context, servicePath string, serviceMethod stri
 }
 
 //同步执行 无返回
-func (this *RPCL) GoNR(ctx context.Context, servicePath string, serviceMethod string, args interface{}) (err error) { //异步调用 无返回
+func (this *rpc) GoNR(ctx context.Context, servicePath string, serviceMethod string, args interface{}) (err error) { //异步调用 无返回
 	call := new(MessageCall)
 	call.Done = make(chan *MessageCall, 10)
 	call.Args = args
-	var client lcore.IConnClient
+	var client rpccore.IConnClient
 	if client, err = this.getclient(ctx, servicePath); err != nil {
 		return
 	}
@@ -180,20 +180,20 @@ func (this *RPCL) GoNR(ctx context.Context, servicePath string, serviceMethod st
 	return nil
 }
 
-func (this *RPCL) Broadcast(ctx context.Context, servicePath string, serviceMethod string, args interface{}) (err error) {
+func (this *rpc) Broadcast(ctx context.Context, servicePath string, serviceMethod string, args interface{}) (err error) {
 	return
 }
 
 //接收到远程消息
-func (this *RPCL) Handle(client lcore.IConnClient, message lcore.IMessage) {
-	if message.MessageType() == lcore.Request { //请求消息
+func (this *rpc) Handle(client rpccore.IConnClient, message rpccore.IMessage) {
+	if message.MessageType() == rpccore.Request { //请求消息
 		if message.IsHeartbeat() { //心跳
 			client.ResetHbeat()
 			return
 		}
-		if res, _ := this.handleRequest(lcore.NewContext(context.Background()), message); res != nil {
+		if res, _ := this.handleRequest(rpccore.NewContext(context.Background()), message); res != nil {
 			if !message.IsOneway() { //需要回应
-				if len(res.Payload()) > 1024 && res.CompressType() != lcore.CompressNone {
+				if len(res.Payload()) > 1024 && res.CompressType() != rpccore.CompressNone {
 					res.SetCompressType(res.CompressType())
 				}
 				data := res.EncodeSlicePointer()
@@ -211,12 +211,12 @@ func (this *RPCL) Handle(client lcore.IConnClient, message lcore.IMessage) {
 			call.done(this.options.Log)
 			return
 		}
-		this.handleresponse(lcore.NewContext(context.Background()), message)
+		this.handleresponse(rpccore.NewContext(context.Background()), message)
 	}
 }
 
 //反射批量注册 服务---------------------------------------------------------------------------------
-func (this *RPCL) register(rcvr interface{}) (err error) {
+func (this *rpc) register(rcvr interface{}) (err error) {
 	typ := reflect.TypeOf(rcvr)
 	vof := reflect.ValueOf(rcvr)
 	if vof.IsValid() {
@@ -272,7 +272,7 @@ func (this *RPCL) register(rcvr interface{}) (err error) {
 	}
 	return
 }
-func (this *RPCL) registerFunction(fn interface{}, name string, useName bool) (err error) {
+func (this *rpc) registerFunction(fn interface{}, name string, useName bool) (err error) {
 	f, ok := fn.(reflect.Value)
 	if !ok {
 		f = reflect.ValueOf(fn)
@@ -292,7 +292,7 @@ func (this *RPCL) registerFunction(fn interface{}, name string, useName bool) (e
 		fname = name
 	}
 	if fname == "" {
-		err = fmt.Errorf("rpcl.registerFunction: no func name for type:%s", f.Type().String())
+		err = fmt.Errorf("rpc.registerFunction: no func name for type:%s", f.Type().String())
 		return
 	}
 	t := f.Type()
@@ -336,7 +336,7 @@ func (this *RPCL) registerFunction(fn interface{}, name string, useName bool) (e
 }
 
 //执行远程服务---------------------------------------------------------------------------------------
-func (this *RPCL) call(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) {
+func (this *rpc) call(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) {
 	call = new(MessageCall)
 	call.Done = make(chan *MessageCall, 10)
 	call.Args = args
@@ -346,10 +346,10 @@ func (this *RPCL) call(ctx context.Context, servicePath string, serviceMethod st
 	this.seq++
 	this.pending[seq] = call
 	this.pendingmutex.Unlock()
-	if cseq, ok := ctx.Value(lcore.CallSeqKey).(*uint64); ok {
+	if cseq, ok := ctx.Value(rpccore.CallSeqKey).(*uint64); ok {
 		*cseq = seq
 	}
-	var client lcore.IConnClient
+	var client rpccore.IConnClient
 	if client, err = this.getclient(ctx, servicePath); err != nil {
 		return
 	}
@@ -357,7 +357,7 @@ func (this *RPCL) call(ctx context.Context, servicePath string, serviceMethod st
 	return
 }
 
-func (this *RPCL) getclient(ctx context.Context, servicePath string) (client lcore.IConnClient, err error) {
+func (this *rpc) getclient(ctx context.Context, servicePath string) (client rpccore.IConnClient, err error) {
 	nodes := this.selector.Select(ctx, servicePath)
 	if nodes == nil || len(nodes) == 0 {
 		err = fmt.Errorf("no found any node:%s", servicePath)
@@ -371,14 +371,14 @@ func (this *RPCL) getclient(ctx context.Context, servicePath string) (client lco
 	return
 }
 
-func (this *RPCL) send(client lcore.IConnClient, call *MessageCall, seq uint64) (err error) {
+func (this *rpc) send(client rpccore.IConnClient, call *MessageCall, seq uint64) (err error) {
 	var (
 		data    []byte
 		allData *[]byte
 	)
 
 	req := protocol.GetPooledMsg()
-	req.SetMessageType(lcore.Request)
+	req.SetMessageType(rpccore.Request)
 	req.SetSeq(seq)
 	if call.Reply == nil {
 		req.SetOneway(true)
@@ -391,14 +391,14 @@ func (this *RPCL) send(client lcore.IConnClient, call *MessageCall, seq uint64) 
 	req.SetFrom(this.options.ServiceNode)
 	codec := codecs[this.options.SerializeType]
 	if codec == nil {
-		err = lcore.ErrUnsupportedCodec
+		err = rpccore.ErrUnsupportedCodec
 		return
 	}
 	data, err = codec.Marshal(call.Args)
 	if err != nil {
 		return
 	}
-	if len(data) > 1024 && this.options.CompressType != lcore.CompressNone {
+	if len(data) > 1024 && this.options.CompressType != rpccore.CompressNone {
 		req.SetCompressType(this.options.CompressType)
 	}
 	req.SetPayload(data)
@@ -412,10 +412,10 @@ func (this *RPCL) send(client lcore.IConnClient, call *MessageCall, seq uint64) 
 }
 
 //处理响应------------------------------------------------------------------------------------------
-func (this *RPCL) handleresponse(ctx context.Context, res lcore.IMessage) {
+func (this *rpc) handleresponse(ctx context.Context, res rpccore.IMessage) {
 	var call *MessageCall
 	seq := res.Seq()
-	isServerMessage := (res.MessageType() == lcore.Request && !res.IsHeartbeat() && res.IsOneway())
+	isServerMessage := (res.MessageType() == rpccore.Request && !res.IsHeartbeat() && res.IsOneway())
 	if !isServerMessage {
 		this.pendingmutex.Lock()
 		call = this.pending[seq]
@@ -425,10 +425,10 @@ func (this *RPCL) handleresponse(ctx context.Context, res lcore.IMessage) {
 	switch {
 	case call == nil:
 		this.Warnf("call is nil res:%v", res)
-	case res.MessageStatusType() == lcore.Error:
+	case res.MessageStatusType() == rpccore.Error:
 		if len(res.Metadata()) > 0 {
 			call.ResMetadata = res.Metadata()
-			call.Error = errors.New(res.Metadata()[lcore.ServiceError])
+			call.Error = errors.New(res.Metadata()[rpccore.ServiceError])
 		}
 		if len(res.Payload()) > 0 {
 			data := res.Payload()
@@ -443,7 +443,7 @@ func (this *RPCL) handleresponse(ctx context.Context, res lcore.IMessage) {
 		if len(data) > 0 {
 			codec := codecs[res.SerializeType()]
 			if codec == nil {
-				call.Error = lcore.ErrUnsupportedCodec
+				call.Error = rpccore.ErrUnsupportedCodec
 			} else {
 				err := codec.Unmarshal(data, call.Reply)
 				if err != nil {
@@ -459,10 +459,10 @@ func (this *RPCL) handleresponse(ctx context.Context, res lcore.IMessage) {
 }
 
 //处理服务消息---------------------------------------------------------------------------------------
-func (this *RPCL) handleRequest(ctx context.Context, req lcore.IMessage) (res lcore.IMessage, err error) {
+func (this *rpc) handleRequest(ctx context.Context, req rpccore.IMessage) (res rpccore.IMessage, err error) {
 	methodName := req.ServiceMethod()
 	res = req.Clone()
-	res.SetMessageType(lcore.Response)
+	res.SetMessageType(rpccore.Response)
 	this.serviceMapMu.RLock()
 	service, ok := this.serviceMap[methodName]
 	this.Debugf("server get service %+v for an request %+v", service, req)
@@ -516,7 +516,7 @@ func (this *RPCL) handleRequest(ctx context.Context, req lcore.IMessage) (res lc
 }
 
 //握手请求
-func (this *RPCL) ShakehandsRequest(ctx context.Context, client lcore.IConnClient) (err error) {
+func (this *rpc) ShakehandsRequest(ctx context.Context, client rpccore.IConnClient) (err error) {
 	var (
 		data []byte
 	)
@@ -532,13 +532,13 @@ func (this *RPCL) ShakehandsRequest(ctx context.Context, client lcore.IConnClien
 	req.SetShakeHands(true)
 	req.SetOneway(false)
 	req.SetFrom(this.options.ServiceNode)
-	req.SetMessageType(lcore.Request)
+	req.SetMessageType(rpccore.Request)
 	req.SetSeq(seq)
-	data, err = codecs[lcore.ProtoBuffer].Marshal(call.Args)
+	data, err = codecs[rpccore.ProtoBuffer].Marshal(call.Args)
 	if err != nil {
 		return
 	}
-	if len(data) > 1024 && this.options.CompressType != lcore.CompressNone {
+	if len(data) > 1024 && this.options.CompressType != rpccore.CompressNone {
 		req.SetCompressType(this.options.CompressType)
 	}
 	req.SetPayload(data)

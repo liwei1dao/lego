@@ -1,4 +1,4 @@
-package rpcl
+package rpc
 
 import (
 	"reflect"

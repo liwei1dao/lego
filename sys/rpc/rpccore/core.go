@@ -1,4 +1,4 @@
-package core
+package rpccore
 
 import (
 	"context"

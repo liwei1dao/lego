@@ -1,4 +1,4 @@
-package rpcl_test
+package rpc_test
 
 import "testing"
 

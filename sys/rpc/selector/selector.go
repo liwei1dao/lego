@@ -7,14 +7,14 @@ import (
 	"sync"
 
 	"github.com/liwei1dao/lego/core"
-	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
+	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
 
 var rex_nogather = regexp.MustCompile(`\!\[([^)]+)\]`)
 var rex_noid = regexp.MustCompile(`\!([^)]+)`)
 var rex_gather = regexp.MustCompile(`\[([^)]+)\]`)
 
-func NewSelector(ervers []*core.ServiceNode) (selector lcore.ISelector, err error) {
+func NewSelector(ervers []*core.ServiceNode) (selector rpccore.ISelector, err error) {
 	if ervers == nil {
 		ervers = make([]*core.ServiceNode, 0)
 	}

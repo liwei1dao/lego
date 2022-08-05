@@ -7,7 +7,7 @@ import (
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
-	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
+	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 	WriteChanSize = 1024 * 1024
 )
 
-func NewTcpConnPool(sys lcore.ISys, log log.ILogger, config *lcore.Config) (cpool *TcpConnPool, err error) {
+func NewTcpConnPool(sys rpccore.ISys, log log.ILogger, config *rpccore.Config) (cpool *TcpConnPool, err error) {
 	cpool = &TcpConnPool{
 		sys:    sys,
 		log:    log,
@@ -30,12 +30,12 @@ func NewTcpConnPool(sys lcore.ISys, log log.ILogger, config *lcore.Config) (cpoo
 }
 
 type TcpConnPool struct {
-	sys         lcore.ISys
+	sys         rpccore.ISys
 	log         log.ILogger
-	config      *lcore.Config
+	config      *rpccore.Config
 	doneChan    chan struct{}
 	clientMapMu sync.RWMutex
-	clients     map[string]lcore.IConnClient
+	clients     map[string]rpccore.IConnClient
 }
 
 func (this *TcpConnPool) Start() (err error) {
@@ -49,7 +49,7 @@ func (this *TcpConnPool) Start() (err error) {
 	return
 }
 
-func (this *TcpConnPool) GetClient(node *core.ServiceNode) (client lcore.IConnClient, err error) {
+func (this *TcpConnPool) GetClient(node *core.ServiceNode) (client rpccore.IConnClient, err error) {
 	var (
 		ok   bool
 		conn net.Conn
@@ -65,7 +65,7 @@ func (this *TcpConnPool) GetClient(node *core.ServiceNode) (client lcore.IConnCl
 	return
 }
 
-func (this *TcpConnPool) createClient(conn net.Conn) (client lcore.IConnClient, err error) {
+func (this *TcpConnPool) createClient(conn net.Conn) (client rpccore.IConnClient, err error) {
 	if client, err = newClient(this, this.config, conn); err == nil {
 		if err = this.sys.ShakehandsRequest(context.Background(), client); err == nil {
 			this.clientMapMu.Lock()
@@ -96,7 +96,7 @@ func (this *TcpConnPool) serveListener(ln net.Listener) error {
 
 func (this *TcpConnPool) CloseClient(node *core.ServiceNode) (err error) {
 	var (
-		client lcore.IConnClient
+		client rpccore.IConnClient
 		ok     bool
 	)
 	this.clientMapMu.RLock()

@@ -1,4 +1,4 @@
-package rpcl
+package rpc
 
 import (
 	"bytes"
@@ -6,18 +6,17 @@ import (
 
 	proto "github.com/gogo/protobuf/proto"
 	jsoniter "github.com/json-iterator/go"
-	gcore "github.com/liwei1dao/lego/sys/rpcl/core"
-	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
+	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 	"github.com/tinylib/msgp/msgp"
 	"github.com/vmihailenco/msgpack/v5"
 	pb "google.golang.org/protobuf/proto"
 )
 
 // Codecs are codecs supported by rpcx. You can add customized codecs in Codecs.
-var codecs = map[lcore.SerializeType]gcore.ICodec{
-	lcore.JSON:        &JSONCodec{},
-	lcore.ProtoBuffer: &PBCodec{},
-	lcore.MsgPack:     &MsgpackCodec{},
+var codecs = map[rpccore.SerializeType]rpccore.ICodec{
+	rpccore.JSON:        &JSONCodec{},
+	rpccore.ProtoBuffer: &PBCodec{},
+	rpccore.MsgPack:     &MsgpackCodec{},
 }
 
 type JSONCodec struct{}

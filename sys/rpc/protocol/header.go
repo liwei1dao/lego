@@ -3,7 +3,7 @@ package protocol
 import (
 	"encoding/binary"
 
-	lcore "github.com/liwei1dao/lego/sys/rpcl/core"
+	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
 
 const (
@@ -28,12 +28,12 @@ func (this *Header) SetVersion(v byte) {
 }
 
 // 协议类型 请求/回应
-func (this Header) MessageType() lcore.MessageType {
-	return lcore.MessageType(this[2]&0x80) >> 7
+func (this Header) MessageType() rpccore.MessageType {
+	return rpccore.MessageType(this[2]&0x80) >> 7
 }
 
 // 设置 协议类型 请求/回应
-func (this *Header) SetMessageType(mt lcore.MessageType) {
+func (this *Header) SetMessageType(mt rpccore.MessageType) {
 	this[2] = this[2] | (byte(mt) << 7)
 }
 
@@ -66,22 +66,22 @@ func (h *Header) SetHeartbeat(hb bool) {
 }
 
 //读取压缩方式
-func (this Header) CompressType() lcore.CompressType {
-	return lcore.CompressType((this[2] & 0x1C) >> 2)
+func (this Header) CompressType() rpccore.CompressType {
+	return rpccore.CompressType((this[2] & 0x1C) >> 2)
 }
 
 //设置压缩类型
-func (this *Header) SetCompressType(ct lcore.CompressType) {
+func (this *Header) SetCompressType(ct rpccore.CompressType) {
 	this[2] = (this[2] &^ 0x1C) | ((byte(ct) << 2) & 0x1C)
 }
 
 //消息状态
-func (this Header) MessageStatusType() lcore.MessageStatusType {
-	return lcore.MessageStatusType(this[2] & 0x03)
+func (this Header) MessageStatusType() rpccore.MessageStatusType {
+	return rpccore.MessageStatusType(this[2] & 0x03)
 }
 
 // 设置消息状态 正常或者错误
-func (this *Header) SetMessageStatusType(mt lcore.MessageStatusType) {
+func (this *Header) SetMessageStatusType(mt rpccore.MessageStatusType) {
 	this[2] = (this[2] &^ 0x03) | (byte(mt) & 0x03)
 }
 
@@ -100,12 +100,12 @@ func (this *Header) SetOneway(oneway bool) {
 }
 
 // SerializeType returns serialization type of payload.
-func (h Header) SerializeType() lcore.SerializeType {
-	return lcore.SerializeType((h[3] & 0xF0) >> 4)
+func (h Header) SerializeType() rpccore.SerializeType {
+	return rpccore.SerializeType((h[3] & 0xF0) >> 4)
 }
 
 // SetSerializeType sets the serialization type.
-func (h *Header) SetSerializeType(st lcore.SerializeType) {
+func (h *Header) SetSerializeType(st rpccore.SerializeType) {
 	h[3] = (h[3] &^ 0xF0) | (byte(st) << 4)
 }
 
