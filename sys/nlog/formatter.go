@@ -30,40 +30,10 @@ func NewDefEncoderConfig() *EncoderConfig {
 		MessageKey:       "msg",
 		StacktraceKey:    "stacktrace",
 		ConsoleSeparator: "\t",
-		Encoder:          DefEncoderEntry,
 		EncodeTime:       DefTimeEncoder,
 		EncodeLevel:      LowercaseLevelEncoder,
 		EncodeCaller:     ShortCallerEncoder,
 	}
-}
-
-type EncoderEntry func(config *EncoderConfig, entry *Entry) Fields
-
-func DefEncoderEntry(config *EncoderConfig, entry *Entry) Fields {
-	fields := getFields()
-	if config.TimeKey != "" && config.EncodeTime != nil {
-		fields = append(fields, Field{config.TimeKey, config.EncodeTime(entry.Time)})
-	}
-	if config.LevelKey != "" && config.EncodeLevel != nil {
-		fields = append(fields, Field{config.LevelKey, config.EncodeLevel(entry.Level)})
-	}
-	if entry.Caller.Defined {
-		if config.CallerKey != "" && config.EncodeCaller != nil {
-			fields = append(fields, Field{config.CallerKey, config.EncodeCaller(entry.Caller)})
-		}
-		if config.FunctionKey != "" {
-			fields = append(fields, Field{config.FunctionKey, entry.Caller.Function})
-		}
-	}
-	if config.MessageKey != "" {
-		fields = append(fields, Field{config.MessageKey, entry.Message})
-	}
-
-	fields = append(fields, entry.Data...)
-	if entry.Caller.Stack != "" && config.StacktraceKey != "" {
-		fields = append(fields, Field{config.StacktraceKey, entry.Caller.Stack})
-	}
-	return fields
 }
 
 type TimeEncoder func(time.Time) string
@@ -90,7 +60,6 @@ type EncoderConfig struct {
 	FunctionKey      string `json:"functionKey" yaml:"functionKey"`
 	StacktraceKey    string `json:"stacktraceKey" yaml:"stacktraceKey"`
 	ConsoleSeparator string `json:"consoleSeparator" yaml:"consoleSeparator"`
-	Encoder          EncoderEntry
 	EncodeTime       TimeEncoder
 	EncodeLevel      LevelEncoder
 	EncodeCaller     CallerEncoder

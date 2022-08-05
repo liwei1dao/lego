@@ -6,19 +6,29 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/utils/pools"
-	"github.com/natefinch/lumberjack"
 )
 
 func newSys(options *Options) (sys *Logger, err error) {
-	hook := lumberjack.Logger{
-		Filename:  options.FileName, //日志文件路径
-		Compress:  false,            //是否压缩 disabled by default
-		LocalTime: true,             //使用本地时间
+	hook := LogFileOut{
+		Filename:   options.FileName,                               //日志文件路径
+		MaxAge:     options.MaxAgeTime,                             //备份日志保存天数
+		CupTime:    time.Duration(options.CupTimeTime) * time.Hour, //日志切割间隔时间
+		Compress:   options.Compress,                               //是否压缩 disabled by default
+		MaxBackups: options.MaxBackups,                             //最大备份数
+		LocalTime:  true,                                           //使用本地时间
+	}
+	if err = hook.openNew(); err != nil {
+		return
+	}
+	out := make(writeTree, 0, 2)
+	out = append(out, AddSync(&hook))
+	if options.IsDebug {
+		out = append(out, Lock(os.Stdout))
 	}
 	sys = &Logger{
 		config:     NewDefEncoderConfig(),
 		formatter:  NewConsoleEncoder(),
-		out:        AddWrites(AddSync(&hook), Lock(os.Stdout)),
+		out:        out,
 		level:      options.Loglevel,
 		addCaller:  options.ReportCaller,
 		callerSkip: options.CallerSkip,
