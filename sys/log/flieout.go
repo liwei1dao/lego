@@ -92,7 +92,7 @@ func (l *LogFileOut) openExistingOrNew(writeLen int) error {
 	}
 
 	//校验是否需要切割日志
-	if info.Size()+int64(writeLen) >= l.max() || time.Since(l.ctime) > l.CupTime {
+	if info.Size()+int64(writeLen) >= l.max() || (!l.ctime.IsZero() && time.Since(l.ctime) > l.CupTime) {
 		return l.rotate()
 	}
 

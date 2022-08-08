@@ -18,9 +18,12 @@ func newSys(options *Options) (sys *Logger, err error) {
 		MaxBackups: options.MaxBackups,                             //最大备份数
 		LocalTime:  true,                                           //使用本地时间
 	}
-	if err = hook.openNew(); err != nil {
-		return
+	if !options.IsDebug {
+		if err = hook.openNew(); err != nil {
+			return
+		}
 	}
+
 	out := make(writeTree, 0, 2)
 	out = append(out, AddSync(&hook))
 	if options.IsDebug {
