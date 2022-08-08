@@ -11,6 +11,7 @@ import (
 func newSys(options *Options) (sys *Logger, err error) {
 	hook := LogFileOut{
 		Filename:   options.FileName,                               //日志文件路径
+		MaxSize:    options.MaxSize,                                //日志大小
 		MaxAge:     options.MaxAgeTime,                             //备份日志保存天数
 		CupTime:    time.Duration(options.CupTimeTime) * time.Hour, //日志切割间隔时间
 		Compress:   options.Compress,                               //是否压缩 disabled by default

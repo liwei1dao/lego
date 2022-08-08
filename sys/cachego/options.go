@@ -27,11 +27,11 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 	for _, o := range opts {
 		o(options)
 	}
-	if options.Debug && options.Log == nil {
-		if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.cachego", 2)); options.Log == nil {
-			err = errors.New("log is nil")
-		}
+
+	if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.cachego", 2)); options.Log == nil {
+		err = errors.New("log is nil")
 	}
+
 	return
 }
 
@@ -43,10 +43,8 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 	for _, o := range opts {
 		o(options)
 	}
-	if options.Debug && options.Log == nil {
-		if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.cachego", 2)); options.Log == nil {
-			err = errors.New("log is nil")
-		}
+	if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.cachego", 2)); options.Log == nil {
+		err = errors.New("log is nil")
 	}
 	return
 }

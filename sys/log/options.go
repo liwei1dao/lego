@@ -21,6 +21,7 @@ type Options struct {
 	ReportCaller bool       //是否输出堆栈信息
 	CallerSkip   int        //堆栈深度
 	Encoder      LogEncoder //日志输出样式
+	MaxSize      int        //日志最大大小
 	CupTimeTime  int        //日志分割时间 单位 小时
 	MaxAgeTime   int        //日志最大保存时间 单位天
 	MaxBackups   int        //最大备份日志个数
@@ -66,6 +67,13 @@ func SetEncoder(v LogEncoder) Option {
 	}
 }
 
+///设置日志大小
+func SetMaxSize(v int) Option {
+	return func(o *Options) {
+		o.MaxSize = v
+	}
+}
+
 ///日志分割时间 单位 小时
 func SetRotationTime(v int) Option {
 	return func(o *Options) {
@@ -103,7 +111,7 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 		Compress:     false,
 		Encoder:      TextEncoder,
 		CallerSkip:   0,
-		ReportCaller: true,
+		ReportCaller: false,
 		IsDebug:      true,
 	}
 	if config != nil {
@@ -129,7 +137,7 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 		Compress:     false,
 		Encoder:      TextEncoder,
 		CallerSkip:   0,
-		ReportCaller: true,
+		ReportCaller: false,
 		IsDebug:      true,
 	}
 	for _, o := range opts {

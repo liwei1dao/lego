@@ -95,6 +95,9 @@ type referenceEncoder struct {
 	encoder codecore.IEncoder
 }
 
+func (this *referenceEncoder) GetType() reflect.Kind {
+	return this.encoder.GetType()
+}
 func (this *referenceEncoder) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	this.encoder.Encode(unsafe.Pointer(&ptr), stream)
 }
@@ -107,6 +110,9 @@ type referenceDecoder struct {
 	decoder codecore.IDecoder
 }
 
+func (this *referenceDecoder) GetType() reflect.Kind {
+	return this.decoder.GetType()
+}
 func (this *referenceDecoder) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 	this.decoder.Decode(unsafe.Pointer(&ptr), extra)
 }

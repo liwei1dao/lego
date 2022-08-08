@@ -344,6 +344,11 @@ func (this *JsonReader) ReadFloat64() (ret float64) {
 	this.head += n
 	return
 }
+func (this *JsonReader) ReadBytes() (ret []byte) {
+	head := this.head
+	this.Skip()
+	return this.buf[head:this.head]
+}
 func (this *JsonReader) ReadString() (ret string) {
 	c := this.nextToken()
 	if c == '"' {

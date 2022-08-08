@@ -62,6 +62,7 @@ type (
 		ReadUint64() (ret uint64)
 		ReadFloat32() (ret float32)
 		ReadFloat64() (ret float64)
+		ReadBytes() (ret []byte)
 		ReadString() (ret string)
 		ResetBytes(d []byte)
 		Error() error
@@ -130,6 +131,10 @@ type (
 	IsEmbeddedPtrNil interface {
 		IsEmbeddedPtrNil(ptr unsafe.Pointer) bool
 	}
+	//是否是空
+	CheckIsEmpty interface {
+		IsEmpty(ptr unsafe.Pointer) bool
+	}
 )
 
 //序列化配置
@@ -150,6 +155,7 @@ type Ctx struct {
 
 func (this *Ctx) Append(prefix string) *Ctx {
 	return &Ctx{
+		Config:   this.Config,
 		Prefix:   this.Prefix + " " + prefix,
 		Encoders: this.Encoders,
 		Decoders: this.Decoders,
