@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/liwei1dao/lego/sys/redis/pipe"
 )
 
 type (
@@ -14,7 +15,8 @@ type (
 		Do(ctx context.Context, args ...interface{}) *redis.Cmd
 		Lock(key string, outTime int) (result bool, err error)
 		UnLock(key string) (err error)
-		Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error)
+		Pipeline() redis.Pipeliner
+		Pipelined(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error)
 		TxPipelined(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error)
 		Watch(ctx context.Context, fn func(*redis.Tx) error, keys ...string) (err error)
 
@@ -126,6 +128,7 @@ type (
 	ISys interface {
 		IRedis
 		GetClient() IRedis
+		RedisPipe(ctx context.Context) *pipe.RedisPipe
 		/*Lock*/
 		NewRedisMutex(key string, opt ...RMutexOption) (result *RedisMutex, err error)
 	}
@@ -163,7 +166,9 @@ func Close() (err error) {
 func GetClient() IRedis {
 	return defsys.GetClient()
 }
-
+func RedisPipe(ctx context.Context) *pipe.RedisPipe {
+	return defsys.RedisPipe(ctx)
+}
 func Context() context.Context {
 	return defsys.Context()
 }
@@ -171,9 +176,11 @@ func Context() context.Context {
 func Do(ctx context.Context, args ...interface{}) *redis.Cmd {
 	return defsys.Do(ctx, args...)
 }
-
-func Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {
-	return defsys.Pipeline(ctx, fn)
+func Pipeline() redis.Pipeliner {
+	return defsys.Pipeline()
+}
+func Pipelined(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {
+	return defsys.Pipelined(ctx, fn)
 }
 func TxPipelined(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {
 	return defsys.TxPipelined(ctx, fn)
@@ -335,6 +342,9 @@ func HGet(key string, field string, value interface{}) (err error) {
 }
 func HGetAll(key string, v interface{}) (err error) {
 	return defsys.HGetAll(key, v)
+}
+func HGetAllToMapString(key string) (result map[string]string, err error) {
+	return defsys.HGetAllToMapString(key)
 }
 func HIncrBy(key string, field string, value int) (err error) {
 	return defsys.HIncrBy(key, field, value)

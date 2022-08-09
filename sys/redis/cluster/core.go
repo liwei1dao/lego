@@ -59,7 +59,12 @@ func (this *Redis) Do(ctx context.Context, args ...interface{}) *redis.Cmd {
 }
 
 ///批处理
-func (this *Redis) Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {
+func (this *Redis) Pipeline() redis.Pipeliner {
+	return this.client.Pipeline()
+}
+
+///批处理
+func (this *Redis) Pipelined(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {
 	_, err = this.client.Pipelined(ctx, fn)
 	return
 }

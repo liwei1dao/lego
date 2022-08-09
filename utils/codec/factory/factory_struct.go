@@ -282,7 +282,7 @@ func (this *structEncoder) EncodeToMapJson(ptr unsafe.Pointer, w codecore.IWrite
 			err = w.Error()
 			return
 		}
-		ret[field.toName] = BytesToString(w.Buffer())
+		ret[field.toName] = string(w.Buffer())
 	}
 	return
 }

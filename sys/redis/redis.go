@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/sys/redis/cluster"
+	"github.com/liwei1dao/lego/sys/redis/pipe"
 	"github.com/liwei1dao/lego/sys/redis/single"
 	"github.com/liwei1dao/lego/utils/codec/json"
 
@@ -58,8 +59,14 @@ func (this *Redis) Context() context.Context {
 func (this *Redis) Do(ctx context.Context, args ...interface{}) *redis.Cmd {
 	return this.client.Do(ctx, args...)
 }
-func (this *Redis) Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {
-	return this.client.Pipeline(ctx, fn)
+func (this *Redis) RedisPipe(ctx context.Context) *pipe.RedisPipe {
+	return pipe.NewPipe(ctx, this.client.Pipeline(), this)
+}
+func (this *Redis) Pipeline() redis.Pipeliner {
+	return this.client.Pipeline()
+}
+func (this *Redis) Pipelined(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {
+	return this.client.Pipelined(ctx, fn)
 }
 func (this *Redis) TxPipelined(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {
 	return this.client.TxPipelined(ctx, fn)
