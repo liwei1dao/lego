@@ -36,7 +36,7 @@ func newSys(options *Options) (sys *Logger, err error) {
 		level:      options.Loglevel,
 		addCaller:  options.ReportCaller,
 		callerSkip: options.CallerSkip,
-		addStack:   ErrorLevel,
+		addStack:   FatalLevel,
 	}
 	return
 }
@@ -47,7 +47,7 @@ type Logger struct {
 	formatter  Formatter      //日志格式化
 	name       string         //日志标签
 	out        IWrite         //日志输出
-	addCaller  bool           //是否打印堆栈信息
+	addCaller  LevelEnabler   //是否打印堆栈信息
 	addStack   LevelEnabler   //堆栈信息输出级别
 	callerSkip int            //堆栈输出深度
 }
@@ -167,7 +167,8 @@ func (this *Logger) check(level Loglevel, msg string, args ...Field) (entry *Ent
 	entry.Message = msg
 	entry.WithFields(args...)
 	addStack := this.addStack.Enabled(level)
-	if !this.addCaller && !addStack {
+	addCaller := this.addCaller.Enabled(level)
+	if !addCaller && !addStack {
 		return
 	}
 
@@ -175,7 +176,7 @@ func (this *Logger) check(level Loglevel, msg string, args ...Field) (entry *Ent
 	stack := captureStacktrace(this.callerSkip+callerSkipOffset, stackDepth)
 	defer stack.Free()
 	if stack.Count() == 0 {
-		if this.addCaller {
+		if addCaller {
 			if entry.Err != "" {
 				entry.Err = entry.Err + ",error: failed to get caller"
 			} else {
@@ -185,7 +186,7 @@ func (this *Logger) check(level Loglevel, msg string, args ...Field) (entry *Ent
 		return
 	}
 	frame, more := stack.Next()
-	if this.addCaller {
+	if addCaller {
 		entry.Caller.Defined = frame.PC != 0
 		entry.Caller.PC = frame.PC
 		entry.Caller.File = frame.File

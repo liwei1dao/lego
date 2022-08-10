@@ -18,7 +18,7 @@ type Options struct {
 	FileName     string     //日志文件名包含
 	Loglevel     Loglevel   //日志输出级别
 	IsDebug      bool       //是否是开发模式
-	ReportCaller bool       //是否输出堆栈信息
+	ReportCaller Loglevel   //是否输出堆栈信息
 	CallerSkip   int        //堆栈深度
 	Encoder      LogEncoder //日志输出样式
 	MaxSize      int        //日志最大大小
@@ -49,7 +49,7 @@ func SetLoglevel(v Loglevel) Option {
 	}
 }
 
-func SetReportCaller(v bool) Option {
+func SetReportCaller(v Loglevel) Option {
 	return func(o *Options) {
 		o.ReportCaller = v
 	}
@@ -111,7 +111,7 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 		Compress:     false,
 		Encoder:      TextEncoder,
 		CallerSkip:   0,
-		ReportCaller: false,
+		ReportCaller: ErrorLevel,
 		IsDebug:      true,
 	}
 	if config != nil {
@@ -137,7 +137,7 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 		Compress:     false,
 		Encoder:      TextEncoder,
 		CallerSkip:   0,
-		ReportCaller: false,
+		ReportCaller: ErrorLevel,
 		IsDebug:      true,
 	}
 	for _, o := range opts {

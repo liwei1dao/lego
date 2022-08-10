@@ -28,7 +28,7 @@ func TestMain(m *testing.M) {
 	defer os.Exit(m.Run())
 }
 func Test_sys(t *testing.T) {
-	sys.Error("妈妈咪呀!")
+	sys.Panic("妈妈咪呀!")
 }
 
 //性能测试
