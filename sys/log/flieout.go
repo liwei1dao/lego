@@ -217,7 +217,7 @@ func (l *LogFileOut) openNew() error {
 	}
 
 	name := l.filename()
-	mode := os.FileMode(0600)
+	mode := os.FileMode(0666)
 	info, err := osStat(name)
 	//备份老的日志文件
 	if err == nil {
