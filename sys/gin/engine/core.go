@@ -24,6 +24,7 @@ type RouteInfo struct {
 type RoutesInfo []RouteInfo
 
 type IRoutes interface {
+	Register(rcvr interface{})
 	Group(relativePath string, handlers ...HandlerFunc) IRoutes
 	Use(...HandlerFunc) IRoutes
 	Handle(string, string, ...HandlerFunc) IRoutes

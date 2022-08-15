@@ -107,6 +107,9 @@ func (this *Gin) Close() (err error) {
 	this.server.Close()
 	return
 }
+func (this *Gin) Register(rcvr interface{}) {
+	this.engine.Register(rcvr)
+}
 func (this *Gin) Group(relativePath string, handlers ...engine.HandlerFunc) engine.IRoutes {
 	return this.engine.Group(relativePath, handlers...)
 }

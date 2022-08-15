@@ -375,18 +375,17 @@ func (this *Context) GetPostFormMap(key string) (map[string]string, bool) {
 	return this.get(this.formCache, key)
 }
 
-func (this *Context) FormFile(name string) (*multipart.FileHeader, error) {
+func (this *Context) FormFile(name string) (multipart.File, *multipart.FileHeader, error) {
 	if this.Request.MultipartForm == nil {
 		if err := this.Request.ParseMultipartForm(this.engine.MaxMultipartMemory); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 	f, fh, err := this.Request.FormFile(name)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	f.Close()
-	return fh, err
+	return f, fh, err
 }
 
 /*

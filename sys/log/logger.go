@@ -192,6 +192,7 @@ func (this *Logger) check(level Loglevel, msg string, args ...Field) (entry *Ent
 		entry.Caller.File = frame.File
 		entry.Caller.Line = frame.Line
 		entry.Caller.Function = frame.Function
+		entry.Caller.Stack = ""
 	}
 	if addStack {
 		buffer := pools.BufferPoolGet()

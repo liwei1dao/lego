@@ -1,9 +1,14 @@
 package gin
 
 import (
+	"fmt"
 	"net/http"
+	"reflect"
+	"sort"
+	"strings"
 
 	"github.com/liwei1dao/lego/sys/gin/engine"
+	"github.com/liwei1dao/lego/utils/crypto/md5"
 )
 
 type ISys interface {
@@ -78,4 +83,42 @@ func Static(relativePath string, root string) engine.IRoutes {
 
 func StaticFS(relativePath string, fs http.FileSystem) engine.IRoutes {
 	return defsys.StaticFS(relativePath, fs)
+}
+
+//签名接口
+func ParamSign(key string, param map[string]interface{}) (sign string) {
+	var keys []string
+	for k, _ := range param {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	builder := strings.Builder{}
+	for _, v := range keys {
+		builder.WriteString(v)
+		builder.WriteString("=")
+		switch reflect.TypeOf(param[v]).Kind() {
+		case reflect.Int,
+			reflect.Int8,
+			reflect.Int16,
+			reflect.Int32,
+			reflect.Int64,
+			reflect.Uint,
+			reflect.Uint8,
+			reflect.Uint16,
+			reflect.Uint32,
+			reflect.Uint64,
+			reflect.Uintptr,
+			reflect.Float32,
+			reflect.Float64:
+			builder.WriteString(fmt.Sprintf("%d", param[v]))
+			break
+		default:
+			builder.WriteString(fmt.Sprintf("%s", param[v]))
+			break
+		}
+		builder.WriteString("&")
+	}
+	builder.WriteString("key=" + key)
+	sign = md5.MD5EncToLower(builder.String())
+	return
 }

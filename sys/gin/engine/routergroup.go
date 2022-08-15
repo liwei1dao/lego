@@ -3,6 +3,7 @@ package engine
 import (
 	"net/http"
 	"path"
+	"reflect"
 	"regexp"
 	"strings"
 )
@@ -166,4 +167,28 @@ func (this *RouterGroup) returnObj() IRoutes {
 		return this.engine
 	}
 	return this
+}
+
+func (this *RouterGroup) Register(rcvr interface{}) {
+	typ := reflect.TypeOf(rcvr)
+	vof := reflect.ValueOf(rcvr)
+	for m := 0; m < typ.NumMethod(); m++ {
+		method := typ.Method(m)
+		mname := method.Name
+		mtype := method.Type
+		if method.PkgPath != "" {
+			continue
+		}
+		if mtype.NumIn() != 2 {
+			continue
+		}
+		context := mtype.In(1)
+		if context.String() != "*engine.Context" {
+			continue
+		}
+		if mtype.NumOut() != 0 {
+			continue
+		}
+		this.POST(strings.ToLower(mname), vof.MethodByName(mname).Interface().(func(*Context)))
+	}
 }
