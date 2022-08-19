@@ -13,13 +13,17 @@ type TestData struct {
 	Age  int32
 }
 
+func (this *TestData) Log() {
+	sys.Error("妈妈咪呀!")
+}
+
 var sys log.ISys
 
 func TestMain(m *testing.M) {
 	var err error
 	if sys, err = log.NewSys(
 		log.SetFileName("log.log"),
-		log.SetIsDebug(false),
+		log.SetIsDebug(true),
 		log.SetEncoder(log.TextEncoder),
 	); err != nil {
 		fmt.Println(err)
@@ -28,7 +32,8 @@ func TestMain(m *testing.M) {
 	defer os.Exit(m.Run())
 }
 func Test_sys(t *testing.T) {
-	sys.Panic("妈妈咪呀!")
+	data := &TestData{}
+	data.Log()
 }
 
 //性能测试

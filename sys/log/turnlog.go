@@ -12,6 +12,12 @@ type Turnlog struct {
 	log      ILogger
 }
 
+func (this *Turnlog) SetName(name string) {
+	if this.log != nil {
+		this.log.SetName(name)
+	}
+}
+
 func (this *Turnlog) Enabled(lvl Loglevel) bool {
 	if this.isturnon && this.log != nil {
 		return this.log.Enabled(lvl)

@@ -32,7 +32,7 @@ type stacktrace struct {
 // stacktraceDepth specifies how deep of a stack trace should be captured.
 type stacktraceDepth int
 
-const callerSkipOffset = 4
+const callerSkipOffset = 2
 const (
 	// stacktraceFirst captures only the first frame.
 	stacktraceFirst stacktraceDepth = iota

@@ -43,6 +43,7 @@ type (
 		Panic(msg string, args ...Field)
 	}
 	ILogger interface {
+		SetName(name string)
 		Enabled(lvl Loglevel) bool
 		Ilogf
 		IlogIn
@@ -82,19 +83,19 @@ func Debug(msg string, args ...Field) {
 	defsys.Debug(msg, args...)
 }
 func Info(msg string, args ...Field) {
-	defsys.Debug(msg, args...)
+	defsys.Info(msg, args...)
 }
 func Warn(msg string, args ...Field) {
-	defsys.Debug(msg, args...)
+	defsys.Warn(msg, args...)
 }
 func Error(msg string, args ...Field) {
-	defsys.Debug(msg, args...)
+	defsys.Error(msg, args...)
 }
 func Fatal(msg string, args ...Field) {
-	defsys.Debug(msg, args...)
+	defsys.Fatal(msg, args...)
 }
 func Panic(msg string, args ...Field) {
-	defsys.Debug(msg, args...)
+	defsys.Panic(msg, args...)
 }
 func Debugf(format string, args ...interface{}) {
 	defsys.Debugf(format, args...)

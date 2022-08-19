@@ -11,7 +11,6 @@ import (
 func newSys(options *Options) (sys *Logger, err error) {
 	hook := LogFileOut{
 		Filename:   options.FileName,                               //日志文件路径
-		MaxSize:    options.MaxSize,                                //日志大小
 		MaxAge:     options.MaxAgeTime,                             //备份日志保存天数
 		CupTime:    time.Duration(options.CupTimeTime) * time.Hour, //日志切割间隔时间
 		Compress:   options.Compress,                               //是否压缩 disabled by default
@@ -23,7 +22,6 @@ func newSys(options *Options) (sys *Logger, err error) {
 			return
 		}
 	}
-
 	out := make(writeTree, 0, 2)
 	out = append(out, AddSync(&hook))
 	if options.IsDebug {
@@ -64,7 +62,9 @@ func (this *Logger) Clone(name string, skip int) ILogger {
 		addStack:   this.addStack,
 	}
 }
-
+func (this *Logger) SetName(name string) {
+	this.name = name
+}
 func (this *Logger) Enabled(lvl Loglevel) bool {
 	return this.level.Enabled(lvl)
 }
@@ -171,8 +171,10 @@ func (this *Logger) check(level Loglevel, msg string, args ...Field) (entry *Ent
 	if !addCaller && !addStack {
 		return
 	}
-
 	stackDepth := stacktraceFirst
+	if addStack {
+		stackDepth = stacktraceFull
+	}
 	stack := captureStacktrace(this.callerSkip+callerSkipOffset, stackDepth)
 	defer stack.Free()
 	if stack.Count() == 0 {
@@ -197,9 +199,7 @@ func (this *Logger) check(level Loglevel, msg string, args ...Field) (entry *Ent
 	if addStack {
 		buffer := pools.BufferPoolGet()
 		defer buffer.Free()
-
 		stackfmt := newStackFormatter(buffer)
-
 		stackfmt.FormatFrame(frame)
 		if more {
 			stackfmt.FormatStack(stack)

@@ -50,7 +50,9 @@ func (this *ConsoleFormatter) Format(config *EncoderConfig, entry *Entry) (*pool
 			line.AppendString(config.ConsoleSeparator)
 		}
 		isfirst = false
+		line.AppendString("[")
 		line.AppendString(entry.Name)
+		line.AppendString("]")
 	}
 
 	if config.MessageKey != "" {

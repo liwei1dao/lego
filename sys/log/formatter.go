@@ -45,7 +45,7 @@ func DefTimeEncoder(t time.Time) string {
 }
 
 func LowercaseLevelEncoder(l Loglevel) string {
-	return l.String()
+	return l.CapitalString()
 }
 
 func ShortCallerEncoder(caller EntryCaller) string {
