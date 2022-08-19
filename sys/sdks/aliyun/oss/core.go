@@ -8,12 +8,20 @@ import (
 
 type (
 	ISys interface {
+		///创建数据桶
 		CreateBucket(bucketName string) (err error)
+		///上传对象
 		UploadObject(objectKey string, reader io.Reader, options ...oss.Option) (err error)
+		///上传本地文件
 		UploadFile(objectName string, localFileName string) (err error)
+		///获取对象
 		GetObject(objectName string, options ...oss.Option) ([]byte, error)
+		///下载文件
 		DownloadFile(objectName string, downloadedFileName string) (err error)
+		///删除文件
 		DeleteFile(objectName string) (err error)
+		//获取临时访问地址
+		GetURL(objectName string, expired int64) (url string, err error)
 	}
 )
 
@@ -30,6 +38,7 @@ func NewSys(option ...Option) (sys ISys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
 }
+
 func CreateBucket(bucketName string) (err error) {
 	return defsys.CreateBucket(bucketName)
 }
@@ -52,4 +61,8 @@ func DownloadFile(objectName string, downloadedFileName string) (err error) {
 
 func DeleteFile(objectName string) (err error) {
 	return defsys.DeleteFile(objectName)
+}
+
+func GetURL(objectName string, expired int64) (url string, err error) {
+	return defsys.GetURL(objectName, expired)
 }

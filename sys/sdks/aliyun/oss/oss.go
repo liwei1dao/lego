@@ -48,9 +48,8 @@ func (this *OSS) CreateBucket(bucketName string) (err error) {
 }
 
 //上传文件
-// <objectName>上传文件到OSS时需要指定包含文件后缀在内的完整路径，例如abc/efg/123.jpg。
-// <localFileName>由本地文件路径加文件名包括后缀组成，例如/users/local/myfile.txt。
-// 上传文件。
+//<objectName>上传文件到OSS时需要指定包含文件后缀在内的完整路径，例如abc/efg/123.jpg。
+//<localFileName>由本地文件路径加文件名包括后缀组成，例如/users/local/myfile.txt。
 func (this *OSS) UploadFile(objectName string, localFileName string) (err error) {
 	err = this.bucket.PutObjectFromFile(objectName, localFileName)
 	return err
@@ -65,14 +64,14 @@ func (this *OSS) UploadObject(objectKey string, reader io.Reader, options ...oss
 	return err
 }
 
-// 下载文件。
-// <objectName>从OSS下载文件时需要指定包含文件后缀在内的完整路径，例如abc/efg/123.jpg。
+//下载文件。
+//<objectName>从OSS下载文件时需要指定包含文件后缀在内的完整路径，例如abc/efg/123.jpg。
 func (this *OSS) DownloadFile(objectName string, downloadedFileName string) (err error) {
 	err = this.bucket.GetObjectToFile(objectName, downloadedFileName)
 	return err
 }
 
-// 下载文件到缓存
+//下载文件到缓存
 func (this *OSS) GetObject(objectName string, options ...oss.Option) ([]byte, error) {
 	if file, err := this.bucket.GetObject(objectName, options...); err != nil {
 		return nil, err
@@ -89,7 +88,12 @@ func (this *OSS) GetObject(objectName string, options ...oss.Option) ([]byte, er
 
 //删除文件
 func (this *OSS) DeleteFile(objectName string) (err error) {
-	// 删除文件。
 	err = this.bucket.DeleteObject(objectName)
+	return
+}
+
+//获取临时访问url
+func (this *OSS) GetURL(objectName string, expired int64) (url string, err error) {
+	url, err = this.bucket.SignURL(objectName, oss.HTTPGet, expired)
 	return
 }
