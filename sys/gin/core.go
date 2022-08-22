@@ -86,7 +86,7 @@ func StaticFS(relativePath string, fs http.FileSystem) engine.IRoutes {
 }
 
 //签名接口
-func ParamSign(key string, param map[string]interface{}) (sign string) {
+func ParamSign(key string, param map[string]interface{}) (origin, sign string) {
 	var keys []string
 	for k, _ := range param {
 		keys = append(keys, k)
@@ -112,6 +112,15 @@ func ParamSign(key string, param map[string]interface{}) (sign string) {
 			reflect.Float64:
 			builder.WriteString(fmt.Sprintf("%d", param[v]))
 			break
+		case reflect.Slice, reflect.Array:
+			s := reflect.ValueOf(param[v])
+			valueStr := ""
+			for i := 0; i < s.Len(); i++ {
+				valueStr += fmt.Sprintf("%v,", s.Index(i).Interface())
+			}
+			valueStr = valueStr[0 : len(valueStr)-1]
+			builder.WriteString(fmt.Sprintf("%s", valueStr))
+			break
 		default:
 			builder.WriteString(fmt.Sprintf("%s", param[v]))
 			break
@@ -119,6 +128,7 @@ func ParamSign(key string, param map[string]interface{}) (sign string) {
 		builder.WriteString("&")
 	}
 	builder.WriteString("key=" + key)
-	sign = md5.MD5EncToLower(builder.String())
+	origin = builder.String()
+	sign = md5.MD5EncToLower(origin)
 	return
 }

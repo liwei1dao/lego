@@ -44,3 +44,9 @@ func Test_sys(t *testing.T) {
 		fmt.Println("关闭 signal\n", sig)
 	}
 }
+
+///测试签名
+func Test_ParamSign(t *testing.T) {
+	origin, sgin := gin.ParamSign("@234%67g12q4*67m12#4l67!", map[string]interface{}{"images": []string{"测试资源.png", "11.jpg"}})
+	fmt.Println(origin, sgin)
+}
