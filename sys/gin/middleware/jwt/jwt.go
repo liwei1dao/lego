@@ -6,19 +6,24 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/gin/engine"
 )
 
-func NewJWT(key string) *JWT {
-	return &JWT{jwtkey: key}
+func NewJWT(key, tokenKey string) *JWT {
+	return &JWT{
+		jwtkey:   key,
+		tokenKey: tokenKey,
+	}
 }
 
 type JWT struct {
-	jwtkey string
+	jwtkey   string
+	tokenKey string
 }
 
 // CreateToken 生成token
-func (this *JWT) CreateToken(Id string) (string, error) {
+func CreateToken(key, Id string) (string, error) {
 	expireTime := time.Now().Add(2 * time.Hour) //过期时间
 	nowTime := time.Now()                       //当前时间
 	claims := jwt.StandardClaims{
@@ -30,7 +35,7 @@ func (this *JWT) CreateToken(Id string) (string, error) {
 
 	}
 	tokenStruct := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return tokenStruct.SignedString([]byte(this.jwtkey))
+	return tokenStruct.SignedString([]byte(key))
 }
 
 // CheckToken 验证token
@@ -49,30 +54,30 @@ func (this *JWT) CheckToken(token string) (*jwt.StandardClaims, bool) {
 func (this *JWT) JwtMiddleware() engine.HandlerFunc {
 	return func(c *engine.Context) {
 		//从请求头中获取token
-		tokenStr := c.Request.Header.Get("Authorization")
+		tokenStr := c.Request.Header.Get(this.tokenKey)
 		//用户不存在
 		if tokenStr == "" {
-			c.JSON(http.StatusOK, engine.H{"code": 0, "msg": "用户不存在"})
+			c.JSON(http.StatusOK, engine.H{"code": core.ErrorCode_NoLogin, "msg": "用户不存在"})
 			c.Abort() //阻止执行
 			return
 		}
 		//token格式错误
 		tokenSlice := strings.SplitN(tokenStr, " ", 2)
 		if len(tokenSlice) != 2 && tokenSlice[0] != "Bearer" {
-			c.JSON(http.StatusOK, engine.H{"code": 0, "msg": "token格式错误"})
+			c.JSON(http.StatusOK, engine.H{"code": core.ErrorCode_NoLogin, "msg": "token格式错误"})
 			c.Abort() //阻止执行
 			return
 		}
 		//验证token
 		tokenStruck, ok := this.CheckToken(tokenSlice[1])
 		if !ok {
-			c.JSON(http.StatusOK, engine.H{"code": 0, "msg": "token不正确"})
+			c.JSON(http.StatusOK, engine.H{"code": core.ErrorCode_NoLogin, "msg": "token不正确"})
 			c.Abort() //阻止执行
 			return
 		}
 		//token超时
 		if time.Now().Unix() > tokenStruck.ExpiresAt {
-			c.JSON(http.StatusOK, engine.H{"code": 0, "msg": "token过期"})
+			c.JSON(http.StatusOK, engine.H{"code": core.ErrorCode_NoLogin, "msg": "token过期"})
 			c.Abort() //阻止执行
 			return
 		}
