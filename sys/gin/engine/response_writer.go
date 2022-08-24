@@ -2,6 +2,7 @@ package engine
 
 import (
 	"bufio"
+	"io"
 	"net"
 	"net/http"
 
@@ -26,10 +27,16 @@ type IResponseWriter interface {
 		大小返回已经写入响应 http 正文的字节数
 	*/
 	Size() int
+	// WriteString writes the string into the response body.
+	WriteString(string) (int, error)
+	// Written returns true if the response body was already written.
+	Written() bool
 	/*
 		WriteHeaderNow 强制写入 http 标头（状态码 + 标头）。
 	*/
 	WriteHeaderNow()
+	// Pusher get the http.Pusher for server push
+	Pusher() http.Pusher
 }
 type ResponseWriter struct {
 	http.ResponseWriter
@@ -51,6 +58,26 @@ func (this *ResponseWriter) WriteHeader(code int) {
 		}
 		this.status = code
 	}
+}
+func (this *ResponseWriter) WriteHeaderNow() {
+	if !this.Written() {
+		this.size = 0
+		this.ResponseWriter.WriteHeader(this.status)
+	}
+}
+
+func (this *ResponseWriter) Write(data []byte) (n int, err error) {
+	this.WriteHeaderNow()
+	n, err = this.ResponseWriter.Write(data)
+	this.size += n
+	return
+}
+
+func (this *ResponseWriter) WriteString(s string) (n int, err error) {
+	this.WriteHeaderNow()
+	n, err = io.WriteString(this.ResponseWriter, s)
+	this.size += n
+	return
 }
 
 func (this *ResponseWriter) Status() int {
@@ -81,12 +108,6 @@ func (this *ResponseWriter) Flush() {
 	this.ResponseWriter.(http.Flusher).Flush()
 }
 
-func (this *ResponseWriter) WriteHeaderNow() {
-	if !this.Written() {
-		this.size = 0
-		this.ResponseWriter.WriteHeader(this.status)
-	}
-}
 func (this *ResponseWriter) Pusher() (pusher http.Pusher) {
 	if pusher, ok := this.ResponseWriter.(http.Pusher); ok {
 		return pusher
