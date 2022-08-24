@@ -12,13 +12,13 @@ import (
 
 func NewJWT(key, tokenKey string) *JWT {
 	return &JWT{
-		jwtkey:   key,
+		jwtkey:   []byte(key),
 		tokenKey: tokenKey,
 	}
 }
 
 type JWT struct {
-	jwtkey   string
+	jwtkey   []byte
 	tokenKey string
 }
 
@@ -62,14 +62,14 @@ func (this *JWT) JwtMiddleware() engine.HandlerFunc {
 			return
 		}
 		//token格式错误
-		tokenSlice := strings.SplitN(tokenStr, " ", 2)
-		if len(tokenSlice) != 2 && tokenSlice[0] != "Bearer" {
+		tokenSlice := strings.Split(tokenStr, ".")
+		if len(tokenSlice) != 3 {
 			c.JSON(http.StatusOK, engine.H{"code": core.ErrorCode_NoLogin, "msg": "token格式错误"})
 			c.Abort() //阻止执行
 			return
 		}
 		//验证token
-		tokenStruck, ok := this.CheckToken(tokenSlice[1])
+		tokenStruck, ok := this.CheckToken(tokenStr)
 		if !ok {
 			c.JSON(http.StatusOK, engine.H{"code": core.ErrorCode_NoLogin, "msg": "token不正确"})
 			c.Abort() //阻止执行
@@ -81,7 +81,7 @@ func (this *JWT) JwtMiddleware() engine.HandlerFunc {
 			c.Abort() //阻止执行
 			return
 		}
-		c.Set("UserId", tokenStruck.Id)
+		c.SetUserId(tokenStruck.Id)
 		c.Next()
 	}
 }

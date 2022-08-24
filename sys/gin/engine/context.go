@@ -161,6 +161,10 @@ func (this *Context) Set(key string, value interface{}) {
 	this.mu.Unlock()
 }
 
+func (this *Context) SetUserId(uid string) {
+	this.Set("UserId", uid)
+}
+
 func (this *Context) Get(key string) (value interface{}, exists bool) {
 	this.mu.RLock()
 	value, exists = this.Keys[key]
@@ -266,6 +270,10 @@ func (this *Context) GetStringMapStringSlice(key string) (smss map[string][]stri
 		smss, _ = val.(map[string][]string)
 	}
 	return
+}
+
+func (this *Context) GetUserId() string {
+	return this.GetString("UserId")
 }
 
 func (this *Context) Header(key, value string) {
