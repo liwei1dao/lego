@@ -1,5 +1,7 @@
 package log
 
+import "io"
+
 var AllLevels = []Loglevel{
 	PanicLevel,
 	FatalLevel,
@@ -45,6 +47,7 @@ type (
 	ILogger interface {
 		SetName(name string)
 		Enabled(lvl Loglevel) bool
+		io.Writer
 		Ilogf
 		IlogIn
 		ILog

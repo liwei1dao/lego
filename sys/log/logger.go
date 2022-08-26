@@ -68,6 +68,13 @@ func (this *Logger) SetName(name string) {
 func (this *Logger) Enabled(lvl Loglevel) bool {
 	return this.level.Enabled(lvl)
 }
+
+func (this *Logger) Write(p []byte) (n int, err error) {
+	err = this.out.WriteTo(p)
+	n = len(p)
+	return
+}
+
 func (this *Logger) Debug(msg string, args ...Field) {
 	this.Log(DebugLevel, msg, args...)
 }
