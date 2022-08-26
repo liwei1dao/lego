@@ -13,6 +13,8 @@ import (
 
 type ISys interface {
 	engine.IRoutes
+	HandleContext(c *engine.Context)
+	LoadHTMLGlob(pattern string)
 	Close() (err error)
 }
 
@@ -34,6 +36,14 @@ func NewSys(opt ...Option) (sys ISys, err error) {
 	}
 	sys, err = newSys(option)
 	return
+}
+
+func LoadHTMLGlob(pattern string) {
+	defsys.LoadHTMLGlob(pattern)
+}
+
+func HandleContext(c *engine.Context) {
+	defsys.HandleContext(c)
 }
 
 func Close() (err error) {

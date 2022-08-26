@@ -292,6 +292,14 @@ func (this *Engine) addRoute(method, path string, handlers HandlersChain) {
 	}
 }
 
+//重定向
+func (this *Engine) HandleContext(c *Context) {
+	oldIndexValue := c.index
+	c.reset()
+	this.handleHTTPRequest(c)
+	c.index = oldIndexValue
+}
+
 func (this *Engine) handleHTTPRequest(c *Context) {
 	httpMethod := c.Request.Method
 	rPath := c.Request.URL.Path

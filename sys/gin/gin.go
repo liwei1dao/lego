@@ -99,6 +99,12 @@ func (this *Gin) RunListener(listener net.Listener) (err error) {
 	err = http.Serve(listener, this.engine.Handler())
 	return
 }
+func (this *Gin) HandleContext(c *engine.Context) {
+	this.HandleContext(c)
+}
+func (this *Gin) LoadHTMLGlob(pattern string) {
+	this.engine.LoadHTMLGlob(pattern)
+}
 
 func (this *Gin) Close() (err error) {
 	if err = this.server.Shutdown(context.Background()); err != nil {
