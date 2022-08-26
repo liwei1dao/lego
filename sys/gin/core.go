@@ -107,7 +107,6 @@ func ParamSign(key string, param map[string]interface{}) (origin, sign string) {
 			reflect.Uint16,
 			reflect.Uint32,
 			reflect.Uint64,
-			reflect.Uintptr,
 			reflect.Float32,
 			reflect.Float64:
 			builder.WriteString(fmt.Sprintf("%d", param[v]))

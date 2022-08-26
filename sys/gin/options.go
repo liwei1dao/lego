@@ -70,7 +70,7 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 		ListenPort: 8080,
 		CertFile:   "",
 		KeyFile:    "",
-		Debug:      true,
+		Debug:      false,
 	}
 	for _, o := range opts {
 		o(options)
