@@ -47,7 +47,7 @@ func (this *PayPal) CreateOrder(id string, amount float64) (order *paypal.Order,
 	purchaseUnits[0] = paypal.PurchaseUnitRequest{
 		Amount: &paypal.PurchaseUnitAmount{
 			Currency: this.options.Currency,     //收款类型
-			Value:    fmt.Sprintf("%f", amount), //收款数量
+			Value:    fmt.Sprintf("%v", amount), //收款数量
 		},
 	}
 	payer := &paypal.CreateOrderPayer{
