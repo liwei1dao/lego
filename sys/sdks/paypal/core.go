@@ -37,7 +37,7 @@ func NewSys(opt ...Option) (sys ISys, err error) {
 	return
 }
 
-func CreateOrder(id string, amount int32) (order *paypal.Order, err error) {
+func CreateOrder(id string, amount float64) (order *paypal.Order, err error) {
 	return defsys.CreateOrder(id, amount)
 }
 
