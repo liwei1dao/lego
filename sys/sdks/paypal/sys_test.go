@@ -17,7 +17,7 @@ func Test_sys(t *testing.T) {
 		fmt.Printf("livego init err:%v \n", err)
 		return
 	} else {
-		order, err := sys.CreateOrder("liwei1dao", 1)
+		order, err := sys.CreateOrder("orderid", "liwei1dao", 1)
 		fmt.Printf("order:%v err:%v \n", order, err)
 	}
 

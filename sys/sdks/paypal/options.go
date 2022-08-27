@@ -81,7 +81,6 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 			err = errors.New("log is nil")
 		}
 	}
-
 	return
 }
 
@@ -102,6 +101,5 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 			err = errors.New("log is nil")
 		}
 	}
-
 	return
 }

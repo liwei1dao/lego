@@ -2,7 +2,6 @@ package paypal
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/plutov/paypal/v4"
@@ -42,22 +41,25 @@ func (this *PayPal) init() (err error) {
 创建收款订单
 (*order).Links[1].Href就是支付的链接
 */
-func (this *PayPal) CreateOrder(id string, amount float64) (order *paypal.Order, err error) {
+func (this *PayPal) CreateOrder(orderId, uid string, amount float64) (order *paypal.Order, err error) {
 	purchaseUnits := make([]paypal.PurchaseUnitRequest, 1)
 	purchaseUnits[0] = paypal.PurchaseUnitRequest{
 		Amount: &paypal.PurchaseUnitAmount{
 			Currency: this.options.Currency,     //收款类型
 			Value:    fmt.Sprintf("%v", amount), //收款数量
 		},
+		InvoiceID:   orderId,
+		ReferenceID: uid,
+		Description: this.options.AppName,
 	}
 	payer := &paypal.CreateOrderPayer{
 		Name: &paypal.CreateOrderPayerName{
-			GivenName: id,
-			Surname:   this.options.AppName,
+			GivenName: uid,
+			Surname:   uid,
 		},
 	}
 	appContext := &paypal.ApplicationContext{
-		ReturnURL: this.options.ReturnURL, //回调链接
+		ReturnURL: this.options.ReturnURL + orderId, //回调链接
 	}
 	order, err = this.client.CreateOrder(context.Background(), "CAPTURE", purchaseUnits, payer, appContext)
 	if err != nil {
@@ -68,15 +70,8 @@ func (this *PayPal) CreateOrder(id string, amount float64) (order *paypal.Order,
 }
 
 //回调(可以利用上面的回调链接实现)
-func (this *PayPal) PaypalCallback(orderId string) error {
+func (this *PayPal) GetOrder(orderId string) (order *paypal.CaptureOrderResponse, err error) {
 	ctor := paypal.CaptureOrderRequest{}
-	order, err := this.client.CaptureOrder(context.Background(), orderId, ctor)
-	if err != nil {
-		return err
-	}
-	//查看回调完成后订单状态是否支付完成。
-	if (*order).Status != "COMPLETED" {
-		return errors.New("pay fail")
-	}
-	return nil
+	order, err = this.client.CaptureOrder(context.Background(), orderId, ctor)
+	return
 }
