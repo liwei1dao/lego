@@ -102,7 +102,7 @@ func (this *ServiceBase) Run(mod ...core.IModule) {
 		for _, v := range this.modules {
 			options := v.mi.NewOptions()
 			if err := options.LoadConfig(v.seetring); err == nil {
-				err := v.mi.Init(this.Service, v.mi, options)
+				err = v.mi.Init(this.Service, v.mi, options)
 				if err != nil {
 					log.Panicf(fmt.Sprintf("初始化模块【%s】错误 err:%v", v.mi.GetType(), err))
 				}

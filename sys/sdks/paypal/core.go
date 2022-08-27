@@ -9,7 +9,7 @@ import "github.com/plutov/paypal/v4"
 type (
 	ISys interface {
 		///创建付款订单
-		CreateOrder(amount string) (order *paypal.Order, err error)
+		CreateOrder(id string, amount float64) (order *paypal.Order, err error)
 		//回调订单 查看是否完成
 		PaypalCallback(orderId string) error
 	}
@@ -37,8 +37,8 @@ func NewSys(opt ...Option) (sys ISys, err error) {
 	return
 }
 
-func CreateOrder(amount string) (order *paypal.Order, err error) {
-	return defsys.CreateOrder(amount)
+func CreateOrder(id string, amount int32) (order *paypal.Order, err error) {
+	return defsys.CreateOrder(id, amount)
 }
 
 func PaypalCallback(orderId string) error {

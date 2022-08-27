@@ -3,6 +3,7 @@ package paypal
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/plutov/paypal/v4"
 )
@@ -41,17 +42,22 @@ func (this *PayPal) init() (err error) {
 创建收款订单
 (*order).Links[1].Href就是支付的链接
 */
-func (this *PayPal) CreateOrder(amount string) (order *paypal.Order, err error) {
+func (this *PayPal) CreateOrder(id string, amount float64) (order *paypal.Order, err error) {
 	purchaseUnits := make([]paypal.PurchaseUnitRequest, 1)
 	purchaseUnits[0] = paypal.PurchaseUnitRequest{
 		Amount: &paypal.PurchaseUnitAmount{
-			Currency: "USD",  //收款类型
-			Value:    amount, //收款数量
+			Currency: this.options.Currency,     //收款类型
+			Value:    fmt.Sprintf("%f", amount), //收款数量
 		},
 	}
-	payer := &paypal.CreateOrderPayer{}
+	payer := &paypal.CreateOrderPayer{
+		Name: &paypal.CreateOrderPayerName{
+			GivenName: id,
+			Surname:   this.options.AppName,
+		},
+	}
 	appContext := &paypal.ApplicationContext{
-		ReturnURL: "", //回调链接
+		ReturnURL: this.options.ReturnURL, //回调链接
 	}
 	order, err = this.client.CreateOrder(context.Background(), "CAPTURE", purchaseUnits, payer, appContext)
 	if err != nil {
