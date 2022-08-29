@@ -34,6 +34,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/nats-io/nats.go v1.16.0
 	github.com/pkg/sftp v1.13.5
+	github.com/plutov/paypal/v4 v4.6.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/xid v1.4.0
 	github.com/satori/go.uuid v1.2.0

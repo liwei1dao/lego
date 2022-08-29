@@ -46,7 +46,7 @@ func (this *JWT) CheckToken(token string) (*jwt.StandardClaims, bool) {
 	if key, _ := tokenObj.Claims.(*jwt.StandardClaims); tokenObj.Valid {
 		return key, true
 	} else {
-		return nil, false
+		return key, false
 	}
 }
 
