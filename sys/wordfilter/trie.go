@@ -1,4 +1,4 @@
-package wordguard
+package wordfilter
 
 // Node Trie树上的一个节点.
 type Node struct {

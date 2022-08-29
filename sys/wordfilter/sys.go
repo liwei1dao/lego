@@ -1,4 +1,4 @@
-package wordguard
+package wordfilter
 
 import (
 	"bufio"
