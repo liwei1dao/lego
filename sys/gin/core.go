@@ -128,7 +128,9 @@ func ParamSign(key string, param map[string]interface{}) (origin, sign string) {
 			for i := 0; i < s.Len(); i++ {
 				valueStr += fmt.Sprintf("%v,", s.Index(i).Interface())
 			}
-			valueStr = valueStr[0 : len(valueStr)-1]
+			if s.Len() > 0 {
+				valueStr = valueStr[0 : len(valueStr)-1]
+			}
 			builder.WriteString(fmt.Sprintf("%s", valueStr))
 			break
 		default:
