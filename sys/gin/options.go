@@ -36,6 +36,17 @@ func SetKeyFile(v string) Option {
 	}
 }
 
+func SetLetEncrypt(v bool) Option {
+	return func(o *Options) {
+		o.LetEncrypt = v
+	}
+}
+
+func SetDomain(v []string) Option {
+	return func(o *Options) {
+		o.Domain = v
+	}
+}
 func SetDebug(v bool) Option {
 	return func(o *Options) {
 		o.Debug = v
