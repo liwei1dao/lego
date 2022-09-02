@@ -9,10 +9,12 @@ import (
 
 type Option func(*Options)
 type Options struct {
-	ListenPort int    //监听端口
-	CertFile   string //tls文件
-	KeyFile    string //tls文件
-	Debug      bool   //日志是否开启
+	ListenPort int      //监听端口
+	CertFile   string   //tls文件
+	KeyFile    string   //tls文件
+	LetEncrypt bool     //Let's Encrypt 证书模式
+	Domain     []string //域名
+	Debug      bool     //日志是否开启
 	Log        log.ILogger
 }
 

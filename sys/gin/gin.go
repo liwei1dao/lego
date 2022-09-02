@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/gin-gonic/autotls"
 	"github.com/liwei1dao/lego/sys/gin/engine"
 	"github.com/liwei1dao/lego/sys/gin/middleware/logger"
 	"github.com/liwei1dao/lego/sys/gin/middleware/recovery"
@@ -21,6 +22,8 @@ func newSys(options *Options) (sys *Gin, err error) {
 	sys.engine.Use(logger.Logger([]string{}), recovery.Recovery())
 	if options.CertFile != "" && options.KeyFile != "" {
 		sys.RunTLS(options.ListenPort, options.CertFile, options.KeyFile)
+	} else if options.LetEncrypt {
+		sys.RunLetEncrypt(options.Domain...)
 	} else {
 		sys.Run(options.ListenPort)
 	}
@@ -81,6 +84,10 @@ func (this *Gin) RunTLS(listenPort int, certFile, keyFile string) (err error) {
 	}()
 	// err = http.ListenAndServeTLS(addr, certFile, keyFile, this.Handler())
 	return
+}
+
+func (this *Gin) RunLetEncrypt(domain ...string) {
+	autotls.Run(this.engine, domain...)
 }
 
 func (this *Gin) RunListener(listener net.Listener) (err error) {

@@ -2,6 +2,10 @@ package translation
 
 import "context"
 
+/*
+	Google 翻译系统
+*/
+
 type (
 	ISys interface {
 		Translation_Text_Base(ctx context.Context, original string, from, to string) (result string, err error)
