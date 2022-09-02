@@ -37,11 +37,6 @@ type Gin struct {
 }
 
 func (this *Gin) Run(listenPort int) (err error) {
-	defer func() {
-		if err != nil {
-			this.options.Log.Errorf("Run err:%v", err)
-		}
-	}()
 	// if this.engine.IsUnsafeTrustedProxies() {
 	// 	this.Warnf("You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
 	// 		"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
@@ -63,12 +58,6 @@ func (this *Gin) Run(listenPort int) (err error) {
 
 func (this *Gin) RunTLS(listenPort int, certFile, keyFile string) (err error) {
 	this.options.Log.Debugf("Listening and serving HTTPS on :%d", listenPort)
-	defer func() {
-		if err != nil {
-			this.options.Log.Errorln(err)
-		}
-	}()
-
 	// if this.engine.IsUnsafeTrustedProxies() {
 	// 	this.Warnf("You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
 	// 		"Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.")
@@ -87,7 +76,12 @@ func (this *Gin) RunTLS(listenPort int, certFile, keyFile string) (err error) {
 }
 
 func (this *Gin) RunLetEncrypt(domain ...string) {
-	autotls.Run(this.engine, domain...)
+	this.options.Log.Debugf("Listening and serving LetEncrypt on :%v", domain)
+	go func() {
+		if err := autotls.Run(this.engine, domain...); err != nil && errors.Is(err, http.ErrServerClosed) {
+			this.options.Log.Errorln(err)
+		}
+	}()
 }
 
 func (this *Gin) RunListener(listener net.Listener) (err error) {
@@ -96,7 +90,6 @@ func (this *Gin) RunListener(listener net.Listener) (err error) {
 		if err != nil {
 			this.options.Log.Errorln(err)
 		}
-
 	}()
 	// if this.engine.IsUnsafeTrustedProxies() {
 	// 	this.Warnf("You trusted all proxies, this is NOT safe. We recommend you to set a value.\n" +
