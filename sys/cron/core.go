@@ -5,11 +5,12 @@ import (
 )
 
 type (
-	ISys interface {
+	EntryID tcron.EntryID
+	ISys    interface {
 		Start()
 		Close()
-		AddFunc(spec string, cmd func()) (tcron.EntryID, error)
-		Remove(id tcron.EntryID)
+		AddFunc(spec string, cmd func()) (EntryID, error)
+		Remove(id EntryID)
 	}
 )
 
@@ -39,10 +40,10 @@ func Close() {
 	defsys.Close()
 }
 
-func AddFunc(spec string, cmd func()) (tcron.EntryID, error) {
+func AddFunc(spec string, cmd func()) (EntryID, error) {
 	return defsys.AddFunc(spec, cmd)
 }
 
-func Remove(id tcron.EntryID) {
+func Remove(id EntryID) {
 	defsys.Remove(id)
 }
