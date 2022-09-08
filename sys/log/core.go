@@ -80,7 +80,10 @@ func NewSys(opt ...Option) (sys ISys, err error) {
 	return
 }
 func Clone(name string, skip int) ILogger {
-	return defsys.Clone(name, skip)
+	if defsys != nil {
+		return defsys.Clone(name, skip)
+	}
+	return nil
 }
 func Debug(msg string, args ...Field) {
 	defsys.Debug(msg, args...)
