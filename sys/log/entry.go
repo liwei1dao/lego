@@ -85,6 +85,11 @@ type Entry struct {
 
 func (entry *Entry) reset() {
 	entry.Message = ""
+	entry.Caller.Defined = false
+	entry.Caller.File = ""
+	entry.Caller.Line = 0
+	entry.Caller.Function = ""
+	entry.Caller.Stack = ""
 	entry.Err = ""
 	entry.Data = entry.Data[:0]
 }
