@@ -10,13 +10,14 @@ import (
 
 type Option func(*Options)
 type Options struct {
-	DomainGlob  string
-	Parallelism int
-	Delay       time.Duration
-	Proxy       []string
-	UserAgent   string
-	Debug       bool //日志是否开启
-	Log         log.ILog
+	DomainGlob      string
+	Parallelism     int
+	Delay           time.Duration
+	Proxy           []string
+	SkipCertificate bool //是否跳过证书验证
+	UserAgent       string
+	Debug           bool //日志是否开启
+	Log             log.ILog
 }
 
 func SetDomainGlob(v string) Option {
@@ -38,6 +39,11 @@ func SetDelay(v time.Duration) Option {
 func SetProxy(v []string) Option {
 	return func(o *Options) {
 		o.Proxy = v
+	}
+}
+func SetSkipCertificate(v bool) Option {
+	return func(o *Options) {
+		o.SkipCertificate = v
 	}
 }
 func SetUserAgent(v string) Option {
