@@ -93,7 +93,7 @@ func (this *OSS) DeleteFile(objectName string) (err error) {
 }
 
 //获取临时访问url
-func (this *OSS) GetURL(objectName string, expired int64) (url string, err error) {
-	url, err = this.bucket.SignURL(objectName, oss.HTTPGet, expired)
+func (this *OSS) GetURL(objectName string, expired int64, options ...oss.Option) (url string, err error) {
+	url, err = this.bucket.SignURL(objectName, oss.HTTPGet, expired, options...)
 	return
 }

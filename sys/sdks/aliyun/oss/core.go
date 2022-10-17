@@ -21,7 +21,7 @@ type (
 		///删除文件
 		DeleteFile(objectName string) (err error)
 		//获取临时访问地址
-		GetURL(objectName string, expired int64) (url string, err error)
+		GetURL(objectName string, expired int64, options ...oss.Option) (url string, err error)
 	}
 )
 
@@ -63,6 +63,6 @@ func DeleteFile(objectName string) (err error) {
 	return defsys.DeleteFile(objectName)
 }
 
-func GetURL(objectName string, expired int64) (url string, err error) {
-	return defsys.GetURL(objectName, expired)
+func GetURL(objectName string, expired int64, options ...oss.Option) (url string, err error) {
+	return defsys.GetURL(objectName, expired, options...)
 }
