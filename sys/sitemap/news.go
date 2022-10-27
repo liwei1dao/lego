@@ -4,6 +4,8 @@ import (
 	"encoding/xml"
 	"errors"
 	"time"
+
+	"github.com/beevik/etree"
 )
 
 var (
@@ -16,6 +18,28 @@ type News struct {
 	Language        string   `xml:"News:publication>News:language"`
 	PublicationDate string   `xml:"News:publication_date"`
 	Title           string   `xml:"News:title"`
+}
+
+func NewNewsForXml(el *etree.Element) *News {
+	news := &News{}
+	for _, v := range el.ChildElements() {
+		switch v.Tag {
+		case "name":
+			news.Name = v.Text()
+			break
+		case "language":
+			news.Language = v.Text()
+			break
+		case "publication_date":
+			news.PublicationDate = v.Text()
+			break
+		case "title":
+			news.Title = v.Text()
+			break
+			break
+		}
+	}
+	return news
 }
 
 // ISO 639 语言代码 http://www.loc.gov/standards/iso639-2/php/code_list.php

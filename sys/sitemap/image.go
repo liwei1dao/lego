@@ -1,6 +1,10 @@
 package sitemap
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+
+	"github.com/beevik/etree"
+)
 
 type Image struct {
 	XMLName     xml.Name `xml:"image:image"`
@@ -11,6 +15,29 @@ type Image struct {
 	License     string   `xml:"image:license,omitempty"`
 }
 
+func NewImageForXml(el *etree.Element) *Image {
+	image := &Image{}
+	for _, v := range el.ChildElements() {
+		switch v.Tag {
+		case "loc":
+			image.Loc = v.Text()
+			break
+		case "caption":
+			image.Caption = v.Text()
+			break
+		case "geo_location":
+			image.GeoLocation = v.Text()
+			break
+		case "title":
+			image.Title = v.Text()
+			break
+		case "license":
+			image.License = v.Text()
+			break
+		}
+	}
+	return image
+}
 func NewImage() *Image {
 	return &Image{}
 }

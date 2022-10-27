@@ -139,8 +139,12 @@ func (this *Sitemap) load() (err error) {
 				_url.ChangeFreq = ChangeFreq(v.Text())
 			case "priority":
 				_url.Priority = po(codec.StringToFloat64(v.Text()))
+			case "Image":
+				_url.AppendImage(NewImageForXml(v))
 			case "Video":
 				_url.AppendVideo(NewVideoForXml(v))
+			case "News":
+				_url.AppendNews(NewNewsForXml(v))
 			}
 		}
 		this.AppendUrl(_url)
