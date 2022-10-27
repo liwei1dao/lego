@@ -1,4 +1,4 @@
-package blockcache
+package sitemap
 
 import (
 	"errors"
@@ -9,31 +9,52 @@ import (
 
 type Option func(*Options)
 type Options struct {
-	CacheMaxSzie int64
-	Debug        bool //日志是否开启
-	Log          log.ILogger
+	DefaultHost string //网址
+	Filename    string //文件地址
+	Compress    bool   //是否压缩
+	Pretty      bool
+	MaxLinks    int  //最大url数量
+	Debug       bool //日志是否开启
+	Log         log.ILogger
 }
 
-func SetCacheMaxSzie(v int64) Option {
+///网址
+func SetDefaultHost(v string) Option {
 	return func(o *Options) {
-		o.CacheMaxSzie = v
+		o.DefaultHost = v
 	}
 }
 
-func SetDebug(v bool) Option {
+///文件地址
+func SetFilename(v string) Option {
 	return func(o *Options) {
-		o.Debug = v
+		o.Filename = v
 	}
 }
-func SetLog(v log.ILogger) Option {
+
+///是否压缩
+func SetCompress(v bool) Option {
 	return func(o *Options) {
-		o.Log = v
+		o.Compress = v
+	}
+}
+
+func SetPretty(v bool) Option {
+	return func(o *Options) {
+		o.Pretty = v
+	}
+}
+
+func SetMaxLinks(v int) Option {
+	return func(o *Options) {
+		o.MaxLinks = v
 	}
 }
 
 func newOptions(config map[string]interface{}, opts ...Option) (options *Options, err error) {
 	options = &Options{
-		CacheMaxSzie: 1024 * 1024 * 100,
+		MaxLinks: 50000,
+		Filename: "./sitemap.xml",
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
@@ -42,28 +63,27 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 		o(options)
 	}
 	if options.Debug && options.Log == nil {
-		options.Log = log.Clone("sys.blockcache", 2)
+		options.Log = log.Clone("sys.sitemap", 2)
 	}
 	if options.Log = log.NewTurnlog(options.Debug, options.Log); options.Log == nil {
 		err = errors.New("log is nil")
 	}
-
 	return
 }
 
 func newOptionsByOption(opts ...Option) (options *Options, err error) {
 	options = &Options{
-		CacheMaxSzie: 1024 * 1024 * 100,
+		MaxLinks: 50000,
+		Filename: "./sitemap.xml",
 	}
 	for _, o := range opts {
 		o(options)
 	}
 	if options.Debug && options.Log == nil {
-		options.Log = log.Clone("sys.blockcache", 2)
+		options.Log = log.Clone("sys.sitemap", 2)
 	}
 	if options.Log = log.NewTurnlog(options.Debug, options.Log); options.Log == nil {
 		err = errors.New("log is nil")
 	}
-
 	return
 }

@@ -17,7 +17,7 @@ type Options struct {
 	SkipCertificate bool //是否跳过证书验证
 	UserAgent       string
 	Debug           bool //日志是否开启
-	Log             log.ILog
+	Log             log.ILogger
 }
 
 func SetDomainGlob(v string) Option {
@@ -60,7 +60,10 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 	for _, o := range opts {
 		o(options)
 	}
-	if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.colly", 2)); options.Log == nil {
+	if options.Debug && options.Log == nil {
+		options.Log = log.Clone("sys.colly", 2)
+	}
+	if options.Log = log.NewTurnlog(options.Debug, options.Log); options.Log == nil {
 		err = errors.New("log is nil")
 	}
 	return
@@ -71,7 +74,10 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 	for _, o := range opts {
 		o(options)
 	}
-	if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.colly", 2)); options.Log == nil {
+	if options.Debug && options.Log == nil {
+		options.Log = log.Clone("sys.colly", 2)
+	}
+	if options.Log = log.NewTurnlog(options.Debug, options.Log); options.Log == nil {
 		err = errors.New("log is nil")
 	}
 	return

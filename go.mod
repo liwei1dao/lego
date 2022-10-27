@@ -13,6 +13,7 @@ require (
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.4+incompatible
 	github.com/apache/pulsar-client-go v0.8.1
 	github.com/axgle/mahonia v0.0.0-20180208002826-3358181d7394
+	github.com/beevik/etree v1.1.0
 	github.com/denisenkom/go-mssqldb v0.12.2
 	github.com/disintegration/imaging v1.6.2
 	github.com/eclipse/paho.mqtt.golang v1.4.1

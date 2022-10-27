@@ -13,7 +13,7 @@ type Options struct {
 	Expiration      time.Duration
 	CleanupInterval time.Duration
 	Debug           bool //日志是否开启
-	Log             log.ILog
+	Log             log.ILogger
 }
 
 func newOptions(config map[string]interface{}, opts ...Option) (options *Options, err error) {
@@ -28,7 +28,10 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 		o(options)
 	}
 
-	if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.cachego", 2)); options.Log == nil {
+	if options.Debug && options.Log == nil {
+		options.Log = log.Clone("sys.cachego", 2)
+	}
+	if options.Log = log.NewTurnlog(options.Debug, options.Log); options.Log == nil {
 		err = errors.New("log is nil")
 	}
 
@@ -43,8 +46,12 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 	for _, o := range opts {
 		o(options)
 	}
-	if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.cachego", 2)); options.Log == nil {
+	if options.Debug && options.Log == nil {
+		options.Log = log.Clone("sys.cachego", 2)
+	}
+	if options.Log = log.NewTurnlog(options.Debug, options.Log); options.Log == nil {
 		err = errors.New("log is nil")
 	}
+
 	return
 }
