@@ -39,10 +39,10 @@ func NewUrl() *Url {
 type Url struct {
 	*base
 	XMLName    xml.Name   `xml:"url"`
-	Loc        string     `xml:"loc"`
-	LastMod    string     `xml:"lastmod,omitempty"`
-	ChangeFreq ChangeFreq `xml:"changefreq,omitempty"`
-	Priority   po         `xml:"priority,omitempty"`
+	Loc        string     `xml:"loc"`                  //链接地址
+	LastMod    string     `xml:"lastmod,omitempty"`    //最后一次更新时间
+	ChangeFreq ChangeFreq `xml:"changefreq,omitempty"` //变化周期
+	Priority   po         `xml:"priority,omitempty"`   //优先级
 	Token      []xml.Token
 }
 

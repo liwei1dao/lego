@@ -53,6 +53,22 @@ func (this *Sitemap) AppendUrl(url *Url) {
 	this.urlSet.Token = append(this.urlSet.Token, url)
 }
 
+func (this *Sitemap) GetUrls() (urls map[string]*Url) {
+	urls = make(map[string]*Url)
+	for _, v := range this.urlSet.Token {
+		url := v.(*Url)
+		urls[url.Loc] = url
+	}
+	return
+}
+
+func (this *Sitemap) SetUrls(urls map[string]*Url) {
+	this.urlSet.Token = make([]xml.Token, 0, len(urls))
+	for _, v := range urls {
+		this.urlSet.Token = append(this.urlSet.Token, v)
+	}
+}
+
 func (this *Sitemap) ToXml() ([]byte, error) {
 	if ImageXmlNS&this.urlSet.xmlns == ImageXmlNS {
 		this.urlSet.XMLNSImage = "http://www.google.com/schemas/sitemap-image/1.1"
