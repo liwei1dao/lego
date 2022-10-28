@@ -25,6 +25,7 @@ type RoutesInfo []RouteInfo
 
 type IRoutes interface {
 	Register(rcvr interface{})
+	NoRoute(handlers ...HandlerFunc)
 	Group(relativePath string, handlers ...HandlerFunc) IRoutes
 	Use(...HandlerFunc) IRoutes
 	Handle(string, string, ...HandlerFunc) IRoutes

@@ -27,7 +27,9 @@ type RouterGroup struct {
 func (this *RouterGroup) BasePath() string {
 	return this.basePath
 }
-
+func (this *RouterGroup) NoRoute(handlers ...HandlerFunc) {
+	this.engine.NoRoute(handlers...)
+}
 func (this *RouterGroup) Use(middleware ...HandlerFunc) IRoutes {
 	this.Handlers = append(this.Handlers, middleware...)
 	return this.returnObj()

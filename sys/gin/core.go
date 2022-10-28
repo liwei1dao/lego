@@ -49,7 +49,9 @@ func HandleContext(c *engine.Context) {
 func Close() (err error) {
 	return defsys.Close()
 }
-
+func NoRoute(handlers ...engine.HandlerFunc) {
+	defsys.NoRoute(handlers...)
+}
 func Use(handlers ...engine.HandlerFunc) engine.IRoutes {
 	return defsys.Use(handlers...)
 }
