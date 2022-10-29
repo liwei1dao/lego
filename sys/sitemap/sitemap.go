@@ -165,7 +165,7 @@ func (this *Sitemap) load() (err error) {
 			case "changefreq":
 				_url.ChangeFreq = ChangeFreq(v.Text())
 			case "priority":
-				_url.Priority = po(codec.StringToFloat64(v.Text()))
+				_url.Priority = codec.StringToFloat64(v.Text())
 			case "Image":
 				_url.AppendImage(NewImageForXml(v))
 			case "Video":

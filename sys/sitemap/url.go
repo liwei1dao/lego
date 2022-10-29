@@ -24,8 +24,6 @@ const (
 	Never   ChangeFreq = "never"
 )
 
-type po float64
-
 func NewUrl() *Url {
 	return &Url{
 		base:       &base{},
@@ -42,7 +40,7 @@ type Url struct {
 	Loc        string     `xml:"loc"`                  //链接地址
 	LastMod    string     `xml:"lastmod,omitempty"`    //最后一次更新时间
 	ChangeFreq ChangeFreq `xml:"changefreq,omitempty"` //变化周期
-	Priority   po         `xml:"priority,omitempty"`   //优先级
+	Priority   float64    `xml:"priority,omitempty"`   //优先级
 	Token      []xml.Token
 }
 
@@ -69,7 +67,7 @@ func (u *Url) SetPriority(priority float64) *Url {
 	if priority < 0 || priority > 1 {
 		panic(InvalidPriorityError{"Valid values range from 0.0 to 1.0"})
 	}
-	u.Priority = po(priority)
+	u.Priority = priority
 	return u
 }
 

@@ -36,7 +36,6 @@ func NewNewsForXml(el *etree.Element) *News {
 		case "title":
 			news.Title = v.Text()
 			break
-			break
 		}
 	}
 	return news
