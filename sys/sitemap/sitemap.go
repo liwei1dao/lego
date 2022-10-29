@@ -53,16 +53,16 @@ func (this *Sitemap) AppendUrl(url *Url) {
 	this.urlSet.Token = append(this.urlSet.Token, url)
 }
 
-func (this *Sitemap) GetUrls() (urls map[string]*Url) {
-	urls = make(map[string]*Url)
+func (this *Sitemap) GetUrls() (urls []*Url) {
+	urls = make([]*Url, 0)
 	for _, v := range this.urlSet.Token {
 		url := v.(*Url)
-		urls[url.Loc] = url
+		urls = append(urls, url)
 	}
 	return
 }
 
-func (this *Sitemap) SetUrls(urls map[string]*Url) {
+func (this *Sitemap) SetUrls(urls []*Url) {
 	this.urlSet.Token = make([]xml.Token, 0, len(urls))
 	for _, v := range urls {
 		this.urlSet.Token = append(this.urlSet.Token, v)
