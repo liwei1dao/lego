@@ -34,14 +34,20 @@ func newSys(options *Options) (sys *Sitemap, err error) {
 		urlSet: &UrlSet{
 			base: &base{},
 		},
+		urls:    map[string]int{},
 		options: options,
 	}
 	err = sys.load()
+	for i, v := range sys.urlSet.Token {
+		url := v.(*Url)
+		sys.urls[url.Loc] = i
+	}
 	return
 }
 
 type Sitemap struct {
 	urlSet  *UrlSet
+	urls    map[string]int
 	options *Options
 }
 
@@ -50,7 +56,12 @@ func (this *Sitemap) AppendUrl(url *Url) {
 		url.Loc = strings.TrimRight(this.options.DefaultHost, "/") + strings.TrimLeft(url.Loc, "/")
 	}
 	this.urlSet.setNs(url.xmlns)
-	this.urlSet.Token = append(this.urlSet.Token, url)
+	if i, ok := this.urls[url.Loc]; ok {
+		this.urlSet.Token[i] = url
+	} else {
+		this.urlSet.Token = append(this.urlSet.Token, url)
+		this.urls[url.Loc] = len(this.urlSet.Token) - 1
+	}
 }
 
 func (this *Sitemap) GetUrls() (urls []*Url) {
