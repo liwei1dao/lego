@@ -84,61 +84,42 @@ func writetoline(line *pools.Buffer, v interface{}) {
 	switch v := v.(type) {
 	case nil:
 		line.AppendString("nil")
-		break
 	case string:
 		line.AppendString(v)
-		break
 	case []byte:
 		line.AppendBytes(v)
-		break
 	case int:
 		line.AppendInt(int64(v))
-		break
 	case int8:
 		line.AppendInt(int64(v))
-		break
 	case int16:
 		line.AppendInt(int64(v))
-		break
 	case int32:
 		line.AppendInt(int64(v))
-		break
 	case int64:
 		line.AppendInt(int64(v))
-		break
 	case uint:
 		line.AppendUint(uint64(v))
-		break
 	case uint8:
 		line.AppendUint(uint64(v))
-		break
 	case uint16:
 		line.AppendUint(uint64(v))
-		break
 	case uint32:
 		line.AppendUint(uint64(v))
-		break
 	case uint64:
 		line.AppendUint(uint64(v))
-		break
 	case float32:
 		line.AppendFloat(float64(v), 64)
-		break
 	case float64:
 		line.AppendFloat(v, 64)
-		break
 	case bool:
 		line.AppendBool(v)
-		break
 	case time.Time:
 		line.AppendTime(v, time.RFC3339Nano)
-		break
 	case time.Duration:
 		line.AppendInt(v.Nanoseconds())
-		break
 	default:
 		d, _ := json.Marshal(v)
 		line.AppendBytes(d)
-		break
 	}
 }

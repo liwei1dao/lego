@@ -25,14 +25,6 @@ func (this *Turnlog) Enabled(lvl Loglevel) bool {
 		return false
 	}
 }
-
-func (this *Turnlog) Write(p []byte) (n int, err error) {
-	if this.isturnon && this.log != nil {
-		this.log.Write(p)
-	}
-	return
-}
-
 func (this *Turnlog) Debug(msg string, args ...Field) {
 	if this.isturnon && this.log != nil {
 		this.log.Debug(msg, args...)

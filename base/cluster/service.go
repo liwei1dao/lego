@@ -45,6 +45,7 @@ func (this *ClusterService) Configure(option ...Option) {
 		Id:      this.option.Setting.Id,
 		Type:    this.option.Setting.Type,
 		Version: this.option.Version,
+		Meta:    make(map[string]string),
 	}
 }
 

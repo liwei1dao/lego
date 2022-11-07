@@ -12,6 +12,8 @@ import (
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/discovery"
+	"github.com/liwei1dao/lego/sys/event"
+	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/rpc/connpool"
 	"github.com/liwei1dao/lego/sys/rpc/protocol"
 	"github.com/liwei1dao/lego/sys/rpc/rpccore"
@@ -81,8 +83,21 @@ func (this *rpc) Start() (err error) {
 	}
 	this.selector.UpdateServer(this.discovery.GetServices())
 	go func() { //监控服务发现
+		var add, del, change []*core.ServiceNode
 		for v := range this.discovery.WatchService() {
-			this.selector.UpdateServer(v)
+			add, del, change = this.selector.UpdateServer(v)
+			if len(add) > 0 { //发现节点
+				this.options.Log.Debug("发现节点!", log.Field{Key: "nodes", Value: add})
+				event.TriggerEvent(Event_RpcDiscoverNewNodes, add)
+			}
+			if len(del) > 0 { //丢失节点
+				this.options.Log.Debug("丢失节点!", log.Field{Key: "nodes", Value: del})
+				event.TriggerEvent(Event_RpcLoseNodes, del)
+			}
+			if len(change) > 0 { //节点属性变化
+				this.options.Log.Debug("节点属性变化!", log.Field{Key: "nodes", Value: change})
+				event.TriggerEvent(Event_RpChangeNodes, change)
+			}
 		}
 	}()
 	return

@@ -32,8 +32,14 @@ func (this *PayPal) init() (err error) {
 		}
 	}
 
-	this.client.SetLog(this.options.Log)
+	this.client.SetLog(this)
 	this.accessToken, err = this.client.GetAccessToken(context.Background())
+	return
+}
+
+func (this *PayPal) Write(p []byte) (n int, err error) {
+	n = len(p)
+	this.options.Log.Debugf(string(p))
 	return
 }
 

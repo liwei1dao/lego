@@ -18,7 +18,8 @@ type ICodec interface {
 type StoreType int8
 
 const (
-	StoreConsul StoreType = iota
+	StoreNUll StoreType = iota
+	StoreConsul
 	StoreZookeeper
 	StoreRedis
 )

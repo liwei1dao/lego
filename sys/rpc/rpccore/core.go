@@ -130,7 +130,7 @@ type ICodec interface {
 //选择器
 type ISelector interface {
 	Select(ctx context.Context, servicePath string) []*core.ServiceNode
-	UpdateServer(servers []*core.ServiceNode)
+	UpdateServer(servers []*core.ServiceNode) (add, del, change []*core.ServiceNode)
 }
 
 //连接对象池

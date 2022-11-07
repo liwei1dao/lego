@@ -2,6 +2,18 @@ package rpc
 
 import (
 	"context"
+
+	"github.com/liwei1dao/lego/core"
+)
+
+//系统事件
+const (
+	///发现新的节点
+	Event_RpcDiscoverNewNodes core.Event_Key = "Event_RpcDiscoverNewNodes"
+	///丢失节点
+	Event_RpcLoseNodes core.Event_Key = "Event_RpcLoseNodes"
+	///节点属性变更
+	Event_RpChangeNodes core.Event_Key = "Event_RpChangeNodes"
 )
 
 type (

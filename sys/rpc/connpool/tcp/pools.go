@@ -46,6 +46,7 @@ func (this *TcpConnPool) Start() (err error) {
 		this.log.Errorf("err:%v", err)
 	}
 	go this.serveListener(ln)
+	this.log.Debug("TcpConnPool Start Listen !", log.Field{Key: "Endpoints", Value: this.config.Endpoints})
 	return
 }
 

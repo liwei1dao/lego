@@ -26,5 +26,5 @@ def buildProto(pbpath,outpath,pbfile):
         f.write(file_data)
 
 
-buildProto('./core','./core','db')
+buildProto('./core','./core','proto')
 

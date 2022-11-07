@@ -24,7 +24,7 @@ type IClusterService interface {
 	RegisterFunction(fn interface{}) (err error)
 	RegisterFunctionName(name string, fn interface{}) (err error)
 	RpcCall(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}) (err error)
-	RpcGo(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}, done chan *rpc.MessageCall) (call *rpc.MessageCall, err error)
+	RpcGo(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}) (call *rpc.MessageCall, err error)
 	RpcNoCall(ctx context.Context, servicePath, serviceMethod string, args interface{}) (err error)
 	Broadcast(ctx context.Context, servicePath, serviceMethod string, args interface{}) (err error)
 }

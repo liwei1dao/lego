@@ -48,13 +48,41 @@ func (this *Selector) Select(ctx context.Context, servicePath string) (result []
 	return
 }
 
-func (this *Selector) UpdateServer(servers []*core.ServiceNode) {
+func (this *Selector) UpdateServer(servers []*core.ServiceNode) (add, del, change []*core.ServiceNode) {
 	if servers == nil {
 		return
 	}
+	var (
+		iskeep bool
+	)
+	add = make([]*core.ServiceNode, 0)
+	del = make([]*core.ServiceNode, 0)
+	change = make([]*core.ServiceNode, 0)
+	this.mutex.RLock()
+	for i, v := range this.servers {
+		del[i] = v
+	}
+	for _, v1 := range servers {
+		iskeep = false
+		for i, v2 := range this.servers {
+			if v1.Tag == v2.Tag && v1.Id == v2.Id {
+				iskeep = true
+				if !v1.Equal(v2) { //有变化
+					change = append(change, v1)
+				}
+			}
+			del = append(del[i:0], del[i+1:]...) //移除存在的节点 过滤出被销毁的节点
+		}
+		if !iskeep {
+			add = append(add, v1)
+		}
+	}
+	this.mutex.RUnlock()
+
 	this.mutex.Lock()
 	this.servers = servers
 	this.mutex.Unlock()
+	return
 }
 
 //路由规则解析
