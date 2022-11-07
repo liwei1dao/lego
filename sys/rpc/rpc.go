@@ -144,15 +144,15 @@ func (this *rpc) UnRegister(name string) {
 }
 
 //同步执行
-func (this *rpc) Call(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (err error) { //同步调用 等待结果
+func (this *rpc) Call(ctx context.Context, servicePath string, serviceMethod string, req interface{}, reply interface{}) (err error) { //同步调用 等待结果
 	seq := new(uint64)
 	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
-	this.Debugf("client.Call for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
+	this.options.Log.Debug("Call Start", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
 	defer func() {
-		this.Debugf("client.Call done for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
+		this.options.Log.Debug("Call End", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req}, log.Field{Key: "reply", Value: reply})
 	}()
 	var call *MessageCall
-	call, err = this.call(ctx, servicePath, serviceMethod, args, reply)
+	call, err = this.call(ctx, servicePath, serviceMethod, req, reply)
 	select {
 	case <-ctx.Done(): // cancel by context
 		this.pendingmutex.Lock()
@@ -343,7 +343,7 @@ func (this *rpc) registerFunction(fn interface{}, name string, useName bool) (er
 	this.serviceMapMu.Lock()
 	this.serviceMap[fname] = &Server{Fn: f, ArgType: argType, ReplyType: replyType}
 	this.serviceMapMu.Unlock()
-
+	this.options.Log.Debug("注册服务!", log.Field{Key: "func", Value: fname})
 	//注册类型池
 	reflectTypePools.Init(argType)
 	reflectTypePools.Init(replyType)
@@ -376,7 +376,7 @@ func (this *rpc) getclient(ctx context.Context, servicePath string) (client rpcc
 	nodes := this.selector.Select(ctx, servicePath)
 	if nodes == nil || len(nodes) == 0 {
 		err = fmt.Errorf("no found any node:%s", servicePath)
-		this.Errorf("selector.Select err:%s", err)
+		this.options.Log.Errorf("selector.Select err:%s", err)
 		return
 	}
 	if client, err = this.cpool.GetClient(nodes[0]); err != nil {

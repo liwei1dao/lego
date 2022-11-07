@@ -1,7 +1,6 @@
 package discovery
 
 import (
-	"errors"
 	"time"
 
 	"github.com/liwei1dao/lego/core"
@@ -93,11 +92,8 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 	for _, o := range opts {
 		o(options)
 	}
-	if options.Debug && options.Log == nil {
-		options.Log = log.Clone("sys.discovery", 2)
-	}
-	if options.Log = log.NewTurnlog(options.Debug, options.Log); options.Log == nil {
-		err = errors.New("log is nil")
+	if options.Log == nil {
+		options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.discovery", 4))
 	}
 	return
 }
@@ -115,11 +111,8 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 		}
 	}
 
-	if options.Debug && options.Log == nil {
-		options.Log = log.Clone("sys.discovery", 2)
-	}
-	if options.Log = log.NewTurnlog(options.Debug, options.Log); options.Log == nil {
-		err = errors.New("log is nil")
+	if options.Log == nil {
+		options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.discovery", 4))
 	}
 	return
 }

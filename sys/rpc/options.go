@@ -1,8 +1,6 @@
 package rpc
 
 import (
-	"errors"
-
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/discovery"
 	"github.com/liwei1dao/lego/sys/log"
@@ -65,9 +63,7 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 		o(options)
 	}
 	if options.Log == nil {
-		if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.rpc", 4)); options.Log == nil {
-			err = errors.New("log is nil")
-		}
+		options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.rpc", 4))
 	}
 	return
 }
@@ -78,9 +74,7 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 		o(options)
 	}
 	if options.Log == nil {
-		if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.rpc", 4)); options.Log == nil {
-			err = errors.New("log is nil")
-		}
+		options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.rpc", 4))
 	}
 	return
 }

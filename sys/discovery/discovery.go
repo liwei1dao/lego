@@ -172,8 +172,9 @@ func (this *Discovery) watch() {
 			}
 			// k := strings.TrimPrefix(p.Key, prefix)
 			pair := &core.ServiceNode{}
+			this.options.Log.Debug("watch!", log.Field{Key: "key", Value: p.Key}, log.Field{Key: "value", Value: string(p.Value)})
 			if err = this.Unmarshal(p.Value, pair); err != nil {
-				this.options.Log.Errorln(err)
+				this.options.Log.Error("watch Unmarshal err !", log.Field{Key: "key", Value: p.Key}, log.Field{Key: "value", Value: string(p.Value)}, log.Field{Key: "err", Value: err})
 			}
 			pairs = append(pairs, pair)
 		}
