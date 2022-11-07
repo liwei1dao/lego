@@ -34,14 +34,20 @@ func newSys(options *Options) (sys *Sitemap, err error) {
 		urlSet: &UrlSet{
 			base: &base{},
 		},
+		urls:    map[string]int{},
 		options: options,
 	}
 	err = sys.load()
+	for i, v := range sys.urlSet.Token {
+		url := v.(*Url)
+		sys.urls[url.Loc] = i
+	}
 	return
 }
 
 type Sitemap struct {
 	urlSet  *UrlSet
+	urls    map[string]int
 	options *Options
 }
 
@@ -50,19 +56,24 @@ func (this *Sitemap) AppendUrl(url *Url) {
 		url.Loc = strings.TrimRight(this.options.DefaultHost, "/") + strings.TrimLeft(url.Loc, "/")
 	}
 	this.urlSet.setNs(url.xmlns)
-	this.urlSet.Token = append(this.urlSet.Token, url)
+	if i, ok := this.urls[url.Loc]; ok {
+		this.urlSet.Token[i] = url
+	} else {
+		this.urlSet.Token = append(this.urlSet.Token, url)
+		this.urls[url.Loc] = len(this.urlSet.Token) - 1
+	}
 }
 
-func (this *Sitemap) GetUrls() (urls map[string]*Url) {
-	urls = make(map[string]*Url)
+func (this *Sitemap) GetUrls() (urls []*Url) {
+	urls = make([]*Url, 0)
 	for _, v := range this.urlSet.Token {
 		url := v.(*Url)
-		urls[url.Loc] = url
+		urls = append(urls, url)
 	}
 	return
 }
 
-func (this *Sitemap) SetUrls(urls map[string]*Url) {
+func (this *Sitemap) SetUrls(urls []*Url) {
 	this.urlSet.Token = make([]xml.Token, 0, len(urls))
 	for _, v := range urls {
 		this.urlSet.Token = append(this.urlSet.Token, v)
@@ -154,7 +165,7 @@ func (this *Sitemap) load() (err error) {
 			case "changefreq":
 				_url.ChangeFreq = ChangeFreq(v.Text())
 			case "priority":
-				_url.Priority = po(codec.StringToFloat64(v.Text()))
+				_url.Priority = codec.StringToFloat64(v.Text())
 			case "Image":
 				_url.AppendImage(NewImageForXml(v))
 			case "Video":

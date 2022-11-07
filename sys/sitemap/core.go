@@ -3,8 +3,8 @@ package sitemap
 type (
 	ISys interface {
 		AppendUrl(url *Url)
-		GetUrls() (urls map[string]*Url)
-		SetUrls(urls map[string]*Url)
+		GetUrls() (urls []*Url)
+		SetUrls(urls []*Url)
 		ToXml() ([]byte, error)
 		Storage() (filename string, err error)
 	}
@@ -36,11 +36,11 @@ func AppendUrl(url *Url) {
 	defsys.AppendUrl(url)
 }
 
-func GetUrls() (urls map[string]*Url) {
+func GetUrls() (urls []*Url) {
 	return defsys.GetUrls()
 }
 
-func SetUrls(urls map[string]*Url) {
+func SetUrls(urls []*Url) {
 	defsys.SetUrls(urls)
 }
 
