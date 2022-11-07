@@ -20,6 +20,7 @@ func StringToBytes(s string) []byte {
 		}{s, len(s)},
 	))
 }
+
 // int
 func IntToBytes(v int) []byte {
 	if host32bit {

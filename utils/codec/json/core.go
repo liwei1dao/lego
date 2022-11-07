@@ -8,6 +8,7 @@ import (
 
 	"github.com/liwei1dao/lego/utils/codec"
 	"github.com/liwei1dao/lego/utils/codec/codecore"
+
 	"github.com/modern-go/reflect2"
 )
 
@@ -51,6 +52,7 @@ func GetWriter() codecore.IWriter {
 }
 
 func PutWriter(w codecore.IWriter) {
+	w.Reset()
 	writerPool.Put(w)
 }
 

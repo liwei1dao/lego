@@ -11,6 +11,7 @@ import (
 	"github.com/liwei1dao/lego/utils/codec"
 	"github.com/liwei1dao/lego/utils/codec/codecore"
 	"github.com/liwei1dao/lego/utils/codec/utils"
+
 	"github.com/modern-go/reflect2"
 )
 
@@ -116,10 +117,10 @@ func (this *JsonReader) ReadArrayStart() (ret bool) {
 }
 func (this *JsonReader) CheckNextIsArrayEnd() (ret bool) {
 	c := this.nextToken()
-	this.unreadByte()
 	if c == ']' {
 		return true
 	}
+	this.unreadByte()
 	return
 }
 func (this *JsonReader) ReadArrayEnd() (ret bool) {
@@ -343,11 +344,6 @@ func (this *JsonReader) ReadFloat64() (ret float64) {
 	}
 	this.head += n
 	return
-}
-func (this *JsonReader) ReadBytes() (ret []byte) {
-	head := this.head
-	this.Skip()
-	return this.buf[head:this.head]
 }
 func (this *JsonReader) ReadString() (ret string) {
 	c := this.nextToken()

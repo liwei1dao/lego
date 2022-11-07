@@ -4,6 +4,7 @@ import (
 	"github.com/liwei1dao/lego/utils/codec"
 	"github.com/liwei1dao/lego/utils/codec/codecore"
 	"github.com/liwei1dao/lego/utils/codec/utils"
+
 	"github.com/modern-go/reflect2"
 )
 
@@ -152,7 +153,7 @@ func (this *JsonWriter) WriteBytes(val []byte) {
 	this.buf = append(this.buf, val...)
 }
 func (this *JsonWriter) Reset() {
-	this.buf = this.buf[:0]
+	this.buf = []byte{}
 	this.err = nil
 	this.indention = 0
 	return

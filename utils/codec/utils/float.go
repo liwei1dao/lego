@@ -39,7 +39,7 @@ func init() {
 //从字符串中读取float 对象
 func ReadBigFloatForString(buf []byte) (ret *big.Float, n int, err error) {
 	var str string
-	if str, n, err = readNumberAsString(buf); err == nil {
+	if str, n, err = readNumberAsString(buf); err != nil {
 		return
 	}
 	prec := 64

@@ -113,30 +113,6 @@ func _createDecoderOfType(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecode
 	}
 }
 
-func createCheckIsEmpty(ctx *codecore.Ctx, typ reflect2.Type) codecore.CheckIsEmpty {
-	encoder := createEncoderOfNative(ctx, typ)
-	if encoder != nil {
-		return encoder
-	}
-	kind := typ.Kind()
-	switch kind {
-	case reflect.Interface:
-		return &dynamicEncoder{typ}
-	case reflect.Struct:
-		return &structEncoder{typ: typ}
-	case reflect.Array:
-		return &arrayEncoder{}
-	case reflect.Slice:
-		return &sliceEncoder{}
-	case reflect.Map:
-		return encoderOfMap(ctx, typ)
-	case reflect.Ptr:
-		return &OptionalEncoder{}
-	default:
-		return &lazyErrorEncoder{err: fmt.Errorf("unsupported type: %v", typ)}
-	}
-}
-
 // string
 func BytesToString(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))

@@ -5,7 +5,6 @@ import "strconv"
 func Atoi(b []byte) (int, error) {
 	return strconv.Atoi(BytesToString(b))
 }
-
 func StringToInt64(b string) int64 {
 	if i, err := strconv.ParseInt(b, 10, 64); err != nil {
 		return 0
@@ -20,7 +19,6 @@ func StringToFloat64(b string) float64 {
 		return i
 	}
 }
-
 func ParseInt(b []byte, base int, bitSize int) (int64, error) {
 	return strconv.ParseInt(BytesToString(b), base, bitSize)
 }

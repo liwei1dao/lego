@@ -92,20 +92,20 @@ type sortKeysMapEncoder struct {
 func (this *sortKeysMapEncoder) GetType() reflect.Kind {
 	return reflect.Map
 }
-func (this *sortKeysMapEncoder) Encode(ptr unsafe.Pointer, w codecore.IWriter) {
+func (encoder *sortKeysMapEncoder) Encode(ptr unsafe.Pointer, w codecore.IWriter) {
 	if *(*unsafe.Pointer)(ptr) == nil {
 		w.WriteNil()
 		return
 	}
 	w.WriteObjectStart()
-	mapIter := this.mapType.UnsafeIterate(ptr)
+	mapIter := encoder.mapType.UnsafeIterate(ptr)
 	subStream := w.GetWriter()
 	subIter := w.GetReader(nil)
 	keyValues := encodedKeyValues{}
 	for mapIter.HasNext() {
 		key, elem := mapIter.UnsafeNext()
 		subStreamIndex := subStream.Buffered()
-		this.keyEncoder.Encode(key, subStream)
+		encoder.keyEncoder.Encode(key, subStream)
 		if subStream.Error() != nil && subStream.Error() != io.EOF && w.Error() == nil {
 			w.SetErr(subStream.Error())
 		}
@@ -113,7 +113,7 @@ func (this *sortKeysMapEncoder) Encode(ptr unsafe.Pointer, w codecore.IWriter) {
 		subIter.ResetBytes(encodedKey)
 		decodedKey := subIter.ReadString()
 		subStream.WriteKVSplit()
-		this.elemEncoder.Encode(elem, subStream)
+		encoder.elemEncoder.Encode(elem, subStream)
 		keyValues = append(keyValues, encodedKV{
 			key:      decodedKey,
 			keyValue: subStream.Buffer()[subStreamIndex:],
@@ -133,6 +133,7 @@ func (this *sortKeysMapEncoder) Encode(ptr unsafe.Pointer, w codecore.IWriter) {
 	w.PutWriter(subStream)
 	w.PutReader(subIter)
 }
+
 func (this *sortKeysMapEncoder) EncodeToMapJson(ptr unsafe.Pointer, w codecore.IWriter) (ret map[string]string, err error) {
 	ret = make(map[string]string)
 	var (
@@ -153,7 +154,7 @@ func (this *sortKeysMapEncoder) EncodeToMapJson(ptr unsafe.Pointer, w codecore.I
 				err = keystream.Error()
 				return
 			}
-			k = string(keystream.Buffer())
+			k = BytesToString(keystream.Buffer())
 		} else {
 			k = *((*string)(key))
 		}
@@ -163,7 +164,7 @@ func (this *sortKeysMapEncoder) EncodeToMapJson(ptr unsafe.Pointer, w codecore.I
 				err = elemstream.Error()
 				return
 			}
-			v = string(elemstream.Buffer())
+			v = BytesToString(elemstream.Buffer())
 		} else {
 			v = *((*string)(elem))
 		}
@@ -173,8 +174,9 @@ func (this *sortKeysMapEncoder) EncodeToMapJson(ptr unsafe.Pointer, w codecore.I
 	}
 	return
 }
-func (this *sortKeysMapEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	iter := this.mapType.UnsafeIterate(ptr)
+
+func (encoder *sortKeysMapEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+	iter := encoder.mapType.UnsafeIterate(ptr)
 	return !iter.HasNext()
 }
 
@@ -226,7 +228,7 @@ func (this *mapEncoder) EncodeToMapJson(ptr unsafe.Pointer, w codecore.IWriter) 
 				err = keystream.Error()
 				return
 			}
-			k = string(keystream.Buffer())
+			k = BytesToString(keystream.Buffer())
 		} else {
 			k = *((*string)(key))
 		}
@@ -236,7 +238,7 @@ func (this *mapEncoder) EncodeToMapJson(ptr unsafe.Pointer, w codecore.IWriter) 
 				err = elemstream.Error()
 				return
 			}
-			v = string(elemstream.Buffer())
+			v = BytesToString(elemstream.Buffer())
 		} else {
 			v = *((*string)(elem))
 		}

@@ -11,6 +11,7 @@ import (
 	"unsafe"
 
 	"github.com/liwei1dao/lego/utils/codec/codecore"
+	"github.com/liwei1dao/lego/utils/codec/utils"
 
 	"github.com/modern-go/reflect2"
 )
@@ -108,6 +109,9 @@ func describeStruct(ctx *codecore.Ctx, typ reflect2.Type) *StructDescriptor {
 	bindings := []*Binding{}
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Field(i)
+		if !utils.IsExported(field.Name()) { //内部字段不处理
+			continue
+		}
 		tag, hastag := field.Tag().Lookup(ctx.Config.TagKey)
 		if ctx.Config.OnlyTaggedField && !hastag && !field.Anonymous() {
 			continue
