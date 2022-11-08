@@ -167,32 +167,58 @@ func (this *rpc) Call(ctx context.Context, servicePath string, serviceMethod str
 	case call := <-call.Done:
 		err = call.Error
 	}
-	return nil
-}
-
-//异步执行 异步返回
-func (this *rpc) Go(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) { //异步调用 异步返回
-	seq := new(uint64)
-	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
-	this.options.Log.Debugf("client.Go for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
-	defer func() {
-		this.options.Log.Debugf("client.Go done for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
-	}()
-	call, err = this.call(ctx, servicePath, serviceMethod, args, reply)
 	return
 }
 
-//同步执行 无返回
-func (this *rpc) GoNR(ctx context.Context, servicePath string, serviceMethod string, args interface{}) (err error) { //异步调用 无返回
-	call := new(MessageCall)
-	call.Done = make(chan *MessageCall, 10)
-	call.Args = args
-	var client rpccore.IConnClient
-	if client, err = this.getclient(ctx, servicePath); err != nil {
-		return
+//异步执行 异步返回
+func (this *rpc) ClentForCall(ctx context.Context, client rpccore.IConnClient, serviceMethod string, req interface{}, reply interface{}) (err error) { //异步调用 异步返回
+	seq := new(uint64)
+	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
+	this.options.Log.Debug("ClentForCall start!", log.Field{Key: "node", Value: client.ServiceNode()}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
+	defer func() {
+		this.options.Log.Debug("ClentForGo end!", log.Field{Key: "node", Value: client.ServiceNode()}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req}, log.Field{Key: "reply", Value: reply})
+	}()
+	var call *MessageCall
+	call, err = this.call2(ctx, client, serviceMethod, req, reply)
+	select {
+	case <-ctx.Done(): // cancel by context
+		this.pendingmutex.Lock()
+		call := this.pending[*seq]
+		delete(this.pending, *seq)
+		this.pendingmutex.Unlock()
+		if call != nil {
+			call.Error = ctx.Err()
+			call.done(this.options.Log)
+		}
+		return ctx.Err()
+	case call := <-call.Done:
+		err = call.Error
 	}
-	err = this.send(client, call, 0)
-	return nil
+	return
+}
+
+//异步执行 异步返回
+func (this *rpc) Go(ctx context.Context, servicePath string, serviceMethod string, req interface{}, reply interface{}) (call *MessageCall, err error) { //异步调用 异步返回
+	seq := new(uint64)
+	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
+	this.options.Log.Debug("Go start!", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
+	defer func() {
+		this.options.Log.Debug("Go end!", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req}, log.Field{Key: "reply", Value: reply})
+	}()
+	call, err = this.call(ctx, servicePath, serviceMethod, req, reply)
+	return
+}
+
+//异步执行 异步返回
+func (this *rpc) ClentForGo(ctx context.Context, client rpccore.IConnClient, serviceMethod string, req interface{}, reply interface{}) (call *MessageCall, err error) { //异步调用 异步返回
+	seq := new(uint64)
+	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
+	this.options.Log.Debug("ClentForGo start!", log.Field{Key: "node", Value: client.ServiceNode()}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
+	defer func() {
+		this.options.Log.Debug("ClentForGo end!", log.Field{Key: "node", Value: client.ServiceNode()}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req}, log.Field{Key: "reply", Value: reply})
+	}()
+	call, err = this.call2(ctx, client, serviceMethod, req, reply)
+	return
 }
 
 func (this *rpc) Broadcast(ctx context.Context, servicePath string, serviceMethod string, args interface{}) (err error) {
@@ -206,6 +232,10 @@ func (this *rpc) Handle(client rpccore.IConnClient, message rpccore.IMessage) {
 			client.ResetHbeat()
 			return
 		}
+		if message.IsShakeHands() {
+			this.ShakehandsResponse(rpccore.NewContext(context.Background()), client, message)
+			return
+		}
 		if res, _ := this.handleRequest(rpccore.NewContext(context.Background()), message); res != nil {
 			if !message.IsOneway() { //需要回应
 				if len(res.Payload()) > 1024 && res.CompressType() != rpccore.CompressNone {
@@ -217,15 +247,6 @@ func (this *rpc) Handle(client rpccore.IConnClient, message rpccore.IMessage) {
 			}
 		}
 	} else { //回应
-		if message.IsShakeHands() { //握手
-			seq := message.Seq()
-			this.pendingmutex.Lock()
-			call := this.pending[seq]
-			delete(this.pending, seq)
-			this.pendingmutex.Unlock()
-			call.done(this.options.Log)
-			return
-		}
 		this.handleresponse(rpccore.NewContext(context.Background()), message)
 	}
 }
@@ -372,15 +393,64 @@ func (this *rpc) call(ctx context.Context, servicePath string, serviceMethod str
 	return
 }
 
+func (this *rpc) call2(ctx context.Context, client rpccore.IConnClient, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) {
+	call = new(MessageCall)
+	call.Done = make(chan *MessageCall, 10)
+	call.Args = args
+	call.Reply = reply
+	this.pendingmutex.Lock()
+	seq := this.seq
+	this.seq++
+	this.pending[seq] = call
+	this.pendingmutex.Unlock()
+	if cseq, ok := ctx.Value(rpccore.CallSeqKey).(*uint64); ok {
+		*cseq = seq
+	}
+	err = this.send(client, call, seq)
+	return
+}
+
+//获取请求消息对象
+func (this *rpc) getMessage(serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, req *protocol.Message, err error) {
+	var data []byte
+	call = new(MessageCall)
+	call.Done = make(chan *MessageCall, 10)
+	call.Args = this.ServiceNode() //自己发起握手 需要传递本服务的节点信息
+	req = protocol.GetPooledMsg()
+	if reply != nil {
+		this.pendingmutex.Lock()
+		seq := this.seq
+		this.seq++
+		this.pending[seq] = call
+		this.pendingmutex.Unlock()
+		req.SetSeq(seq)
+		req.SetOneway(true)
+	} else {
+		req.SetOneway(false)
+	}
+	req.SetShakeHands(true)
+	req.SetFrom(this.ServiceNode())
+	req.SetMessageType(rpccore.Request)
+	data, err = codecs[rpccore.ProtoBuffer].Marshal(call.Args)
+	if err != nil {
+		return
+	}
+	if len(data) > 1024 && this.options.CompressType != rpccore.CompressNone {
+		req.SetCompressType(this.options.CompressType)
+	}
+	req.SetPayload(data)
+	return
+}
+
 func (this *rpc) getclient(ctx context.Context, servicePath string) (client rpccore.IConnClient, err error) {
 	nodes := this.selector.Select(ctx, servicePath)
 	if nodes == nil || len(nodes) == 0 {
 		err = fmt.Errorf("no found any node:%s", servicePath)
-		this.options.Log.Errorf("selector.Select err:%v", err)
+		this.options.Log.Errorln(err)
 		return
 	}
 	if client, err = this.cpool.GetClient(nodes[0]); err != nil {
-		this.options.Log.Errorf("get client err:%v", err)
+		this.options.Log.Errorln(err)
 		return
 	}
 	return
@@ -480,7 +550,7 @@ func (this *rpc) handleRequest(ctx context.Context, req rpccore.IMessage) (res r
 	res.SetMessageType(rpccore.Response)
 	this.serviceMapMu.RLock()
 	service, ok := this.serviceMap[methodName]
-	this.options.Log.Debugf("server get service %+v for an request %+v", service, req)
+	this.options.Log.Debug("handleRequest", log.Field{Key: "ServiceMethod", Value: req.ServiceMethod()}, log.Field{Key: "Form", Value: req.From()})
 	this.serviceMapMu.RUnlock()
 	if !ok {
 		err = errors.New("rpcx: can't find service " + methodName)
@@ -527,56 +597,5 @@ func (this *rpc) handleRequest(ctx context.Context, req rpccore.IMessage) (res r
 		reflectTypePools.Put(service.ReplyType, replyv)
 	}
 	this.options.Log.Debugf("server called service %+v for an request %+v", service, req)
-	return
-}
-
-//握手请求
-func (this *rpc) ShakehandsRequest(ctx context.Context, client rpccore.IConnClient) (err error) {
-	var (
-		data []byte
-	)
-	call := new(MessageCall)
-	call.Done = make(chan *MessageCall, 10)
-	call.Args = client.ServiceNode
-	this.pendingmutex.Lock()
-	seq := this.seq
-	this.seq++
-	this.pending[seq] = call
-	this.pendingmutex.Unlock()
-	req := protocol.GetPooledMsg()
-	req.SetShakeHands(true)
-	req.SetOneway(false)
-	req.SetFrom(this.options.ServiceNode)
-	req.SetMessageType(rpccore.Request)
-	req.SetSeq(seq)
-	data, err = codecs[rpccore.ProtoBuffer].Marshal(call.Args)
-	if err != nil {
-		return
-	}
-	if len(data) > 1024 && this.options.CompressType != rpccore.CompressNone {
-		req.SetCompressType(this.options.CompressType)
-	}
-	req.SetPayload(data)
-	allData := req.EncodeSlicePointer()
-	err = client.Write(*allData)
-	protocol.PutData(allData)
-	protocol.FreeMsg(req)
-	if err != nil {
-		return
-	}
-	select {
-	case <-ctx.Done(): // cancel by context
-		this.pendingmutex.Lock()
-		call := this.pending[seq]
-		delete(this.pending, seq)
-		this.pendingmutex.Unlock()
-		if call != nil {
-			call.Error = ctx.Err()
-			call.done(this.options.Log)
-		}
-		return ctx.Err()
-	case call := <-call.Done:
-		err = call.Error
-	}
 	return
 }

@@ -85,7 +85,7 @@ type ISys interface {
 	ServiceNode() *core.ServiceNode                                        //服务节点路径
 	Heartbeat() []byte                                                     //心跳包数据 可以复用
 	Handle(client IConnClient, message IMessage)                           //接收到远程消息
-	ShakehandsRequest(ctx context.Context, client IConnClient) (err error) //握手请求
+	ShakehandsRequest(ctx context.Context, client IConnClient) (err error) //项目表rpc服务发起握手请求
 }
 
 //消息对象
@@ -142,7 +142,7 @@ type IConnPool interface {
 
 type IConnClient interface {
 	ServiceNode() *core.ServiceNode
-	Start()
+	Start(node *core.ServiceNode)
 	ResetHbeat()
 	Write(msg []byte) (err error)
 	Close() (err error)

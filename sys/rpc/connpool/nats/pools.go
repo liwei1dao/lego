@@ -53,7 +53,7 @@ func (this *NatsConnPool) GetClient(node *core.ServiceNode) (client rpccore.ICon
 				this.clientMapMu.Lock()
 				this.clients[node.GetNodePath()] = client
 				this.clientMapMu.Unlock()
-				client.Start()
+				client.Start(node)
 			}
 		}
 	}

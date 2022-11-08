@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 	"github.com/liwei1dao/lego/utils/codec"
 	"github.com/liwei1dao/lego/utils/pools"
 	"github.com/smallnest/rpcx/util"
+	"google.golang.org/protobuf/proto"
 )
 
 var bufferPool = util.NewLimitedPool(512, 4096)
@@ -31,6 +31,7 @@ func NewMessage() *Message {
 
 	return &Message{
 		Header: &header,
+		from:   &core.ServiceNode{},
 	}
 }
 
@@ -269,7 +270,7 @@ func (m Message) WriteTo(w io.Writer) (int64, error) {
 	}
 
 	// write servicePath and serviceMethod
-	err = binary.Write(w, binary.BigEndian, uint32(len(m.serviceMethod)))
+	err = binary.Write(w, binary.BigEndian, uint32(smL))
 	if err != nil {
 		return n, err
 	}

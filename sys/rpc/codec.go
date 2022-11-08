@@ -54,7 +54,7 @@ func (c PBCodec) Unmarshal(data []byte, i interface{}) error {
 		return pb.Unmarshal(data, m)
 	}
 
-	return fmt.Errorf("%T is not a proto.Unmarshaler  or pb.Message", i)
+	return fmt.Errorf("%T is not a proto.Unmarshaler or pb.Message", i)
 }
 
 type MsgpackCodec struct{}

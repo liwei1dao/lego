@@ -59,21 +59,35 @@ func (this *TcpConnPool) GetClient(node *core.ServiceNode) (client rpccore.IConn
 	client, ok = this.clients[node.GetNodePath()]
 	this.clientMapMu.RUnlock()
 	if !ok {
-		if conn, err = net.DialTimeout("tcp", node.Addr, this.config.ConnectionTimeout); err == nil {
-			client, err = this.createClient(conn)
+		if conn, err = net.DialTimeout("tcp", node.Addr, this.config.ConnectionTimeout); err != nil {
+			this.log.Error("TcpConnPool GetClient Dial Err!", log.Field{Key: "add", Value: node.Addr}, log.Field{Key: "err", Value: err.Error()})
+			return
+		}
+		if client, err = this.createClient(conn, node); err != nil {
+			this.log.Error("TcpConnPool createClient Err!", log.Field{Key: "err", Value: err.Error()})
+			return
 		}
 	}
 	return
 }
 
-func (this *TcpConnPool) createClient(conn net.Conn) (client rpccore.IConnClient, err error) {
+//创建远程连接客户端
+func (this *TcpConnPool) createClient(conn net.Conn, node *core.ServiceNode) (client rpccore.IConnClient, err error) {
 	if client, err = newClient(this, this.config, conn); err == nil {
 		if err = this.sys.ShakehandsRequest(context.Background(), client); err == nil {
 			this.clientMapMu.Lock()
 			this.clients[client.ServiceNode().GetNodePath()] = client
 			this.clientMapMu.Unlock()
-			client.Start()
+			client.Start(node)
 		}
+	}
+	return
+}
+
+//接收远程客户端
+func (this *TcpConnPool) acceptClient(conn net.Conn) (client rpccore.IConnClient, err error) {
+	if client, err = newClient(this, this.config, conn); err != nil {
+		this.log.Error("TcpConnPool acceptClient Err!", log.Field{Key: "err", Value: err.Error()})
 	}
 	return
 }
@@ -91,7 +105,7 @@ func (this *TcpConnPool) serveListener(ln net.Listener) error {
 				tc.SetLinger(10)
 			}
 		}
-		this.createClient(conn)
+		this.acceptClient(conn)
 	}
 }
 

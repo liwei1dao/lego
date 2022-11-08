@@ -11,7 +11,25 @@ import (
 )
 
 //获取心跳消息包
-func getHeartbeat(node core.ServiceNode) []byte {
+func getHeartbeat(node *core.ServiceNode) []byte {
+	req := protocol.GetPooledMsg()
+	req.SetMessageType(rpccore.Request)
+	req.SetHeartbeat(true)
+	req.SetOneway(true)
+	req.SetServiceMethod("")
+	codec := codecs[rpccore.ProtoBuffer]
+	data, _ := codec.Marshal(node)
+	req.SetPayload(data)
+	allData := req.EncodeSlicePointer()
+	defer func() {
+		protocol.PutData(allData)
+		protocol.FreeMsg(req)
+	}()
+	return *allData
+}
+
+//获取握手消息包
+func getShakehands(node *core.ServiceNode) []byte {
 	req := protocol.GetPooledMsg()
 	req.SetMessageType(rpccore.Request)
 	req.SetHeartbeat(true)

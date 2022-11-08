@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
 
@@ -24,8 +25,14 @@ func TestMessage(t *testing.T) {
 	fmt.Printf("%b\n", req.Header[2])
 	req.SetSerializeType(rpccore.ProtoBuffer)
 	fmt.Printf("%b\n", req.Header[2])
-
 	req.SetSeq(1234567890)
+	req.SetFrom(&core.ServiceNode{
+		Tag:  "demo",
+		Type: "demo",
+		Id:   "demo",
+		Addr: "127.0.0.1:9852",
+		Meta: map[string]string{},
+	})
 
 	m := make(map[string]string)
 	m["__ID"] = "6ba7b810-9dad-11d1-80b4-00c04fd430c9"

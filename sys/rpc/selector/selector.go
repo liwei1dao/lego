@@ -71,7 +71,7 @@ func (this *Selector) UpdateServer(servers []*core.ServiceNode) (add, del, chang
 				if !v1.Equal(v2) { //有变化
 					change = append(change, v1)
 				}
-				del = append(del[i:0], del[i+1:]...) //移除存在的节点 过滤出被销毁的节点
+				del = append(del[0:i], del[i+1:]...) //移除存在的节点 过滤出被销毁的节点
 				break
 			}
 		}

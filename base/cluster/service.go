@@ -112,11 +112,6 @@ func (this *ClusterService) RpcGo(ctx context.Context, servicePath, serviceMetho
 	return rpc.Go(ctx, servicePath, serviceMethod, args, reply)
 }
 
-//调用远端服务接口 无回应
-func (this *ClusterService) RpcNoCall(ctx context.Context, servicePath, serviceMethod string, args interface{}) (err error) {
-	return rpc.GoNR(ctx, servicePath, serviceMethod, args)
-}
-
 //广播调用远端服务接口
 func (this *ClusterService) Broadcast(ctx context.Context, servicePath, serviceMethod string, args interface{}) (err error) {
 	return rpc.Broadcast(ctx, servicePath, serviceMethod, args)

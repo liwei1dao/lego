@@ -45,7 +45,8 @@ func (this *Client) ResetHbeat() {
 	atomic.StoreInt32(&this.hbeat, 0)
 }
 
-func (this *Client) Start() {
+func (this *Client) Start(node *core.ServiceNode) {
+	this.node = node
 	atomic.StoreInt32(&this.state, 1)
 	this.wg.Add(1)
 	go this.heartbeat()

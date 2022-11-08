@@ -39,7 +39,7 @@ func (this *Client) ServiceNode() *core.ServiceNode {
 	return this.node
 }
 
-func (this *Client) Start() {
+func (this *Client) Start(snode *core.ServiceNode) {
 	atomic.StoreInt32(&this.state, 1)
 	this.wg.Add(1)
 	go this.heartbeat()
