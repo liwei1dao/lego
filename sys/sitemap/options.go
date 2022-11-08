@@ -1,8 +1,6 @@
 package sitemap
 
 import (
-	"errors"
-
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
@@ -62,11 +60,8 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 	for _, o := range opts {
 		o(options)
 	}
-	if options.Debug && options.Log == nil {
-		options.Log = log.Clone("sys.sitemap", 2)
-	}
-	if options.Log = log.NewTurnlog(options.Debug, options.Log); options.Log == nil {
-		err = errors.New("log is nil")
+	if options.Log == nil {
+		options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.sitemap", 3))
 	}
 	return
 }
@@ -79,11 +74,9 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 	for _, o := range opts {
 		o(options)
 	}
-	if options.Debug && options.Log == nil {
-		options.Log = log.Clone("sys.sitemap", 2)
+	if options.Log == nil {
+		options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.sitemap", 3))
 	}
-	if options.Log = log.NewTurnlog(options.Debug, options.Log); options.Log == nil {
-		err = errors.New("log is nil")
-	}
+
 	return
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/consul/api"
 	"github.com/liwei1dao/lego/sys/discovery/dcore"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 const (
@@ -112,6 +113,7 @@ func (this *ConsulStore) Put(key string, value []byte, opts *dcore.WriteOptions)
 			if err == nil {
 				break
 			}
+			log.Errorln(err)
 			if retry == RenewSessionRetryMax {
 				return ErrSessionRenew
 			}

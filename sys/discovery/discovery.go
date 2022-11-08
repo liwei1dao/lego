@@ -85,8 +85,10 @@ func (this *Discovery) Start() (err error) {
 		//先注册进去一次
 		d, _ := this.Marshal(this.options.ServiceNode)
 		nodePath := this.GetNodePath()
-		err = this.store.Put(nodePath, d, &dcore.WriteOptions{TTL: this.options.UpdateInterval * 2})
-
+		if err = this.store.Put(nodePath, d, &dcore.WriteOptions{TTL: this.options.UpdateInterval * 2}); err != nil {
+			this.options.Log.Errorf("consul put path %s err: %v", nodePath, err)
+		}
+		this.options.Log.Debug("start")
 		go func() {
 			ticker := time.NewTicker(this.options.UpdateInterval)
 			defer ticker.Stop()
@@ -101,7 +103,7 @@ func (this *Discovery) Start() (err error) {
 					nodePath := this.GetNodePath()
 					err := this.store.Put(nodePath, d, &dcore.WriteOptions{TTL: this.options.UpdateInterval * 2})
 					if err != nil {
-						log.Errorf("cannot re-create consul path %s: %v", nodePath, err)
+						this.options.Log.Error("consul put ", log.Field{Key: "nodePath", Value: nodePath}, log.Field{Key: "value", Value: string(d)}, log.Field{Key: "err", Value: err.Error()})
 					}
 				}
 			}

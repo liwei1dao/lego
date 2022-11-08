@@ -93,7 +93,7 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 		o(options)
 	}
 	if options.Log == nil {
-		options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.discovery", 4))
+		options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.discovery", 3))
 	}
 	return
 }
@@ -112,7 +112,7 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 	}
 
 	if options.Log == nil {
-		options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.discovery", 4))
+		options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.discovery", 3))
 	}
 	return
 }

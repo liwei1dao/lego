@@ -88,6 +88,10 @@ func (this *Selector) UpdateServer(servers []*core.ServiceNode) (add, del, chang
 
 //路由规则解析
 func (this *Selector) ParseRoutRules(rules string) (result []*core.ServiceNode) {
+	if rules == "" {
+		return
+	}
+
 	result = make([]*core.ServiceNode, 0)
 
 	//解析 ![sid,sid] 格式规则

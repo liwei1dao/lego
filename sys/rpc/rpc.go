@@ -48,7 +48,7 @@ func newSys(options *Options) (sys *rpc, err error) {
 		discovery.SetEndpoints(options.DiscoveryEndpoints),
 		discovery.SetUpdateInterval(time.Duration(options.DiscoveryInterval)*time.Second),
 		discovery.SetCodec(codecs[rpccore.JSON]),
-		discovery.SetLog(options.Log),
+		discovery.SetDebug(options.Debug),
 	); err != nil {
 		return
 	}
@@ -174,9 +174,9 @@ func (this *rpc) Call(ctx context.Context, servicePath string, serviceMethod str
 func (this *rpc) Go(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) { //异步调用 异步返回
 	seq := new(uint64)
 	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
-	this.Debugf("client.Go for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
+	this.options.Log.Debugf("client.Go for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
 	defer func() {
-		this.Debugf("client.Go done for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
+		this.options.Log.Debugf("client.Go done for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
 	}()
 	call, err = this.call(ctx, servicePath, serviceMethod, args, reply)
 	return
@@ -376,11 +376,11 @@ func (this *rpc) getclient(ctx context.Context, servicePath string) (client rpcc
 	nodes := this.selector.Select(ctx, servicePath)
 	if nodes == nil || len(nodes) == 0 {
 		err = fmt.Errorf("no found any node:%s", servicePath)
-		this.options.Log.Errorf("selector.Select err:%s", err)
+		this.options.Log.Errorf("selector.Select err:%v", err)
 		return
 	}
 	if client, err = this.cpool.GetClient(nodes[0]); err != nil {
-		this.Errorf("get client err:%s", err)
+		this.options.Log.Errorf("get client err:%v", err)
 		return
 	}
 	return
@@ -439,7 +439,7 @@ func (this *rpc) handleresponse(ctx context.Context, res rpccore.IMessage) {
 	}
 	switch {
 	case call == nil:
-		this.Warnf("call is nil res:%v", res)
+		this.options.Log.Warnf("call is nil res:%v", res)
 	case res.MessageStatusType() == rpccore.Error:
 		if len(res.Metadata()) > 0 {
 			call.ResMetadata = res.Metadata()
@@ -480,7 +480,7 @@ func (this *rpc) handleRequest(ctx context.Context, req rpccore.IMessage) (res r
 	res.SetMessageType(rpccore.Response)
 	this.serviceMapMu.RLock()
 	service, ok := this.serviceMap[methodName]
-	this.Debugf("server get service %+v for an request %+v", service, req)
+	this.options.Log.Debugf("server get service %+v for an request %+v", service, req)
 	this.serviceMapMu.RUnlock()
 	if !ok {
 		err = errors.New("rpcx: can't find service " + methodName)
@@ -526,7 +526,7 @@ func (this *rpc) handleRequest(ctx context.Context, req rpccore.IMessage) (res r
 	} else if replyv != nil {
 		reflectTypePools.Put(service.ReplyType, replyv)
 	}
-	this.Debugf("server called service %+v for an request %+v", service, req)
+	this.options.Log.Debugf("server called service %+v for an request %+v", service, req)
 	return
 }
 

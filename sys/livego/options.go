@@ -1,8 +1,6 @@
 package livego
 
 import (
-	"errors"
-
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
@@ -125,8 +123,8 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 	for _, o := range opts {
 		o(options)
 	}
-	if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.livego", 2)); options.Log == nil {
-		err = errors.New("log is nil")
+	if options.Log == nil {
+		options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.livego", 3))
 	}
 	return
 }
@@ -141,8 +139,8 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 	for _, o := range opts {
 		o(options)
 	}
-	if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.livego", 2)); options.Log == nil {
-		err = errors.New("log is nil")
+	if options.Log == nil {
+		options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.livego", 3))
 	}
 	return
 }
