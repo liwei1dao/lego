@@ -422,6 +422,7 @@ func (this *rpc) getMessage(serviceMethod string, args interface{}, reply interf
 	call.Done = make(chan *MessageCall, 10)
 	call.Args = this.ServiceNode() //自己发起握手 需要传递本服务的节点信息
 	req = protocol.GetPooledMsg()
+	req.SetVersion(this.options.ProtoVersion)
 	if reply != nil {
 		this.pendingmutex.Lock()
 		seq := this.seq
@@ -469,6 +470,7 @@ func (this *rpc) send(client rpccore.IConnClient, call *MessageCall, seq uint64)
 	)
 
 	req := protocol.GetPooledMsg()
+	req.SetVersion(this.options.ProtoVersion)
 	req.SetMessageType(rpccore.Request)
 	req.SetSeq(seq)
 	if call.Reply == nil {

@@ -186,24 +186,24 @@ func (this Message) Clone() rpccore.IMessage {
 	return c
 }
 
-func (m Message) EncodeSlicePointer() *[]byte {
+func (this *Message) EncodeSlicePointer() *[]byte {
 	bb := pools.BufferPoolGet()
-	encodeMetadata(m.metadata, bb)
-	fdata, _ := proto.Marshal(m.from)
+	encodeMetadata(this.metadata, bb)
+	fdata, _ := proto.Marshal(this.from)
 	meta := bb.Bytes()
-	smL := len(m.serviceMethod)
+	smL := len(this.serviceMethod)
 	fml := len(fdata)
 	var err error
-	payload := m.payload
-	if m.CompressType() != rpccore.CompressNone {
-		compressor := Compressors[m.CompressType()]
+	payload := this.payload
+	if this.CompressType() != rpccore.CompressNone {
+		compressor := Compressors[this.CompressType()]
 		if compressor == nil {
-			m.SetCompressType(rpccore.CompressNone)
+			this.SetCompressType(rpccore.CompressNone)
 		} else {
-			payload, err = compressor.Zip(m.payload)
+			payload, err = compressor.Zip(this.payload)
 			if err != nil {
-				m.SetCompressType(rpccore.CompressNone)
-				payload = m.payload
+				this.SetCompressType(rpccore.CompressNone)
+				payload = this.payload
 			}
 		}
 	}
@@ -217,13 +217,13 @@ func (m Message) EncodeSlicePointer() *[]byte {
 	l := 12 + 4 + totalL
 
 	data := bufferPool.Get(l)
-	copy(*data, m.Header[:])
+	copy(*data, this.Header[:])
 
 	// totalLen
 	binary.BigEndian.PutUint32((*data)[12:16], uint32(totalL))
 
 	binary.BigEndian.PutUint32((*data)[16:20], uint32(smL))
-	copy((*data)[20:20+smL], util.StringToSliceByte(m.serviceMethod))
+	copy((*data)[20:20+smL], util.StringToSliceByte(this.serviceMethod))
 
 	binary.BigEndian.PutUint32((*data)[20+smL:24+smL], uint32(fml))
 	copy((*data)[24+smL:metaStart], fdata)
@@ -240,28 +240,28 @@ func (m Message) EncodeSlicePointer() *[]byte {
 }
 
 // WriteTo writes message to writers.
-func (m Message) WriteTo(w io.Writer) (int64, error) {
-	fdata, _ := proto.Marshal(m.from)
-	nn, err := w.Write(m.Header[:])
+func (this *Message) WriteTo(w io.Writer) (int64, error) {
+	fdata, _ := proto.Marshal(this.from)
+	nn, err := w.Write(this.Header[:])
 	n := int64(nn)
 	if err != nil {
 		return n, err
 	}
 
 	bb := pools.BufferPoolGet()
-	encodeMetadata(m.metadata, bb)
+	encodeMetadata(this.metadata, bb)
 	meta := bb.Bytes()
 
-	smL := len(m.serviceMethod)
+	smL := len(this.serviceMethod)
 	fml := len(fdata)
 
-	payload := m.payload
-	if m.CompressType() != rpccore.CompressNone {
-		compressor := Compressors[m.CompressType()]
+	payload := this.payload
+	if this.CompressType() != rpccore.CompressNone {
+		compressor := Compressors[this.CompressType()]
 		if compressor == nil {
 			return n, rpccore.ErrUnsupportedCompressor
 		}
-		payload, err = compressor.Zip(m.payload)
+		payload, err = compressor.Zip(this.payload)
 		if err != nil {
 			return n, err
 		}
@@ -278,7 +278,7 @@ func (m Message) WriteTo(w io.Writer) (int64, error) {
 	if err != nil {
 		return n, err
 	}
-	_, err = w.Write(util.StringToSliceByte(m.serviceMethod))
+	_, err = w.Write(util.StringToSliceByte(this.serviceMethod))
 	if err != nil {
 		return n, err
 	}

@@ -14,7 +14,7 @@ func TestMessage(t *testing.T) {
 	req.SetVersion(1)
 	req.SetMessageType(rpccore.Response)
 	fmt.Printf("%b\n", req.Header[2])
-	req.SetShakeHands(false)
+	req.SetShakeHands(true)
 	fmt.Printf("%b\n", req.Header[2])
 	req.SetHeartbeat(true)
 	fmt.Printf("%b\n", req.Header[2])
