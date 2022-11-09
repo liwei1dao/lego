@@ -81,6 +81,11 @@ func (this *TcpConnPool) createClient(conn net.Conn, node *core.ServiceNode) (cl
 			client.Start(node)
 		}
 	}
+	if err != nil {
+		this.log.Error("createClient err", log.Field{Key: "err", Value: err.Error()})
+	} else {
+		this.log.Debug("createClient succ", log.Field{Key: "node", Value: node})
+	}
 	return
 }
 

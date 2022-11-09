@@ -227,6 +227,7 @@ func (this *rpc) Broadcast(ctx context.Context, servicePath string, serviceMetho
 
 //接收到远程消息
 func (this *rpc) Handle(client rpccore.IConnClient, message rpccore.IMessage) {
+	this.options.Log.Debug("[handle] message", log.Field{Key: "Header", Value: message.PrintHeader()}, log.Field{Key: "ServiceMethod", Value: message.ServiceMethod()})
 	if message.MessageType() == rpccore.Request { //请求消息
 		if message.IsHeartbeat() { //心跳
 			client.ResetHbeat()
@@ -374,6 +375,8 @@ func (this *rpc) registerFunction(fn interface{}, name string, useName bool) (er
 //执行远程服务---------------------------------------------------------------------------------------
 func (this *rpc) call(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) {
 	call = new(MessageCall)
+	call.ServicePath = servicePath
+	call.ServiceMethod = serviceMethod
 	call.Done = make(chan *MessageCall, 10)
 	call.Args = args
 	call.Reply = reply
@@ -395,6 +398,7 @@ func (this *rpc) call(ctx context.Context, servicePath string, serviceMethod str
 
 func (this *rpc) call2(ctx context.Context, client rpccore.IConnClient, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) {
 	call = new(MessageCall)
+	call.ServiceMethod = serviceMethod
 	call.Done = make(chan *MessageCall, 10)
 	call.Args = args
 	call.Reply = reply
@@ -414,6 +418,7 @@ func (this *rpc) call2(ctx context.Context, client rpccore.IConnClient, serviceM
 func (this *rpc) getMessage(serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, req *protocol.Message, err error) {
 	var data []byte
 	call = new(MessageCall)
+	call.ServiceMethod = serviceMethod
 	call.Done = make(chan *MessageCall, 10)
 	call.Args = this.ServiceNode() //自己发起握手 需要传递本服务的节点信息
 	req = protocol.GetPooledMsg()
@@ -428,7 +433,8 @@ func (this *rpc) getMessage(serviceMethod string, args interface{}, reply interf
 	} else {
 		req.SetOneway(false)
 	}
-	req.SetShakeHands(true)
+
+	req.SetServiceMethod(call.ServiceMethod)
 	req.SetFrom(this.ServiceNode())
 	req.SetMessageType(rpccore.Request)
 	data, err = codecs[rpccore.ProtoBuffer].Marshal(call.Args)

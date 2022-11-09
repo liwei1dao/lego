@@ -119,6 +119,7 @@ type IMessage interface {
 	SetMetadata(map[string]string)
 	Payload() []byte
 	SetPayload(b []byte)
+	PrintHeader() string
 }
 
 //路由

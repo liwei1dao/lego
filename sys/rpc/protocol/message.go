@@ -44,6 +44,10 @@ type Message struct {
 	data          []byte
 }
 
+func (this *Message) PrintHeader() string {
+	return fmt.Sprintf("%b", this.Header[2])
+}
+
 func (this *Message) ServiceMethod() string {
 	return this.serviceMethod
 }
