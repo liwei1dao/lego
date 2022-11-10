@@ -74,3 +74,15 @@ func TestMessage(t *testing.T) {
 		t.Errorf("got wrong payload: %v", string(res.payload))
 	}
 }
+
+func TestSetCompress(t *testing.T) {
+	fmt.Printf("0x80 = %08b\n", 0x80)
+	fmt.Printf("0x20 = %08b\n", 0x40)
+	fmt.Printf("0x20 = %08b\n", 0x20)
+	fmt.Printf("0x10 = %08b\n", 0x10)
+	fmt.Printf("0x08 = %08b\n", 0x08)
+	fmt.Printf("0x04 = %08b\n", 0x04)
+	fmt.Printf("0x02 = %08b\n", 0x02)
+	fmt.Printf("0x01 = %08b\n", 0x01)
+	fmt.Printf("0x0C = %08b\n", 0x0E)
+}

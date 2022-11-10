@@ -45,7 +45,7 @@ type Message struct {
 }
 
 func (this *Message) PrintHeader() string {
-	return fmt.Sprintf("%b", this.Header[2])
+	return fmt.Sprintf("%08b", this.Header[2])
 }
 
 func (this *Message) ServiceMethod() string {

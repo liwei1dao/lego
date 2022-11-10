@@ -421,9 +421,10 @@ func (this *rpc) getMessage(serviceMethod string, args interface{}, reply interf
 	call.ServiceMethod = serviceMethod
 	call.Done = make(chan *MessageCall, 10)
 	call.Args = this.ServiceNode() //自己发起握手 需要传递本服务的节点信息
+	call.Reply = reply
 	req = protocol.GetPooledMsg()
 	req.SetVersion(this.options.ProtoVersion)
-	if reply != nil {
+	if call.Reply != nil {
 		this.pendingmutex.Lock()
 		seq := this.seq
 		this.seq++
@@ -438,7 +439,8 @@ func (this *rpc) getMessage(serviceMethod string, args interface{}, reply interf
 	req.SetServiceMethod(call.ServiceMethod)
 	req.SetFrom(this.ServiceNode())
 	req.SetMessageType(rpccore.Request)
-	data, err = codecs[rpccore.ProtoBuffer].Marshal(call.Args)
+	req.SetSerializeType(this.options.SerializeType)
+	data, err = codecs[this.options.SerializeType].Marshal(call.Args)
 	if err != nil {
 		return
 	}
@@ -482,6 +484,7 @@ func (this *rpc) send(client rpccore.IConnClient, call *MessageCall, seq uint64)
 
 	req.SetServiceMethod(call.ServiceMethod)
 	req.SetFrom(this.options.ServiceNode)
+	req.SetSerializeType(this.options.SerializeType)
 	codec := codecs[this.options.SerializeType]
 	if codec == nil {
 		err = rpccore.ErrUnsupportedCodec
@@ -538,9 +541,13 @@ func (this *rpc) handleresponse(ctx context.Context, res rpccore.IMessage) {
 			if codec == nil {
 				call.Error = rpccore.ErrUnsupportedCodec
 			} else {
-				err := codec.Unmarshal(data, call.Reply)
-				if err != nil {
-					call.Error = err
+				if call.Reply == nil {
+					call.Error = fmt.Errorf("%s reply is null no cant Unmarshal !", res.ServiceMethod())
+				} else {
+					err := codec.Unmarshal(data, call.Reply)
+					if err != nil {
+						call.Error = err
+					}
 				}
 			}
 		}
@@ -604,6 +611,6 @@ func (this *rpc) handleRequest(ctx context.Context, req rpccore.IMessage) (res r
 	} else if replyv != nil {
 		reflectTypePools.Put(service.ReplyType, replyv)
 	}
-	this.options.Log.Debugf("server called service %+v for an request %+v", service, req)
+	// this.options.Log.Debugf("server called service %+v for an request %+v", service, req)
 	return
 }

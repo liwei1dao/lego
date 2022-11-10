@@ -48,14 +48,19 @@ func (this *NatsConnPool) GetClient(node *core.ServiceNode) (client rpccore.ICon
 	client, ok = this.clients[node.GetNodePath()]
 	this.clientMapMu.RUnlock()
 	if !ok {
-		if client, err = newClient(this, this.config, node); err == nil {
-			if err = this.sys.ShakehandsRequest(context.Background(), client); err == nil {
-				this.clientMapMu.Lock()
-				this.clients[node.GetNodePath()] = client
-				this.clientMapMu.Unlock()
-				client.Start(node)
-			}
+		if client, err = newClient(this, this.config, node); err != nil {
+			this.log.Errorln(err)
+			return
 		}
+		if err = this.sys.ShakehandsRequest(context.Background(), client); err != nil {
+			this.log.Errorln(err)
+			return
+		}
+		this.log.Debug("CreateClient Succ!", log.Field{Key: "node", Value: node})
+		this.clientMapMu.Lock()
+		this.clients[node.GetNodePath()] = client
+		this.clientMapMu.Unlock()
+		client.Start()
 	}
 	return
 }

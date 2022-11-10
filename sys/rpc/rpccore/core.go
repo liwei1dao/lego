@@ -143,7 +143,8 @@ type IConnPool interface {
 
 type IConnClient interface {
 	ServiceNode() *core.ServiceNode
-	Start(node *core.ServiceNode)
+	SetServiceNode(node *core.ServiceNode)
+	Start()
 	ResetHbeat()
 	Write(msg []byte) (err error)
 	Close() (err error)

@@ -27,7 +27,7 @@ func (this *Header) SetVersion(v byte) {
 	this[1] = v
 }
 
-// 协议类型 请求/回应
+// 协议类型 请求/回应  10000000
 func (this *Header) MessageType() rpccore.MessageType {
 	return rpccore.MessageType(this[2]&0x80) >> 7
 }
@@ -37,21 +37,7 @@ func (this *Header) SetMessageType(mt rpccore.MessageType) {
 	this[2] = this[2] | (byte(mt) << 7)
 }
 
-// 是否是握手
-func (this *Header) IsShakeHands() bool {
-	return this[2]&0x10 == 0x10
-}
-
-// 设置握手
-func (this *Header) SetShakeHands(sh bool) {
-	if sh {
-		this[2] = this[2] | 0x10
-	} else {
-		this[2] = this[2] &^ 0x10
-	}
-}
-
-// 是否是心跳消息
+// 是否是心跳消息 01000000
 func (this *Header) IsHeartbeat() bool {
 	return this[2]&0x40 == 0x40
 }
@@ -65,27 +51,8 @@ func (this *Header) SetHeartbeat(hb bool) {
 	}
 }
 
-//读取压缩方式
-func (this *Header) CompressType() rpccore.CompressType {
-	return rpccore.CompressType((this[2] & 0x1C) >> 2)
-}
-
-//设置压缩类型
-func (this *Header) SetCompressType(ct rpccore.CompressType) {
-	this[2] = (this[2] &^ 0x1C) | ((byte(ct) << 2) & 0x1C)
-}
-
-//消息状态
-func (this *Header) MessageStatusType() rpccore.MessageStatusType {
-	return rpccore.MessageStatusType(this[2] & 0x03)
-}
-
-// 设置消息状态 正常或者错误
-func (this *Header) SetMessageStatusType(mt rpccore.MessageStatusType) {
-	this[2] = (this[2] &^ 0x03) | (byte(mt) & 0x03)
-}
-
 //是否是单向消息 是 true 则服务器不会发出回应消息
+///00100000
 func (this *Header) IsOneway() bool {
 	return this[2]&0x20 == 0x20
 }
@@ -97,6 +64,42 @@ func (this *Header) SetOneway(oneway bool) {
 	} else {
 		this[2] = this[2] &^ 0x20
 	}
+}
+
+// 是否是握手
+// 00010000
+func (this *Header) IsShakeHands() bool {
+	return this[2]&0x10 == 0x10
+}
+
+// 设置握手
+func (this *Header) SetShakeHands(sh bool) {
+	if sh {
+		this[2] = this[2] | 0x10
+	} else {
+		this[2] = this[2] &^ 0x10
+	}
+}
+
+//读取压缩方式 00001110
+func (this *Header) CompressType() rpccore.CompressType {
+	return rpccore.CompressType((this[2] & 0x0E) >> 1)
+}
+
+//设置压缩类型
+func (this *Header) SetCompressType(ct rpccore.CompressType) {
+	this[2] = (this[2] &^ 0x0E) | ((byte(ct) << 1) & 0x0E)
+}
+
+// 消息状态
+// 00000001
+func (this *Header) MessageStatusType() rpccore.MessageStatusType {
+	return rpccore.MessageStatusType(this[2] & 0x01)
+}
+
+// 设置消息状态 正常或者错误
+func (this *Header) SetMessageStatusType(mt rpccore.MessageStatusType) {
+	this[2] = (this[2] &^ 0x01) | (byte(mt) & 0x01)
 }
 
 // SerializeType returns serialization type of payload.

@@ -22,9 +22,10 @@ const (
 
 func NewTcpConnPool(sys rpccore.ISys, log log.ILogger, config *rpccore.Config) (cpool *TcpConnPool, err error) {
 	cpool = &TcpConnPool{
-		sys:    sys,
-		log:    log,
-		config: config,
+		sys:     sys,
+		log:     log,
+		config:  config,
+		clients: make(map[string]rpccore.IConnClient),
 	}
 	return
 }
@@ -73,19 +74,20 @@ func (this *TcpConnPool) GetClient(node *core.ServiceNode) (client rpccore.IConn
 
 //创建远程连接客户端
 func (this *TcpConnPool) createClient(conn net.Conn, node *core.ServiceNode) (client rpccore.IConnClient, err error) {
-	if client, err = newClient(this, this.config, conn); err == nil {
-		if err = this.sys.ShakehandsRequest(context.Background(), client); err == nil {
-			this.clientMapMu.Lock()
-			this.clients[client.ServiceNode().GetNodePath()] = client
-			this.clientMapMu.Unlock()
-			client.Start(node)
-		}
+	if client, err = newClient(this, this.config, conn); err != nil {
+		this.log.Errorln(err)
+		return
 	}
-	if err != nil {
-		this.log.Error("createClient err", log.Field{Key: "err", Value: err.Error()})
-	} else {
-		this.log.Debug("createClient succ", log.Field{Key: "node", Value: node})
+	if err = this.sys.ShakehandsRequest(context.Background(), client); err != nil {
+		this.log.Errorln(err)
+		return
 	}
+	this.log.Debug("CreateClient Succ!", log.Field{Key: "node", Value: node})
+	client.SetServiceNode(node)
+	this.clientMapMu.Lock()
+	this.clients[client.ServiceNode().GetNodePath()] = client
+	this.clientMapMu.Unlock()
+	client.Start()
 	return
 }
 
