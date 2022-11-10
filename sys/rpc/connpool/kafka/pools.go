@@ -33,6 +33,9 @@ func (this *KafkaConnPool) Start() (err error) {
 func (this *KafkaConnPool) GetClient(node *core.ServiceNode) (client rpccore.IConnClient, err error) {
 	return
 }
+func (this *KafkaConnPool) AddClient(client rpccore.IConnClient, node *core.ServiceNode) (err error) {
+	return
+}
 func (this *KafkaConnPool) Close() (err error) {
 
 	return

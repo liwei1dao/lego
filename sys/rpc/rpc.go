@@ -147,9 +147,16 @@ func (this *rpc) UnRegister(name string) {
 func (this *rpc) Call(ctx context.Context, servicePath string, serviceMethod string, req interface{}, reply interface{}) (err error) { //同步调用 等待结果
 	seq := new(uint64)
 	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
-	this.options.Log.Debug("Call Start", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
+	stime := time.Now()
+	// this.options.Log.Debug("Call Start", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
 	defer func() {
-		this.options.Log.Debug("Call End", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req}, log.Field{Key: "reply", Value: reply})
+		this.options.Log.Debug("RPC Call",
+			log.Field{Key: "t", Value: time.Since(stime).Milliseconds()},
+			log.Field{Key: "servicePath", Value: servicePath},
+			log.Field{Key: "serviceMethod", Value: serviceMethod},
+			log.Field{Key: "req", Value: req},
+			log.Field{Key: "reply", Value: reply},
+		)
 	}()
 	var call *MessageCall
 	call, err = this.call(ctx, servicePath, serviceMethod, req, reply)
@@ -201,9 +208,16 @@ func (this *rpc) ClentForCall(ctx context.Context, client rpccore.IConnClient, s
 func (this *rpc) Go(ctx context.Context, servicePath string, serviceMethod string, req interface{}, reply interface{}) (call *MessageCall, err error) { //异步调用 异步返回
 	seq := new(uint64)
 	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
-	this.options.Log.Debug("Go start!", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
+	stime := time.Now()
+	// this.options.Log.Debug("Go start!", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
 	defer func() {
-		this.options.Log.Debug("Go end!", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req}, log.Field{Key: "reply", Value: reply})
+		this.options.Log.Debug("RPC Go",
+			log.Field{Key: "t", Value: time.Since(stime).Milliseconds()},
+			log.Field{Key: "servicePath", Value: servicePath},
+			log.Field{Key: "serviceMethod", Value: serviceMethod},
+			log.Field{Key: "req", Value: req},
+			log.Field{Key: "reply", Value: reply},
+		)
 	}()
 	call, err = this.call(ctx, servicePath, serviceMethod, req, reply)
 	return
@@ -227,7 +241,7 @@ func (this *rpc) Broadcast(ctx context.Context, servicePath string, serviceMetho
 
 //接收到远程消息
 func (this *rpc) Handle(client rpccore.IConnClient, message rpccore.IMessage) {
-	this.options.Log.Debug("[handle] message", log.Field{Key: "Header", Value: message.PrintHeader()}, log.Field{Key: "ServiceMethod", Value: message.ServiceMethod()})
+	// this.options.Log.Debug("[handle] message", log.Field{Key: "Header", Value: message.PrintHeader()}, log.Field{Key: "ServiceMethod", Value: message.ServiceMethod()})
 	if message.MessageType() == rpccore.Request { //请求消息
 		if message.IsHeartbeat() { //心跳
 			client.ResetHbeat()

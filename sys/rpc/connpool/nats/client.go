@@ -41,6 +41,11 @@ func (this *Client) ServiceNode() *core.ServiceNode {
 func (this *Client) SetServiceNode(node *core.ServiceNode) {
 	this.node = node
 }
+
+func (this *Client) State() rpccore.ClientState {
+	return rpccore.ClientState(atomic.LoadInt32(&this.state))
+}
+
 func (this *Client) Start() {
 	atomic.StoreInt32(&this.state, 1)
 	this.wg.Add(1)

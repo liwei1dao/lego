@@ -24,6 +24,15 @@ const (
 	CallSeqKey     = "__call_seq__"     //客户端请求id存储key
 )
 
+type ClientState int32
+
+const (
+	ClientClose      ClientState = iota //关闭状态
+	ClientShakeHands                    //握手状态
+	ClientRuning                        //运行中
+	ClientCloseing                      //关闭中
+)
+
 type ConnectType int //通信类型
 const (
 	Tcp   ConnectType = iota //Tcp  连接对象
@@ -138,12 +147,14 @@ type ISelector interface {
 type IConnPool interface {
 	Start() error
 	GetClient(node *core.ServiceNode) (client IConnClient, err error)
+	AddClient(client IConnClient, node *core.ServiceNode) (err error)
 	Close() error
 }
 
 type IConnClient interface {
 	ServiceNode() *core.ServiceNode
 	SetServiceNode(node *core.ServiceNode)
+	State() ClientState
 	Start()
 	ResetHbeat()
 	Write(msg []byte) (err error)

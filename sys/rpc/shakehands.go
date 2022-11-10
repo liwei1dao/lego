@@ -66,11 +66,12 @@ func (this *rpc) ShakehandsResponse(ctx context.Context, client rpccore.IConnCli
 	data, err := codec.Marshal(&ShakehandsResp{})
 	if err != nil {
 		handleError(res, err)
+		return
 	}
 	res.SetPayload(data)
 	if len(res.Payload()) > 1024 && res.CompressType() != rpccore.CompressNone {
 		res.SetCompressType(res.CompressType())
 	}
-
+	this.cpool.AddClient(client, req.From())
 	return
 }

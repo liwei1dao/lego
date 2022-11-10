@@ -88,7 +88,6 @@ func (this *Discovery) Start() (err error) {
 		if err = this.store.Put(nodePath, d, &dcore.WriteOptions{TTL: this.options.UpdateInterval * 2}); err != nil {
 			this.options.Log.Errorf("consul put path %s err: %v", nodePath, err)
 		}
-		this.options.Log.Debug("start")
 		go func() {
 			ticker := time.NewTicker(this.options.UpdateInterval)
 			defer ticker.Stop()
