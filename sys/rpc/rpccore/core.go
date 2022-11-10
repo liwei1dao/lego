@@ -18,10 +18,22 @@ var (
 
 const (
 	ServiceError   = "__rpcx_error__"   //服务错误信息字段
+	ServerTimeout  = "__ServerTimeout"  //服务超时字段
 	ReqMetaDataKey = "__req_metadata"   //请求元数据字段
 	ResMetaDataKey = "__res_metadata"   //返回元数据字段
 	ServiceAddrKey = "__service_addr__" //服务端地址
 	CallSeqKey     = "__call_seq__"     //客户端请求id存储key
+
+)
+
+type contextKey struct {
+	name string
+}
+
+func (k *contextKey) String() string { return "rpcx context value " + k.name }
+
+var (
+	RemoteConnContextKey = &contextKey{"remote-conn"} //远程服务连接对象
 )
 
 type ClientState int32

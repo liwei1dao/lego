@@ -241,6 +241,14 @@ func (this *rpc) Broadcast(ctx context.Context, servicePath string, serviceMetho
 
 //接收到远程消息
 func (this *rpc) Handle(client rpccore.IConnClient, message rpccore.IMessage) {
+	defer func() {
+		if r := recover(); r != nil {
+			buf := make([]byte, 1024)
+			buf = buf[:runtime.Stack(buf, true)]
+			this.options.Log.Errorf("failed to handle the request: %v， stacks: %s", r, buf)
+		}
+	}()
+	ctx := rpccore.WithValue(context.Background(), rpccore.RemoteConnContextKey, client)
 	// this.options.Log.Debug("[handle] message", log.Field{Key: "Header", Value: message.PrintHeader()}, log.Field{Key: "ServiceMethod", Value: message.ServiceMethod()})
 	if message.MessageType() == rpccore.Request { //请求消息
 		if message.IsHeartbeat() { //心跳
@@ -248,10 +256,14 @@ func (this *rpc) Handle(client rpccore.IConnClient, message rpccore.IMessage) {
 			return
 		}
 		if message.IsShakeHands() {
-			this.ShakehandsResponse(rpccore.NewContext(context.Background()), client, message)
+			this.ShakehandsResponse(ctx, client, message)
 			return
 		}
-		if res, _ := this.handleRequest(rpccore.NewContext(context.Background()), message); res != nil {
+		cancelFunc := parseServerTimeout(ctx, message)
+		if cancelFunc != nil {
+			defer cancelFunc()
+		}
+		if res, _ := this.handleRequest(ctx, message); res != nil {
 			if !message.IsOneway() { //需要回应
 				if len(res.Payload()) > 1024 && res.CompressType() != rpccore.CompressNone {
 					res.SetCompressType(res.CompressType())
