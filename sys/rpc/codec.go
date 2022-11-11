@@ -2,11 +2,12 @@ package rpc
 
 import (
 	"bytes"
+
 	"fmt"
 
 	proto "github.com/gogo/protobuf/proto"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/liwei1dao/lego/sys/rpc/rpccore"
+	"github.com/liwei1dao/lego/utils/codec/json"
 	"github.com/tinylib/msgp/msgp"
 	"github.com/vmihailenco/msgpack/v5"
 	pb "google.golang.org/protobuf/proto"
@@ -22,13 +23,14 @@ var codecs = map[rpccore.SerializeType]rpccore.ICodec{
 type JSONCodec struct{}
 
 func (c JSONCodec) Marshal(i interface{}) ([]byte, error) {
-	return jsoniter.Marshal(i)
+	return json.Marshal(i)
 }
 
 func (c JSONCodec) Unmarshal(data []byte, i interface{}) error {
-	d := jsoniter.NewDecoder(bytes.NewBuffer(data))
-	d.UseNumber()
-	return d.Decode(i)
+	// d := json.NewDecoder(bytes.NewBuffer(data))
+	// d.UseNumber()
+	// return d.Decode(i)
+	return json.Unmarshal(data, i)
 }
 
 type PBCodec struct{}
