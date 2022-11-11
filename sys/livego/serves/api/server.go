@@ -1,11 +1,12 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
+
+	"github.com/liwei1dao/lego/utils/codec/json"
 
 	"github.com/liwei1dao/lego/sys/livego/core"
 	"github.com/liwei1dao/lego/sys/livego/serves/rtmp"

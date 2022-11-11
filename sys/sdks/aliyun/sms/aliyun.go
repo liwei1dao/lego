@@ -1,8 +1,9 @@
 package sms
 
 import (
-	"encoding/json"
 	"fmt"
+
+	"github.com/liwei1dao/lego/utils/codec/json"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"

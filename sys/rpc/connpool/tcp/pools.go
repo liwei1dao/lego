@@ -111,7 +111,7 @@ func (this *TcpConnPool) AddClient(client rpccore.IConnClient, node *core.Servic
 		ok bool
 	)
 	this.clientMapMu.RLock()
-	client, ok = this.clients[node.GetNodePath()]
+	_, ok = this.clients[node.GetNodePath()]
 	this.clientMapMu.RUnlock()
 	if !ok {
 		this.log.Debug("AddClient Succ!", log.Field{Key: "node", Value: node})

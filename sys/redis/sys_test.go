@@ -2,12 +2,13 @@ package redis_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/liwei1dao/lego/utils/codec/json"
 
 	"github.com/go-redis/redis/v8"
 	lgredis "github.com/liwei1dao/lego/sys/redis"

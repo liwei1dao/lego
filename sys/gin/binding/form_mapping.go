@@ -5,13 +5,14 @@
 package binding
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/liwei1dao/lego/utils/codec/json"
 
 	"github.com/liwei1dao/lego/utils/codec"
 )

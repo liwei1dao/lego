@@ -23,14 +23,18 @@ var codecs = map[rpccore.SerializeType]rpccore.ICodec{
 type JSONCodec struct{}
 
 func (c JSONCodec) Marshal(i interface{}) ([]byte, error) {
-	return json.Marshal(i)
+	data, err := json.Marshal(i)
+	// log.Debug("json Marshal", log.Field{Key: "value", Value: i}, log.Field{Key: "data", Value: string(data)}, log.Field{Key: "err", Value: err})
+	return data, err
 }
 
 func (c JSONCodec) Unmarshal(data []byte, i interface{}) error {
 	// d := json.NewDecoder(bytes.NewBuffer(data))
 	// d.UseNumber()
 	// return d.Decode(i)
-	return json.Unmarshal(data, i)
+	err := json.Unmarshal(data, i)
+	// log.Debug("json Unmarshal", log.Field{Key: "data", Value: string(data)}, log.Field{Key: "value", Value: i}, log.Field{Key: "err", Value: err})
+	return err
 }
 
 type PBCodec struct{}

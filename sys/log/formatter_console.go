@@ -1,9 +1,9 @@
 package log
 
 import (
-	"encoding/json"
 	"time"
 
+	"github.com/liwei1dao/lego/utils/codec/json"
 	"github.com/liwei1dao/lego/utils/pools"
 )
 
@@ -118,6 +118,8 @@ func writetoline(line *pools.Buffer, v interface{}) {
 		line.AppendTime(v, time.RFC3339Nano)
 	case time.Duration:
 		line.AppendInt(v.Nanoseconds())
+	case error:
+		line.AppendString(v.Error())
 	default:
 		d, _ := json.Marshal(v)
 		line.AppendBytes(d)

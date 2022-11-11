@@ -1,8 +1,9 @@
 package container
 
 import (
-	"encoding/json"
 	"sync"
+
+	"github.com/liwei1dao/lego/utils/codec/json"
 )
 
 var SHARD_COUNT = 32

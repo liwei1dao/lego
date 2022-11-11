@@ -1,10 +1,11 @@
 package httpflv
 
 import (
-	"encoding/json"
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/liwei1dao/lego/utils/codec/json"
 
 	"github.com/liwei1dao/lego/sys/livego/core"
 	"github.com/liwei1dao/lego/sys/log"
