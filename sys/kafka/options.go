@@ -50,6 +50,20 @@ type Options struct {
 }
 
 ///kafka启动类型
+func SetLog(v log.ILogger) Option {
+	return func(o *Options) {
+		o.Log = v
+	}
+}
+
+///kafka启动类型
+func SetDebug(v bool) Option {
+	return func(o *Options) {
+		o.Debug = v
+	}
+}
+
+///kafka启动类型
 func SetStartType(v KafkaStartType) Option {
 	return func(o *Options) {
 		o.StartType = v
@@ -236,7 +250,7 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 		Sasl_Enable:               false,
 	}
 	if config != nil {
-		mapstructure.Decode(config, &options)
+		mapstructure.Decode(config, options)
 	}
 	for _, o := range opts {
 		o(options)

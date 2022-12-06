@@ -25,7 +25,7 @@ func Test_sys(t *testing.T) {
 		"Producer_Compression":      sarama.CompressionGZIP,
 		"Producer_CompressionLevel": 1,
 		"Producer_Retry_Max":        3,
-		"Sasl_Enable":               true,
+		"Sasl_Enable":               false,
 		"Sasl_Mechanism":            sarama.SASLTypeGSSAPI,
 	}, kafka.SetSasl_GSSAPI(sarama.GSSAPIConfig{
 		AuthType:           sarama.KRB5_KEYTAB_AUTH,

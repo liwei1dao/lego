@@ -13,13 +13,13 @@ type logger struct {
 }
 
 func (this *logger) Print(v ...interface{}) {
-	this.log.Panicln(v...)
+	this.log.Println(v...)
 }
 func (this *logger) Printf(format string, v ...interface{}) {
 	this.log.Printf(format, v...)
 }
 func (this *logger) Println(v ...interface{}) {
-	this.log.Panicln(v...)
+	this.log.Println(v...)
 }
 
 func newSys(options *Options) (sys *Kafka, err error) {

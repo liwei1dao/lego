@@ -33,16 +33,17 @@ var defaultTrustedCIDRs = []*net.IPNet{
 	},
 }
 
-func NewEngine(log log.ILogger) (engine *Engine) {
+func NewEngine(opts ...Option) (engine *Engine) {
+	option, _ := newOptionsByOption(opts...)
 	engine = &Engine{
 		RouterGroup: RouterGroup{
 			Handlers: nil,
 			basePath: "/",
 			root:     true,
 		},
-		log:                    log,
+		log:                    option.Log,
 		FuncMap:                template.FuncMap{},
-		RedirectTrailingSlash:  true,
+		RedirectTrailingSlash:  option.RedirectTrailingSlash,
 		RedirectFixedPath:      false,
 		HandleMethodNotAllowed: false,
 		ForwardedByClientIP:    true,
