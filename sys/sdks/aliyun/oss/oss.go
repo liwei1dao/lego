@@ -87,8 +87,13 @@ func (this *OSS) GetObject(objectName string, options ...oss.Option) ([]byte, er
 }
 
 //删除文件
-func (this *OSS) DeleteFile(objectName string) (err error) {
-	err = this.bucket.DeleteObject(objectName)
+func (this *OSS) DeleteFile(objectName string, options ...oss.Option) (err error) {
+	err = this.bucket.DeleteObject(objectName, options...)
+	return
+}
+
+func (this *OSS) DeleteFiles(objectNames []string, options ...oss.Option) (err error) {
+	_, err = this.bucket.DeleteObjects(objectNames, options...)
 	return
 }
 
