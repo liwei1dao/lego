@@ -33,14 +33,16 @@ var defaultTrustedCIDRs = []*net.IPNet{
 	},
 }
 
-func NewEngine(log log.ILogger) (engine *Engine) {
+func NewEngine(opts ...Option) (engine *Engine) {
+	option, _ := newOptions(opts...)
+
 	engine = &Engine{
 		RouterGroup: RouterGroup{
 			Handlers: nil,
 			basePath: "/",
 			root:     true,
 		},
-		log:                    log,
+		log:                    option.Log,
 		FuncMap:                template.FuncMap{},
 		RedirectTrailingSlash:  true,
 		RedirectFixedPath:      false,
@@ -50,7 +52,7 @@ func NewEngine(log log.ILogger) (engine *Engine) {
 		UseRawPath:             false,
 		RemoveExtraSlash:       false,
 		UnescapePathValues:     true,
-		MaxMultipartMemory:     defaultMultipartMemory,
+		MaxMultipartMemory:     option.MultipartMemory,
 		trees:                  make(methodTrees, 0, 9),
 		delims:                 render.Delims{Left: "{{", Right: "}}"},
 		secureJSONPrefix:       "while(1);",

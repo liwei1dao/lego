@@ -17,7 +17,7 @@ func newSys(options *Options) (sys *Gin, err error) {
 	sys = &Gin{
 		options: options,
 	}
-	sys.engine = engine.NewEngine(options.Log)
+	sys.engine = engine.NewEngine(engine.SetLog(options.Log), engine.SetMultipartMemory(options.MultipartMemory))
 	///添加基础中间件
 	sys.engine.Use(logger.Logger([]string{}), recovery.Recovery())
 	if options.CertFile != "" && options.KeyFile != "" {
