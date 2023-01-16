@@ -31,7 +31,6 @@ require (
 	github.com/jlaffaye/ftp v0.0.0-20220630165035-11536801d1ff
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
-	github.com/json-iterator/go v1.1.12
 	github.com/liwei1dao/dm v0.0.0-20211103094420-938edf103cf0
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/nats-io/nats.go v1.16.0
@@ -41,6 +40,7 @@ require (
 	github.com/rs/xid v1.4.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/smallnest/rpcx v1.7.8
+	github.com/smartwalle/alipay/v3 v3.1.8
 	github.com/tinylib/msgp v1.1.6
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/ugorji/go/codec v1.2.7
@@ -118,6 +118,7 @@ require (
 	github.com/jcmturner/gokrb5/v8 v8.4.2 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/jmespath/go-jmespath v0.3.0 // indirect
+	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/keybase/go-keychain v0.0.0-20190712205309-48d3d31d256d // indirect
 	github.com/klauspost/compress v1.15.8 // indirect
@@ -147,6 +148,7 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
+	github.com/smartwalle/crypto4go v1.0.2 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/stretchr/testify v1.8.0 // indirect
 	github.com/temoto/robotstxt v1.1.1 // indirect
