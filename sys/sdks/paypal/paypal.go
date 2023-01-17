@@ -2,7 +2,6 @@ package paypal
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/plutov/paypal/v4"
 )
@@ -47,12 +46,12 @@ func (this *PayPal) Write(p []byte) (n int, err error) {
 创建收款订单
 (*order).Links[1].Href就是支付的链接
 */
-func (this *PayPal) CreateOrder(orderId, uid string, amount float64) (order *paypal.Order, err error) {
+func (this *PayPal) CreateOrder(orderId, uid string, amount string) (order *paypal.Order, err error) {
 	purchaseUnits := make([]paypal.PurchaseUnitRequest, 1)
 	purchaseUnits[0] = paypal.PurchaseUnitRequest{
 		Amount: &paypal.PurchaseUnitAmount{
-			Currency: this.options.Currency,     //收款类型
-			Value:    fmt.Sprintf("%v", amount), //收款数量
+			Currency: this.options.Currency, //收款类型
+			Value:    amount,                //收款数量
 		},
 		InvoiceID:   orderId,
 		ReferenceID: uid,
