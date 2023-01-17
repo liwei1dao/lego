@@ -2,7 +2,6 @@ package paypal
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/plutov/paypal/v4"
@@ -85,22 +84,21 @@ func (this *PayPal) GetOrder(orderId string) (order *paypal.CaptureOrderResponse
 
 //回调(可以利用上面的回调链接实现) orderId 就是返回的token
 func (this *PayPal) PaypalCallback(orderId string) (isucc bool, err error) {
+	var (
+		order *paypal.CaptureOrderResponse
+	)
 	_, err = this.client.GetAccessToken(context.TODO())
 	if err != nil {
 		return
 	}
 	//log.Info(accessToken.Token,orderId)
 	ctor := paypal.CaptureOrderRequest{}
-	order, err := this.client.CaptureOrder(context.TODO(), orderId, ctor)
+	order, err = this.client.CaptureOrder(context.TODO(), orderId, ctor)
 	if err != nil {
-		//log.Info(err,"打款失败")
 		return
 	}
 	//查看回调完成后订单状态是否支付完成。
-	strByte, _ := json.Marshal(order)
-	log.Debugf(string(strByte))
 	if (*order).Status != "COMPLETED" {
-		log.Debugf(order.Status)
 		return
 	}
 	isucc = true
