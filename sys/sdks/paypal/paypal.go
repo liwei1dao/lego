@@ -3,7 +3,6 @@ package paypal
 import (
 	"context"
 
-	"github.com/liwei1dao/lego/sys/log"
 	"github.com/plutov/paypal/v4"
 )
 
@@ -102,6 +101,6 @@ func (this *PayPal) PaypalCallback(orderId string) (isucc bool, err error) {
 		return
 	}
 	isucc = true
-	log.Debugf("支付成功", order.Status, order.Address)
+	this.options.Log.Debugf("支付成功 Status:%v Address:%v", order.Status, order.Address)
 	return
 }
