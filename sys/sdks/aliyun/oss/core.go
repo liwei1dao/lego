@@ -16,6 +16,8 @@ type (
 		UploadFile(objectName string, localFileName string) (err error)
 		///获取对象
 		GetObject(objectName string, options ...oss.Option) ([]byte, error)
+		///复制文件
+		CopyObject(srcObjectKey, destObjectKey string, options ...oss.Option) (err error)
 		///下载文件
 		DownloadFile(objectName string, downloadedFileName string) (err error)
 		///删除文件
@@ -56,7 +58,9 @@ func UploadFile(localFileName string, objectName string) (err error) {
 func GetObject(objectName string, options ...oss.Option) ([]byte, error) {
 	return defsys.GetObject(objectName, options...)
 }
-
+func CopyObject(srcObjectKey, destObjectKey string, options ...oss.Option) (err error) {
+	return defsys.CopyObject(srcObjectKey, destObjectKey, options...)
+}
 func DownloadFile(objectName string, downloadedFileName string) (err error) {
 	return defsys.DownloadFile(objectName, downloadedFileName)
 }

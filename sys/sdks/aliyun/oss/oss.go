@@ -86,6 +86,12 @@ func (this *OSS) GetObject(objectName string, options ...oss.Option) ([]byte, er
 	}
 }
 
+//复制文件
+func (this *OSS) CopyObject(srcObjectKey, destObjectKey string, options ...oss.Option) (err error) {
+	_, err = this.bucket.CopyObject(srcObjectKey, destObjectKey, options...)
+	return
+}
+
 //删除文件
 func (this *OSS) DeleteFile(objectName string, options ...oss.Option) (err error) {
 	err = this.bucket.DeleteObject(objectName, options...)
