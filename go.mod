@@ -49,8 +49,8 @@ require (
 	github.com/wolfogre/go-pprof-practice v0.0.0-20190402114113-8ce266a210ee
 	go.mongodb.org/mongo-driver v1.4.6
 	go.uber.org/zap v1.17.0
-	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
-	golang.org/x/text v0.3.7
+	golang.org/x/crypto v0.1.0
+	golang.org/x/text v0.4.0
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324 // indirect
 	gonum.org/v1/gonum v0.8.2
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c
