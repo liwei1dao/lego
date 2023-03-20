@@ -27,7 +27,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 
 func NewSys(option ...Option) (sys ISys, err error) {
 	if sys, err = newSys(newOptionsByOption(option...)); err == nil {
-		Start()
+		sys.Start()
 	}
 	return
 }
