@@ -39,6 +39,7 @@ require (
 	github.com/plutov/paypal/v4 v4.6.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/xid v1.4.0
+	github.com/sashabaranov/go-openai v1.5.7
 	github.com/satori/go.uuid v1.2.0
 	github.com/smallnest/rpcx v1.7.8
 	github.com/tinylib/msgp v1.1.6
