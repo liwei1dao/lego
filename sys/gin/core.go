@@ -124,6 +124,8 @@ func ParamSign(key string, param map[string]interface{}) (origin, sign string) {
 		case reflect.Float32,
 			reflect.Float64:
 			builder.WriteString(fmt.Sprintf("%v", param[v]))
+		case reflect.Bool:
+			builder.WriteString(fmt.Sprintf("%v", param[v]))
 		case reflect.Slice, reflect.Array:
 			s := reflect.ValueOf(param[v])
 			valueStr := ""

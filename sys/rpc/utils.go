@@ -1,7 +1,10 @@
 package rpc
 
 import (
+	"context"
 	"reflect"
+	"strconv"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -44,6 +47,27 @@ func getShakehands(node *core.ServiceNode) []byte {
 		protocol.FreeMsg(req)
 	}()
 	return *allData
+}
+
+//解析rpc请求超时设置
+func parseServerTimeout(ctx *rpccore.Context, req rpccore.IMessage) context.CancelFunc {
+	if req == nil || req.Metadata() == nil {
+		return nil
+	}
+
+	st := req.Metadata()[rpccore.ServerTimeout]
+	if st == "" {
+		return nil
+	}
+
+	timeout, err := strconv.ParseInt(st, 10, 64)
+	if err != nil {
+		return nil
+	}
+
+	newCtx, cancel := context.WithTimeout(ctx.Context, time.Duration(timeout)*time.Millisecond)
+	ctx.Context = newCtx
+	return cancel
 }
 
 //设置消息错误信息

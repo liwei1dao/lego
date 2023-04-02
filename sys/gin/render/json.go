@@ -2,10 +2,11 @@ package render
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
+
+	"github.com/liwei1dao/lego/utils/codec/json"
 
 	"github.com/liwei1dao/lego/utils/codec"
 )

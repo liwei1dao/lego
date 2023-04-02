@@ -18,10 +18,31 @@ var (
 
 const (
 	ServiceError   = "__rpcx_error__"   //服务错误信息字段
+	ServerTimeout  = "__ServerTimeout"  //服务超时字段
 	ReqMetaDataKey = "__req_metadata"   //请求元数据字段
 	ResMetaDataKey = "__res_metadata"   //返回元数据字段
 	ServiceAddrKey = "__service_addr__" //服务端地址
 	CallSeqKey     = "__call_seq__"     //客户端请求id存储key
+
+)
+
+type contextKey struct {
+	name string
+}
+
+func (k *contextKey) String() string { return "rpcx context value " + k.name }
+
+var (
+	RemoteConnContextKey = &contextKey{"remote-conn"} //远程服务连接对象
+)
+
+type ClientState int32
+
+const (
+	ClientClose      ClientState = iota //关闭状态
+	ClientShakeHands                    //握手状态
+	ClientRuning                        //运行中
+	ClientCloseing                      //关闭中
 )
 
 type ConnectType int //通信类型
@@ -119,6 +140,7 @@ type IMessage interface {
 	SetMetadata(map[string]string)
 	Payload() []byte
 	SetPayload(b []byte)
+	PrintHeader() string
 }
 
 //路由
@@ -137,12 +159,15 @@ type ISelector interface {
 type IConnPool interface {
 	Start() error
 	GetClient(node *core.ServiceNode) (client IConnClient, err error)
+	AddClient(client IConnClient, node *core.ServiceNode) (err error)
 	Close() error
 }
 
 type IConnClient interface {
 	ServiceNode() *core.ServiceNode
-	Start(node *core.ServiceNode)
+	SetServiceNode(node *core.ServiceNode)
+	State() ClientState
+	Start()
 	ResetHbeat()
 	Write(msg []byte) (err error)
 	Close() (err error)

@@ -147,9 +147,16 @@ func (this *rpc) UnRegister(name string) {
 func (this *rpc) Call(ctx context.Context, servicePath string, serviceMethod string, req interface{}, reply interface{}) (err error) { //同步调用 等待结果
 	seq := new(uint64)
 	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
-	this.options.Log.Debug("Call Start", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
+	stime := time.Now()
+	// this.options.Log.Debug("Call Start", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
 	defer func() {
-		this.options.Log.Debug("Call End", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req}, log.Field{Key: "reply", Value: reply})
+		this.options.Log.Debug("RPC Call",
+			log.Field{Key: "t", Value: time.Since(stime).Milliseconds()},
+			log.Field{Key: "servicePath", Value: servicePath},
+			log.Field{Key: "serviceMethod", Value: serviceMethod},
+			log.Field{Key: "req", Value: req},
+			log.Field{Key: "reply", Value: reply},
+		)
 	}()
 	var call *MessageCall
 	call, err = this.call(ctx, servicePath, serviceMethod, req, reply)
@@ -201,9 +208,16 @@ func (this *rpc) ClentForCall(ctx context.Context, client rpccore.IConnClient, s
 func (this *rpc) Go(ctx context.Context, servicePath string, serviceMethod string, req interface{}, reply interface{}) (call *MessageCall, err error) { //异步调用 异步返回
 	seq := new(uint64)
 	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
-	this.options.Log.Debug("Go start!", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
+	stime := time.Now()
+	// this.options.Log.Debug("Go start!", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
 	defer func() {
-		this.options.Log.Debug("Go end!", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req}, log.Field{Key: "reply", Value: reply})
+		this.options.Log.Debug("RPC Go",
+			log.Field{Key: "t", Value: time.Since(stime).Milliseconds()},
+			log.Field{Key: "servicePath", Value: servicePath},
+			log.Field{Key: "serviceMethod", Value: serviceMethod},
+			log.Field{Key: "req", Value: req},
+			log.Field{Key: "reply", Value: reply},
+		)
 	}()
 	call, err = this.call(ctx, servicePath, serviceMethod, req, reply)
 	return
@@ -227,16 +241,29 @@ func (this *rpc) Broadcast(ctx context.Context, servicePath string, serviceMetho
 
 //接收到远程消息
 func (this *rpc) Handle(client rpccore.IConnClient, message rpccore.IMessage) {
+	defer func() {
+		if r := recover(); r != nil {
+			buf := make([]byte, 1024)
+			buf = buf[:runtime.Stack(buf, true)]
+			this.options.Log.Errorf("failed to handle the request: %v， stacks: %s", r, buf)
+		}
+	}()
+	ctx := rpccore.WithValue(context.Background(), rpccore.RemoteConnContextKey, client)
+	// this.options.Log.Debug("[handle] message", log.Field{Key: "Header", Value: message.PrintHeader()}, log.Field{Key: "ServiceMethod", Value: message.ServiceMethod()})
 	if message.MessageType() == rpccore.Request { //请求消息
 		if message.IsHeartbeat() { //心跳
 			client.ResetHbeat()
 			return
 		}
 		if message.IsShakeHands() {
-			this.ShakehandsResponse(rpccore.NewContext(context.Background()), client, message)
+			this.ShakehandsResponse(ctx, client, message)
 			return
 		}
-		if res, _ := this.handleRequest(rpccore.NewContext(context.Background()), message); res != nil {
+		cancelFunc := parseServerTimeout(ctx, message)
+		if cancelFunc != nil {
+			defer cancelFunc()
+		}
+		if res, _ := this.handleRequest(ctx, message); res != nil {
 			if !message.IsOneway() { //需要回应
 				if len(res.Payload()) > 1024 && res.CompressType() != rpccore.CompressNone {
 					res.SetCompressType(res.CompressType())
@@ -374,6 +401,8 @@ func (this *rpc) registerFunction(fn interface{}, name string, useName bool) (er
 //执行远程服务---------------------------------------------------------------------------------------
 func (this *rpc) call(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) {
 	call = new(MessageCall)
+	call.ServicePath = servicePath
+	call.ServiceMethod = serviceMethod
 	call.Done = make(chan *MessageCall, 10)
 	call.Args = args
 	call.Reply = reply
@@ -395,6 +424,7 @@ func (this *rpc) call(ctx context.Context, servicePath string, serviceMethod str
 
 func (this *rpc) call2(ctx context.Context, client rpccore.IConnClient, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) {
 	call = new(MessageCall)
+	call.ServiceMethod = serviceMethod
 	call.Done = make(chan *MessageCall, 10)
 	call.Args = args
 	call.Reply = reply
@@ -414,10 +444,13 @@ func (this *rpc) call2(ctx context.Context, client rpccore.IConnClient, serviceM
 func (this *rpc) getMessage(serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, req *protocol.Message, err error) {
 	var data []byte
 	call = new(MessageCall)
+	call.ServiceMethod = serviceMethod
 	call.Done = make(chan *MessageCall, 10)
 	call.Args = this.ServiceNode() //自己发起握手 需要传递本服务的节点信息
+	call.Reply = reply
 	req = protocol.GetPooledMsg()
-	if reply != nil {
+	req.SetVersion(this.options.ProtoVersion)
+	if call.Reply != nil {
 		this.pendingmutex.Lock()
 		seq := this.seq
 		this.seq++
@@ -428,10 +461,12 @@ func (this *rpc) getMessage(serviceMethod string, args interface{}, reply interf
 	} else {
 		req.SetOneway(false)
 	}
-	req.SetShakeHands(true)
+
+	req.SetServiceMethod(call.ServiceMethod)
 	req.SetFrom(this.ServiceNode())
 	req.SetMessageType(rpccore.Request)
-	data, err = codecs[rpccore.ProtoBuffer].Marshal(call.Args)
+	req.SetSerializeType(this.options.SerializeType)
+	data, err = codecs[this.options.SerializeType].Marshal(call.Args)
 	if err != nil {
 		return
 	}
@@ -463,6 +498,7 @@ func (this *rpc) send(client rpccore.IConnClient, call *MessageCall, seq uint64)
 	)
 
 	req := protocol.GetPooledMsg()
+	req.SetVersion(this.options.ProtoVersion)
 	req.SetMessageType(rpccore.Request)
 	req.SetSeq(seq)
 	if call.Reply == nil {
@@ -474,6 +510,7 @@ func (this *rpc) send(client rpccore.IConnClient, call *MessageCall, seq uint64)
 
 	req.SetServiceMethod(call.ServiceMethod)
 	req.SetFrom(this.options.ServiceNode)
+	req.SetSerializeType(this.options.SerializeType)
 	codec := codecs[this.options.SerializeType]
 	if codec == nil {
 		err = rpccore.ErrUnsupportedCodec
@@ -530,9 +567,13 @@ func (this *rpc) handleresponse(ctx context.Context, res rpccore.IMessage) {
 			if codec == nil {
 				call.Error = rpccore.ErrUnsupportedCodec
 			} else {
-				err := codec.Unmarshal(data, call.Reply)
-				if err != nil {
-					call.Error = err
+				if call.Reply == nil {
+					call.Error = fmt.Errorf("%s reply is null no cant Unmarshal !", res.ServiceMethod())
+				} else {
+					err := codec.Unmarshal(data, call.Reply)
+					if err != nil {
+						call.Error = err
+					}
 				}
 			}
 		}
@@ -596,6 +637,6 @@ func (this *rpc) handleRequest(ctx context.Context, req rpccore.IMessage) (res r
 	} else if replyv != nil {
 		reflectTypePools.Put(service.ReplyType, replyv)
 	}
-	this.options.Log.Debugf("server called service %+v for an request %+v", service, req)
+	// this.options.Log.Debugf("server called service %+v for an request %+v", service, req)
 	return
 }

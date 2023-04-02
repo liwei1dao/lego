@@ -31,6 +31,10 @@ func ParseFloat(b []byte, bitSize int) (float64, error) {
 	return strconv.ParseFloat(BytesToString(b), bitSize)
 }
 
+func ParseBool(b []byte) (bool, error) {
+	return strconv.ParseBool(BytesToString(b))
+}
+
 func UintToString(n uint64) string {
 	return BytesToString(strconv.AppendUint([]byte{}, n, 10))
 }

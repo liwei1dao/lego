@@ -2,11 +2,12 @@ package doris
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/liwei1dao/lego/utils/codec/json"
 
 	"github.com/liwei1dao/lego/utils/container/id"
 )

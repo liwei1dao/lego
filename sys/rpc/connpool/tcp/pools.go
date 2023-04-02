@@ -2,6 +2,7 @@ package tcp
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"sync"
 
@@ -22,9 +23,10 @@ const (
 
 func NewTcpConnPool(sys rpccore.ISys, log log.ILogger, config *rpccore.Config) (cpool *TcpConnPool, err error) {
 	cpool = &TcpConnPool{
-		sys:    sys,
-		log:    log,
-		config: config,
+		sys:     sys,
+		log:     log,
+		config:  config,
+		clients: make(map[string]rpccore.IConnClient),
 	}
 	return
 }
@@ -73,22 +75,15 @@ func (this *TcpConnPool) GetClient(node *core.ServiceNode) (client rpccore.IConn
 
 //创建远程连接客户端
 func (this *TcpConnPool) createClient(conn net.Conn, node *core.ServiceNode) (client rpccore.IConnClient, err error) {
-	if client, err = newClient(this, this.config, conn); err == nil {
-		if err = this.sys.ShakehandsRequest(context.Background(), client); err == nil {
-			this.clientMapMu.Lock()
-			this.clients[client.ServiceNode().GetNodePath()] = client
-			this.clientMapMu.Unlock()
-			client.Start(node)
-		}
-	}
-	return
-}
-
-//接收远程客户端
-func (this *TcpConnPool) acceptClient(conn net.Conn) (client rpccore.IConnClient, err error) {
 	if client, err = newClient(this, this.config, conn); err != nil {
-		this.log.Error("TcpConnPool acceptClient Err!", log.Field{Key: "err", Value: err.Error()})
+		this.log.Errorln(err)
+		return
 	}
+	if err = this.sys.ShakehandsRequest(context.Background(), client); err != nil {
+		this.log.Errorln(err)
+		return
+	}
+	this.AddClient(client, node)
 	return
 }
 
@@ -105,8 +100,31 @@ func (this *TcpConnPool) serveListener(ln net.Listener) error {
 				tc.SetLinger(10)
 			}
 		}
-		this.acceptClient(conn)
+		if _, err := newClient(this, this.config, conn); err != nil {
+			this.log.Error("newClient Err!", log.Field{Key: "err", Value: err.Error()})
+		}
 	}
+}
+
+func (this *TcpConnPool) AddClient(client rpccore.IConnClient, node *core.ServiceNode) (err error) {
+	var (
+		ok bool
+	)
+	this.clientMapMu.RLock()
+	_, ok = this.clients[node.GetNodePath()]
+	this.clientMapMu.RUnlock()
+	if !ok {
+		this.log.Debug("AddClient Succ!", log.Field{Key: "node", Value: node})
+		client.SetServiceNode(node)
+		this.clientMapMu.Lock()
+		this.clients[client.ServiceNode().GetNodePath()] = client
+		this.clientMapMu.Unlock()
+		client.Start()
+	} else {
+		err = fmt.Errorf("%v client already exists", node)
+		this.log.Errorln(err)
+	}
+	return
 }
 
 func (this *TcpConnPool) CloseClient(node *core.ServiceNode) (err error) {

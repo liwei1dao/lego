@@ -12,13 +12,13 @@ import (
 	"github.com/modern-go/reflect2"
 )
 
-func decoderOfArray(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecoder {
+func decoderOfArray(ctx codecore.ICtx, typ reflect2.Type) codecore.IDecoder {
 	arrayType := typ.(*reflect2.UnsafeArrayType)
 	decoder := DecoderOfType(ctx.Append("[arrayElem]"), arrayType.Elem())
 	return &arrayDecoder{arrayType, decoder}
 }
 
-func encoderOfArray(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
+func encoderOfArray(ctx codecore.ICtx, typ reflect2.Type) codecore.IEncoder {
 	arrayType := typ.(*reflect2.UnsafeArrayType)
 	if arrayType.Len() == 0 {
 		return &emptyArrayEncoder{}
@@ -66,7 +66,7 @@ func (this *arrayEncoder) EncodeToSliceJson(ptr unsafe.Pointer, w codecore.IWrit
 			return
 		}
 		ret[i] = string(w.Buffer())
-		w.Reset()
+		w.Reset(nil)
 	}
 	return
 }
@@ -116,7 +116,7 @@ func (this *arrayDecoder) DecodeForSliceJson(ptr unsafe.Pointer, r codecore.IRea
 	arrayType.UnsafeGetIndex(ptr, len(data))
 	for i, v := range data {
 		elemPtr := arrayType.UnsafeGetIndex(ptr, i)
-		r.ResetBytes(StringToBytes(v))
+		r.ResetBytes(StringToBytes(v), nil)
 		this.elemDecoder.Decode(elemPtr, r)
 		if r.Error() != nil && r.Error() != io.EOF {
 			err = r.Error()

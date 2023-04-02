@@ -20,7 +20,7 @@ func newClient(pool *TcpConnPool, config *rpccore.Config, conn net.Conn) (client
 		config: config,
 		conn:   conn,
 		hbeat:  0,
-		state:  0,
+		state:  int32(rpccore.ClientShakeHands),
 	}
 	go client.serveConn()
 	return
@@ -41,15 +41,19 @@ func (this *Client) ServiceNode() *core.ServiceNode {
 	return this.node
 }
 
+func (this *Client) SetServiceNode(node *core.ServiceNode) {
+	this.node = node
+}
+
 func (this *Client) ResetHbeat() {
 	atomic.StoreInt32(&this.hbeat, 0)
 }
+func (this *Client) State() rpccore.ClientState {
+	return rpccore.ClientState(atomic.LoadInt32(&this.state))
+}
 
-func (this *Client) Start(node *core.ServiceNode) {
-	this.node = node
-	atomic.StoreInt32(&this.state, 1)
-	this.wg.Add(1)
-	go this.heartbeat()
+func (this *Client) Start() {
+	atomic.StoreInt32(&this.state, int32(rpccore.ClientRuning))
 	return
 }
 
@@ -62,7 +66,9 @@ func (this *Client) Write(msg []byte) (err error) {
 }
 
 func (this *Client) Close() (err error) {
-	this.conn.Close()
+	if atomic.CompareAndSwapInt32(&this.state, int32(rpccore.ClientRuning), int32(rpccore.ClientClose)) {
+		this.conn.Close()
+	}
 	return
 }
 
@@ -95,6 +101,7 @@ func (this *Client) serveConn() {
 	}
 
 	r := bufio.NewReaderSize(this.conn, ReaderBuffsize)
+locp:
 	for {
 		t0 := time.Now()
 		if this.config.ReadTimeout > 0 {
@@ -103,8 +110,8 @@ func (this *Client) serveConn() {
 		req := protocol.GetPooledMsg()
 		err := req.Decode(r)
 		if err != nil {
-			this.pool.log.Errorf("err:%v", err)
-			return
+			go this.pool.CloseClient(this.node)
+			break locp
 		}
 		go this.pool.sys.Handle(this, req)
 	}

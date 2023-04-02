@@ -11,6 +11,7 @@ import (
 type Option func(*Options)
 type Options struct {
 	ServiceNode        *core.ServiceNode     //服务节点
+	ProtoVersion       byte                  //协议版本
 	SerializeType      rpccore.SerializeType //消息序列化方式 0:JSON 1:ProtoBuffer 2:MsgPack 3:Thrift
 	CompressType       rpccore.CompressType  //消息压缩模式	0:CompressNone 1:CompressGzip
 	ConnectType        rpccore.ConnectType   //RPC通信类型类型 0:Tcp 1:Kafka 2:Nats
@@ -29,6 +30,11 @@ type Options struct {
 func SetServiceNode(v *core.ServiceNode) Option {
 	return func(o *Options) {
 		o.ServiceNode = v
+	}
+}
+func SetProtoVersion(v byte) Option {
+	return func(o *Options) {
+		o.ProtoVersion = v
 	}
 }
 func SetCommType(v bool) Option {
@@ -55,7 +61,10 @@ func SetLog(v log.ILogger) Option {
 }
 
 func newOptions(config map[string]interface{}, opts ...Option) (options *Options, err error) {
-	options = &Options{}
+	options = &Options{
+		ProtoVersion:  1,
+		SerializeType: rpccore.MsgPack,
+	}
 	if config != nil {
 		mapstructure.Decode(config, options)
 	}
@@ -69,7 +78,10 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 }
 
 func newOptionsByOption(opts ...Option) (options *Options, err error) {
-	options = &Options{}
+	options = &Options{
+		ProtoVersion:  1,
+		SerializeType: rpccore.MsgPack,
+	}
 	for _, o := range opts {
 		o(options)
 	}

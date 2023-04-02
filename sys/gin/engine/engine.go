@@ -34,7 +34,8 @@ var defaultTrustedCIDRs = []*net.IPNet{
 }
 
 func NewEngine(opts ...Option) (engine *Engine) {
-	option, _ := newOptionsByOption(opts...)
+	option, _ := newOptions(opts...)
+
 	engine = &Engine{
 		RouterGroup: RouterGroup{
 			Handlers: nil,
@@ -51,7 +52,7 @@ func NewEngine(opts ...Option) (engine *Engine) {
 		UseRawPath:             false,
 		RemoveExtraSlash:       false,
 		UnescapePathValues:     true,
-		MaxMultipartMemory:     defaultMultipartMemory,
+		MaxMultipartMemory:     option.MultipartMemory,
 		trees:                  make(methodTrees, 0, 9),
 		delims:                 render.Delims{Left: "{{", Right: "}}"},
 		secureJSONPrefix:       "while(1);",

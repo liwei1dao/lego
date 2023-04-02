@@ -268,6 +268,10 @@ func readFloat64SlowPath(buf []byte) (ret float64, n int, err error) {
 	return
 }
 
+func ReadNumberAsString(buf []byte) (ret string, n int, err error) {
+	return readNumberAsString(buf)
+}
+
 //读取字符串数字
 func readNumberAsString(buf []byte) (ret string, n int, err error) {
 	strBuf := [16]byte{}

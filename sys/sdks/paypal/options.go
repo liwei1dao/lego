@@ -15,6 +15,7 @@ type Options struct {
 	IsSandBox bool   //paypal 是否是沙盒环境
 	Currency  string //货币类型 "USD" 美元
 	ReturnURL string //支付回调地址
+	CancelURL string //取消支付地址
 	Debug     bool   //日志是否开启
 	Log       log.ILogger
 }
@@ -49,6 +50,12 @@ func SetReturnURL(v string) Option {
 		o.ReturnURL = v
 	}
 }
+func SetCancelURL(v string) Option {
+	return func(o *Options) {
+		o.CancelURL = v
+	}
+}
+
 func SetDebug(v bool) Option {
 	return func(o *Options) {
 		o.Debug = v

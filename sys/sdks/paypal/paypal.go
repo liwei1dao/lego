@@ -2,7 +2,6 @@ package paypal
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/plutov/paypal/v4"
 )
@@ -47,12 +46,12 @@ func (this *PayPal) Write(p []byte) (n int, err error) {
 创建收款订单
 (*order).Links[1].Href就是支付的链接
 */
-func (this *PayPal) CreateOrder(orderId, uid string, amount float64) (order *paypal.Order, err error) {
+func (this *PayPal) CreateOrder(orderId, uid string, amount string) (order *paypal.Order, err error) {
 	purchaseUnits := make([]paypal.PurchaseUnitRequest, 1)
 	purchaseUnits[0] = paypal.PurchaseUnitRequest{
 		Amount: &paypal.PurchaseUnitAmount{
-			Currency: this.options.Currency,     //收款类型
-			Value:    fmt.Sprintf("%v", amount), //收款数量
+			Currency: this.options.Currency, //收款类型
+			Value:    amount,                //收款数量
 		},
 		InvoiceID:   orderId,
 		ReferenceID: uid,
@@ -79,5 +78,29 @@ func (this *PayPal) CreateOrder(orderId, uid string, amount float64) (order *pay
 func (this *PayPal) GetOrder(orderId string) (order *paypal.CaptureOrderResponse, err error) {
 	ctor := paypal.CaptureOrderRequest{}
 	order, err = this.client.CaptureOrder(context.Background(), orderId, ctor)
+	return
+}
+
+//回调(可以利用上面的回调链接实现) orderId 就是返回的token
+func (this *PayPal) PaypalCallback(orderId string) (isucc bool, err error) {
+	var (
+		order *paypal.CaptureOrderResponse
+	)
+	_, err = this.client.GetAccessToken(context.TODO())
+	if err != nil {
+		return
+	}
+	//log.Info(accessToken.Token,orderId)
+	ctor := paypal.CaptureOrderRequest{}
+	order, err = this.client.CaptureOrder(context.TODO(), orderId, ctor)
+	if err != nil {
+		return
+	}
+	//查看回调完成后订单状态是否支付完成。
+	if (*order).Status != "COMPLETED" {
+		return
+	}
+	isucc = true
+	this.options.Log.Debugf("支付成功 Status:%v Address:%v", order.Status, order.Address)
 	return
 }

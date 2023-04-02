@@ -5,11 +5,12 @@
 package engine
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/liwei1dao/lego/utils/codec/json"
 )
 
 // H is a shortcut for map[string]interface{}

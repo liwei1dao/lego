@@ -6,10 +6,11 @@ package binding
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
+
+	"github.com/liwei1dao/lego/utils/codec/json"
 )
 
 // EnableDecoderUseNumber is used to call the UseNumber method on the JSON
