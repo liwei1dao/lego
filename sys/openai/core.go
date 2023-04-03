@@ -1,8 +1,8 @@
 package openai
 
 type (
-	ISys interface{
-
+	ISys interface {
+		SendReq(content string) (results string, err error)
 	}
 )
 
@@ -18,4 +18,8 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 func NewSys(option ...Option) (sys ISys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
+}
+
+func SendReq(content string) (results string, err error) {
+	return defsys.SendReq(content)
 }
