@@ -114,6 +114,8 @@ func (this *ServiceBase) Run(mod ...core.IModule) {
 			err := v.mi.Start()
 			if err != nil {
 				log.Panicf(fmt.Sprintf("启动模块【%s】错误 err:%v", v.mi.GetType(), err))
+			} else {
+				log.Debugf("启动模块【%s】", v.mi.GetType())
 			}
 		}
 		for _, v := range this.modules {
