@@ -86,7 +86,7 @@ func (t *Task) Reset() {
 	t.circle = false
 }
 
-//启动时间轮
+// 启动时间轮
 func (this *TimeWheel) Start() {
 	// onlye once start
 	this.onceStart.Do(
@@ -112,7 +112,7 @@ func (this *TimeWheel) Remove(task *Task) error {
 	return nil
 }
 
-//停止时间轮
+// 停止时间轮
 func (this *TimeWheel) Stop() {
 	this.stopC <- struct{}{}
 }
@@ -134,7 +134,7 @@ func (this *TimeWheel) tickGenerator() {
 	}
 }
 
-//调度器
+// 调度器
 func (this *TimeWheel) schduler() {
 	queue := this.ticker.C
 	if this.tickQueue != nil {
@@ -157,7 +157,7 @@ func (this *TimeWheel) schduler() {
 	}
 }
 
-//清理
+// 清理
 func (this *TimeWheel) collectTask(task *Task) {
 	index := this.bucketIndexes[task.id]
 	delete(this.bucketIndexes, task.id)
@@ -182,21 +182,24 @@ func (this *TimeWheel) handleTick() {
 		}
 
 		if task.async {
-			go task.callback(task, task.args...)
+			go func(_task *Task) {
+				task.callback(task, task.args...)
+				this.collectTask(task)
+			}(task)
+
 		} else {
 			// optimize gopool
 			task.callback(task, task.args...)
 		}
-
 		// circle
 		if task.circle {
 			this.collectTask(task)
 			this.putCircle(task, modeIsCircle)
 			continue
 		}
-
-		// gc
-		this.collectTask(task)
+		if !task.async { //异步调用 不能直接回收
+			this.collectTask(task)
+		}
 	}
 
 	if this.currentIndex == this.bucketsNum-1 {
