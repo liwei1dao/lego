@@ -38,11 +38,11 @@ func EncoderOf(typ reflect2.Type, config *codecore.Config) codecore.IEncoder {
 	if encoder != nil {
 		return encoder
 	}
-	ctx := &codecore.Ctx{
-		Config:   config,
-		Prefix:   "",
-		Decoders: map[reflect2.Type]codecore.IDecoder{},
-		Encoders: map[reflect2.Type]codecore.IEncoder{},
+	ctx := &Ctx{
+		config:   config,
+		prefix:   "",
+		decoders: map[reflect2.Type]codecore.IDecoder{},
+		encoders: map[reflect2.Type]codecore.IEncoder{},
 	}
 	encoder = factory.EncoderOfType(ctx, typ)
 	if typ.LikePtr() {
@@ -57,14 +57,56 @@ func DecoderOf(typ reflect2.Type, config *codecore.Config) codecore.IDecoder {
 	if decoder != nil {
 		return decoder
 	}
-	ctx := &codecore.Ctx{
-		Config:   config,
-		Prefix:   "",
-		Decoders: map[reflect2.Type]codecore.IDecoder{},
-		Encoders: map[reflect2.Type]codecore.IEncoder{},
+	ctx := &Ctx{
+		config:   config,
+		prefix:   "",
+		decoders: map[reflect2.Type]codecore.IDecoder{},
+		encoders: map[reflect2.Type]codecore.IEncoder{},
 	}
 	ptrType := typ.(*reflect2.UnsafePtrType)
 	decoder = factory.DecoderOfType(ctx, ptrType.Elem())
 	AddDecoder(cacheKey, decoder)
 	return decoder
+}
+
+type Ctx struct {
+	config   *codecore.Config
+	prefix   string
+	encoders map[reflect2.Type]codecore.IEncoder
+	decoders map[reflect2.Type]codecore.IDecoder
+}
+
+func (this *Ctx) Config() *codecore.Config {
+	return this.config
+}
+
+func (this *Ctx) Prefix() string {
+	return this.prefix
+}
+func (this *Ctx) GetEncoder(rtype reflect2.Type) codecore.IEncoder {
+	return this.encoders[rtype]
+}
+func (this *Ctx) SetEncoder(rtype reflect2.Type, encoder codecore.IEncoder) {
+	this.encoders[rtype] = encoder
+}
+func (this *Ctx) GetDecoder(rtype reflect2.Type) codecore.IDecoder {
+	return this.decoders[rtype]
+}
+func (this *Ctx) SetDecoder(rtype reflect2.Type, decoder codecore.IDecoder) {
+	this.decoders[rtype] = decoder
+}
+func (this *Ctx) Append(prefix string) codecore.ICtx {
+	return &Ctx{
+		config:   this.config,
+		prefix:   this.prefix + " " + prefix,
+		encoders: this.encoders,
+		decoders: this.decoders,
+	}
+}
+
+func (this *Ctx) EncoderOf(typ reflect2.Type) codecore.IEncoder {
+	return EncoderOf(typ, this.config)
+}
+func (this *Ctx) DecoderOf(typ reflect2.Type) codecore.IDecoder {
+	return DecoderOf(typ, this.config)
 }

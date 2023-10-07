@@ -1,6 +1,7 @@
 package json
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"io"
@@ -16,21 +17,28 @@ import (
 )
 
 type JsonReader struct {
-	buf   []byte
-	head  int
-	tail  int
-	depth int
-	err   error
+	config           *codecore.Config
+	reader           io.Reader
+	buf              []byte
+	head             int
+	tail             int
+	depth            int
+	captureStartedAt int
+	captured         []byte
+	err              error
 }
 
-func (this *JsonReader) GetReader(buf []byte) codecore.IReader {
-	return GetReader(buf)
+func (this *JsonReader) Config() *codecore.Config {
+	return this.config
+}
+func (this *JsonReader) GetReader(buf []byte, r io.Reader) codecore.IReader {
+	return GetReader(buf, r)
 }
 func (this *JsonReader) PutReader(r codecore.IReader) {
 	PutReader(r)
 }
 func (this *JsonReader) GetWriter() codecore.IWriter {
-	return GetWriter()
+	return GetWriter(nil)
 }
 func (this *JsonReader) PutWriter(w codecore.IWriter) {
 	PutWriter(w)
@@ -45,7 +53,7 @@ func (this *JsonReader) ReadVal(obj interface{}) {
 			this.reportError("ReadVal", "can only unmarshal into pointer")
 			return
 		}
-		decoder = codec.DecoderOf(typ, defconf)
+		decoder = codec.DecoderOf(typ, this.config)
 	}
 	ptr := reflect2.PtrOf(obj)
 	if ptr == nil {
@@ -69,6 +77,14 @@ func (this *JsonReader) Read() interface{} {
 	case codecore.StringValue:
 		return this.ReadString()
 	case codecore.NumberValue:
+		if this.config.UseNumber {
+			ret, n, err := utils.ReadNumberAsString(this.buf[this.head:])
+			if err != nil {
+				this.err = err
+			}
+			this.head += n
+			return json.Number(ret)
+		}
 		return this.ReadFloat64()
 	case codecore.NilValue:
 		this.skipFourBytes('n', 'u', 'l', 'l')
@@ -187,6 +203,15 @@ func (this *JsonReader) ReadKeyEnd() (ret bool) {
 	this.reportError("ReadKeyEnd", `expect " but found `+string([]byte{c}))
 	return
 }
+
+func (this *JsonReader) SkipAndReturnBytes() []byte {
+	this.nextToken()
+	this.unreadByte()
+	this.startCapture(this.head)
+	this.Skip()
+	return this.stopCapture()
+}
+
 func (this *JsonReader) Skip() {
 	c := this.nextToken()
 	switch c {
@@ -370,10 +395,16 @@ func (this *JsonReader) ReadString() (ret string) {
 	this.reportError("ReadString", `expects " or n, but found `+string([]byte{c}))
 	return
 }
-func (this *JsonReader) ResetBytes(d []byte) {
+func (this *JsonReader) ResetBytes(d []byte, r io.Reader) {
 	this.buf = d
+	this.reader = r
 	this.head = 0
 	this.tail = len(d)
+	if this.reader != nil {
+		if !this.loadMore() {
+			this.err = io.EOF
+		}
+	}
 }
 func (this *JsonReader) Error() error {
 	return this.err
@@ -385,6 +416,11 @@ func (this *JsonReader) SetErr(err error) {
 //-----------------------------------------------------------------------------------------------------------------------------------
 func (this *JsonReader) readByte() (ret byte) {
 	if this.head == this.tail {
+		if this.loadMore() {
+			ret = this.buf[this.head]
+			this.head++
+			return ret
+		}
 		return 0
 	}
 	ret = this.buf[this.head]
@@ -487,17 +523,51 @@ func (this *JsonReader) readU4() (ret rune) {
 	}
 	return ret
 }
-func (this *JsonReader) nextToken() byte {
-	for i := this.head; i < this.tail; i++ {
-		c := this.buf[i]
-		switch c {
-		case ' ', '\n', '\t', '\r':
-			continue
+func (iter *JsonReader) loadMore() bool {
+	if iter.reader == nil {
+		if iter.Error == nil {
+			iter.head = iter.tail
+			iter.err = io.EOF
 		}
-		this.head = i + 1
-		return c
+		return false
 	}
-	return 0
+	if iter.captured != nil {
+		iter.captured = append(iter.captured,
+			iter.buf[iter.captureStartedAt:iter.tail]...)
+		iter.captureStartedAt = 0
+	}
+	for {
+		n, err := iter.reader.Read(iter.buf)
+		if n == 0 {
+			if err != nil {
+				if iter.err == nil {
+					iter.err = err
+				}
+				return false
+			}
+		} else {
+			iter.head = 0
+			iter.tail = n
+			return true
+		}
+	}
+}
+
+func (this *JsonReader) nextToken() byte {
+	for {
+		for i := this.head; i < this.tail; i++ {
+			c := this.buf[i]
+			switch c {
+			case ' ', '\n', '\t', '\r':
+				continue
+			}
+			this.head = i + 1
+			return c
+		}
+		if !this.loadMore() {
+			return 0
+		}
+	}
 }
 func (this *JsonReader) unreadByte() {
 	if this.err != nil {
@@ -505,6 +575,26 @@ func (this *JsonReader) unreadByte() {
 	}
 	this.head--
 	return
+}
+func (this *JsonReader) startCapture(captureStartedAt int) {
+	this.startCaptureTo(make([]byte, 0, 32), captureStartedAt)
+}
+func (this *JsonReader) startCaptureTo(buf []byte, captureStartedAt int) {
+	if this.captured != nil {
+		panic("already in capture mode")
+	}
+	this.captureStartedAt = captureStartedAt
+	this.captured = buf
+}
+func (this *JsonReader) stopCapture() []byte {
+	if this.captured == nil {
+		panic("not in capture mode")
+	}
+	captured := this.captured
+	remaining := this.buf[this.captureStartedAt:this.head]
+	this.captureStartedAt = -1
+	this.captured = nil
+	return append(captured, remaining...)
 }
 func (this *JsonReader) skipNumber() {
 	if !this.trySkipNumber() {

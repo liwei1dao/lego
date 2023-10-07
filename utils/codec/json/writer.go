@@ -1,6 +1,8 @@
 package json
 
 import (
+	"io"
+
 	"github.com/liwei1dao/lego/utils/codec"
 	"github.com/liwei1dao/lego/utils/codec/codecore"
 	"github.com/liwei1dao/lego/utils/codec/utils"
@@ -8,22 +10,25 @@ import (
 	"github.com/modern-go/reflect2"
 )
 
-const indentionStep = 1
-
 type JsonWriter struct {
-	err       error
+	config    *codecore.Config
+	out       io.Writer
 	buf       []byte
 	indention int
+	err       error
 }
 
-func (this *JsonWriter) GetReader(buf []byte) codecore.IReader {
-	return GetReader(buf)
+func (this *JsonWriter) Config() *codecore.Config {
+	return this.config
+}
+func (this *JsonWriter) GetReader(buf []byte, r io.Reader) codecore.IReader {
+	return GetReader(buf, r)
 }
 func (this *JsonWriter) PutReader(r codecore.IReader) {
 	PutReader(r)
 }
 func (this *JsonWriter) GetWriter() codecore.IWriter {
-	return GetWriter()
+	return GetWriter(nil)
 }
 func (this *JsonWriter) PutWriter(w codecore.IWriter) {
 	PutWriter(w)
@@ -51,26 +56,26 @@ func (this *JsonWriter) WriteEmptyArray() {
 	this.writeTwoBytes('[', ']')
 }
 func (this *JsonWriter) WriteArrayStart() {
-	this.indention += indentionStep
+	this.indention += this.config.IndentionStep
 	this.writeByte('[')
 	this.writeIndention(0)
 }
 func (this *JsonWriter) WriteArrayEnd() {
-	this.writeIndention(indentionStep)
-	this.indention -= indentionStep
+	this.writeIndention(this.config.IndentionStep)
+	this.indention -= this.config.IndentionStep
 	this.writeByte(']')
 }
 func (this *JsonWriter) WriteEmptyObject() {
 	this.writeTwoBytes('{', '}')
 }
 func (this *JsonWriter) WriteObjectStart() {
-	this.indention += indentionStep
+	this.indention += this.config.IndentionStep
 	this.writeByte('{')
 	this.writeIndention(0)
 }
 func (this *JsonWriter) WriteObjectEnd() {
-	this.writeIndention(indentionStep)
-	this.indention -= indentionStep
+	this.writeIndention(this.config.IndentionStep)
+	this.indention -= this.config.IndentionStep
 	this.writeByte('}')
 }
 func (this *JsonWriter) WriteMemberSplit() {
@@ -149,10 +154,40 @@ func (this *JsonWriter) WriteString(val string) {
 	}
 	utils.WriteStringSlowPath(&this.buf, i, val, valLen)
 }
+
+func (this *JsonWriter) Write(p []byte) (nn int, err error) {
+	this.buf = append(this.buf, p...)
+	if this.out != nil {
+		nn, err = this.out.Write(this.buf)
+		this.buf = this.buf[nn:]
+		return
+	}
+	return len(p), nil
+}
+
+func (this *JsonWriter) Flush() error {
+	if this.out == nil {
+		return nil
+	}
+	if this.err != nil {
+		return this.err
+	}
+	_, err := this.out.Write(this.buf)
+	if err != nil {
+		if this.err == nil {
+			this.err = err
+		}
+		return err
+	}
+	this.buf = this.buf[:0]
+	return nil
+}
+
 func (this *JsonWriter) WriteBytes(val []byte) {
+
 	this.buf = append(this.buf, val...)
 }
-func (this *JsonWriter) Reset() {
+func (this *JsonWriter) Reset(w io.Writer) {
 	this.buf = []byte{}
 	this.err = nil
 	this.indention = 0
