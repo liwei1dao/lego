@@ -105,6 +105,16 @@ func (this *Redis) LRange(key string, start, end int, v interface{}) (err error)
 }
 
 /*
+Redis Lrange 返回列表中指定区间内的元素，区间以偏移量 START 和 END 指定。 其中 0 表示列表的第一个元素， 1 表示列表的第二个元素，
+以此类推。 你也可以使用负数下标，以 -1 表示列表的最后一个元素， -2 表示列表的倒数第二个元素，以此类推
+*/
+func (this *Redis) LRangeToStringSlice(key string, start, end int) *redis.StringSliceCmd {
+	cmd := redis.NewStringSliceCmd(this.client.Context(), "LRANGE", key, start, end)
+	this.client.Process(this.client.Context(), cmd)
+	return cmd
+}
+
+/*
 Redis Lrem 根据参数 COUNT 的值，移除列表中与参数 VALUE 相等的元素。
 COUNT 的值可以是以下几种：
 count > 0 : 从表头开始向表尾搜索，移除与 VALUE 相等的元素，数量为 COUNT 。

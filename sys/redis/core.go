@@ -57,6 +57,7 @@ type (
 		LPush(key string, values ...interface{}) (err error)
 		LPushX(key string, values ...interface{}) (err error)
 		LRange(key string, start, end int, v interface{}) (err error)
+		LRangeToStringSlice(key string, start, end int) *redis.StringSliceCmd
 		LRem(key string, count int, target interface{}) (err error)
 		LSet(key string, index int, value interface{}) (err error)
 		Ltrim(key string, start, stop int) (err error)
@@ -307,6 +308,9 @@ func LPushX(key string, values ...interface{}) (err error) {
 }
 func LRange(key string, start, end int, v interface{}) (err error) {
 	return defsys.LRange(key, start, end, v)
+}
+func LRangeToStringSlice(key string, start, end int) *redis.StringSliceCmd {
+	return defsys.LRangeToStringSlice(key, start, end)
 }
 func LRem(key string, count int, target interface{}) (err error) {
 	return defsys.LRem(key, count, target)

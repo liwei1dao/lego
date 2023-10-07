@@ -186,6 +186,9 @@ func (this *Redis) LPushX(key string, values ...interface{}) (err error) {
 func (this *Redis) LRange(key string, start, end int, v interface{}) (err error) {
 	return this.client.LRange(key, start, end, v)
 }
+func (this *Redis) LRangeToStringSlice(key string, start, end int) *redis.StringSliceCmd {
+	return this.client.LRangeToStringSlice(key, start, end)
+}
 func (this *Redis) LRem(key string, count int, target interface{}) (err error) {
 	return this.client.LRem(key, count, target)
 }
