@@ -35,25 +35,21 @@ func (this sortableBindings) Swap(i, j int) {
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------
-func EncoderOfType(ctx codecore.ICtx, typ reflect2.Type) codecore.IEncoder {
-	encoder := ctx.GetEncoder(typ)
+func EncoderOfType(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
+	encoder := ctx.Encoders[typ]
 	if encoder != nil {
 		return encoder
 	}
 	root := &rootEncoder{}
-	ctx.SetEncoder(typ, root)
+	ctx.Encoders[typ] = root
 	encoder = _createEncoderOfType(ctx, typ)
 	root.encoder = encoder
 	return encoder
 }
 
-func _createEncoderOfType(ctx codecore.ICtx, typ reflect2.Type) codecore.IEncoder {
+func _createEncoderOfType(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
 	var encoder codecore.IEncoder
 	encoder = createEncoderOfNative(ctx, typ)
-	if encoder != nil {
-		return encoder
-	}
-	encoder = createEncoderOfMarshaler(ctx, typ)
 	if encoder != nil {
 		return encoder
 	}
@@ -72,35 +68,29 @@ func _createEncoderOfType(ctx codecore.ICtx, typ reflect2.Type) codecore.IEncode
 	case reflect.Ptr:
 		return encoderOfOptional(ctx, typ)
 	default:
-		return &lazyErrorEncoder{err: fmt.Errorf("%s %s is unsupported type", ctx.Prefix(), typ.String())}
+		return &lazyErrorEncoder{err: fmt.Errorf("%s %s is unsupported type", ctx.Prefix, typ.String())}
 	}
 }
 
-func DecoderOfType(ctx codecore.ICtx, typ reflect2.Type) codecore.IDecoder {
-	decoder := ctx.GetDecoder(typ)
+func DecoderOfType(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecoder {
+	decoder := ctx.Decoders[typ]
 	if decoder != nil {
 		return decoder
 	}
 	root := &rootDecoder{}
-	ctx.SetDecoder(typ, root)
+	ctx.Decoders[typ] = root
 	decoder = _createDecoderOfType(ctx, typ)
 	root.decoder = decoder
 	return decoder
 }
 
-func _createDecoderOfType(ctx codecore.ICtx, typ reflect2.Type) codecore.IDecoder {
+func _createDecoderOfType(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecoder {
 	var decoder codecore.IDecoder
 
 	decoder = createDecoderOfNative(ctx, typ)
 	if decoder != nil {
 		return decoder
 	}
-
-	decoder = createDecoderOfMarshaler(ctx, typ)
-	if decoder != nil {
-		return decoder
-	}
-
 	switch typ.Kind() {
 	case reflect.Interface:
 		ifaceType, isIFace := typ.(*reflect2.UnsafeIFaceType)
@@ -119,7 +109,7 @@ func _createDecoderOfType(ctx codecore.ICtx, typ reflect2.Type) codecore.IDecode
 	case reflect.Ptr:
 		return decoderOfOptional(ctx, typ)
 	default:
-		return &lazyErrorDecoder{err: fmt.Errorf("%s %s is unsupported type", ctx.Prefix(), typ.String())}
+		return &lazyErrorDecoder{err: fmt.Errorf("%s %s is unsupported type", ctx.Prefix, typ.String())}
 	}
 }
 
