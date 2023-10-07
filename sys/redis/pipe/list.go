@@ -200,6 +200,15 @@ func (this *RedisPipe) RPush(key string, values ...interface{}) (err error) {
 }
 
 /*
+Redis Rpush 命令用于将一个或多个值插入到列表的尾部(最右边)。
+如果列表不存在，一个空列表会被创建并执行 RPUSH 操作。 当列表存在但不是列表类型时，返回一个错误。
+注意：在 Redis 2.4 版本以前的 RPUSH 命令，都只接受单个 value 值
+*/
+func (this *RedisPipe) RPushForStringSlice(key string, values ...string) *redis.IntCmd {
+	return this.client.RPush(this.ctx, key, values)
+}
+
+/*
 Redis Rpushx 命令用于将一个值插入到已存在的列表尾部(最右边)。如果列表不存在，操作无效
 */
 func (this *RedisPipe) RPushX(key string, values ...interface{}) (err error) {
