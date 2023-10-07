@@ -1,7 +1,6 @@
 package codecore
 
 import (
-	"io"
 	"reflect"
 	"unsafe"
 
@@ -30,14 +29,13 @@ const (
 
 type (
 	IPools interface {
-		GetReader(buf []byte, r io.Reader) IReader
+		GetReader(buf []byte) IReader
 		PutReader(w IReader)
 		GetWriter() IWriter
 		PutWriter(w IWriter)
 	}
 	IReader interface {
 		IPools
-		Config() *Config         //解析配置
 		ReadVal(obj interface{}) //读取指定类型对象
 		WhatIsNext() ValueType
 		Read() interface{}
@@ -53,7 +51,6 @@ type (
 		ReadKeyStart() (ret bool)         //读取字段名 开始
 		ReadKeyEnd() (ret bool)           //读取字段名 结束
 		Skip()                            //跳过一个数据单元 容错处理
-		SkipAndReturnBytes() []byte       //跳过一个数据单元并返回中间的数据
 		ReadBool() (ret bool)
 		ReadInt8() (ret int8)
 		ReadInt16() (ret int16)
@@ -66,13 +63,12 @@ type (
 		ReadFloat32() (ret float32)
 		ReadFloat64() (ret float64)
 		ReadString() (ret string)
-		ResetBytes(d []byte, r io.Reader)
+		ResetBytes(d []byte)
 		Error() error
 		SetErr(err error)
 	}
 	IWriter interface {
 		IPools
-		Config() *Config
 		WriteVal(val interface{})        //写入一个对象
 		WriteNil()                       //写空 null
 		WriteEmptyArray()                //写空数组 []
@@ -99,9 +95,7 @@ type (
 		WriteFloat64(val float64)
 		WriteString(val string)
 		WriteBytes(val []byte)
-		Write(p []byte) (nn int, err error)
-		Flush() error
-		Reset(w io.Writer)
+		Reset()
 		Buffer() []byte //返回缓存区数据
 		Buffered() int
 		Error() error
@@ -136,27 +130,29 @@ type (
 	IsEmbeddedPtrNil interface {
 		IsEmbeddedPtrNil(ptr unsafe.Pointer) bool
 	}
-	ICtx interface {
-		Config() *Config
-		Prefix() string
-		Append(prefix string) ICtx
-		GetEncoder(rtype reflect2.Type) IEncoder
-		SetEncoder(rtype reflect2.Type, encoder IEncoder)
-		GetDecoder(rtype reflect2.Type) IDecoder
-		SetDecoder(rtype reflect2.Type, decoder IDecoder)
-		EncoderOf(typ reflect2.Type) IEncoder
-		DecoderOf(typ reflect2.Type) IDecoder
-	}
 )
 
 //序列化配置
 type Config struct {
-	EscapeHTML            bool
-	SortMapKeys           bool //排序mapkey
-	UseNumber             bool
+	SortMapKeys           bool   //排序mapkey
 	IndentionStep         int    //缩进步骤
 	OnlyTaggedField       bool   //仅仅处理标签字段
 	DisallowUnknownFields bool   //禁止未知字段
 	CaseSensitive         bool   //是否区分大小写
 	TagKey                string //标签
+}
+type Ctx struct {
+	Config   *Config
+	Prefix   string
+	Encoders map[reflect2.Type]IEncoder
+	Decoders map[reflect2.Type]IDecoder
+}
+
+func (this *Ctx) Append(prefix string) *Ctx {
+	return &Ctx{
+		Config:   this.Config,
+		Prefix:   this.Prefix + " " + prefix,
+		Encoders: this.Encoders,
+		Decoders: this.Decoders,
+	}
 }

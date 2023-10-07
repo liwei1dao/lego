@@ -30,7 +30,7 @@ type Binding struct {
 	Decoder   codecore.IDecoder
 }
 
-func encoderOfStruct(ctx codecore.ICtx, typ reflect2.Type) codecore.IEncoder {
+func encoderOfStruct(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
 	type bindingTo struct {
 		binding *Binding
 		toName  string
@@ -48,7 +48,7 @@ func encoderOfStruct(ctx codecore.ICtx, typ reflect2.Type) codecore.IEncoder {
 				if old.toName != toName {
 					continue
 				}
-				old.ignored, new.ignored = resolveConflictBinding(ctx.Config(), old.binding, new.binding)
+				old.ignored, new.ignored = resolveConflictBinding(ctx.Config, old.binding, new.binding)
 			}
 			orderedBindings = append(orderedBindings, new)
 		}
@@ -68,7 +68,7 @@ func encoderOfStruct(ctx codecore.ICtx, typ reflect2.Type) codecore.IEncoder {
 	return &structEncoder{typ, finalOrderedFields}
 }
 
-func decoderOfStruct(ctx codecore.ICtx, typ reflect2.Type) codecore.IDecoder {
+func decoderOfStruct(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecoder {
 	bindings := map[string]*Binding{}
 	structDescriptor := describeStruct(ctx, typ)
 	for _, binding := range structDescriptor.Fields {
@@ -78,7 +78,7 @@ func decoderOfStruct(ctx codecore.ICtx, typ reflect2.Type) codecore.IDecoder {
 				bindings[fromName] = binding
 				continue
 			}
-			ignoreOld, ignoreNew := resolveConflictBinding(ctx.Config(), old, binding)
+			ignoreOld, ignoreNew := resolveConflictBinding(ctx.Config, old, binding)
 			if ignoreOld {
 				delete(bindings, fromName)
 			}
@@ -92,18 +92,18 @@ func decoderOfStruct(ctx codecore.ICtx, typ reflect2.Type) codecore.IDecoder {
 		fields[k] = binding.Decoder.(*structFieldDecoder)
 	}
 
-	if !ctx.Config().CaseSensitive {
+	if !ctx.Config.CaseSensitive {
 		for k, binding := range bindings {
 			if _, found := fields[strings.ToLower(k)]; !found {
 				fields[strings.ToLower(k)] = binding.Decoder.(*structFieldDecoder)
 			}
 		}
 	}
-	return &structDecoder{ctx.Config(), typ, fields}
+	return &structDecoder{ctx.Config, typ, fields}
 }
 
 //结构第编辑码构建
-func describeStruct(ctx codecore.ICtx, typ reflect2.Type) *StructDescriptor {
+func describeStruct(ctx *codecore.Ctx, typ reflect2.Type) *StructDescriptor {
 	structType := typ.(*reflect2.UnsafeStructType)
 	embeddedBindings := []*Binding{}
 	bindings := []*Binding{}
@@ -112,8 +112,8 @@ func describeStruct(ctx codecore.ICtx, typ reflect2.Type) *StructDescriptor {
 		if !utils.IsExported(field.Name()) { //内部字段不处理
 			continue
 		}
-		tag, hastag := field.Tag().Lookup(ctx.Config().TagKey)
-		if ctx.Config().OnlyTaggedField && !hastag && !field.Anonymous() {
+		tag, hastag := field.Tag().Lookup(ctx.Config.TagKey)
+		if ctx.Config.OnlyTaggedField && !hastag && !field.Anonymous() {
 			continue
 		}
 		if tag == "-" || field.Name() == "_" {
@@ -164,12 +164,12 @@ func describeStruct(ctx codecore.ICtx, typ reflect2.Type) *StructDescriptor {
 	return createStructDescriptor(ctx, typ, bindings, embeddedBindings)
 }
 
-func createStructDescriptor(ctx codecore.ICtx, typ reflect2.Type, bindings []*Binding, embeddedBindings []*Binding) *StructDescriptor {
+func createStructDescriptor(ctx *codecore.Ctx, typ reflect2.Type, bindings []*Binding, embeddedBindings []*Binding) *StructDescriptor {
 	structDescriptor := &StructDescriptor{
 		Type:   typ,
 		Fields: bindings,
 	}
-	processTags(structDescriptor, ctx.Config())
+	processTags(structDescriptor, ctx.Config)
 	allBindings := sortableBindings(append(embeddedBindings, structDescriptor.Fields...))
 	sort.Sort(allBindings)
 	structDescriptor.Fields = allBindings
@@ -280,7 +280,7 @@ func (this *structEncoder) EncodeToMapJson(ptr unsafe.Pointer, w codecore.IWrite
 		if field.encoder.IsEmbeddedPtrNil(ptr) {
 			continue
 		}
-		w.Reset(nil)
+		w.Reset()
 		field.encoder.Encode(ptr, w)
 		if w.Error() != nil && w.Error() != io.EOF {
 			err = w.Error()
@@ -308,8 +308,8 @@ func (this *structDecoder) Decode(ptr unsafe.Pointer, r codecore.IReader) {
 	if !r.ReadObjectStart() {
 		return
 	}
+
 	if r.CheckNextIsObjectEnd() { //空对象直接跳出
-		// r.ReadObjectEnd()
 		return
 	}
 
@@ -354,7 +354,7 @@ func (this *structDecoder) decodeField(ptr unsafe.Pointer, r codecore.IReader) {
 //解码对象从MapJson 中
 func (this *structDecoder) DecodeForMapJson(ptr unsafe.Pointer, r codecore.IReader, extra map[string]string) (err error) {
 	var fieldDecoder *structFieldDecoder
-	ext := r.GetReader([]byte{}, nil)
+	ext := r.GetReader([]byte{})
 	for k, v := range extra {
 		fieldDecoder = this.fields[k]
 		if fieldDecoder == nil && !this.config.CaseSensitive {
@@ -367,7 +367,7 @@ func (this *structDecoder) DecodeForMapJson(ptr unsafe.Pointer, r codecore.IRead
 			}
 			continue
 		}
-		ext.ResetBytes(StringToBytes(v), nil)
+		ext.ResetBytes(StringToBytes(v))
 		fieldDecoder.Decode(ptr, ext)
 		if ext.Error() != nil && ext.Error() != io.EOF {
 			err = ext.Error()

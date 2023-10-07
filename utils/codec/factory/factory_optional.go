@@ -10,14 +10,14 @@ import (
 	"github.com/modern-go/reflect2"
 )
 
-func decoderOfOptional(ctx codecore.ICtx, typ reflect2.Type) codecore.IDecoder {
+func decoderOfOptional(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecoder {
 	ptrType := typ.(*reflect2.UnsafePtrType)
 	elemType := ptrType.Elem()
 	decoder := DecoderOfType(ctx, elemType)
 	return &OptionalDecoder{elemType, decoder}
 }
 
-func encoderOfOptional(ctx codecore.ICtx, typ reflect2.Type) codecore.IEncoder {
+func encoderOfOptional(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
 	ptrType := typ.(*reflect2.UnsafePtrType)
 	elemType := ptrType.Elem()
 	elemEncoder := EncoderOfType(ctx, elemType)
@@ -95,9 +95,6 @@ type referenceEncoder struct {
 	encoder codecore.IEncoder
 }
 
-func (this *referenceEncoder) GetType() reflect.Kind {
-	return this.encoder.GetType()
-}
 func (this *referenceEncoder) Encode(ptr unsafe.Pointer, stream codecore.IWriter) {
 	this.encoder.Encode(unsafe.Pointer(&ptr), stream)
 }
@@ -108,10 +105,6 @@ func (this *referenceEncoder) IsEmpty(ptr unsafe.Pointer) bool {
 
 type referenceDecoder struct {
 	decoder codecore.IDecoder
-}
-
-func (this *referenceDecoder) GetType() reflect.Kind {
-	return this.decoder.GetType()
 }
 
 func (this *referenceDecoder) Decode(ptr unsafe.Pointer, extra codecore.IReader) {

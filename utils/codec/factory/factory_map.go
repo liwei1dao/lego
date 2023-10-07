@@ -12,7 +12,7 @@ import (
 	"github.com/modern-go/reflect2"
 )
 
-func decoderOfMap(ctx codecore.ICtx, typ reflect2.Type) codecore.IDecoder {
+func decoderOfMap(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecoder {
 	mapType := typ.(*reflect2.UnsafeMapType)
 	keyDecoder := decoderOfMapKey(ctx.Append("[mapKey]"), mapType.Key())
 	elemDecoder := DecoderOfType(ctx.Append("[mapElem]"), mapType.Elem())
@@ -25,9 +25,9 @@ func decoderOfMap(ctx codecore.ICtx, typ reflect2.Type) codecore.IDecoder {
 	}
 }
 
-func encoderOfMap(ctx codecore.ICtx, typ reflect2.Type) codecore.IEncoder {
+func encoderOfMap(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
 	mapType := typ.(*reflect2.UnsafeMapType)
-	if ctx.Config().SortMapKeys {
+	if ctx.Config.SortMapKeys {
 		return &sortKeysMapEncoder{
 			mapType:     mapType,
 			keyEncoder:  encoderOfMapKey(ctx.Append("[mapKey]"), mapType.Key()),
@@ -41,7 +41,7 @@ func encoderOfMap(ctx codecore.ICtx, typ reflect2.Type) codecore.IEncoder {
 	}
 }
 
-func decoderOfMapKey(ctx codecore.ICtx, typ reflect2.Type) codecore.IDecoder {
+func decoderOfMapKey(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecoder {
 	switch typ.Kind() {
 	case reflect.String:
 		return DecoderOfType(ctx, reflect2.DefaultTypeOfKind(reflect.String))
@@ -60,7 +60,7 @@ func decoderOfMapKey(ctx codecore.ICtx, typ reflect2.Type) codecore.IDecoder {
 	}
 }
 
-func encoderOfMapKey(ctx codecore.ICtx, typ reflect2.Type) codecore.IEncoder {
+func encoderOfMapKey(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
 	switch typ.Kind() {
 	case reflect.String:
 		return EncoderOfType(ctx, reflect2.DefaultTypeOfKind(reflect.String))
@@ -100,7 +100,7 @@ func (encoder *sortKeysMapEncoder) Encode(ptr unsafe.Pointer, w codecore.IWriter
 	w.WriteObjectStart()
 	mapIter := encoder.mapType.UnsafeIterate(ptr)
 	subStream := w.GetWriter()
-	subIter := w.GetReader(nil, nil)
+	subIter := w.GetReader(nil)
 	keyValues := encodedKeyValues{}
 	for mapIter.HasNext() {
 		key, elem := mapIter.UnsafeNext()
@@ -110,7 +110,7 @@ func (encoder *sortKeysMapEncoder) Encode(ptr unsafe.Pointer, w codecore.IWriter
 			w.SetErr(subStream.Error())
 		}
 		encodedKey := subStream.Buffer()[subStreamIndex:]
-		subIter.ResetBytes(encodedKey, nil)
+		subIter.ResetBytes(encodedKey)
 		decodedKey := subIter.ReadString()
 		subStream.WriteKVSplit()
 		encoder.elemEncoder.Encode(elem, subStream)
@@ -169,8 +169,8 @@ func (this *sortKeysMapEncoder) EncodeToMapJson(ptr unsafe.Pointer, w codecore.I
 			v = *((*string)(elem))
 		}
 		ret[k] = v
-		keystream.Reset(nil)
-		elemstream.Reset(nil)
+		keystream.Reset()
+		elemstream.Reset()
 	}
 	return
 }
@@ -243,8 +243,8 @@ func (this *mapEncoder) EncodeToMapJson(ptr unsafe.Pointer, w codecore.IWriter) 
 			v = *((*string)(elem))
 		}
 		ret[k] = v
-		keystream.Reset(nil)
-		elemstream.Reset(nil)
+		keystream.Reset()
+		elemstream.Reset()
 	}
 	return
 }
@@ -305,8 +305,8 @@ func (this *mapDecoder) Decode(ptr unsafe.Pointer, extra codecore.IReader) {
 
 //解码对象从MapJson 中
 func (this *mapDecoder) DecodeForMapJson(ptr unsafe.Pointer, r codecore.IReader, extra map[string]string) (err error) {
-	keyext := r.GetReader([]byte{}, nil)
-	elemext := r.GetReader([]byte{}, nil)
+	keyext := r.GetReader([]byte{})
+	elemext := r.GetReader([]byte{})
 	defer func() {
 		r.PutReader(keyext)
 		r.PutReader(keyext)
@@ -314,7 +314,7 @@ func (this *mapDecoder) DecodeForMapJson(ptr unsafe.Pointer, r codecore.IReader,
 	for k, v := range extra {
 		key := this.keyType.UnsafeNew()
 		if this.keyDecoder.GetType() != reflect.String {
-			keyext.ResetBytes(StringToBytes(k), nil)
+			keyext.ResetBytes(StringToBytes(k))
 			this.keyDecoder.Decode(key, keyext)
 			if keyext.Error() != nil && keyext.Error() != io.EOF {
 				err = keyext.Error()
@@ -325,7 +325,7 @@ func (this *mapDecoder) DecodeForMapJson(ptr unsafe.Pointer, r codecore.IReader,
 		}
 		elem := this.elemType.UnsafeNew()
 		if this.elemDecoder.GetType() != reflect.String {
-			elemext.ResetBytes(StringToBytes(v), nil)
+			elemext.ResetBytes(StringToBytes(v))
 			this.elemDecoder.Decode(elem, elemext)
 			this.mapType.UnsafeSetIndex(ptr, key, elem)
 			if elemext.Error() != nil && elemext.Error() != io.EOF {
@@ -376,7 +376,7 @@ func (encoder *numericMapKeyEncoder) IsEmpty(ptr unsafe.Pointer) bool {
 
 //------------------------------------------------------------------------------------------------------------------
 type dynamicMapKeyEncoder struct {
-	ctx     codecore.ICtx
+	ctx     *codecore.Ctx
 	valType reflect2.Type
 }
 

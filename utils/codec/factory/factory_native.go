@@ -12,7 +12,7 @@ import (
 
 const ptrSize = 32 << uintptr(^uintptr(0)>>63) //计算int的大小 是32 还是64
 
-func createDecoderOfNative(ctx codecore.ICtx, typ reflect2.Type) codecore.IDecoder {
+func createDecoderOfNative(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecoder {
 	typeName := typ.String()
 	switch typ.Kind() {
 	case reflect.String:
@@ -103,7 +103,7 @@ func createDecoderOfNative(ctx codecore.ICtx, typ reflect2.Type) codecore.IDecod
 	return nil
 }
 
-func createEncoderOfNative(ctx codecore.ICtx, typ reflect2.Type) codecore.IEncoder {
+func createEncoderOfNative(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
 	typeName := typ.String()
 	kind := typ.Kind()
 	switch kind {

@@ -12,12 +12,12 @@ import (
 	"github.com/modern-go/reflect2"
 )
 
-func decoderOfSlice(ctx codecore.ICtx, typ reflect2.Type) codecore.IDecoder {
+func decoderOfSlice(ctx *codecore.Ctx, typ reflect2.Type) codecore.IDecoder {
 	sliceType := typ.(*reflect2.UnsafeSliceType)
 	decoder := DecoderOfType(ctx.Append("[sliceElem]"), sliceType.Elem())
 	return &sliceDecoder{sliceType, decoder}
 }
-func encoderOfSlice(ctx codecore.ICtx, typ reflect2.Type) codecore.IEncoder {
+func encoderOfSlice(ctx *codecore.Ctx, typ reflect2.Type) codecore.IEncoder {
 	sliceType := typ.(*reflect2.UnsafeSliceType)
 	encoder := EncoderOfType(ctx.Append("[sliceElem]"), sliceType.Elem())
 	return &sliceEncoder{sliceType, encoder}
@@ -77,7 +77,7 @@ func (this *sliceEncoder) EncodeToSliceJson(ptr unsafe.Pointer, w codecore.IWrit
 			return
 		}
 		ret[i] = BytesToString(w.Buffer())
-		w.Reset(nil)
+		w.Reset()
 	}
 	return
 }
@@ -131,7 +131,7 @@ func (this *sliceDecoder) DecodeForSliceJson(ptr unsafe.Pointer, r codecore.IRea
 	sliceType.UnsafeGrow(ptr, len(data))
 	for i, v := range data {
 		elemPtr := sliceType.UnsafeGetIndex(ptr, i)
-		r.ResetBytes(StringToBytes(v), nil)
+		r.ResetBytes(StringToBytes(v))
 		this.elemDecoder.Decode(elemPtr, r)
 		if r.Error() != nil && r.Error() != io.EOF {
 			err = r.Error()
