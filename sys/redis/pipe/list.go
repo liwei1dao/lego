@@ -48,9 +48,8 @@ func (this *RedisPipe) Linsert(key string, isbefore bool, tager interface{}, val
 /*
 Redis Llen 命令用于返回列表的长度。 如果列表 key 不存在，则 key 被解释为一个空列表，返回 0 。 如果 key 不是列表类型，返回一个错误
 */
-func (this *RedisPipe) Llen(key string) (result int, err error) {
-	result, err = this.client.Do(this.ctx, "LLEN", key).Int()
-	return
+func (this *RedisPipe) Llen(key string) *redis.IntCmd {
+	return this.client.LLen(this.ctx, key)
 }
 
 /*
