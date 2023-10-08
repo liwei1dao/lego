@@ -29,6 +29,7 @@ require (
 	github.com/golang/snappy v0.0.4
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/consul/api v1.13.1
+	github.com/jinzhu/now v1.1.5
 	github.com/jlaffaye/ftp v0.0.0-20220630165035-11536801d1ff
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
