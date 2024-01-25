@@ -1,18 +1,19 @@
 package timewheel
 
 import (
+	"time"
+
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
 
 type Option func(*Options)
 type Options struct {
-	Tick       int //单位毫秒
+	Tick       time.Duration //不小于 10毫秒
 	BucketsNum int
-	IsSyncPool bool
 }
 
-func SetTick(v int) Option {
+func SetTick(v time.Duration) Option {
 	return func(o *Options) {
 		o.Tick = v
 	}
@@ -23,18 +24,10 @@ func SetBucketsNum(v int) Option {
 		o.BucketsNum = v
 	}
 }
-
-func SetIsSyncPool(v bool) Option {
-	return func(o *Options) {
-		o.IsSyncPool = v
-	}
-}
-
 func newOptions(config map[string]interface{}, opts ...Option) Options {
 	options := Options{
-		Tick:       1000,
-		BucketsNum: 1,
-		IsSyncPool: true,
+		Tick:       time.Second,
+		BucketsNum: 1024,
 	}
 	if config != nil {
 		mapstructure.Decode(config, &options)
@@ -55,9 +48,8 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 
 func newOptionsByOption(opts ...Option) Options {
 	options := Options{
-		Tick:       1000,
-		BucketsNum: 1,
-		IsSyncPool: true,
+		Tick:       time.Second,
+		BucketsNum: 1024,
 	}
 	for _, o := range opts {
 		o(&options)
