@@ -36,7 +36,7 @@ func Test_SendReqByStream(t *testing.T) {
 		resp *openai.ChatCompletionStream
 		err  error
 	)
-	if sys, err = lgopenai.NewSys(lgopenai.SetToken("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")); err != nil {
+	if sys, err = lgopenai.NewSys(lgopenai.SetToken("your-token")); err != nil {
 		fmt.Println(err.Error())
 		return
 	}
