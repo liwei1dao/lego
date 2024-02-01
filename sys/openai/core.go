@@ -1,8 +1,17 @@
 package openai
 
+import (
+	"context"
+
+	openai "github.com/sashabaranov/go-openai"
+)
+
 type (
 	ISys interface {
-		SendReq(content string) (results string, err error)
+		//非流式
+		SendReq(ctx context.Context, content string) (results string, err error)
+		//流式数据回应
+		SendReqByStream(ctx context.Context, content string) (stream *openai.ChatCompletionStream, err error)
 	}
 )
 
@@ -20,6 +29,6 @@ func NewSys(option ...Option) (sys ISys, err error) {
 	return
 }
 
-func SendReq(content string) (results string, err error) {
-	return defsys.SendReq(content)
+func SendReq(ctx context.Context, content string) (results string, err error) {
+	return defsys.SendReq(ctx, content)
 }
