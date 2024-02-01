@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
 	"sync"
 	"syscall"
 
@@ -83,6 +84,13 @@ func (this *ServiceBase) Start() (err error) {
 
 func (this *ServiceBase) Run(mod ...core.IModule) {
 	go func() {
+		defer func() { //程序异常 收集异常信息传递给前端显示
+			if r := recover(); r != nil {
+				buf := make([]byte, 4096)
+				l := runtime.Stack(buf, false)
+				log.Errorf("服务[%s:%s]崩溃啦!------> %s", this.Service.GetId(), this.Service.GetVersion(), fmt.Sprintf("%v: %s", r, buf[:l]))
+			}
+		}()
 		for _, v := range mod {
 			if sf, ok := this.Service.GetSettings().Modules[string(v.GetType())]; ok {
 				this.modules[v.GetType()] = &defaultModule{
