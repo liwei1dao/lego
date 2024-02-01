@@ -6,6 +6,9 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
+/*
+openai后台:https://platform.openai.com/playground
+*/
 type Option func(*Options)
 type Options struct {
 	Token string //密钥
