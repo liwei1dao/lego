@@ -2,6 +2,10 @@ package zookeeper
 
 import "github.com/go-zookeeper/zk"
 
+/*
+系统描述:zookeeper服务系统，
+*/
+
 type (
 	ISys interface {
 		Exists(path string) (bool, *zk.Stat, error)

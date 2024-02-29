@@ -1,5 +1,8 @@
 package livego
 
+/*
+系统描述:流媒体直播系统，开源livego 的重构
+*/
 type (
 	ISys interface {
 	}

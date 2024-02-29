@@ -4,6 +4,9 @@ import (
 	"time"
 )
 
+/*
+系统描述:时间轮系统，处理程序中高频定时任务逻辑
+*/
 type (
 	ISys interface {
 		Start()

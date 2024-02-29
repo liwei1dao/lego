@@ -9,6 +9,10 @@ import (
 	"github.com/modern-go/reflect2"
 )
 
+/*
+系统描述:数据编解码工具,支持json的快速编解码，参考jsonkter 开源库
+*/
+
 var decoderCache = new(sync.Map)
 var encoderCache = new(sync.Map)
 

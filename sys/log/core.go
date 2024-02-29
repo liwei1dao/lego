@@ -1,5 +1,8 @@
 package log
 
+/*
+系统描述:日志系统,zap日志以及logger日志系统的重构版本
+*/
 var AllLevels = []Loglevel{
 	PanicLevel,
 	FatalLevel,

@@ -1,5 +1,9 @@
 package pprof
 
+/*
+系统描述:pprof 性能检测驱动，排查内存以及cpu等指标异常问题，
+*/
+
 type (
 	ISys interface {
 	}

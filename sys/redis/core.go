@@ -8,6 +8,9 @@ import (
 	"github.com/liwei1dao/lego/sys/redis/pipe"
 )
 
+/*
+系统描述:redis系统驱动,集成单接单和集群模式，以及之定义lua支持
+*/
 type (
 	IRedis interface {
 		Close() (err error)

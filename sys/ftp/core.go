@@ -1,5 +1,8 @@
 package ftp
 
+/*
+系统描述:ftp文件系统
+*/
 type (
 	FileEntry struct {
 		FileName string

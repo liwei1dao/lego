@@ -1,5 +1,8 @@
 package sitemap
 
+/*
+系统描述:网站的seo优化系统，自动同步sitemap 文件
+*/
 type (
 	ISys interface {
 		AppendUrl(url *Url)

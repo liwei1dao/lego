@@ -6,6 +6,9 @@ import (
 	"github.com/apache/pulsar-client-go/pulsar"
 )
 
+/*
+系统描述:pulsar驱动系统, pulsar是 golang 版本的kafka 系统
+*/
 type (
 	ProducerError struct {
 		Msg *pulsar.ProducerMessage

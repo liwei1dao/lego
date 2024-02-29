@@ -2,6 +2,9 @@ package doris
 
 import "io"
 
+/*
+系统描述:doris数据库系统
+*/
 type (
 	//Stream load返回消息结构体
 	ResponseBody struct {

@@ -4,6 +4,9 @@ import (
 	"github.com/Shopify/sarama"
 )
 
+/*
+系统描述:kafka驱动库系统
+*/
 type (
 	IConsumer interface {
 		Consumer_Messages() <-chan *sarama.ConsumerMessage

@@ -6,6 +6,10 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
+/*
+系统描述:openai 官方api接口驱动
+*/
+
 type (
 	ISys interface {
 		//非流式

@@ -9,6 +9,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+/*
+系统描述:mgo数据库驱动系统
+*/
 type (
 	ISys interface {
 		Close() (err error)
