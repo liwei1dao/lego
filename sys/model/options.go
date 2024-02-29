@@ -3,13 +3,15 @@ package model
 import (
 	"errors"
 
+	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
 
 type Option func(*Options)
 type Options struct {
-	Tag             string   //标签
+	Tag             string //标签
+	ModelLogTable   core.SqlTable
 	RedisIsCluster  bool     //是否是集群
 	RedisAddr       []string //redis 的集群地址
 	RedisPassword   string   //redis的密码
@@ -37,7 +39,9 @@ func SetLog(v log.ILogger) Option {
 	}
 }
 func newOptions(config map[string]interface{}, opts ...Option) (options *Options, err error) {
-	options = &Options{}
+	options = &Options{
+		ModelLogTable: "model_log",
+	}
 	if config != nil {
 		if err = mapstructure.Decode(config, options); err != nil {
 			return
@@ -53,7 +57,9 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 }
 
 func newOptionsByOption(opts ...Option) (options *Options, err error) {
-	options = &Options{}
+	options = &Options{
+		ModelLogTable: "model_log",
+	}
 	for _, o := range opts {
 		o(options)
 	}
