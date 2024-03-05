@@ -18,6 +18,7 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/eclipse/paho.mqtt.golang v1.4.1
 	github.com/gin-gonic/autotls v0.0.5
+	github.com/go-ego/gse v0.80.2
 	github.com/go-playground/validator/v10 v10.11.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-sql-driver/mysql v1.6.0
@@ -157,6 +158,7 @@ require (
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/stretchr/testify v1.8.0 // indirect
 	github.com/temoto/robotstxt v1.1.1 // indirect
+	github.com/vcaesar/cedar v0.20.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.1 // indirect

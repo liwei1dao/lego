@@ -12,10 +12,10 @@ var (
 */
 type (
 	//sdk相关回处理回调函数
-	MessageReceivedHandler  func(context.Context, Event, MessageOpts, ReceivedMessage)
-	MessageDeliveredHandler func(context.Context, Event, MessageOpts, Delivery)
-	PostbackHandler         func(context.Context, Event, MessageOpts, Postback)
-	AuthenticationHandler   func(context.Context, Event, MessageOpts, *Optin)
+	MessageReceivedHandler  func(ctx context.Context, event Event, opts MessageOpts, message ReceivedMessage) (err error)
+	MessageDeliveredHandler func(ctx context.Context, event Event, opts MessageOpts, delivery Delivery) (err error)
+	PostbackHandler         func(ctx context.Context, event Event, opts MessageOpts, postback Postback) (err error)
+	AuthenticationHandler   func(ctx context.Context, event Event, opts MessageOpts, optin *Optin) (err error)
 
 	//错误对象
 	rawError struct {
