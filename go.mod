@@ -59,6 +59,7 @@ require (
 	google.golang.org/api v0.90.0
 	google.golang.org/genproto v0.0.0-20220801145646-83ce21fca29f
 	google.golang.org/protobuf v1.28.1
+	gopkg.in/maciekmm/messenger-platform-go-sdk.v4 v4.0.0-20160825111906-0cb6e825b6fb
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -84,6 +85,7 @@ require (
 	github.com/danieljoos/wincred v1.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
+	github.com/drewolson/testflight v1.0.0 // indirect
 	github.com/dvsekhvalnov/jose2go v0.0.0-20200901110807-248326c1351b // indirect
 	github.com/eapache/go-resiliency v1.3.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
@@ -127,6 +129,7 @@ require (
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/linkedin/goavro/v2 v2.9.8 // indirect
+	github.com/maciekmm/messenger-platform-go-sdk v0.0.0-20180506131304-fe24182d420d // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
