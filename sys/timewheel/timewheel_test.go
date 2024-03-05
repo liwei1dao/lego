@@ -24,7 +24,7 @@ func checkTimeCost(t *testing.T, start, end time.Time, before int, after int) bo
 }
 
 func TestAddFunc(t *testing.T) {
-	tw, _ := timewheel.NewSys(timewheel.SetTick(100), timewheel.SetBucketsNum(10))
+	tw, _ := timewheel.NewSys(timewheel.SetTick(time.Second), timewheel.SetBucketsNum(10))
 	tw.Start()
 	defer tw.Stop()
 

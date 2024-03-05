@@ -6,6 +6,9 @@ import (
 	"github.com/liwei1dao/lego/core"
 )
 
+/*
+系统描述:rpc服务通信系统，参考xrpc设计思路
+*/
 //系统事件
 const (
 	///发现新的节点

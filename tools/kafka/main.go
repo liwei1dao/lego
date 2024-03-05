@@ -15,6 +15,10 @@ import (
 	"github.com/liwei1dao/lego/utils/codec"
 )
 
+/*
+	kafka 测试工具
+*/
+
 var (
 	_starttype = flag.Int("s", 2, "kafka使用模式 0 生产者 1消费者 2同时生产和消费")
 	_clientid  = flag.String("c", "test1", "kafka客户端id")

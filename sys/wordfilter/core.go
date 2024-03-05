@@ -3,10 +3,8 @@ package wordfilter
 import "io"
 
 /*
-系统:单词守卫
-描述:DFA 算法实践敏感词过滤 敏感词 过滤 验证 替换
+系统描述:敏感词过滤系统,DFA 算法实践敏感词过滤 敏感词 过滤 验证 替换
 */
-
 type (
 	ISys interface {
 		//加载文件

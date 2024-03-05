@@ -1,9 +1,12 @@
-/// 爬虫系统
 package colly
 
 import (
 	"github.com/gocolly/colly/v2"
 )
+
+/*
+系统描述:爬虫系统,开源colly 的封装
+*/
 
 type (
 	ISys interface {

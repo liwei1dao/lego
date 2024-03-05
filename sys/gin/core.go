@@ -11,6 +11,9 @@ import (
 	"github.com/liwei1dao/lego/utils/crypto/md5"
 )
 
+/*
+系统描述:开源gin框架的重构版本
+*/
 type ISys interface {
 	engine.IRoutes
 	HandleContext(c *engine.Context)

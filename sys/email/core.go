@@ -1,5 +1,8 @@
 package email
 
+/*
+系统描述:邮件系统,现支持qq邮箱以及gmail邮箱的邮件发送
+*/
 type (
 	ISys interface {
 		SendMail(title, content string, to ...string) error

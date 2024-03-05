@@ -1,7 +1,7 @@
 package recom
 
 /*
-推荐系统 协同过滤算法
+系统描述:推荐系统 协同过滤算法系统
 */
 type (
 	RecomModel uint8

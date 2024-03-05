@@ -2,6 +2,10 @@ package mqtt
 
 import mqtt "github.com/eclipse/paho.mqtt.golang"
 
+/*
+系统描述:mqtt消息中心系统,开源mqtt系统的封装
+*/
+
 type (
 	ISys interface {
 		Subscribe(topic string, qos byte, callback mqtt.MessageHandler) mqtt.Token

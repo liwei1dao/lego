@@ -4,6 +4,9 @@ import (
 	"github.com/liwei1dao/lego/core"
 )
 
+/*
+系统描述:服务发现系统,提供微服务底层支持
+*/
 type (
 	ISys interface {
 		Start() (err error)

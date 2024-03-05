@@ -4,6 +4,9 @@ import (
 	tcron "github.com/robfig/cron/v3"
 )
 
+/*
+系统描述:定时任务系统,开源cron 的封装
+*/
 type (
 	EntryID tcron.EntryID
 	ISys    interface {

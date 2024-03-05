@@ -2,6 +2,10 @@ package workerpools
 
 import "context"
 
+/*
+系统描述:工作池系统，处理动态任务处理，动态调整工作池大小
+*/
+
 type (
 	ISys interface {
 		Stop()
