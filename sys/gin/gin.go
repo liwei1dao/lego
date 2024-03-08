@@ -78,7 +78,7 @@ func (this *Gin) RunTLS(listenPort int, certFile, keyFile string) (err error) {
 func (this *Gin) RunLetEncrypt(domain ...string) {
 	this.options.Log.Debugf("Listening and serving LetEncrypt on :%v", domain)
 	go func() {
-		if err := autotls.Run(this.engine, domain...); err != nil && errors.Is(err, http.ErrServerClosed) {
+		if err := autotls.Run(this.engine, domain...); err != nil {
 			this.options.Log.Errorln(err)
 		}
 	}()
