@@ -4,8 +4,11 @@ import (
 	"time"
 )
 
+/*
+系统描述:时间轮系统，处理程序中高频定时任务逻辑
+*/
 type (
-	ITimeWheel interface {
+	ISys interface {
 		Start()
 		Stop()
 		Add(delay time.Duration, handler func(*Task, ...interface{}), args ...interface{}) *Task
@@ -20,7 +23,7 @@ type (
 )
 
 var (
-	defsys ITimeWheel
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -30,7 +33,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys ITimeWheel, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	if sys, err = newsys(newOptionsByOption(option...)); err == nil {
 		sys.Start()
 	}

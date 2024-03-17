@@ -9,8 +9,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+/*
+系统描述:mgo数据库驱动系统
+*/
 type (
-	IMongodb interface {
+	ISys interface {
 		Close() (err error)
 		ListCollectionNames(filter interface{}, opts ...*options.ListCollectionsOptions) ([]string, error)
 		Collection(sqltable core.SqlTable) *mongo.Collection
@@ -42,7 +45,7 @@ var (
 )
 
 var (
-	defsys IMongodb
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -50,7 +53,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys IMongodb, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
 }

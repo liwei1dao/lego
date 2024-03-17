@@ -4,17 +4,21 @@ import (
 	tcron "github.com/robfig/cron/v3"
 )
 
+/*
+系统描述:定时任务系统,开源cron 的封装
+*/
 type (
-	Icron interface {
+	EntryID tcron.EntryID
+	ISys    interface {
 		Start()
-		Stop()
-		AddFunc(spec string, cmd func()) (tcron.EntryID, error)
-		Remove(id tcron.EntryID)
+		Close()
+		AddFunc(spec string, cmd func()) (EntryID, error)
+		Remove(id EntryID)
 	}
 )
 
 var (
-	defsys Icron
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -24,9 +28,9 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys Icron, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	if sys, err = newSys(newOptionsByOption(option...)); err == nil {
-		Start()
+		sys.Start()
 	}
 	return
 }
@@ -35,14 +39,14 @@ func Start() {
 	defsys.Start()
 }
 
-func Stop() {
-	defsys.Stop()
+func Close() {
+	defsys.Close()
 }
 
-func AddFunc(spec string, cmd func()) (tcron.EntryID, error) {
+func AddFunc(spec string, cmd func()) (EntryID, error) {
 	return defsys.AddFunc(spec, cmd)
 }
 
-func Remove(id tcron.EntryID) {
+func Remove(id EntryID) {
 	defsys.Remove(id)
 }

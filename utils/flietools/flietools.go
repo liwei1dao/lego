@@ -3,12 +3,13 @@ package flietools
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/liwei1dao/lego/utils/codec/json"
 )
 
 //判断文件或文件夹是否存在

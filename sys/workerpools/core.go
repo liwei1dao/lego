@@ -2,8 +2,12 @@ package workerpools
 
 import "context"
 
+/*
+系统描述:工作池系统，处理动态任务处理，动态调整工作池大小
+*/
+
 type (
-	IWorkerPool interface {
+	ISys interface {
 		Stop()
 		StopWait()
 		IsStop() bool
@@ -14,7 +18,7 @@ type (
 )
 
 var (
-	defsys IWorkerPool
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -22,7 +26,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys IWorkerPool, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
 }

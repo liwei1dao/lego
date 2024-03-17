@@ -2,16 +2,21 @@ package timewheel
 
 import (
 	"context"
+	"fmt"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/liwei1dao/lego"
+	"github.com/liwei1dao/lego/sys/log"
 )
 
 // 创建一个时间轮
 func newsys(options Options) (sys *TimeWheel, err error) {
 	sys = &TimeWheel{
 		// tick
-		tick:      time.Millisecond * time.Duration(options.Tick),
+		tick:      options.Tick,
 		tickQueue: make(chan time.Time, 10),
 
 		// store
@@ -21,10 +26,9 @@ func newsys(options Options) (sys *TimeWheel, err error) {
 		currentIndex:  0,
 
 		// signal
-		addC:     make(chan *Task, 1024*5),
-		removeC:  make(chan *Task, 1024*2),
-		stopC:    make(chan struct{}),
-		syncPool: options.IsSyncPool,
+		addC:    make(chan *Task, 1024*5),
+		removeC: make(chan *Task, 1024*2),
+		stopC:   make(chan struct{}),
 	}
 
 	for i := 0; i < options.BucketsNum; i++ {
@@ -54,9 +58,9 @@ type (
 		round    int
 		args     []interface{}
 		callback func(*Task, ...interface{})
-		async    bool
-		stop     bool
-		circle   bool
+		async    bool //异步执行
+		stop     bool //是否停止
+		circle   bool //是否循环
 	}
 	TimeWheel struct {
 		randomID      int64
@@ -72,7 +76,6 @@ type (
 		removeC       chan *Task
 		stopC         chan struct{}
 		exited        bool
-		syncPool      bool
 	}
 )
 
@@ -86,7 +89,7 @@ func (t *Task) Reset() {
 	t.circle = false
 }
 
-//启动时间轮
+// 启动时间轮
 func (this *TimeWheel) Start() {
 	// onlye once start
 	this.onceStart.Do(
@@ -104,7 +107,7 @@ func (this *TimeWheel) Add(delay time.Duration, handler func(*Task, ...interface
 
 // AddCron add interval task
 func (this *TimeWheel) AddCron(delay time.Duration, handler func(*Task, ...interface{}), args ...interface{}) *Task {
-	return this.addAny(delay, modeIsCircle, modeIsAsync, handler, args...)
+	return this.addAny(delay, true, modeIsAsync, handler, args...)
 }
 
 func (this *TimeWheel) Remove(task *Task) error {
@@ -112,11 +115,12 @@ func (this *TimeWheel) Remove(task *Task) error {
 	return nil
 }
 
-//停止时间轮
+// 停止时间轮
 func (this *TimeWheel) Stop() {
 	this.stopC <- struct{}{}
 }
 
+// 此处写法 为监控时间轮是否正常执行
 func (this *TimeWheel) tickGenerator() {
 	if this.tickQueue == nil {
 		return
@@ -134,7 +138,7 @@ func (this *TimeWheel) tickGenerator() {
 	}
 }
 
-//调度器
+// 调度器
 func (this *TimeWheel) schduler() {
 	queue := this.ticker.C
 	if this.tickQueue != nil {
@@ -157,15 +161,16 @@ func (this *TimeWheel) schduler() {
 	}
 }
 
-//清理
+// 清理
 func (this *TimeWheel) collectTask(task *Task) {
-	index := this.bucketIndexes[task.id]
-	delete(this.bucketIndexes, task.id)
-	delete(this.buckets[index], task.id)
-
-	if this.syncPool && !task.circle {
-		defaultTaskPool.put(task)
+	if index, ok := this.bucketIndexes[task.id]; ok {
+		delete(this.bucketIndexes, task.id)
+		delete(this.buckets[index], task.id)
 	}
+}
+
+func (this *TimeWheel) recoverTask(task *Task) {
+	defaultTaskPool.put(task)
 }
 
 func (this *TimeWheel) handleTick() {
@@ -173,6 +178,7 @@ func (this *TimeWheel) handleTick() {
 	for k, task := range bucket {
 		if task.stop {
 			this.collectTask(task)
+			this.recoverTask(task)
 			continue
 		}
 
@@ -180,23 +186,33 @@ func (this *TimeWheel) handleTick() {
 			bucket[k].round--
 			continue
 		}
-
-		if task.async {
-			go task.callback(task, task.args...)
-		} else {
-			// optimize gopool
-			task.callback(task, task.args...)
-		}
-
-		// circle
-		if task.circle {
-			this.collectTask(task)
-			this.putCircle(task, modeIsCircle)
-			continue
-		}
-
-		// gc
 		this.collectTask(task)
+		if task.async {
+			go func(_task *Task) {
+				defer func() { //程序异常 收集异常信息传递给前端显示
+					if r := recover(); r != nil {
+						buf := make([]byte, 4096)
+						l := runtime.Stack(buf, false)
+						err := fmt.Errorf("%v: %s", r, buf[:l])
+						log.Errorf("[timewheel] calltask err:%s", err.Error())
+					}
+				}()
+				this.calltask(_task, _task.args...)
+				if _task.circle {
+					this.putCircle(_task, true)
+				} else {
+					this.recoverTask(_task)
+				}
+			}(task)
+		} else {
+			this.calltask(task, task.args...)
+			//循环执行
+			if task.circle {
+				this.putCircle(task, true)
+			} else {
+				this.recoverTask(task)
+			}
+		}
 	}
 
 	if this.currentIndex == this.bucketsNum-1 {
@@ -207,6 +223,16 @@ func (this *TimeWheel) handleTick() {
 	this.currentIndex++
 }
 
+// 执行时间轮事件 捕捉异常错误 防止程序崩溃
+func (this *TimeWheel) calltask(task *Task, args ...interface{}) {
+	defer lego.Recover("TimeWheel")
+	if task.callback == nil {
+		log.Error("sys.timeWheel task callback err!", log.Field{Key: "task", Value: task})
+		return
+	}
+	task.callback(task, task.args...)
+}
+
 func (this *TimeWheel) addAny(delay time.Duration, circle, async bool, callback func(*Task, ...interface{}), agr ...interface{}) *Task {
 	if delay <= 0 {
 		delay = this.tick
@@ -215,12 +241,7 @@ func (this *TimeWheel) addAny(delay time.Duration, circle, async bool, callback 
 	id := this.genUniqueID()
 
 	var task *Task
-	if this.syncPool {
-		task = defaultTaskPool.get()
-	} else {
-		task = new(Task)
-	}
-
+	task = defaultTaskPool.get()
 	task.delay = delay
 	task.id = id
 	task.args = agr
@@ -270,6 +291,7 @@ func (this *TimeWheel) calculateIndex(delay time.Duration) (index int) {
 
 func (this *TimeWheel) remove(task *Task) {
 	this.collectTask(task)
+	this.recoverTask(task)
 }
 
 func (this *TimeWheel) NewTimer(delay time.Duration) *Timer {

@@ -1,71 +1,145 @@
 package log
 
-import (
-	"fmt"
-	"os"
-	"strings"
-
-	"github.com/liwei1dao/lego/utils/flietools"
-)
+/*
+系统描述:日志系统,zap日志以及logger日志系统的重构版本
+*/
+var AllLevels = []Loglevel{
+	PanicLevel,
+	FatalLevel,
+	ErrorLevel,
+	WarnLevel,
+	InfoLevel,
+	DebugLevel,
+}
 
 type (
-	LogStrut interface {
-		ToString() (str string)
-	}
 	Field struct {
 		Key   string
 		Value interface{}
 	}
+	Fields []Field
+	Ilogf  interface {
+		Debugf(format string, args ...interface{})
+		Infof(format string, args ...interface{})
+		Printf(format string, args ...interface{})
+		Warnf(format string, args ...interface{})
+		Errorf(format string, args ...interface{})
+		Fatalf(format string, args ...interface{})
+		Panicf(format string, args ...interface{})
+	}
+	IlogIn interface {
+		Debugln(args ...interface{})
+		Infoln(args ...interface{})
+		Println(args ...interface{})
+		Warnln(args ...interface{})
+		Errorln(args ...interface{})
+		Fatalln(args ...interface{})
+		Panicln(args ...interface{})
+	}
 	ILog interface {
-		Debug(msg string, fields ...Field)
-		Info(msg string, fields ...Field)
-		Warn(msg string, fields ...Field)
-		Error(msg string, fields ...Field)
-		Panic(msg string, fields ...Field)
-		Fatal(msg string, fields ...Field)
-		Debugf(format string, a ...interface{})
-		Infof(format string, a ...interface{})
-		Warnf(format string, a ...interface{})
-		Errorf(format string, a ...interface{})
-		Panicf(format string, a ...interface{})
-		Fatalf(format string, a ...interface{})
+		Debug(msg string, args ...Field)
+		Info(msg string, args ...Field)
+		Print(msg string, args ...Field)
+		Warn(msg string, args ...Field)
+		Error(msg string, args ...Field)
+		Fatal(msg string, args ...Field)
+		Panic(msg string, args ...Field)
+	}
+
+	ILogger interface {
+		SetName(name string)
+		Enabled(lvl Loglevel) bool
+		Ilogf
+		IlogIn
+		ILog
+	}
+	ISys interface {
+		Clone(name string, skip int) ILogger
+		ILogger
 	}
 )
 
 var (
-	defsys ILog
+	defsys ISys
 )
 
-func OnInit(config map[string]interface{}, option ...Option) (err error) {
-	defsys, err = newSys(newOptions(config, option...))
-	return
-}
-func NewSys(option ...Option) (sys ILog, err error) {
-	sys, err = newSys(newOptionsByOption(option...))
+func OnInit(config map[string]interface{}, opt ...Option) (err error) {
+	var option *Options
+	if option, err = newOptions(config, opt...); err != nil {
+		return
+	}
+	defsys, err = newSys(option)
 	return
 }
 
-func Debug(msg string, fields ...Field)      { defsys.Debug(msg, fields...) }
-func Info(msg string, fields ...Field)       { defsys.Info(msg, fields...) }
-func Warn(msg string, fields ...Field)       { defsys.Warn(msg, fields...) }
-func Error(msg string, fields ...Field)      { defsys.Error(msg, fields...) }
-func Panic(msg string, fields ...Field)      { defsys.Panic(msg, fields...) }
-func Fatal(msg string, fields ...Field)      { defsys.Fatal(msg, fields...) }
-func Debugf(format string, a ...interface{}) { defsys.Debugf(format, a...) }
-func Infof(format string, a ...interface{})  { defsys.Infof(format, a...) }
-func Warnf(format string, a ...interface{})  { defsys.Warnf(format, a...) }
-func Errorf(format string, a ...interface{}) { defsys.Errorf(format, a...) }
-func Panicf(format string, a ...interface{}) { defsys.Panicf(format, a...) }
-func Fatalf(format string, a ...interface{}) { defsys.Fatalf(format, a...) }
-
-//创建日志文件
-func createlogfile(logpath string) error {
-	logdir := string(logpath[0:strings.LastIndex(logpath, "/")])
-	if !flietools.IsExist(logdir) {
-		err := os.MkdirAll(logdir, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("创建日志路径失败 1" + err.Error())
-		}
+func NewSys(opt ...Option) (sys ISys, err error) {
+	var option *Options
+	if option, err = newOptionsByOption(opt...); err != nil {
+		return
+	}
+	sys, err = newSys(option)
+	return
+}
+func Clone(name string, skip int) ILogger {
+	if defsys != nil {
+		return defsys.Clone(name, skip)
 	}
 	return nil
+}
+func Debug(msg string, args ...Field) {
+	defsys.Debug(msg, args...)
+}
+func Info(msg string, args ...Field) {
+	defsys.Info(msg, args...)
+}
+func Warn(msg string, args ...Field) {
+	defsys.Warn(msg, args...)
+}
+func Error(msg string, args ...Field) {
+	defsys.Error(msg, args...)
+}
+func Fatal(msg string, args ...Field) {
+	defsys.Fatal(msg, args...)
+}
+func Panic(msg string, args ...Field) {
+	defsys.Panic(msg, args...)
+}
+func Debugf(format string, args ...interface{}) {
+	defsys.Debugf(format, args...)
+}
+func Infof(format string, args ...interface{}) {
+	defsys.Infof(format, args...)
+}
+func Warnf(format string, args ...interface{}) {
+	defsys.Warnf(format, args...)
+}
+func Errorf(format string, args ...interface{}) {
+	defsys.Errorf(format, args...)
+}
+func Fatalf(format string, args ...interface{}) {
+	defsys.Fatalf(format, args...)
+}
+func Panicf(format string, args ...interface{}) {
+	defsys.Panicf(format, args...)
+}
+func Debugln(args ...interface{}) {
+	defsys.Debugln(args...)
+}
+func Infoln(args ...interface{}) {
+	defsys.Infoln(args...)
+}
+func Println(args ...interface{}) {
+	defsys.Println(args...)
+}
+func Warnln(args ...interface{}) {
+	defsys.Warnln(args...)
+}
+func Errorln(args ...interface{}) {
+	defsys.Errorln(args...)
+}
+func Fatalln(args ...interface{}) {
+	defsys.Fatalln(args...)
+}
+func Panicln(args ...interface{}) {
+	defsys.Panicln(args...)
 }

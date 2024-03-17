@@ -2,33 +2,39 @@ package redis
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/liwei1dao/lego/sys/redis/pipe"
 )
 
+/*
+系统描述:redis系统驱动,集成单接单和集群模式，以及之定义lua支持
+*/
 type (
 	IRedis interface {
 		Close() (err error)
+		Context() context.Context
 		Do(ctx context.Context, args ...interface{}) *redis.Cmd
 		Lock(key string, outTime int) (result bool, err error)
 		UnLock(key string) (err error)
-		Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error)
+		Pipeline() redis.Pipeliner
+		Pipelined(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error)
 		TxPipelined(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error)
 		Watch(ctx context.Context, fn func(*redis.Tx) error, keys ...string) (err error)
+
 		/*Key*/
 		Delete(key string) (err error)
 		ExistsKey(key string) (iskeep bool, err error)
-		ExpireKey(key string, expire int) (err error)
-		ExpireatKey(key string, expire_unix int64) (err error)
-		Pexpirekey(key string, expire int) (err error)
-		PexpireatKey(key string, expire_unix int64) (err error)
-		PersistKey(key string) (err error)
-		PttlKey(key string) (leftexpire int64, err error)
-		TtlKey(key string) (leftexpire int64, err error)
-		RenameKye(oldkey string, newkey string) (err error)
-		RenamenxKey(oldkey string, newkey string) (err error)
+		Expire(key string, expiration time.Duration) (err error)
+		ExpireAt(key string, tm time.Time) (err error)
+		PExpire(key string, expiration time.Duration) (err error)
+		PExpireAt(key string, tm time.Time) (err error)
+		Persist(key string) (err error)
+		PTTL(key string) (leftexpire time.Duration, err error)
+		TTL(key string) (leftexpire time.Duration, err error)
+		Rename(oldkey string, newkey string) (err error)
+		RenameNX(oldkey string, newkey string) (err error)
 		Keys(pattern string) (keys []string, err error)
 		Type(key string) (ty string, err error)
 		/*String*/
@@ -44,7 +50,7 @@ type (
 		Append(key string, value interface{}) (err error)
 		Get(key string, value interface{}) (err error)
 		GetSet(key string, value interface{}, result interface{}) (err error)
-		MGet(keys ...string) (result []string, err error)
+		MGet(v interface{}, keys ...string) (err error)
 		INCRBY(key string, amount int64) (result int64, err error)
 		/*List*/
 		Lindex(key string, value interface{}) (err error)
@@ -53,7 +59,8 @@ type (
 		LPop(key string, value interface{}) (err error)
 		LPush(key string, values ...interface{}) (err error)
 		LPushX(key string, values ...interface{}) (err error)
-		LRange(key string, start, end int, valuetype reflect.Type) (result []interface{}, err error)
+		LRange(key string, start, end int, v interface{}) (err error)
+		LRangeToStringSlice(key string, start, end int) *redis.StringSliceCmd
 		LRem(key string, count int, target interface{}) (err error)
 		LSet(key string, index int, value interface{}) (err error)
 		Ltrim(key string, start, stop int) (err error)
@@ -65,29 +72,31 @@ type (
 		HDel(key string, fields ...string) (err error)
 		HExists(key string, field string) (result bool, err error)
 		HGet(key string, field string, value interface{}) (err error)
-		HGetAll(key string, valuetype reflect.Type) (result []interface{}, err error)
+		HGetAll(key string, v interface{}) (err error)
+		HGetAllToMapString(key string) (result map[string]string, err error)
 		HIncrBy(key string, field string, value int) (err error)
 		HIncrByFloat(key string, field string, value float32) (err error)
 		Hkeys(key string) (result []string, err error)
 		Hlen(key string) (result int, err error)
-		HMGet(key string, valuetype reflect.Type, fields ...string) (result []interface{}, err error)
-		HMSet(key string, value map[string]interface{}) (err error)
+		HMGet(key string, v interface{}, fields ...string) (err error)
+		HMSet(key string, v interface{}) (err error)
+		HMSetForMap(key string, v map[string]string) (err error)
 		HSet(key string, field string, value interface{}) (err error)
 		HSetNX(key string, field string, value interface{}) (err error)
 		/*Set*/
 		SAdd(key string, values ...interface{}) (err error)
 		SCard(key string) (result int64, err error)
-		SDiff(valuetype reflect.Type, keys ...string) (result []interface{}, err error)
+		SDiff(v interface{}, keys ...string) (err error)
 		SDiffStore(destination string, keys ...string) (result int64, err error)
-		SInter(valuetype reflect.Type, keys ...string) (result []interface{}, err error)
+		SInter(v interface{}, keys ...string) (err error)
 		SInterStore(destination string, keys ...string) (result int64, err error)
 		Sismember(key string, value interface{}) (iskeep bool, err error)
-		SMembers(valuetype reflect.Type, key string) (result []interface{}, err error)
+		SMembers(v interface{}, key string) (err error)
 		SMove(source string, destination string, member interface{}) (result bool, err error)
 		Spop(key string) (result string, err error)
 		Srandmember(key string) (result string, err error)
 		SRem(key string, members ...interface{}) (result int64, err error)
-		SUnion(valuetype reflect.Type, keys ...string) (result []interface{}, err error)
+		SUnion(v interface{}, keys ...string) (err error)
 		Sunionstore(destination string, keys ...string) (result int64, err error)
 		Sscan(key string, _cursor uint64, match string, count int64) (keys []string, cursor uint64, err error)
 		/*ZSet*/
@@ -97,26 +106,33 @@ type (
 		ZIncrBy(key string, increment float64, member string) (result float64, err error)
 		ZInterStore(destination string, store *redis.ZStore) (result int64, err error)
 		ZLexCount(key string, min string, max string) (result int64, err error)
-		ZRange(valuetype reflect.Type, key string, start int64, stop int64) (result []interface{}, err error)
-		ZRangeByLex(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error)
-		ZRangeByScore(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error)
+		ZRange(key string, start int64, stop int64, v interface{}) (err error)
+		ZRangeByLex(key string, opt *redis.ZRangeBy, v interface{}) (err error)
+		ZRangeByScore(key string, opt *redis.ZRangeBy, v interface{}) (err error)
 		ZRank(key string, member string) (result int64, err error)
 		ZRem(key string, members ...interface{}) (result int64, err error)
 		ZRemRangeByLex(key string, min string, max string) (result int64, err error)
 		ZRemRangeByRank(key string, start int64, stop int64) (result int64, err error)
 		ZRemRangeByScore(key string, min string, max string) (result int64, err error)
-		ZRevRange(valuetype reflect.Type, key string, start int64, stop int64) (result []interface{}, err error)
-		ZRevRangeByScore(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error)
+		ZRevRange(key string, start int64, stop int64, v interface{}) (err error)
+		ZRevRangeByScore(key string, opt *redis.ZRangeBy, v interface{}) (err error)
 		ZRevRank(key string, member string) (result int64, err error)
 		ZScore(key string, member string) (result float64, err error)
 		ZUnionStore(dest string, store *redis.ZStore) (result int64, err error)
 		ZScan(key string, _cursor uint64, match string, count int64) (keys []string, cursor uint64, err error)
+
+		/*Lua Script*/
+		NewScript(src string) *redis.StringCmd
+		Eval(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd
+		EvalSha(ctx context.Context, sha1 string, keys []string, args ...interface{}) *redis.Cmd
+		ScriptExists(ctx context.Context, hashes ...string) *redis.BoolSliceCmd
+		// ScriptLoad(ctx context.Context, script string) *redis.StringCmd
 	}
 
-	IRedisSys interface {
+	ISys interface {
 		IRedis
-		Encode(value interface{}) (result []byte, err error)
-		Decode(value []byte, result interface{}) (err error)
+		GetClient() IRedis
+		RedisPipe(ctx context.Context) *pipe.RedisPipe
 		/*Lock*/
 		NewRedisMutex(key string, opt ...RMutexOption) (result *RedisMutex, err error)
 	}
@@ -127,27 +143,48 @@ const (
 	TxFailedErr = redis.TxFailedErr
 )
 
-var defsys IRedisSys
+var defsys ISys
 
-func OnInit(config map[string]interface{}, option ...Option) (err error) {
-	defsys, err = newSys(newOptions(config, option...))
+func OnInit(config map[string]interface{}, opt ...Option) (err error) {
+	var option *Options
+	if option, err = newOptions(config, opt...); err != nil {
+		return
+	}
+	defsys, err = newSys(option)
 	return
 }
 
-func NewSys(option ...Option) (sys IRedisSys, err error) {
-	sys, err = newSys(newOptionsByOption(option...))
+func NewSys(opt ...Option) (sys ISys, err error) {
+	var option *Options
+	if option, err = newOptionsByOption(opt...); err != nil {
+		return
+	}
+	sys, err = newSys(option)
 	return
 }
 
 func Close() (err error) {
 	return defsys.Close()
 }
+
+func GetClient() IRedis {
+	return defsys.GetClient()
+}
+func RedisPipe(ctx context.Context) *pipe.RedisPipe {
+	return defsys.RedisPipe(ctx)
+}
+func Context() context.Context {
+	return defsys.Context()
+}
+
 func Do(ctx context.Context, args ...interface{}) *redis.Cmd {
 	return defsys.Do(ctx, args...)
 }
-
-func Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {
-	return defsys.Pipeline(ctx, fn)
+func Pipeline() redis.Pipeliner {
+	return defsys.Pipeline()
+}
+func Pipelined(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {
+	return defsys.Pipelined(ctx, fn)
 }
 func TxPipelined(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err error) {
 	return defsys.TxPipelined(ctx, fn)
@@ -155,46 +192,38 @@ func TxPipelined(ctx context.Context, fn func(pipe redis.Pipeliner) error) (err 
 func Watch(ctx context.Context, fn func(*redis.Tx) error, keys ...string) (err error) {
 	return defsys.Watch(ctx, fn)
 }
-
-func Encode(value interface{}) (result []byte, err error) {
-	return defsys.Encode(value)
-}
-func Decode(value []byte, result interface{}) (err error) {
-	return defsys.Decode(value, result)
-}
 func Delete(key string) (err error) {
 	return defsys.Delete(key)
 }
 func ExistsKey(key string) (iskeep bool, err error) {
 	return defsys.ExistsKey(key)
-
 }
-func ExpireKey(key string, expire int) (err error) {
-	return defsys.ExpireKey(key, expire)
+func Expire(key string, expiration time.Duration) (err error) {
+	return defsys.Expire(key, expiration)
 }
-func ExpireatKey(key string, expire_unix int64) (err error) {
-	return defsys.ExpireatKey(key, expire_unix)
+func ExpireAt(key string, tm time.Time) (err error) {
+	return defsys.ExpireAt(key, tm)
 }
-func Pexpirekey(key string, expire int) (err error) {
-	return defsys.Pexpirekey(key, expire)
+func PExpire(key string, expiration time.Duration) (err error) {
+	return defsys.PExpire(key, expiration)
 }
-func PexpireatKey(key string, expire_unix int64) (err error) {
-	return defsys.PexpireatKey(key, expire_unix)
+func PExpireAt(key string, tm time.Time) (err error) {
+	return defsys.PExpireAt(key, tm)
 }
-func PersistKey(key string) (err error) {
-	return defsys.PersistKey(key)
+func Persist(key string) (err error) {
+	return defsys.Persist(key)
 }
-func PttlKey(key string) (leftexpire int64, err error) {
-	return defsys.PttlKey(key)
+func PTTL(key string) (leftexpire time.Duration, err error) {
+	return defsys.PTTL(key)
 }
-func TtlKey(key string) (leftexpire int64, err error) {
-	return defsys.TtlKey(key)
+func TTL(key string) (leftexpire time.Duration, err error) {
+	return defsys.TTL(key)
 }
-func RenameKye(oldkey string, newkey string) (err error) {
-	return defsys.RenameKye(oldkey, newkey)
+func Rename(oldkey string, newkey string) (err error) {
+	return defsys.Rename(oldkey, newkey)
 }
-func RenamenxKey(oldkey string, newkey string) (err error) {
-	return defsys.RenamenxKey(oldkey, newkey)
+func RenameNX(oldkey string, newkey string) (err error) {
+	return defsys.RenameNX(oldkey, newkey)
 }
 func Keys(pattern string) (keys []string, err error) {
 	return defsys.Keys(pattern)
@@ -242,8 +271,8 @@ func Get(key string, value interface{}) (err error) {
 func GetSet(key string, value interface{}, result interface{}) (err error) {
 	return defsys.GetSet(key, value, result)
 }
-func MGet(keys ...string) (result []string, err error) {
-	return defsys.MGet(keys...)
+func MGet(v interface{}, keys ...string) (err error) {
+	return defsys.MGet(v, keys...)
 }
 func INCRBY(key string, amount int64) (result int64, err error) {
 	return defsys.INCRBY(key, amount)
@@ -280,8 +309,11 @@ func LPush(key string, values ...interface{}) (err error) {
 func LPushX(key string, values ...interface{}) (err error) {
 	return defsys.LPushX(key, values...)
 }
-func LRange(key string, start, end int, valuetype reflect.Type) (result []interface{}, err error) {
-	return defsys.LRange(key, start, end, valuetype)
+func LRange(key string, start, end int, v interface{}) (err error) {
+	return defsys.LRange(key, start, end, v)
+}
+func LRangeToStringSlice(key string, start, end int) *redis.StringSliceCmd {
+	return defsys.LRangeToStringSlice(key, start, end)
 }
 func LRem(key string, count int, target interface{}) (err error) {
 	return defsys.LRem(key, count, target)
@@ -315,8 +347,11 @@ func HExists(key string, field string) (result bool, err error) {
 func HGet(key string, field string, value interface{}) (err error) {
 	return defsys.HGet(key, field, value)
 }
-func HGetAll(key string, valuetype reflect.Type) (result []interface{}, err error) {
-	return defsys.HGetAll(key, valuetype)
+func HGetAll(key string, v interface{}) (err error) {
+	return defsys.HGetAll(key, v)
+}
+func HGetAllToMapString(key string) (result map[string]string, err error) {
+	return defsys.HGetAllToMapString(key)
 }
 func HIncrBy(key string, field string, value int) (err error) {
 	return defsys.HIncrBy(key, field, value)
@@ -330,11 +365,14 @@ func Hkeys(key string) (result []string, err error) {
 func Hlen(key string) (result int, err error) {
 	return defsys.Hlen(key)
 }
-func HMGet(key string, valuetype reflect.Type, fields ...string) (result []interface{}, err error) {
-	return defsys.HMGet(key, valuetype, fields...)
+func HMGet(key string, v interface{}, fields ...string) (err error) {
+	return defsys.HMGet(key, v, fields...)
 }
-func HMSet(key string, value map[string]interface{}) (err error) {
-	return defsys.HMSet(key, value)
+func HMSet(key string, v interface{}) (err error) {
+	return defsys.HMSet(key, v)
+}
+func HMSetForMap(key string, v map[string]string) (err error) {
+	return defsys.HMSetForMap(key, v)
 }
 func HSet(key string, field string, value interface{}) (err error) {
 	return defsys.HSet(key, field, value)
@@ -350,14 +388,14 @@ func SAdd(key string, values ...interface{}) (err error) {
 func SCard(key string) (result int64, err error) {
 	return defsys.SCard(key)
 }
-func SDiff(valuetype reflect.Type, keys ...string) (result []interface{}, err error) {
-	return defsys.SDiff(valuetype, keys...)
+func SDiff(v interface{}, keys ...string) (err error) {
+	return defsys.SDiff(v, keys...)
 }
 func SDiffStore(destination string, keys ...string) (result int64, err error) {
 	return defsys.SDiffStore(destination, keys...)
 }
-func SInter(valuetype reflect.Type, keys ...string) (result []interface{}, err error) {
-	return defsys.SInter(valuetype, keys...)
+func SInter(v interface{}, keys ...string) (err error) {
+	return defsys.SInter(v, keys...)
 }
 func SInterStore(destination string, keys ...string) (result int64, err error) {
 	return defsys.SInterStore(destination, keys...)
@@ -365,8 +403,8 @@ func SInterStore(destination string, keys ...string) (result int64, err error) {
 func Sismember(key string, value interface{}) (iskeep bool, err error) {
 	return defsys.Sismember(key, value)
 }
-func SMembers(valuetype reflect.Type, key string) (result []interface{}, err error) {
-	return defsys.SMembers(valuetype, key)
+func SMembers(v interface{}, key string) (err error) {
+	return defsys.SMembers(v, key)
 }
 func SMove(source string, destination string, member interface{}) (result bool, err error) {
 	return defsys.SMove(source, destination, member)
@@ -380,8 +418,8 @@ func Srandmember(key string) (result string, err error) {
 func SRem(key string, members ...interface{}) (result int64, err error) {
 	return defsys.SRem(key, members...)
 }
-func SUnion(valuetype reflect.Type, keys ...string) (result []interface{}, err error) {
-	return defsys.SUnion(valuetype, keys...)
+func SUnion(v interface{}, keys ...string) (err error) {
+	return defsys.SUnion(v, keys...)
 }
 func Sunionstore(destination string, keys ...string) (result int64, err error) {
 	return defsys.Sunionstore(destination, keys...)
@@ -409,14 +447,14 @@ func ZInterStore(destination string, store *redis.ZStore) (result int64, err err
 func ZLexCount(key string, min string, max string) (result int64, err error) {
 	return defsys.ZLexCount(key, min, max)
 }
-func ZRange(valuetype reflect.Type, key string, start int64, stop int64) (result []interface{}, err error) {
-	return defsys.ZRange(valuetype, key, start, stop)
+func ZRange(key string, start int64, stop int64, v interface{}) (err error) {
+	return defsys.ZRange(key, start, stop, v)
 }
-func ZRangeByLex(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error) {
-	return defsys.ZRangeByLex(valuetype, key, opt)
+func ZRangeByLex(key string, opt *redis.ZRangeBy, v interface{}) (err error) {
+	return defsys.ZRangeByLex(key, opt, v)
 }
-func ZRangeByScore(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error) {
-	return defsys.ZRangeByScore(valuetype, key, opt)
+func ZRangeByScore(key string, opt *redis.ZRangeBy, v interface{}) (err error) {
+	return defsys.ZRangeByScore(key, opt, v)
 }
 func ZRank(key string, member string) (result int64, err error) {
 	return defsys.ZRank(key, member)
@@ -433,11 +471,11 @@ func ZRemRangeByRank(key string, start int64, stop int64) (result int64, err err
 func ZRemRangeByScore(key string, min string, max string) (result int64, err error) {
 	return defsys.ZRemRangeByScore(key, min, max)
 }
-func ZRevRange(valuetype reflect.Type, key string, start int64, stop int64) (result []interface{}, err error) {
-	return defsys.ZRevRange(valuetype, key, start, stop)
+func ZRevRange(key string, start int64, stop int64, v interface{}) (err error) {
+	return defsys.ZRevRange(key, start, stop, v)
 }
-func ZRevRangeByScore(valuetype reflect.Type, key string, opt *redis.ZRangeBy) (result []interface{}, err error) {
-	return defsys.ZRevRangeByScore(valuetype, key, opt)
+func ZRevRangeByScore(key string, opt *redis.ZRangeBy, v interface{}) (err error) {
+	return defsys.ZRevRangeByScore(key, opt, v)
 }
 func ZRevRank(key string, member string) (result int64, err error) {
 	return defsys.ZRevRank(key, member)
@@ -451,3 +489,21 @@ func ZUnionStore(dest string, store *redis.ZStore) (result int64, err error) {
 func ZScan(key string, _cursor uint64, match string, count int64) (keys []string, cursor uint64, err error) {
 	return defsys.ZScan(key, _cursor, match, count)
 }
+
+/*Lua Script*/
+func NewScript(src string) *redis.StringCmd {
+	return defsys.NewScript(src)
+}
+func Eval(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd {
+	return defsys.Eval(ctx, script, keys, args...)
+}
+func EvalSha(ctx context.Context, sha1 string, keys []string, args ...interface{}) *redis.Cmd {
+	return defsys.EvalSha(ctx, sha1, keys, args...)
+}
+func ScriptExists(ctx context.Context, hashes ...string) *redis.BoolSliceCmd {
+	return defsys.ScriptExists(ctx, hashes...)
+}
+
+// func ScriptLoad(ctx context.Context, script string) *redis.StringCmd {
+// 	return defsys.ScriptLoad(ctx, script)
+// }

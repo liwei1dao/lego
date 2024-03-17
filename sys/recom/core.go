@@ -1,11 +1,11 @@
 package recom
 
 /*
-推荐系统 协同过滤算法
+系统描述:推荐系统 协同过滤算法系统
 */
 type (
 	RecomModel uint8
-	IRecom     interface {
+	ISys       interface {
 		Fit()
 		Wait()
 		RecommendItems(uId uint32, howmany int) (itemIds []uint32)
@@ -18,7 +18,7 @@ const (
 )
 
 var (
-	defsys IRecom
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -26,7 +26,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys IRecom, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
 }

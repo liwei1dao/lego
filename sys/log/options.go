@@ -1,112 +1,139 @@
 package log
 
 import (
+	"errors"
+
 	"github.com/liwei1dao/lego/utils/mapstructure"
-)
-
-type Loglevel int8
-
-const (
-	DebugLevel Loglevel = iota
-	InfoLevel
-	WarnLevel
-	ErrorLevel
-	PanicLevel
-	FatalLevel
 )
 
 type LogEncoder int8
 
 const (
-	Console LogEncoder = iota
-	JSON
+	TextEncoder LogEncoder = iota
+	JSONEncoder
 )
 
 type Option func(*Options)
 type Options struct {
-	FileName      string     //日志文件名包含
-	Loglevel      Loglevel   //日志输出级别
-	Debugmode     bool       //是否debug模式
-	Encoder       LogEncoder //日志输出样式
-	Loglayer      int        //日志堆栈信息打印层级
-	LogMaxSize    int        //每个日志文件最大尺寸 单位 M 默认 1024M
-	LogMaxBackups int        //最多保留备份个数	默认 10个
-	LogMaxAge     int        //文件最多保存多少天 默认 7天
+	FileName     string     //日志文件名包含
+	Loglevel     Loglevel   //日志输出级别
+	IsDebug      bool       //是否是开发模式
+	ReportCaller Loglevel   //是否输出堆栈信息
+	CallerSkip   int        //堆栈深度
+	Encoder      LogEncoder //日志输出样式
+	CupTimeTime  int        //日志分割时间 单位 小时
+	MaxAgeTime   int        //日志最大保存时间 单位天
+	MaxBackups   int        //最大备份日志个数
+	Compress     bool       //是否压缩备份日志
 }
 
+///日志文件名包含
 func SetFileName(v string) Option {
 	return func(o *Options) {
 		o.FileName = v
 	}
 }
 
+//是否是开发模式
+func SetIsDebug(v bool) Option {
+	return func(o *Options) {
+		o.IsDebug = v
+	}
+}
+
+///日志输出级别 debug info warning error fatal panic
 func SetLoglevel(v Loglevel) Option {
 	return func(o *Options) {
 		o.Loglevel = v
 	}
 }
 
-func SetDebugMode(v bool) Option {
+func SetReportCaller(v Loglevel) Option {
 	return func(o *Options) {
-		o.Debugmode = v
+		o.ReportCaller = v
 	}
 }
+func SetCallerSkip(v int) Option {
+	return func(o *Options) {
+		o.CallerSkip = v
+	}
+}
+
+///日志输出样式
 func SetEncoder(v LogEncoder) Option {
 	return func(o *Options) {
 		o.Encoder = v
 	}
 }
-func SetLoglayer(v int) Option {
+
+///日志分割时间 单位 小时
+func SetRotationTime(v int) Option {
 	return func(o *Options) {
-		o.Loglayer = v
-	}
-}
-func SetLogMaxSize(v int) Option {
-	return func(o *Options) {
-		o.LogMaxSize = v
-	}
-}
-func SetLogMaxBackups(v int) Option {
-	return func(o *Options) {
-		o.LogMaxBackups = v
-	}
-}
-func SetLogMaxAge(v int) Option {
-	return func(o *Options) {
-		o.LogMaxAge = v
+		o.CupTimeTime = v
 	}
 }
 
-func newOptions(config map[string]interface{}, opts ...Option) Options {
-	options := Options{
-		Loglevel:      WarnLevel,
-		Debugmode:     false,
-		Encoder:       Console,
-		Loglayer:      2,
-		LogMaxSize:    1024,
-		LogMaxBackups: 10,
-		LogMaxAge:     7,
+///日志最大保存时间 单位天
+func SetMaxAgeTime(v int) Option {
+	return func(o *Options) {
+		o.MaxAgeTime = v
+	}
+}
+
+///日志备份最大文件数
+func SetMaxBackups(v int) Option {
+	return func(o *Options) {
+		o.MaxBackups = v
+	}
+}
+
+///是否压缩备份日志
+func SetCompress(v bool) Option {
+	return func(o *Options) {
+		o.Compress = v
+	}
+}
+func newOptions(config map[string]interface{}, opts ...Option) (options *Options, err error) {
+	options = &Options{
+		FileName:     "log",
+		Loglevel:     DebugLevel,
+		CupTimeTime:  24,
+		MaxAgeTime:   7,
+		MaxBackups:   250,
+		Compress:     false,
+		Encoder:      TextEncoder,
+		CallerSkip:   3,
+		ReportCaller: ErrorLevel,
+		IsDebug:      true,
 	}
 	if config != nil {
-		mapstructure.Decode(config, &options)
+		mapstructure.Decode(config, options)
 	}
 	for _, o := range opts {
-		o(&options)
+		o(options)
 	}
-	return options
+	if options.CupTimeTime <= 0 || options.MaxAgeTime <= 0 {
+		err = errors.New("log options RotationTime or MaxAgeTime is zero!")
+		return
+	}
+	return
 }
 
-func newOptionsByOption(opts ...Option) Options {
-	options := Options{
-		Loglevel:      WarnLevel,
-		Debugmode:     false,
-		Loglayer:      2,
-		LogMaxSize:    1024,
-		LogMaxBackups: 10,
-		LogMaxAge:     7,
+func newOptionsByOption(opts ...Option) (options *Options, err error) {
+	options = &Options{
+		FileName:     "log.log",
+		Loglevel:     DebugLevel,
+		CupTimeTime:  24,
+		MaxAgeTime:   7,
+		MaxBackups:   250,
+		Compress:     false,
+		Encoder:      TextEncoder,
+		CallerSkip:   3,
+		ReportCaller: ErrorLevel,
+		IsDebug:      true,
 	}
 	for _, o := range opts {
-		o(&options)
+		o(options)
 	}
-	return options
+	return
 }

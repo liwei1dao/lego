@@ -6,6 +6,9 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+/*
+系统描述:关系型数据库的集成解决方案
+*/
 type (
 	ISys interface {
 		Close() error

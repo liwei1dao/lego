@@ -1,0 +1,114 @@
+#mgo 副本集数据库
+version: "3.7"
+
+# 申明同一个网络
+networks:
+  net:
+    name: net
+
+# 游戏数据卷
+volumes:
+  mongodata:
+    name: mongodata
+  mongo1data:
+    name: mongo1data
+  mongo2data:
+    name: mongo2data
+  mongo3data:
+    name: mongo3data
+
+# 服务
+services:
+  mongo1:
+    image: mongo:latest
+    container_name: mongo1
+    restart: always
+    ports:
+        - 37017:27017
+    networks:
+      net:
+        # 给网络取别名,可以用redis和cache找到
+        aliases:
+          - db1
+    volumes:
+      - mongo1data:/data/db:rw
+      - mongo1data:/data/configdb:rw
+      - ./mongod.conf:/etc/mongo/mongod.conf:rw
+      - ./mongodb.key:/data/mongodb.key
+    environment:
+        MONGO_INITDB_ROOT_USERNAME: liwei1dao
+        MONGO_INITDB_ROOT_PASSWORD: li13451234
+    command: mongod -f /etc/mongo/mongod.conf --replSet mongoReplSet --keyFile /data/mongodb.key
+    entrypoint:
+        - bash
+        - -c
+        - |
+          chmod 400 /data/mongodb.key
+          chown 999:999 /data/mongodb.key
+          exec docker-entrypoint.sh $$@
+  mongo2:
+    image: mongo:latest
+    container_name: mongo2
+    restart: always
+    ports:
+        - 37018:27017
+    networks:
+      net:
+        # 给网络取别名,可以用redis和cache找到
+        aliases:
+          - db2
+    volumes:
+      - mongo2data:/data/db:rw
+      - mongo2data:/data/configdb:rw
+      - ./mongod.conf:/etc/mongo/mongod.conf:rw
+      - ./mongodb.key:/data/mongodb.key
+    environment:
+        MONGO_INITDB_ROOT_USERNAME: liwei1dao
+        MONGO_INITDB_ROOT_PASSWORD: li13451234
+    command: mongod -f /etc/mongo/mongod.conf --replSet mongoReplSet --keyFile /data/mongodb.key
+    entrypoint:
+        - bash
+        - -c
+        - |
+          chmod 400 /data/mongodb.key
+          chown 999:999 /data/mongodb.key
+          exec docker-entrypoint.sh $$@
+  mongo3:
+    image: mongo:latest
+    container_name: mongo3
+    restart: always
+    ports:
+        - 37019:27017
+    networks:
+      net:
+        # 给网络取别名,可以用redis和cache找到
+        aliases:
+          - db3
+    volumes:
+      - mongo3data:/data/db:rw
+      - mongo3data:/data/configdb:rw
+      - ./mongod.conf:/etc/mongo/mongod.conf:rw
+      - ./mongodb.key:/data/mongodb.key
+    environment:
+        MONGO_INITDB_ROOT_USERNAME: liwei1dao
+        MONGO_INITDB_ROOT_PASSWORD: li13451234
+    command: mongod -f /etc/mongo/mongod.conf --replSet mongoReplSet --keyFile /data/mongodb.key
+    entrypoint:
+        - bash
+        - -c
+        - |
+          chmod 400 /data/mongodb.key
+          chown 999:999 /data/mongodb.key
+          exec docker-entrypoint.sh $$@
+  mongodb-init:
+    image: mongo:latest
+    depends_on:
+        - mongo1
+        - mongo2
+        - mongo3
+    restart: on-failure:5
+    command:                #这里一定要注意使用局域网ip或者外网ip 不要使用127.0.0.1或者localhost 
+        - mongo
+        - mongodb://liwei1dao:li13451234@192.168.0.101:37017/admin
+        - --eval
+        - 'rs.initiate({ _id: "mongoReplSet", members: [{_id:1,host:"192.168.0.101:37017"},{_id:2,host:"192.168.0.101:37018"},{_id:3,host:"192.168.0.101:37019"}]})'

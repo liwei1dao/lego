@@ -4,13 +4,19 @@ import (
 	"github.com/Shopify/sarama"
 )
 
+/*
+系统描述:kafka驱动库系统
+*/
 type (
 	IConsumer interface {
 		Consumer_Messages() <-chan *sarama.ConsumerMessage
 		Consumer_Errors() <-chan error
 		Consumer_Close() error
 	}
-	IKafka interface {
+	ISys interface {
+		Topics() ([]string, error)
+		Partitions(topic string) ([]int32, error)
+		GetOffset(topic string, partitionID int32, time int64) (int64, error)
 		Syncproducer_SendMessage(msg *sarama.ProducerMessage) (partition int32, offset int64, err error)
 		Syncproducer_SendMessages(msgs []*sarama.ProducerMessage) error
 		Syncproducer_Close() error
@@ -27,19 +33,35 @@ type (
 )
 
 var (
-	defsys IKafka
+	defsys ISys
 )
 
-func OnInit(config map[string]interface{}, option ...Option) (err error) {
-	if defsys, err = newSys(newOptions(config, option...)); err == nil {
+func OnInit(config map[string]interface{}, opt ...Option) (err error) {
+	var option *Options
+	if option, err = newOptions(config, opt...); err != nil {
+		return
 	}
+	defsys, err = newSys(option)
 	return
 }
 
-func NewSys(option ...Option) (sys IKafka, err error) {
-	if sys, err = newSys(newOptionsByOption(option...)); err == nil {
+func NewSys(opt ...Option) (sys ISys, err error) {
+	var option *Options
+	if option, err = newOptionsByOption(opt...); err != nil {
+		return
 	}
+	sys, err = newSys(option)
 	return
+}
+
+func Topics() ([]string, error) {
+	return defsys.Topics()
+}
+func Partitions(topic string) ([]int32, error) {
+	return defsys.Partitions(topic)
+}
+func GetOffset(topic string, partitionID int32, time int64) (int64, error) {
+	return defsys.GetOffset(topic, partitionID, time)
 }
 
 func Syncproducer_SendMessage(msg *sarama.ProducerMessage) (partition int32, offset int64, err error) {

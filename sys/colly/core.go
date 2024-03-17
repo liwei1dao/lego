@@ -1,9 +1,12 @@
-/// 爬虫系统
 package colly
 
 import (
 	"github.com/gocolly/colly/v2"
 )
+
+/*
+系统描述:爬虫系统,开源colly 的封装
+*/
 
 type (
 	ISys interface {
@@ -21,15 +24,21 @@ var (
 	defsys ISys
 )
 
-func OnInit(config map[string]interface{}, option ...Option) (err error) {
-	if defsys, err = newSys(newOptions(config, option...)); err == nil {
+func OnInit(config map[string]interface{}, opt ...Option) (err error) {
+	var option *Options
+	if option, err = newOptions(config, opt...); err != nil {
+		return
 	}
+	defsys, err = newSys(option)
 	return
 }
 
-func NewSys(option ...Option) (sys ISys, err error) {
-	if sys, err = newSys(newOptionsByOption(option...)); err == nil {
+func NewSys(opt ...Option) (sys ISys, err error) {
+	var option *Options
+	if option, err = newOptionsByOption(opt...); err != nil {
+		return
 	}
+	sys, err = newSys(option)
 	return
 }
 

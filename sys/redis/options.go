@@ -3,6 +3,7 @@ package redis
 import (
 	"time"
 
+	"github.com/liwei1dao/lego/sys/redis/core"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
 
@@ -13,25 +14,16 @@ const (
 	Redis_Cluster
 )
 
-///redis 存储数据格式化类型
-type RedisStorageTyoe int8
-
-const (
-	JsonData RedisStorageTyoe = iota
-	ProtoData
-)
-
 type Option func(*Options)
 type Options struct {
 	RedisType              RedisType
 	Redis_Single_Addr      string
 	Redis_Single_Password  string
 	Redis_Single_DB        int
-	Redis_Single_PoolSize  int
 	Redis_Cluster_Addr     []string
 	Redis_Cluster_Password string
-	RedisStorageType       RedisStorageTyoe
 	TimeOut                time.Duration
+	Codec                  core.ICodec
 }
 
 func SetRedisType(v RedisType) Option {
@@ -58,12 +50,7 @@ func SetRedis_Single_DB(v int) Option {
 	}
 }
 
-func SetRedis_Single_PoolSize(v int) Option {
-	return func(o *Options) {
-		o.Redis_Single_PoolSize = v
-	}
-}
-func Redis_Cluster_Addr(v []string) Option {
+func SetRedis_Cluster_Addr(v []string) Option {
 	return func(o *Options) {
 		o.Redis_Cluster_Addr = v
 	}
@@ -74,11 +61,6 @@ func SetRedis_Cluster_Password(v string) Option {
 		o.Redis_Cluster_Password = v
 	}
 }
-func SetRedisStorageType(v RedisStorageTyoe) Option {
-	return func(o *Options) {
-		o.RedisStorageType = v
-	}
-}
 
 func SetTimeOut(v time.Duration) Option {
 	return func(o *Options) {
@@ -86,39 +68,43 @@ func SetTimeOut(v time.Duration) Option {
 	}
 }
 
-func newOptions(config map[string]interface{}, opts ...Option) Options {
-	options := Options{
-		Redis_Single_Addr:      "127.0.0.1:6379",
-		Redis_Single_Password:  "",
-		Redis_Single_DB:        1,
-		Redis_Cluster_Addr:     []string{"127.0.0.1:6379"},
-		Redis_Cluster_Password: "",
-		TimeOut:                time.Second * 3,
-		Redis_Single_PoolSize:  100,
+func SetCodec(v core.ICodec) Option {
+	return func(o *Options) {
+		o.Codec = v
 	}
-	if config != nil {
-		mapstructure.Decode(config, &options)
-	}
-	for _, o := range opts {
-		o(&options)
-	}
-	return options
 }
 
-func newOptionsByOption(opts ...Option) Options {
-	options := Options{
+func newOptions(config map[string]interface{}, opts ...Option) (options *Options, err error) {
+	options = &Options{
 		Redis_Single_Addr:      "127.0.0.1:6379",
 		Redis_Single_Password:  "",
 		Redis_Single_DB:        1,
 		Redis_Cluster_Addr:     []string{"127.0.0.1:6379"},
 		Redis_Cluster_Password: "",
 		TimeOut:                time.Second * 3,
-		Redis_Single_PoolSize:  100,
+	}
+	if config != nil {
+		mapstructure.Decode(config, options)
 	}
 	for _, o := range opts {
-		o(&options)
+		o(options)
 	}
-	return options
+	return
+}
+
+func newOptionsByOption(opts ...Option) (options *Options, err error) {
+	options = &Options{
+		Redis_Single_Addr:      "127.0.0.1:6379",
+		Redis_Single_Password:  "",
+		Redis_Single_DB:        1,
+		Redis_Cluster_Addr:     []string{"127.0.0.1:6379"},
+		Redis_Cluster_Password: "",
+		TimeOut:                time.Second * 3,
+	}
+	for _, o := range opts {
+		o(options)
+	}
+	return
 }
 
 type RMutexOption func(*RMutexOptions)

@@ -2,14 +2,20 @@ package doris
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/liwei1dao/lego/utils/codec/json"
+
 	"github.com/liwei1dao/lego/utils/container/id"
 )
+
+func newSys(options Options) (sys *Doris, err error) {
+	sys = &Doris{options: options}
+	return
+}
 
 type Doris struct {
 	options Options

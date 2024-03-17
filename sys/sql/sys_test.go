@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	_ "gitee.com/chunanyong/dm"          //达梦数据库 驱动
 	_ "github.com/denisenkom/go-mssqldb" //sqlservice 驱动
 	_ "github.com/go-sql-driver/mysql"   //mysql 驱动
 	_ "github.com/godror/godror"         //oracle 驱动
+	_ "github.com/liwei1dao/dm"          //达梦数据库 驱动
 	lgsql "github.com/liwei1dao/lego/sys/sql"
 )
 

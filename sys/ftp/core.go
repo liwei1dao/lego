@@ -1,5 +1,8 @@
 package ftp
 
+/*
+系统描述:ftp文件系统
+*/
 type (
 	FileEntry struct {
 		FileName string
@@ -7,7 +10,7 @@ type (
 		ModTime  int64
 		IsDir    bool
 	}
-	IFtp interface {
+	ISys interface {
 		ReadDir(path string) (entries []*FileEntry, err error)
 		MakeDir(path string) error
 		RemoveDir(path string) error
@@ -16,10 +19,10 @@ type (
 )
 
 var (
-	defsys IFtp
+	defsys ISys
 )
 
-func newSys(options Options) (sys IFtp, err error) {
+func newSys(options Options) (sys ISys, err error) {
 	if options.SType == FTP {
 		sys, err = newFtp(options)
 	} else if options.SType == SFTP {
@@ -34,7 +37,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys IFtp, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	if sys, err = newSys(newOptionsByOption(option...)); err == nil {
 	}
 	return

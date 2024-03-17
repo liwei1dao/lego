@@ -1,13 +1,15 @@
 package colly
 
 import (
+	"crypto/tls"
+	"net/http"
 	"time"
 
 	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/proxy"
 )
 
-func newSys(options Options) (sys *Colly, err error) {
+func newSys(options *Options) (sys *Colly, err error) {
 	var (
 		py colly.ProxyFunc
 	)
@@ -17,6 +19,12 @@ func newSys(options Options) (sys *Colly, err error) {
 			colly.AllowURLRevisit(),
 		),
 	}
+	if options.SkipCertificate {
+		sys.colly.WithTransport(&http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		})
+	}
+
 	//限速
 	sys.colly.Limit(&colly.LimitRule{
 		DomainGlob:  "www.douban.com",
@@ -35,7 +43,7 @@ func newSys(options Options) (sys *Colly, err error) {
 }
 
 type Colly struct {
-	options Options
+	options *Options
 	colly   *colly.Collector
 }
 

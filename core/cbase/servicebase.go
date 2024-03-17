@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
 	"sync"
 	"syscall"
 
@@ -82,44 +83,55 @@ func (this *ServiceBase) Start() (err error) {
 }
 
 func (this *ServiceBase) Run(mod ...core.IModule) {
-	for _, v := range mod {
-		if sf, ok := this.Service.GetSettings().Modules[string(v.GetType())]; ok {
-			this.modules[v.GetType()] = &defaultModule{
-				seetring: sf,
-				mi:       v,
-				closeSig: make(chan bool, 1),
+	go func() {
+		defer func() { //程序异常 收集异常信息传递给前端显示
+			if r := recover(); r != nil {
+				buf := make([]byte, 4096)
+				l := runtime.Stack(buf, false)
+				log.Errorf("服务[%s:%s]崩溃啦!------> %s", this.Service.GetId(), this.Service.GetVersion(), fmt.Sprintf("%v: %s", r, buf[:l]))
 			}
-		} else {
-			this.modules[v.GetType()] = &defaultModule{
-				seetring: make(map[string]interface{}),
-				mi:       v,
-				closeSig: make(chan bool, 1),
+		}()
+		for _, v := range mod {
+			if sf, ok := this.Service.GetSettings().Modules[string(v.GetType())]; ok {
+				this.modules[v.GetType()] = &defaultModule{
+					seetring: sf,
+					mi:       v,
+					closeSig: make(chan bool, 1),
+				}
+			} else {
+				this.modules[v.GetType()] = &defaultModule{
+					seetring: make(map[string]interface{}),
+					mi:       v,
+					closeSig: make(chan bool, 1),
+				}
+				log.Warnf("注册模块【%s】 没有对应的配置信息", v.GetType())
 			}
-			log.Warnf("注册模块【%s】 没有对应的配置信息", v.GetType())
 		}
-	}
-	for _, v := range this.modules {
-		options := v.mi.NewOptions()
-		if err := options.LoadConfig(v.seetring); err == nil {
-			err := v.mi.Init(this.Service, v.mi, options)
+		for _, v := range this.modules {
+			options := v.mi.NewOptions()
+			if err := options.LoadConfig(v.seetring); err == nil {
+				err = v.mi.Init(this.Service, v.mi, options)
+				if err != nil {
+					log.Panicf(fmt.Sprintf("初始化模块【%s】错误 err:%v", v.mi.GetType(), err))
+				}
+			} else {
+				log.Panicf(fmt.Sprintf("模块【%s】 Options:%v 配置错误 err:%v", v.mi.GetType(), v.seetring, err))
+			}
+		}
+		for _, v := range this.modules {
+			err := v.mi.Start()
 			if err != nil {
-				log.Panicf(fmt.Sprintf("初始化模块【%s】错误 err:%v", v.mi.GetType(), err))
+				log.Panicf(fmt.Sprintf("启动模块【%s】错误 err:%v", v.mi.GetType(), err))
+			} else {
+				log.Debugf("启动模块【%s】", v.mi.GetType())
 			}
-		} else {
-			log.Panicf(fmt.Sprintf("模块【%s】 Options:%v 配置错误 err:%v", v.mi.GetType(), v.seetring, err))
 		}
-	}
-	for _, v := range this.modules {
-		err := v.mi.Start()
-		if err != nil {
-			log.Panicf(fmt.Sprintf("启动模块【%s】错误 err:%v", v.mi.GetType(), err))
+		for _, v := range this.modules {
+			v.wg.Add(1)
+			go v.run()
 		}
-	}
-	for _, v := range this.modules {
-		v.wg.Add(1)
-		go v.run()
-	}
-	event.TriggerEvent(core.Event_ServiceStartEnd) //广播事件
+		event.TriggerEvent(core.Event_ServiceStartEnd) //广播事件
+	}()
 	//监听外部关闭服务信号
 	c := make(chan os.Signal, 1)
 	//添加进程结束信号
@@ -172,6 +184,6 @@ func (this *ServiceBase) GetComp(CompName core.S_Comps) (comp core.IServiceComp,
 	if v, ok := this.comps[CompName]; ok {
 		return v, nil
 	} else {
-		return nil, fmt.Errorf("未装配组件【%s】", CompName)
+		return nil, fmt.Errorf("Service 未装配组件【%s】", CompName)
 	}
 }

@@ -10,6 +10,7 @@ type Options struct {
 	Endpoint        string
 	AccessKeyId     string
 	AccessKeySecret string
+	SecurityToken   string
 	BucketName      string
 }
 
@@ -28,6 +29,11 @@ func SetAccessKeyId(v string) Option {
 func SetAccessKeySecret(v string) Option {
 	return func(o *Options) {
 		o.AccessKeySecret = v
+	}
+}
+func SetSecurityToken(v string) Option {
+	return func(o *Options) {
+		o.SecurityToken = v
 	}
 }
 

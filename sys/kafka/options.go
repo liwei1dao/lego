@@ -4,12 +4,14 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
+	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
 
 type KafkaStartType int8 //kafka启动类型
 const (
-	Syncproducer             KafkaStartType = iota ///同步生产者
+	Client                   KafkaStartType = iota //kafka客户端
+	Syncproducer                                   ///同步生产者
 	Asyncproducer                                  ///异步生产者
 	Consumer                                       ///消费者
 	SyncproducerAndConsumer                        ///同步生产者和消费
@@ -43,6 +45,22 @@ type Options struct {
 	Sasl_Enable               bool                    //开启认证
 	Sasl_Mechanism            sarama.SASLMechanism    //认证方法
 	Sasl_GSSAPI               sarama.GSSAPIConfig     //认证配置
+	Debug                     bool                    //日志是否开启
+	Log                       log.ILogger
+}
+
+///kafka启动类型
+func SetLog(v log.ILogger) Option {
+	return func(o *Options) {
+		o.Log = v
+	}
+}
+
+///kafka启动类型
+func SetDebug(v bool) Option {
+	return func(o *Options) {
+		o.Debug = v
+	}
 }
 
 ///kafka启动类型
@@ -213,8 +231,8 @@ func SetSasl_GSSAPI(v sarama.GSSAPIConfig) Option {
 	}
 }
 
-func newOptions(config map[string]interface{}, opts ...Option) Options {
-	options := Options{
+func newOptions(config map[string]interface{}, opts ...Option) (options *Options, err error) {
+	options = &Options{
 		Version:                   "1.0.0",
 		Producer_Return_Successes: false,
 		Producer_Return_Errors:    false,
@@ -232,16 +250,19 @@ func newOptions(config map[string]interface{}, opts ...Option) Options {
 		Sasl_Enable:               false,
 	}
 	if config != nil {
-		mapstructure.Decode(config, &options)
+		mapstructure.Decode(config, options)
 	}
 	for _, o := range opts {
-		o(&options)
+		o(options)
 	}
-	return options
+	if options.Log == nil {
+		options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.kafka", 3))
+	}
+	return
 }
 
-func newOptionsByOption(opts ...Option) Options {
-	options := Options{
+func newOptionsByOption(opts ...Option) (options *Options, err error) {
+	options = &Options{
 		Version:                   "1.0.0",
 		Producer_Return_Successes: false,
 		Producer_Return_Errors:    false,
@@ -259,7 +280,10 @@ func newOptionsByOption(opts ...Option) Options {
 		Sasl_Enable:               false,
 	}
 	for _, o := range opts {
-		o(&options)
+		o(options)
 	}
-	return options
+	if options.Log == nil {
+		options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.kafka", 3))
+	}
+	return
 }

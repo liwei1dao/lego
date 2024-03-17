@@ -1,10 +1,11 @@
 package ip
 
 import (
-	"encoding/json"
 	"io/ioutil"
 	"net"
 	"net/http"
+
+	"github.com/liwei1dao/lego/utils/codec/json"
 
 	"github.com/axgle/mahonia"
 )

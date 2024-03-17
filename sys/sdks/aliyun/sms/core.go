@@ -1,13 +1,13 @@
 package sms
 
 type (
-	ISMS interface {
+	ISys interface {
 		SendCaptcha(mobile string, captcha string) error
 	}
 )
 
 var (
-	defsys ISMS
+	defsys ISys
 )
 
 func OnInit(config map[string]interface{}, option ...Option) (err error) {
@@ -15,7 +15,7 @@ func OnInit(config map[string]interface{}, option ...Option) (err error) {
 	return
 }
 
-func NewSys(option ...Option) (sys ISMS, err error) {
+func NewSys(option ...Option) (sys ISys, err error) {
 	sys, err = newSys(newOptionsByOption(option...))
 	return
 }

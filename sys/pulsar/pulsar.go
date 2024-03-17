@@ -9,7 +9,7 @@ import (
 )
 
 func newSys(options Options) (sys *Pulsar, err error) {
-	sys = &Pulsar{options: options}
+	sys = &Pulsar{options: options, ctx: context.Background()}
 	err = sys.init()
 	return
 }
@@ -36,7 +36,10 @@ func (this *Pulsar) init() (err error) {
 	}
 	if this.options.StartType == Producer || this.options.StartType == All {
 		if this.producer, err = this.client.CreateProducer(pulsar.ProducerOptions{
-			Topic: this.options.Topics[0],
+			Topic:            this.options.Topics[0],
+			BatchingMaxSize:  this.options.Producer_BatchingMaxSize,
+			CompressionType:  this.options.Producer_CompressionType,
+			CompressionLevel: this.options.Producer_CompressionLevel,
 		}); err != nil {
 			err = fmt.Errorf("Sys:Pulsar CreateProducer err:%v", err)
 			return
@@ -101,7 +104,7 @@ func (this *Pulsar) run() {
 }
 
 func (this *Pulsar) producer_SendAsync_Call(mi pulsar.MessageID, pm *pulsar.ProducerMessage, err error) {
-	if this.options.Producer_Return_Errors {
+	if this.options.Producer_Return_Errors && err != nil {
 		this.errors <- &ProducerError{Msg: pm, Err: err}
 	}
 }

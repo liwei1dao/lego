@@ -1,58 +1,35 @@
 package rpc
 
 import (
-	"reflect"
+	"context"
 
-	lgcore "github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/sys/rpc/core"
-	_ "github.com/liwei1dao/lego/sys/rpc/serialize"
+	"github.com/liwei1dao/lego/core"
 )
 
+/*
+系统描述:rpc服务通信系统，参考xrpc设计思路
+*/
+//系统事件
 const (
-	Nats RPCConnType = iota
-	Kafka
+	///发现新的节点
+	Event_RpcDiscoverNewNodes core.Event_Key = "Event_RpcDiscoverNewNodes"
+	///丢失节点
+	Event_RpcLoseNodes core.Event_Key = "Event_RpcLoseNodes"
+	///节点属性变更
+	Event_RpChangeNodes core.Event_Key = "Event_RpChangeNodes"
 )
 
 type (
-	RPCConnType int
-	ISys        interface {
-		IRpcServer
-		NewRpcClient(sId, rId string) (clent IRpcClient, err error)
-		OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error))
-		OnRegisterJsonRpcData(d interface{})
-		OnRegisterProtoDataData(d interface{})
-	}
-	IRpcServer interface {
-		RpcId() string
-		GetRpcInfo() (rfs []lgcore.Rpc_Key)
-		Register(id lgcore.Rpc_Key, f interface{})
-		RegisterGO(id lgcore.Rpc_Key, f interface{})
-		UnRegister(id lgcore.Rpc_Key, f interface{})
+	ISys interface {
 		Start() (err error)
-		Stop() (err error)
-	}
-	IRpcClient interface {
-		Stop() (err error)
-		Call(_func string, params ...interface{}) (interface{}, error)
-		CallNR(_func string, params ...interface{}) (err error)
-	}
-	RPCListener interface {
-		NoFoundFunction(fn string) (*core.FunctionInfo, error)
-		BeforeHandle(fn string, callInfo *core.CallInfo) error
-		OnTimeOut(fn string, Expired int64)
-		OnError(fn string, callInfo *core.CallInfo, err error)
-		OnComplete(fn string, callInfo *core.CallInfo, result *core.ResultInfo, exec_time int64)
-	}
-	IRPCConnServer interface {
-		Callback(callinfo core.CallInfo) error
-		Start(service core.IRpcServer) (err error)
-		Stop() (err error)
-	}
-	IRPCConnClient interface {
-		Stop() (err error)
-		Delete(key string) (err error)
-		Call(callInfo core.CallInfo, callback chan core.ResultInfo) error
-		CallNR(callInfo core.CallInfo) error
+		Close() (err error)
+		Register(rcvr interface{}) error
+		RegisterFunction(fn interface{}) error
+		RegisterFunctionName(name string, fn interface{}) (err error)
+		UnRegister(name string)
+		Call(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (err error)                  //同步调用 等待结果
+		Go(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) //异步调用 异步返回
+		Broadcast(ctx context.Context, servicePath string, serviceMethod string, args interface{}) (err error)
 	}
 )
 
@@ -60,45 +37,49 @@ var (
 	defsys ISys
 )
 
-func OnInit(config map[string]interface{}, option ...Option) (err error) {
-	defsys, err = newSys(newOptions(config, option...))
+func OnInit(config map[string]interface{}, opt ...Option) (err error) {
+	var option *Options
+	if option, err = newOptions(config, opt...); err != nil {
+		return
+	}
+	defsys, err = newSys(option)
 	return
 }
 
-func NewSys(option ...Option) (sys ISys, err error) {
-	sys, err = newSys(newOptionsByOption(option...))
+func NewSys(opt ...Option) (sys ISys, err error) {
+	var option *Options
+	if option, err = newOptionsByOption(opt...); err != nil {
+		return
+	}
+	sys, err = newSys(option)
 	return
 }
+
 func Start() (err error) {
 	return defsys.Start()
 }
-func Stop() (err error) {
-	return defsys.Stop()
+func Close() (err error) {
+	return defsys.Close()
 }
-func RpcId() string {
-	return defsys.RpcId()
+
+func Register(rcvr interface{}) error {
+	return defsys.Register(rcvr)
 }
-func GetRpcInfo() (rfs []lgcore.Rpc_Key) {
-	return defsys.GetRpcInfo()
+func RegisterFunction(fn interface{}) error {
+	return defsys.RegisterFunction(fn)
 }
-func Register(id lgcore.Rpc_Key, f interface{}) {
-	defsys.Register(id, f)
+func RegisterFunctionName(name string, fn interface{}) error {
+	return defsys.RegisterFunctionName(name, fn)
 }
-func RegisterGO(id lgcore.Rpc_Key, f interface{}) {
-	defsys.RegisterGO(id, f)
+func UnRegister(name string) {
+	defsys.UnRegister(name)
 }
-func UnRegister(id lgcore.Rpc_Key, f interface{}) {
-	defsys.UnRegister(id, f)
+func Call(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (err error) {
+	return defsys.Call(ctx, servicePath, serviceMethod, args, reply)
 }
-func NewRpcClient(sId, rId string) (clent IRpcClient, err error) {
-	return defsys.NewRpcClient(sId, rId)
+func Go(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) {
+	return defsys.Go(ctx, servicePath, serviceMethod, args, reply)
 }
-func OnRegisterRpcData(d interface{}, sf func(d interface{}) ([]byte, error), unsf func(dataType reflect.Type, d []byte) (interface{}, error)) {
-	defsys.OnRegisterRpcData(d, sf, unsf)
-}
-func OnRegisterJsonRpcData(d interface{}) {
-	defsys.OnRegisterJsonRpcData(d)
-}
-func OnRegisterProtoDataData(d interface{}) {
-	defsys.OnRegisterProtoDataData(d)
+func Broadcast(ctx context.Context, servicePath string, serviceMethod string, args interface{}) (err error) {
+	return defsys.Broadcast(ctx, servicePath, serviceMethod, args)
 }
