@@ -9,7 +9,7 @@ import (
 )
 
 /*
-系统描述:redis系统驱动,集成单接单和集群模式，以及之定义lua支持
+系统描述:redis系统驱动,集成单接单和集群模式，以及之定义lua支持,并配合序列化系统批量处理消息数据
 */
 type (
 	IRedis interface {
@@ -229,7 +229,7 @@ func Keys(pattern string) (keys []string, err error) {
 	return defsys.Keys(pattern)
 }
 
-///获取键类型
+// /获取键类型
 func Type(key string) (ty string, err error) {
 	return defsys.Type(key)
 }
