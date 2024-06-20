@@ -131,7 +131,7 @@ func (this *Model) UpdateModelLogs(table string, uID string, where bson.M, targe
 	return err
 }
 
-//更新数据模块过期
+// 更新数据模块过期
 func (this *Model) UpDateModelExpired(key string, childs map[string]struct{}, expired time.Duration) {
 	this.mu.RLock()
 	exp, ok := this.data[key]
@@ -157,5 +157,13 @@ func (this *Model) UpDateModelExpired(key string, childs map[string]struct{}, ex
 		this.mu.Lock()
 		this.data[key] = exp
 		this.mu.Unlock()
+	}
+}
+
+func (this *Model) NewDBModel(tableName string) *Document {
+	return &Document{
+		Model:     this,
+		TableName: tableName,
+		Expired:   time.Minute * 15,
 	}
 }
