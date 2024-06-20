@@ -2,7 +2,7 @@ package rpcx
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/liwei1dao/lego/core"
 	"gopkg.in/yaml.v2"
@@ -35,7 +35,7 @@ func newOptions(option ...Option) *Options {
 	for _, o := range option {
 		o(options)
 	}
-	yamlFile, err := ioutil.ReadFile(options.ConfPath)
+	yamlFile, err := os.ReadFile(options.ConfPath)
 	if err != nil {
 		panic(fmt.Sprintf("读取服务配置【%s】文件失败err:%v:", options.ConfPath, err))
 	}
