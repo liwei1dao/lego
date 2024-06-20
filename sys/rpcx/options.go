@@ -24,7 +24,8 @@ type Options struct {
 	ServiceId      string                 //服务id
 	ServiceVersion string                 //服务版本
 	ServiceAddr    string                 //服务地址
-	ConsulServers  []string               //Consul集群服务地址
+	ETCDServers    []string               //ETCD集群服务地址
+	UpdateInterval int32                  //更新间隔
 	RpcxStartType  RpcxStartType          //Rpcx启动类型
 	AutoConnect    bool                   //自动连接 客户端启动模式下 主动连接发现的节点服务器
 	SerializeType  protocol.SerializeType //序列化方式
@@ -63,9 +64,9 @@ func SetServiceAddr(v string) Option {
 	}
 }
 
-func SetConsulServers(v []string) Option {
+func SetETCDServers(v []string) Option {
 	return func(o *Options) {
-		o.ConsulServers = v
+		o.ETCDServers = v
 	}
 }
 
@@ -99,12 +100,13 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 	for _, o := range opts {
 		o(options)
 	}
-	if len(options.ServiceTag) == 0 || len(options.ServiceType) == 0 || len(options.ServiceId) == 0 || len(options.ConsulServers) == 0 {
+	if len(options.ServiceTag) == 0 || len(options.ServiceType) == 0 || len(options.ServiceId) == 0 || len(options.ETCDServers) == 0 {
 		return options, errors.New("[Sys.RPCX] newOptions err: 启动参数异常")
 	}
 
 	if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.rpc", 3)); options.Log == nil {
 		err = errors.New("log is nil")
+		return
 	}
 
 	return options, nil
@@ -119,7 +121,7 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 	for _, o := range opts {
 		o(options)
 	}
-	if len(options.ServiceTag) == 0 || len(options.ServiceType) == 0 || len(options.ServiceId) == 0 || len(options.ConsulServers) == 0 {
+	if len(options.ServiceTag) == 0 || len(options.ServiceType) == 0 || len(options.ServiceId) == 0 || len(options.ETCDServers) == 0 {
 		return options, errors.New("[Sys.RPCX] newOptions err: 启动参数异常")
 	}
 	if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.rpc", 3)); options.Log == nil {

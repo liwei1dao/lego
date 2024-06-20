@@ -331,7 +331,7 @@ func (this *Client) getclient(ctx *context.Context, clusterTag string, servicePa
 	c, ok = cluster.clients[spath[0]]
 	cluster.Mu.RUnlock()
 	if !ok {
-		if d, err = consulclient.NewConsulDiscovery(clusterTag, spath[0], this.options.ConsulServers, nil); err != nil {
+		if d, err = consulclient.NewConsulDiscovery(clusterTag, spath[0], this.options.ETCDServers, nil); err != nil {
 			return
 		}
 		c = client.NewBidirectionalXClient(spath[0], client.Failfast, client.RoundRobin, d, client.DefaultOption, this.msgChan)

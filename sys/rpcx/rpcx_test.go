@@ -23,7 +23,7 @@ func Test_Sys(t *testing.T) {
 		SetServiceId("worker_1"),
 		SetServiceVersion("1.0.0"),
 		SetServiceAddr("127.0.0.1:9978"),
-		SetConsulServers([]string{"10.0.0.9:8500"}),
+		SetETCDServers([]string{"10.0.0.9:2379"}),
 	); err != nil {
 		fmt.Printf("err:%v", err)
 		return

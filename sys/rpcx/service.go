@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/rcrowley/go-metrics"
-	"github.com/rpcxio/rpcx-consul/serverplugin"
+	"github.com/rpcxio/rpcx-etcd/serverplugin"
 	"github.com/smallnest/rpcx/client"
 	"github.com/smallnest/rpcx/protocol"
 	"github.com/smallnest/rpcx/server"
@@ -29,12 +29,12 @@ func newService(options *Options) (sys *Service, err error) {
 		pending:    make(map[uint64]*client.Call),
 	}
 
-	r := &serverplugin.ConsulRegisterPlugin{
+	r := &serverplugin.EtcdRegisterPlugin{
 		ServiceAddress: "tcp@" + options.ServiceAddr,
-		ConsulServers:  options.ConsulServers,
+		EtcdServers:    options.ETCDServers,
 		BasePath:       options.ServiceTag,
 		Metrics:        metrics.NewRegistry(),
-		UpdateInterval: time.Minute,
+		UpdateInterval: time.Duration(options.UpdateInterval) * time.Second,
 	}
 	if err = r.Start(); err != nil {
 		return

@@ -10,7 +10,7 @@ import (
 	"github.com/liwei1dao/lego/sys/log"
 )
 
-//异步返回结构
+// 异步返回结构
 type MessageCall struct {
 	ServicePath   string
 	ServiceMethod string
@@ -28,11 +28,10 @@ func (call *MessageCall) done(log log.Ilogf) {
 		// ok
 	default:
 		log.Debugf("rpc: discarding Call reply due to insufficient Done chan capacity")
-
 	}
 }
 
-//服务对象
+// 服务对象
 type Server struct {
 	sync.Mutex
 	Fn        reflect.Value //执行方法

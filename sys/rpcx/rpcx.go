@@ -9,15 +9,6 @@ import (
 )
 
 func newSys(options *Options) (sys ISys, err error) {
-	// if options.RpcxStartType == RpcxStartByService { //创建RPCX 服务端
-	// 	sys, err = newService(options)
-	// 	return
-	// }
-
-	// if options.RpcxStartType == RpcxStartByClient { //创建RPCX 客户端
-	// 	sys, err = newClient(options)
-	// 	return
-	// }
 	var (
 		service ISys
 		client  ISys
