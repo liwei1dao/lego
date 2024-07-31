@@ -69,39 +69,25 @@ func (this *Logger) Enabled(lvl Loglevel) bool {
 	return this.level.Enabled(lvl)
 }
 func (this *Logger) Debug(msg string, args ...Field) {
-	if this.level.Enabled(DebugLevel) {
-		this.log(DebugLevel, msg, args...)
-	}
+	this.Log(DebugLevel, msg, args...)
 }
 func (this *Logger) Info(msg string, args ...Field) {
-	if this.level.Enabled(InfoLevel) {
-		this.log(InfoLevel, msg, args...)
-	}
+	this.Log(InfoLevel, msg, args...)
 }
 func (this *Logger) Print(msg string, args ...Field) {
-	if this.level.Enabled(InfoLevel) {
-		this.log(InfoLevel, msg, args...)
-	}
+	this.Log(InfoLevel, msg, args...)
 }
 func (this *Logger) Warn(msg string, args ...Field) {
-	if this.level.Enabled(WarnLevel) {
-		this.log(WarnLevel, msg, args...)
-	}
+	this.Log(WarnLevel, msg, args...)
 }
 func (this *Logger) Error(msg string, args ...Field) {
-	if this.level.Enabled(ErrorLevel) {
-		this.log(ErrorLevel, msg, args...)
-	}
+	this.Log(ErrorLevel, msg, args...)
 }
 func (this *Logger) Panic(msg string, args ...Field) {
-	if this.level.Enabled(PanicLevel) {
-		this.log(PanicLevel, msg, args...)
-	}
+	this.Log(PanicLevel, msg, args...)
 }
 func (this *Logger) Fatal(msg string, args ...Field) {
-	if this.level.Enabled(FatalLevel) {
-		this.log(FatalLevel, msg, args...)
-	}
+	this.Log(FatalLevel, msg, args...)
 	os.Exit(1)
 }
 func (this *Logger) Log(level Loglevel, msg string, args ...Field) {
