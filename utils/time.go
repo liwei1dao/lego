@@ -13,7 +13,7 @@ func IsToday(d int64) bool {
 	return tt.Year() == now.Year() && tt.Month() == now.Month() && tt.Day() == now.Day()
 }
 
-//是否是下一天
+// 是否是下一天
 func IsNextToday(d int64) bool {
 	d += 24 * 3600
 	tt := time.Unix(d, 0)
@@ -64,14 +64,14 @@ func GetZeroTime(curTime int64) int64 {
 	return startTime.Unix() + 86400 //3600*24
 }
 
-//是否是昨天
+// 是否是昨天
 func IsYestoday(timestamp int64) bool {
 	tt := time.Unix(timestamp, 0)
 	yesTime := time.Now().AddDate(0, 0, -1)
 	return tt.Year() == yesTime.Year() && tt.Month() == yesTime.Month() && tt.Day() == yesTime.Day()
 }
 
-//计算自然天数
+// 计算自然天数 时间戳计算间隔时间 是采用 0时区计算的
 func DiffDays(t1, t2 int64) int {
 	if t1 == t2 {
 		return -1
@@ -96,4 +96,42 @@ func DiffDays(t1, t2 int64) int {
 		diffDays += 1
 	}
 	return diffDays
+}
+
+// 计算自然天数 时间戳计算间隔时间 是采用 0时区计算的
+func DiffDaysForTime(st, et time.Time) int {
+	// 转换时间戳为 UTC 时间
+	// 获取整天的时间（忽略小时、分钟、秒）
+	st = time.Date(st.Year(), st.Month(), st.Day(), 0, 0, 0, 0, time.UTC)
+	et = time.Date(et.Year(), et.Month(), et.Day(), 0, 0, 0, 0, time.UTC)
+
+	// 计算天数差异
+	diffDays := int(et.Sub(st).Hours() / 24)
+	return diffDays
+}
+
+// 时区转换
+func ToTimeAreaUnix(timearea string, ts int64) int64 {
+	serverTime := time.Unix(ts, 0)
+	// 加载巴西时区
+	brazilLocation, err := time.LoadLocation(timearea)
+	if err != nil {
+		return ts
+	}
+	// 将服务器时间转换为巴西时区时间
+	brazilTime := serverTime.In(brazilLocation)
+	brazilTimestamp := brazilTime.Unix()
+	return brazilTimestamp
+}
+
+// 时区转换
+func ToTimeAreaTime(timearea string, ts time.Time) time.Time {
+	// 加载巴西时区
+	brazilLocation, err := time.LoadLocation(timearea)
+	if err != nil {
+		return ts
+	}
+	// 将服务器时间转换为巴西时区时间
+	brazilTime := ts.In(brazilLocation)
+	return brazilTime
 }
