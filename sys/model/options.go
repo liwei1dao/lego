@@ -74,14 +74,14 @@ type DBOptions struct {
 	IsMgoLog bool //是否写mgolog
 }
 
-//设置是否写mgor日志
+// 设置是否写mgor日志
 func SetDBMgoLog(v bool) DBOption {
 	return func(o *DBOptions) {
 		o.IsMgoLog = v
 	}
 }
 
-//更具 Option 序列化 系统参数对象
+// 更具 Option 序列化 系统参数对象
 func newDBOption(opts ...DBOption) DBOptions {
 	options := DBOptions{
 		IsMgoLog: true,

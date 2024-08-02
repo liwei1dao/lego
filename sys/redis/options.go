@@ -3,85 +3,55 @@ package redis
 import (
 	"time"
 
-	"github.com/liwei1dao/lego/sys/redis/core"
+	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/mapstructure"
-)
-
-type RedisType int8
-
-const (
-	Redis_Single RedisType = iota
-	Redis_Cluster
 )
 
 type Option func(*Options)
 type Options struct {
-	RedisType              RedisType
-	Redis_Single_Addr      string
-	Redis_Single_Password  string
-	Redis_Single_DB        int
-	Redis_Cluster_Addr     []string
-	Redis_Cluster_Password string
-	TimeOut                time.Duration
-	Codec                  core.ICodec
+	Debug         bool //日志是否开启
+	Log           log.ILogger
+	RedisAddr     []string
+	RedisPassword string
+	RedisDB       int
+	RedisTLS      bool
+	TimeOut       time.Duration
 }
 
-func SetRedisType(v RedisType) Option {
+func SetRedisDB(v int) Option {
 	return func(o *Options) {
-		o.RedisType = v
+		o.RedisDB = v
 	}
 }
 
-///RedisUrl = "127.0.0.1:6379"
-func SetRedis_Single_Addr(v string) Option {
+func SetRedisAddr(v []string) Option {
 	return func(o *Options) {
-		o.Redis_Single_Addr = v
+		o.RedisAddr = v
 	}
 }
 
-func SetRedis_Single_Password(v string) Option {
+func SetRedisPassword(v string) Option {
 	return func(o *Options) {
-		o.Redis_Single_Password = v
+		o.RedisPassword = v
 	}
 }
-func SetRedis_Single_DB(v int) Option {
+func SetRedisTLS(v bool) Option {
 	return func(o *Options) {
-		o.Redis_Single_DB = v
+		o.RedisTLS = v
 	}
 }
-
-func SetRedis_Cluster_Addr(v []string) Option {
-	return func(o *Options) {
-		o.Redis_Cluster_Addr = v
-	}
-}
-
-func SetRedis_Cluster_Password(v string) Option {
-	return func(o *Options) {
-		o.Redis_Cluster_Password = v
-	}
-}
-
 func SetTimeOut(v time.Duration) Option {
 	return func(o *Options) {
 		o.TimeOut = v
 	}
 }
 
-func SetCodec(v core.ICodec) Option {
-	return func(o *Options) {
-		o.Codec = v
-	}
-}
-
 func newOptions(config map[string]interface{}, opts ...Option) (options *Options, err error) {
 	options = &Options{
-		Redis_Single_Addr:      "127.0.0.1:6379",
-		Redis_Single_Password:  "",
-		Redis_Single_DB:        1,
-		Redis_Cluster_Addr:     []string{"127.0.0.1:6379"},
-		Redis_Cluster_Password: "",
-		TimeOut:                time.Second * 3,
+		RedisAddr:     []string{"127.0.0.1:6379"},
+		RedisPassword: "",
+		RedisDB:       1,
+		TimeOut:       time.Second * 3,
 	}
 	if config != nil {
 		mapstructure.Decode(config, options)
@@ -89,33 +59,37 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 	for _, o := range opts {
 		o(options)
 	}
+	if options.Log == nil {
+		options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.redis", 3))
+	}
 	return
 }
 
 func newOptionsByOption(opts ...Option) (options *Options, err error) {
 	options = &Options{
-		Redis_Single_Addr:      "127.0.0.1:6379",
-		Redis_Single_Password:  "",
-		Redis_Single_DB:        1,
-		Redis_Cluster_Addr:     []string{"127.0.0.1:6379"},
-		Redis_Cluster_Password: "",
-		TimeOut:                time.Second * 3,
+		RedisAddr:     []string{"127.0.0.1:6379"},
+		RedisPassword: "",
+		RedisDB:       1,
+		TimeOut:       time.Second * 3,
 	}
 	for _, o := range opts {
 		o(options)
+	}
+	if options.Log == nil {
+		options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.redis", 3))
 	}
 	return
 }
 
 type RMutexOption func(*RMutexOptions)
 type RMutexOptions struct {
-	expiry int
+	expiry time.Duration
 	delay  time.Duration
 }
 
 func SetExpiry(v int) RMutexOption {
 	return func(o *RMutexOptions) {
-		o.expiry = v
+		o.expiry = time.Second * 5
 	}
 }
 func Setdelay(v time.Duration) RMutexOption {
@@ -126,7 +100,7 @@ func Setdelay(v time.Duration) RMutexOption {
 
 func newRMutexOptions(opts ...RMutexOption) RMutexOptions {
 	opt := RMutexOptions{
-		expiry: 5,
+		expiry: time.Second * 5,
 		delay:  time.Millisecond * 50,
 	}
 	for _, o := range opts {
