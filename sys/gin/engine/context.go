@@ -99,8 +99,8 @@ func (this *Context) Handler() HandlerFunc {
 }
 
 /*
-	FullPath 返回匹配的路由完整路径。 对于未找到的路线
-	返回一个空字符串。
+FullPath 返回匹配的路由完整路径。 对于未找到的路线
+返回一个空字符串。
 */
 func (c *Context) FullPath() string {
 	return c.fullPath
@@ -115,25 +115,25 @@ func (this *Context) Next() {
 }
 
 /*
-	如果当前上下文被中止，IsAborted 返回 true。
+如果当前上下文被中止，IsAborted 返回 true。
 */
 func (this *Context) IsAborted() bool {
 	return this.index >= abortIndex
 }
 
 /*
-	Abort 防止挂起的处理程序被调用。 请注意，这不会停止当前处理程序。
-	假设你有一个授权中间件来验证当前请求是否被授权。
-	如果授权失败（例如：密码不匹配），调用 Abort 以确保剩余的 handlers
-	因为这个请求没有被调用。
+Abort 防止挂起的处理程序被调用。 请注意，这不会停止当前处理程序。
+假设你有一个授权中间件来验证当前请求是否被授权。
+如果授权失败（例如：密码不匹配），调用 Abort 以确保剩余的 handlers
+因为这个请求没有被调用。
 */
 func (this *Context) Abort() {
 	this.index = abortIndex
 }
 
 /*
-	AbortWithStatus 调用 `Abort()` 并使用指定的状态代码写入标头。
-	例如，验证请求失败的尝试可以使用：context.AbortWithStatus(401)。
+AbortWithStatus 调用 `Abort()` 并使用指定的状态代码写入标头。
+例如，验证请求失败的尝试可以使用：context.AbortWithStatus(401)。
 */
 func (this *Context) AbortWithStatus(code int) {
 	this.Status(code)
@@ -397,7 +397,7 @@ func (this *Context) FormFile(name string) (multipart.File, *multipart.FileHeade
 }
 
 /*
-	MultipartForm 是解析后的多部分表单，包括文件上传。
+MultipartForm 是解析后的多部分表单，包括文件上传。
 */
 func (this *Context) MultipartForm() (*multipart.Form, error) {
 	err := this.Request.ParseMultipartForm(this.engine.MaxMultipartMemory)
@@ -405,7 +405,7 @@ func (this *Context) MultipartForm() (*multipart.Form, error) {
 }
 
 /*
-	保存上传文件
+保存上传文件
 */
 func (this *Context) SaveUploadedFile(file *multipart.FileHeader, dst string) error {
 	src, err := file.Open()
@@ -423,12 +423,14 @@ func (this *Context) SaveUploadedFile(file *multipart.FileHeader, dst string) er
 	_, err = io.Copy(out, src)
 	return err
 }
-
+func (this *Context) GetHeader(key string) string {
+	return this.requestHeader(key)
+}
 func (this *Context) GetRawData() ([]byte, error) {
 	return ioutil.ReadAll(this.Request.Body)
 }
 
-//序列化--------------------------------------------------------------------------------------------
+// 序列化--------------------------------------------------------------------------------------------
 func (this *Context) Bind(obj interface{}) error {
 	b := binding.Default(this.Request.Method, this.ContentType())
 	return this.MustBindWith(obj, b)
@@ -483,7 +485,7 @@ func (this *Context) BindUri(obj interface{}) error {
 	return nil
 }
 
-//输出-----------------------------------------------------------------------------------------
+// 输出-----------------------------------------------------------------------------------------
 func (this *Context) HTML(code int, name string, obj interface{}) {
 	instance := this.engine.HTMLRender.Instance(name, obj)
 	this.Render(code, instance)
@@ -851,7 +853,7 @@ func (this *Context) reset() {
 }
 
 /*
-	bodyAllowedForStatus 是 http.bodyAllowedForStatus 非导出函数的副本。
+bodyAllowedForStatus 是 http.bodyAllowedForStatus 非导出函数的副本。
 */
 func bodyAllowedForStatus(status int) bool {
 	switch {

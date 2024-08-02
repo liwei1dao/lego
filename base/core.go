@@ -2,7 +2,6 @@ package base
 
 import (
 	"context"
-	"time"
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/rpc"
@@ -40,7 +39,6 @@ type IClusterService interface {
 
 type IRPCXService interface {
 	IClusterServiceBase
-	GetOpentime() time.Time
 	RegisterFunction(fn interface{}) (err error)
 	RegisterFunctionName(name string, fn interface{}) (err error)
 	RpcCall(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (err error)
