@@ -3,6 +3,7 @@ package rpcx
 import (
 	"errors"
 
+	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 
@@ -19,11 +20,7 @@ const (
 
 type Option func(*Options)
 type Options struct {
-	ServiceTag     string                 //集群标签
-	ServiceType    string                 //服务类型
-	ServiceId      string                 //服务id
-	ServiceVersion string                 //服务版本
-	ServiceAddr    string                 //服务地址
+	ServiceNode    *core.ServiceNode      //服务节点
 	ETCDServers    []string               //ETCD集群服务地址
 	UpdateInterval int32                  //更新间隔
 	RpcxStartType  RpcxStartType          //Rpcx启动类型
@@ -34,33 +31,9 @@ type Options struct {
 	Log            log.ILogger
 }
 
-func SetServiceTag(v string) Option {
+func SetServiceNode(v *core.ServiceNode) Option {
 	return func(o *Options) {
-		o.ServiceTag = v
-	}
-}
-
-func SetServiceType(v string) Option {
-	return func(o *Options) {
-		o.ServiceType = v
-	}
-}
-
-func SetServiceId(v string) Option {
-	return func(o *Options) {
-		o.ServiceId = v
-	}
-}
-
-func SetServiceVersion(v string) Option {
-	return func(o *Options) {
-		o.ServiceVersion = v
-	}
-}
-
-func SetServiceAddr(v string) Option {
-	return func(o *Options) {
-		o.ServiceAddr = v
+		o.ServiceNode = v
 	}
 }
 
@@ -100,7 +73,7 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 	for _, o := range opts {
 		o(options)
 	}
-	if len(options.ServiceTag) == 0 || len(options.ServiceType) == 0 || len(options.ServiceId) == 0 || len(options.ETCDServers) == 0 {
+	if len(options.ServiceNode.Tag) == 0 || len(options.ServiceNode.Type) == 0 || len(options.ServiceNode.Id) == 0 || len(options.ETCDServers) == 0 {
 		return options, errors.New("[Sys.RPCX] newOptions err: 启动参数异常")
 	}
 
@@ -121,7 +94,7 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 	for _, o := range opts {
 		o(options)
 	}
-	if len(options.ServiceTag) == 0 || len(options.ServiceType) == 0 || len(options.ServiceId) == 0 || len(options.ETCDServers) == 0 {
+	if len(options.ServiceNode.Tag) == 0 || len(options.ServiceNode.Type) == 0 || len(options.ServiceNode.Id) == 0 || len(options.ETCDServers) == 0 {
 		return options, errors.New("[Sys.RPCX] newOptions err: 启动参数异常")
 	}
 	if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.rpc", 3)); options.Log == nil {

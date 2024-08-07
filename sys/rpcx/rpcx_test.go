@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
 )
 
@@ -18,11 +19,13 @@ func Test_Sys(t *testing.T) {
 		return
 	}
 	if sys, err := NewSys(
-		SetServiceTag("dreamfactory"),
-		SetServiceType("worker"),
-		SetServiceId("worker_1"),
-		SetServiceVersion("1.0.0"),
-		SetServiceAddr("127.0.0.1:9978"),
+		SetServiceNode(&core.ServiceNode{
+			Tag:     "admin",
+			Id:      "worker_1",
+			Type:    "worker",
+			Version: "1.0.0",
+			Addr:    "127.0.0.1:9978",
+		}),
 		SetETCDServers([]string{"10.0.0.9:2379"}),
 	); err != nil {
 		fmt.Printf("err:%v", err)

@@ -70,8 +70,8 @@ func (this *RPCXService) InitSys() {
 	} else {
 		log.Infof("sys event Init success !")
 	}
-	if err := rpc.OnInit(this.option.Setting.Sys["rpc"], rpc.SetServiceNode(this.serviceNode)); err != nil {
-		log.Panicf(fmt.Sprintf("初始化rpc系统 err:%v", err))
+	if err := rpcx.OnInit(this.option.Setting.Sys["rpcx"], rpcx.SetServiceNode(this.serviceNode)); err != nil {
+		log.Panicf(fmt.Sprintf("sys rpcx Init err:%v", err))
 	} else {
 		log.Infof("sys rpc Init success !")
 	}
