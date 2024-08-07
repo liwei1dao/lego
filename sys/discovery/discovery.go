@@ -9,6 +9,7 @@ import (
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/discovery/consul"
 	"github.com/liwei1dao/lego/sys/discovery/dcore"
+	"github.com/liwei1dao/lego/sys/discovery/etcd"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/codec/json"
 )
@@ -18,6 +19,12 @@ func newSys(options *Options) (sys *Discovery, err error) {
 	switch options.StoreType {
 	case StoreConsul:
 		sys.store, err = consul.NewConsulStore(options.Endpoints, options.Config)
+		break
+	case StoreZookeeper:
+		sys.store, err = consul.NewConsulStore(options.Endpoints, options.Config)
+		break
+	case StoreEtcd:
+		sys.store, err = etcd.NewEtcdStore(options.Endpoints, options.Config)
 		break
 	default:
 		err = fmt.Errorf("StoreType:%d unsupported type", options.StoreType)
@@ -121,7 +128,7 @@ func (this *Discovery) Close() error {
 	return nil
 }
 
-//监控
+// 监控
 func (this *Discovery) watch() {
 	defer func() {
 		this.store.Close()
@@ -203,7 +210,7 @@ func (this *Discovery) watch() {
 	this.options.Log.Info("close watch coroutine")
 }
 
-///编解码***********************************************************************
+// /编解码***********************************************************************
 func (this *Discovery) Marshal(v interface{}) ([]byte, error) {
 	if this.options.Codec != nil {
 		return this.options.Codec.Marshal(v)

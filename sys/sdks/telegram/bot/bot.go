@@ -10,6 +10,7 @@ func newSys(options *Options) (sys *Bot, err error) {
 	if sys.api, err = tgbotapi.NewBotAPI(options.ApiToken); err != nil {
 		log.Errorln(err)
 	}
+	go sys.run()
 	return
 }
 
