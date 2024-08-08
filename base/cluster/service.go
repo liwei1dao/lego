@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/sys/cron"
@@ -17,7 +16,7 @@ type ClusterService struct {
 	cbase.ServiceBase
 	option         *Options
 	serviceNode    *core.ServiceNode
-	clusterService base.IClusterService
+	clusterService IClusterService
 }
 
 func (this *ClusterService) GetTag() string {
@@ -51,7 +50,7 @@ func (this *ClusterService) Configure(option ...Option) {
 }
 
 func (this *ClusterService) Init(service core.IService) (err error) {
-	this.clusterService = service.(base.IClusterService)
+	this.clusterService = service.(IClusterService)
 	return this.ServiceBase.Init(service)
 }
 

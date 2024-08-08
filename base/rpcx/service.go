@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/liwei1dao/lego/base"
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/core/cbase"
 	"github.com/liwei1dao/lego/sys/cron"
@@ -22,7 +21,7 @@ type RPCXService struct {
 	cbase.ServiceBase
 	option         *Options
 	serviceNode    *core.ServiceNode
-	clusterService base.IClusterService
+	clusterService IRPCXService
 }
 
 func (this *RPCXService) GetTag() string {
@@ -55,7 +54,7 @@ func (this *RPCXService) Configure(option ...Option) {
 }
 
 func (this *RPCXService) Init(service core.IService) (err error) {
-	this.clusterService = service.(base.IClusterService)
+	this.clusterService = service.(IRPCXService)
 	return this.ServiceBase.Init(service)
 }
 
