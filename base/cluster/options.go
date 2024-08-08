@@ -2,9 +2,10 @@ package cluster
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/utils/container/id"
 	"gopkg.in/yaml.v2"
 )
 
@@ -35,7 +36,7 @@ func newOptions(option ...Option) *Options {
 	for _, o := range option {
 		o(options)
 	}
-	yamlFile, err := ioutil.ReadFile(options.ConfPath)
+	yamlFile, err := os.ReadFile(options.ConfPath)
 	if err != nil {
 		panic(fmt.Sprintf("读取服务配置【%s】文件失败err:%v:", options.ConfPath, err))
 	}
@@ -45,6 +46,9 @@ func newOptions(option ...Option) *Options {
 	}
 	if len(options.Setting.Id) == 0 || len(options.Setting.Type) == 0 || len(options.Setting.Tag) == 0 || len(options.Setting.Addr) == 0 {
 		panic(fmt.Sprintf("[%s] 配置缺少必要配置: %+v", options.ConfPath, options))
+	}
+	if len(options.Setting.Id) == 0 {
+		options.Setting.Id = fmt.Sprintf("%s-%s", options.Setting.Type, id.NewXId())
 	}
 	return options
 }
