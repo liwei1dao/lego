@@ -3,7 +3,7 @@ package kafka
 import (
 	"time"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
@@ -49,182 +49,182 @@ type Options struct {
 	Log                       log.ILogger
 }
 
-///kafka启动类型
+// /kafka启动类型
 func SetLog(v log.ILogger) Option {
 	return func(o *Options) {
 		o.Log = v
 	}
 }
 
-///kafka启动类型
+// /kafka启动类型
 func SetDebug(v bool) Option {
 	return func(o *Options) {
 		o.Debug = v
 	}
 }
 
-///kafka启动类型
+// /kafka启动类型
 func SetStartType(v KafkaStartType) Option {
 	return func(o *Options) {
 		o.StartType = v
 	}
 }
 
-///设置kafka集群地址
+// /设置kafka集群地址
 func SetHosts(v []string) Option {
 	return func(o *Options) {
 		o.Hosts = v
 	}
 }
 
-///设置kafka版本
+// /设置kafka版本
 func SetVersion(v string) Option {
 	return func(o *Options) {
 		o.Version = v
 	}
 }
 
-///设置kafka消费者的消费Topics
+// /设置kafka消费者的消费Topics
 func SetTopics(v []string) Option {
 	return func(o *Options) {
 		o.Topics = v
 	}
 }
 
-///设置消费组 GroupId
+// /设置消费组 GroupId
 func SetGroupId(v string) Option {
 	return func(o *Options) {
 		o.GroupId = v
 	}
 }
 
-///用户提供的字符串随每个请求发送到代理进行日志记录，调试和审计目的。默认为“sarama”，但你应该将其设置为特定于您的应用程序的内容。
+// /用户提供的字符串随每个请求发送到代理进行日志记录，调试和审计目的。默认为“sarama”，但你应该将其设置为特定于您的应用程序的内容。
 func SetClientID(v string) Option {
 	return func(o *Options) {
 		o.ClientID = v
 	}
 }
 
-///设置生产者 消息 回复等级 0 1 all
+// /设置生产者 消息 回复等级 0 1 all
 func SetProducer_RequiredAcks(v sarama.RequiredAcks) Option {
 	return func(o *Options) {
 		o.Producer_RequiredAcks = v
 	}
 }
 
-///消息的最大允许大小（默认为 1000000）。应该设置等于或小于代理的 `message.max.bytes`
+// /消息的最大允许大小（默认为 1000000）。应该设置等于或小于代理的 `message.max.bytes`
 func SetProducer_MaxMessageBytes(v int) Option {
 	return func(o *Options) {
 		o.Producer_MaxMessageBytes = v
 	}
 }
 
-///如果启用 成功发送的消息将在成功通道中
+// /如果启用 成功发送的消息将在成功通道中
 func SetProducer_Return_Successes(v bool) Option {
 	return func(o *Options) {
 		o.Producer_Return_Successes = v
 	}
 }
 
-///如果启用，发送失败的消息将在错误通道中
+// /如果启用，发送失败的消息将在错误通道中
 func SetProducer_Return_Errors(v bool) Option {
 	return func(o *Options) {
 		o.Producer_Return_Errors = v
 	}
 }
 
-///重试发送消息的总次数（默认为 3）
+// /重试发送消息的总次数（默认为 3）
 func SetProducer_Retry_Max(v int) Option {
 	return func(o *Options) {
 		o.Producer_Retry_Max = v
 	}
 }
 
-///重试发送消息的总次数（默认为 3）
+// /重试发送消息的总次数（默认为 3）
 func SetProducer_Retry_Backoff(v int) Option {
 	return func(o *Options) {
 		o.Producer_Retry_Backoff = v
 	}
 }
 
-///用于消息的压缩类型（默认为无压缩）
+// /用于消息的压缩类型（默认为无压缩）
 func SetProducer_Compression(v sarama.CompressionCodec) Option {
 	return func(o *Options) {
 		o.Producer_Compression = v
 	}
 }
 
-///用于消息的压缩级别。意义取决于在实际使用的压缩类型上，默认为默认压缩编解码器的级别。
+// /用于消息的压缩级别。意义取决于在实际使用的压缩类型上，默认为默认压缩编解码器的级别。
 func SetProducer_CompressionLevel(v int) Option {
 	return func(o *Options) {
 		o.Producer_CompressionLevel = v
 	}
 }
 
-///默认5 秒
+// /默认5 秒
 func SetNet_DialTimeout(v time.Duration) Option {
 	return func(o *Options) {
 		o.Net_DialTimeout = v
 	}
 }
 
-///默认60 秒
+// /默认60 秒
 func SetNet_ReadTimeout(v time.Duration) Option {
 	return func(o *Options) {
 		o.Net_ReadTimeout = v
 	}
 }
 
-///默认60 秒
+// /默认60 秒
 func SetNet_WriteTimeout(v time.Duration) Option {
 	return func(o *Options) {
 		o.Net_WriteTimeout = v
 	}
 }
 
-///KeepAlive 指定活动网络连接的保持活动期。如果为零，则禁用保活。 （默认为 0：禁用）单位 秒
+// /KeepAlive 指定活动网络连接的保持活动期。如果为零，则禁用保活。 （默认为 0：禁用）单位 秒
 func SetNet_KeepAlive(v time.Duration) Option {
 	return func(o *Options) {
 		o.Net_KeepAlive = v
 	}
 }
 
-//设置kafka消费者配
+// 设置kafka消费者配
 func SetConsumer_Assignor(v string) Option {
 	return func(o *Options) {
 		o.Consumer_Assignor = v
 	}
 }
 
-///OffsetNewest -1 or OffsetOldest -2 默认 OffsetOldest
+// /OffsetNewest -1 or OffsetOldest -2 默认 OffsetOldest
 func SetConsumer_Offsets_Initial(v int64) Option {
 	return func(o *Options) {
 		o.Consumer_Offsets_Initial = v
 	}
 }
 
-///如果启用，则在消费时发生的任何错误都将返回错误通道（默认禁用）
+// /如果启用，则在消费时发生的任何错误都将返回错误通道（默认禁用）
 func SetConsumer_Return_Errors(v bool) Option {
 	return func(o *Options) {
 		o.Consumer_Return_Errors = v
 	}
 }
 
-///如果启用，则开启认证过程
+// /如果启用，则开启认证过程
 func SetSasl_Enable(v bool) Option {
 	return func(o *Options) {
 		o.Sasl_Enable = v
 	}
 }
 
-///Sasl_Enable 开启 时需要确定认证方式
+// /Sasl_Enable 开启 时需要确定认证方式
 func SetSasl_Mechanism(v sarama.SASLMechanism) Option {
 	return func(o *Options) {
 		o.Sasl_Mechanism = v
 	}
 }
 
-///Sasl_Enable 开启 时需要确定认证方式
+// /Sasl_Enable 开启 时需要确定认证方式
 func SetSasl_GSSAPI(v sarama.GSSAPIConfig) Option {
 	return func(o *Options) {
 		o.Sasl_GSSAPI = v
