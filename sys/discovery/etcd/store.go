@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/sys/discovery/dcore"
-	"github.com/rpcxio/libkv/store"
+
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
@@ -176,7 +176,7 @@ func (s *ETCDV3Store) Get(key string) (*dcore.KVPair, error) {
 		return nil, err
 	}
 	if len(resp.Kvs) == 0 {
-		return nil, store.ErrKeyNotFound
+		return nil, dcore.ErrKeyNotFound
 	}
 
 	pair := &dcore.KVPair{
@@ -251,7 +251,7 @@ func (this *ETCDV3Store) WatchTree(directory string, stopCh <-chan struct{}) (<-
 	watchCh := make(chan []*dcore.KVPair)
 	list, err := this.List(directory)
 	if err != nil {
-		if !this.AllowKeyNotFound || err != store.ErrKeyNotFound {
+		if !this.AllowKeyNotFound || err != dcore.ErrKeyNotFound {
 			return watchCh, err
 		}
 	}
@@ -272,7 +272,7 @@ func (this *ETCDV3Store) WatchTree(directory string, stopCh <-chan struct{}) (<-
 
 				list, err := this.List(directory)
 				if err != nil {
-					if !this.AllowKeyNotFound || err != store.ErrKeyNotFound {
+					if !this.AllowKeyNotFound || err != dcore.ErrKeyNotFound {
 						continue
 					}
 				}
@@ -297,7 +297,7 @@ func (this *ETCDV3Store) List(directory string) ([]*dcore.KVPair, error) {
 	kvpairs := make([]*dcore.KVPair, 0, len(resp.Kvs))
 
 	if len(resp.Kvs) == 0 {
-		return nil, store.ErrKeyNotFound
+		return nil, dcore.ErrKeyNotFound
 	}
 
 	for _, kv := range resp.Kvs {
@@ -343,7 +343,7 @@ func (s *ETCDV3Store) AtomicPut(key string, value []byte, previous *dcore.KVPair
 				revision = presp.Header.GetRevision()
 			}
 		} else {
-			return false, nil, store.ErrKeyExists
+			return false, nil, dcore.ErrKeyExists
 		}
 	} else {
 
