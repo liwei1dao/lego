@@ -73,7 +73,7 @@ func (this *rpc) Heartbeat() []byte {
 	return this.heartbeat
 }
 
-//启动系统
+// 启动系统
 func (this *rpc) Start() (err error) {
 	if err = this.cpool.Start(); err != nil {
 		return
@@ -103,7 +103,7 @@ func (this *rpc) Start() (err error) {
 	return
 }
 
-//关闭系统
+// 关闭系统
 func (this *rpc) Close() (err error) {
 	if err = this.discovery.Close(); err != nil {
 		return
@@ -118,32 +118,32 @@ func (this *rpc) ServiceNode() *core.ServiceNode {
 	return this.options.ServiceNode
 }
 
-//注册服务 批量注册
+// 注册服务 批量注册
 func (this *rpc) Register(rcvr interface{}) (err error) {
 	err = this.register(rcvr)
 	return
 }
 
-//注册服务
+// 注册服务
 func (this *rpc) RegisterFunction(fn interface{}) (err error) {
 	err = this.registerFunction(fn, "", false)
 	return
 }
 
-//注册服务
+// 注册服务
 func (this *rpc) RegisterFunctionName(name string, fn interface{}) (err error) {
 	err = this.registerFunction(fn, name, true)
 	return
 }
 
-//注销服务
+// 注销服务
 func (this *rpc) UnRegister(name string) {
 	this.serviceMapMu.Lock()
 	delete(this.serviceMap, name)
 	this.serviceMapMu.Unlock()
 }
 
-//同步执行
+// 同步执行
 func (this *rpc) Call(ctx context.Context, servicePath string, serviceMethod string, req interface{}, reply interface{}) (err error) { //同步调用 等待结果
 	seq := new(uint64)
 	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
@@ -177,7 +177,7 @@ func (this *rpc) Call(ctx context.Context, servicePath string, serviceMethod str
 	return
 }
 
-//异步执行 异步返回
+// 异步执行 异步返回
 func (this *rpc) ClentForCall(ctx context.Context, client rpccore.IConnClient, serviceMethod string, req interface{}, reply interface{}) (err error) { //异步调用 异步返回
 	seq := new(uint64)
 	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
@@ -204,7 +204,7 @@ func (this *rpc) ClentForCall(ctx context.Context, client rpccore.IConnClient, s
 	return
 }
 
-//异步执行 异步返回
+// 异步执行 异步返回
 func (this *rpc) Go(ctx context.Context, servicePath string, serviceMethod string, req interface{}, reply interface{}) (call *MessageCall, err error) { //异步调用 异步返回
 	seq := new(uint64)
 	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
@@ -223,7 +223,7 @@ func (this *rpc) Go(ctx context.Context, servicePath string, serviceMethod strin
 	return
 }
 
-//异步执行 异步返回
+// 异步执行 异步返回
 func (this *rpc) ClentForGo(ctx context.Context, client rpccore.IConnClient, serviceMethod string, req interface{}, reply interface{}) (call *MessageCall, err error) { //异步调用 异步返回
 	seq := new(uint64)
 	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
@@ -239,7 +239,7 @@ func (this *rpc) Broadcast(ctx context.Context, servicePath string, serviceMetho
 	return
 }
 
-//接收到远程消息
+// 接收到远程消息
 func (this *rpc) Handle(client rpccore.IConnClient, message rpccore.IMessage) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -278,7 +278,7 @@ func (this *rpc) Handle(client rpccore.IConnClient, message rpccore.IMessage) {
 	}
 }
 
-//反射批量注册 服务---------------------------------------------------------------------------------
+// 反射批量注册 服务---------------------------------------------------------------------------------
 func (this *rpc) register(rcvr interface{}) (err error) {
 	typ := reflect.TypeOf(rcvr)
 	vof := reflect.ValueOf(rcvr)
@@ -398,7 +398,7 @@ func (this *rpc) registerFunction(fn interface{}, name string, useName bool) (er
 	return
 }
 
-//执行远程服务---------------------------------------------------------------------------------------
+// 执行远程服务---------------------------------------------------------------------------------------
 func (this *rpc) call(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) {
 	call = new(MessageCall)
 	call.ServicePath = servicePath
@@ -440,7 +440,7 @@ func (this *rpc) call2(ctx context.Context, client rpccore.IConnClient, serviceM
 	return
 }
 
-//获取请求消息对象
+// 获取请求消息对象
 func (this *rpc) getMessage(serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, req *protocol.Message, err error) {
 	var data []byte
 	call = new(MessageCall)
@@ -533,7 +533,7 @@ func (this *rpc) send(client rpccore.IConnClient, call *MessageCall, seq uint64)
 	return
 }
 
-//处理响应------------------------------------------------------------------------------------------
+// 处理响应------------------------------------------------------------------------------------------
 func (this *rpc) handleresponse(ctx context.Context, res rpccore.IMessage) {
 	var call *MessageCall
 	seq := res.Seq()
@@ -584,7 +584,7 @@ func (this *rpc) handleresponse(ctx context.Context, res rpccore.IMessage) {
 	}
 }
 
-//处理服务消息---------------------------------------------------------------------------------------
+// 处理服务消息---------------------------------------------------------------------------------------
 func (this *rpc) handleRequest(ctx context.Context, req rpccore.IMessage) (res rpccore.IMessage, err error) {
 	methodName := req.ServiceMethod()
 	res = req.Clone()

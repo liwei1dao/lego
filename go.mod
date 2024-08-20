@@ -8,7 +8,6 @@ require (
 	cloud.google.com/go/translate v1.2.0
 	firebase.google.com/go/v4 v4.8.0
 	github.com/IBM/sarama v1.43.2
-	github.com/Shopify/sarama v1.35.0
 	github.com/ZZMarquis/gm v1.3.2
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1707
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.4+incompatible
@@ -50,6 +49,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/smallnest/rpcx v1.7.8
 	github.com/smartwalle/alipay/v3 v3.1.8
+	github.com/sony/sonyflake v1.2.0
 	github.com/tinylib/msgp v1.1.6
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/ugorji/go/codec v1.2.7
@@ -60,7 +60,6 @@ require (
 	go.mongodb.org/mongo-driver v1.10.0
 	go.uber.org/multierr v1.6.0
 	golang.org/x/crypto v0.22.0
-	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6
 	golang.org/x/net v0.24.0
 	golang.org/x/oauth2 v0.0.0-20220722155238-128564f6959c
 	golang.org/x/text v0.14.0

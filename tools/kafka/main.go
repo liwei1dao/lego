@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/liwei1dao/lego/sys/kafka"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/codec"
@@ -87,7 +87,7 @@ func main() {
 	}
 }
 
-//生产
+// 生产
 func producer() {
 	c := time.NewTicker(time.Second)
 	defer c.Stop()
@@ -103,7 +103,7 @@ func producer() {
 	}
 }
 
-//消费
+// 消费
 func consumer() {
 	for v := range sys.Consumer_Messages() {
 		send := codec.StringToInt64(string(v.Value))
@@ -111,7 +111,7 @@ func consumer() {
 	}
 }
 
-//消费
+// 消费
 func consumererror() {
 	for v := range sys.Consumer_Errors() {
 		log.Debugf("Consumer_err:%v", v)
