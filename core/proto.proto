@@ -6,7 +6,7 @@ message ServiceNode {
     string type         =2;             //服务类型
     string id           =3;             //服务Id
     string version      =4;             //服务版本
-    string addr         =5;             //地址
+    string commaddr     =5;             //通信地址  //服务节点间 rpc通信的地址 更具不同的消息传输方式进行配置
     map<string,string> meta = 6;        //元数据
 }
 

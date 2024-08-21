@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
 
@@ -29,7 +30,7 @@ type Selector struct {
 	servers []*core.ServiceNode
 }
 
-///servicePath = (worker)/(worker/worker_1)/(worker/!worker_1)/(worker/[worker_1,worker_2])/(worker/![worker_1,worker_2])
+// /servicePath = (stype)|(stype/sid)|(stype/!sid)|(stype/[sid1,sid2])|(stype/![sid1,sid2])
 func (this *Selector) Select(ctx context.Context, servicePath string) (result []*core.ServiceNode) {
 	result = make([]*core.ServiceNode, 0)
 	service := strings.Split(servicePath, "/")
@@ -42,6 +43,7 @@ func (this *Selector) Select(ctx context.Context, servicePath string) (result []
 			}
 		}
 	} else if leng == 2 {
+
 		result = this.ParseRoutRules(service[1])
 	}
 	this.mutex.RUnlock()
@@ -50,6 +52,7 @@ func (this *Selector) Select(ctx context.Context, servicePath string) (result []
 
 func (this *Selector) UpdateServer(servers []*core.ServiceNode) (add, del, change []*core.ServiceNode) {
 	if servers == nil {
+		log.Error("UpdateServer 传参错误!")
 		return
 	}
 	var (
@@ -86,7 +89,7 @@ func (this *Selector) UpdateServer(servers []*core.ServiceNode) (add, del, chang
 	return
 }
 
-//路由规则解析
+// 路由规则解析
 func (this *Selector) ParseRoutRules(rules string) (result []*core.ServiceNode) {
 	if rules == "" {
 		return

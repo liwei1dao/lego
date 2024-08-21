@@ -15,7 +15,7 @@ type Options struct {
 	SerializeType      rpccore.SerializeType //消息序列化方式 0:JSON 1:ProtoBuffer 2:MsgPack 3:Thrift
 	CompressType       rpccore.CompressType  //消息压缩模式	0:CompressNone 1:CompressGzip
 	ConnectType        rpccore.ConnectType   //RPC通信类型类型 0:Tcp 1:Kafka 2:Nats
-	MessageEndpoints   []string              //消息传输节点 tcp:"ip:prot"
+	CommAddrs          []string              //消息传输节点 tcp:["ip:prot"] kafka:["topic_up","topic_back"]
 	ConnectionTimeout  int32                 //连接超时 单位秒
 	ReadTimeout        int32                 //读取超时 单位秒
 	WriteTimeout       int32                 //写入超时 单位秒

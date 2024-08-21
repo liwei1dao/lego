@@ -32,12 +32,12 @@ func newSys(options *Options) (sys *rpc, err error) {
 	}
 
 	if options.ConnectType == rpccore.Tcp {
-		options.ServiceNode.Addr = options.MessageEndpoints[0]
+		options.ServiceNode.Addr = options.CommAddrs[0]
 	}
 
 	if sys.cpool, err = connpool.NewConnPool(sys, options.Log, &rpccore.Config{
 		ConnectType: options.ConnectType,
-		Endpoints:   options.MessageEndpoints,
+		Endpoints:   options.CommAddrs,
 	}); err != nil {
 		return
 	}
@@ -81,7 +81,15 @@ func (this *rpc) Start() (err error) {
 	if err = this.discovery.Start(); err != nil {
 		return
 	}
-	this.selector.UpdateServer(this.discovery.GetServices())
+
+	currnodes := this.discovery.GetServices()
+	if len(currnodes) > 0 {
+		this.selector.UpdateServer(currnodes)
+		for _, v := range currnodes {
+			this.options.Log.Debug("发现节点!", log.Field{Key: "nodes", Value: v})
+		}
+	}
+
 	go func() { //监控服务发现
 		var add, del, change []*core.ServiceNode
 		for v := range this.discovery.WatchService() {

@@ -29,7 +29,6 @@ type ServiceSttings struct {
 	Id      string                            //服务Id
 	Type    string                            //服务类型 (相同的服务可以启动多个)
 	Tag     string                            //服务集群标签 (相同标签的集群服务可以互相发现和发现)
-	Addr    string                            //服务地址 （集群服务下 服务地址）
 	Comps   map[string]map[string]interface{} //服务组件配置
 	Sys     map[string]map[string]interface{} //服务系统配置
 	Modules map[string]map[string]interface{} //服务模块配置
