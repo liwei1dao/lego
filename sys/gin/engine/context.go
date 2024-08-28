@@ -578,6 +578,15 @@ func (this *Context) Render(code int, r render.Render) {
 	}
 }
 
+/*渲染页面接口*/
+func (this *Context) RenderForBytes(code int, contentType string, body []byte) {
+	this.Status(code)
+	this.Header("ContentType", contentType)
+	if _, err := this.writermem.Write(body); err != nil {
+		panic(err)
+	}
+}
+
 func (this *Context) FileFromFS(filepath string, fs http.FileSystem) {
 	defer func(old string) {
 		this.Request.URL.Path = old
