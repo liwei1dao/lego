@@ -50,6 +50,7 @@ require (
 	github.com/smallnest/rpcx v1.7.8
 	github.com/smartwalle/alipay/v3 v3.1.8
 	github.com/sony/sonyflake v1.2.0
+	github.com/spf13/cobra v1.2.1
 	github.com/tinylib/msgp v1.1.6
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/ugorji/go/codec v1.2.7
@@ -142,6 +143,7 @@ require (
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/serf v0.9.8 // indirect
+	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
 	github.com/jcmturner/dnsutils/v2 v2.0.0 // indirect
 	github.com/jcmturner/gofork v1.7.6 // indirect
@@ -200,6 +202,7 @@ require (
 	github.com/smartwalle/crypto4go v1.0.2 // indirect
 	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.9.0 // indirect
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	github.com/temoto/robotstxt v1.1.1 // indirect

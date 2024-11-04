@@ -50,7 +50,7 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 	options = &Options{
 		RedisAddr:     []string{"127.0.0.1:6379"},
 		RedisPassword: "",
-		RedisDB:       1,
+		RedisDB:       0,
 		TimeOut:       time.Second * 3,
 	}
 	if config != nil {
@@ -69,7 +69,7 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 	options = &Options{
 		RedisAddr:     []string{"127.0.0.1:6379"},
 		RedisPassword: "",
-		RedisDB:       1,
+		RedisDB:       0,
 		TimeOut:       time.Second * 3,
 	}
 	for _, o := range opts {
