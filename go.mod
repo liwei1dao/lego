@@ -51,6 +51,7 @@ require (
 	github.com/smartwalle/alipay/v3 v3.1.8
 	github.com/sony/sonyflake v1.2.0
 	github.com/spf13/cobra v1.2.1
+	github.com/streadway/amqp v1.1.0
 	github.com/tinylib/msgp v1.1.6
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/ugorji/go/codec v1.2.7
