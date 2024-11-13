@@ -13,7 +13,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	consulclient "github.com/rpcxio/rpcx-consul/client"
+	etcd "github.com/rpcxio/rpcx-etcd/client"
 	"github.com/smallnest/rpcx/client"
 	"github.com/smallnest/rpcx/protocol"
 	"github.com/smallnest/rpcx/share"
@@ -310,7 +310,7 @@ func (this *Client) getclient(ctx *context.Context, clusterTag string, servicePa
 	var (
 		spath   []string
 		cluster *clusterClients
-		d       *consulclient.ConsulDiscovery
+		d       client.ServiceDiscovery
 		ok      bool
 	)
 	spath = strings.Split(servicePath, "/")
@@ -327,7 +327,7 @@ func (this *Client) getclient(ctx *context.Context, clusterTag string, servicePa
 	c, ok = cluster.clients[spath[0]]
 	cluster.Mu.RUnlock()
 	if !ok {
-		if d, err = consulclient.NewConsulDiscovery(clusterTag, spath[0], this.options.ETCDServers, nil); err != nil {
+		if d, err = etcd.NewEtcdDiscovery(clusterTag, spath[0], this.options.ETCDServers, false, nil); err != nil {
 			return
 		}
 		c = client.NewBidirectionalXClient(spath[0], client.Failfast, client.RoundRobin, d, client.DefaultOption, this.msgChan)
