@@ -10,6 +10,8 @@ import (
 	"github.com/liwei1dao/lego/sys/discovery/consul"
 	"github.com/liwei1dao/lego/sys/discovery/dcore"
 	"github.com/liwei1dao/lego/sys/discovery/etcd"
+	"github.com/liwei1dao/lego/sys/discovery/redis"
+	"github.com/liwei1dao/lego/sys/discovery/zookeeper"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/utils/codec/json"
 )
@@ -18,13 +20,16 @@ func newSys(options *Options) (sys *Discovery, err error) {
 	sys = &Discovery{options: options}
 	switch options.StoreType {
 	case StoreConsul:
-		sys.store, err = consul.NewConsulStore(options.Endpoints, options.Config)
-		break
-	case StoreZookeeper:
-		sys.store, err = consul.NewConsulStore(options.Endpoints, options.Config)
+		sys.store, err = consul.New(options.Endpoints, options.Config)
 		break
 	case StoreEtcd:
-		sys.store, err = etcd.NewEtcdStore(options.Endpoints, options.Config)
+		sys.store, err = etcd.New(options.Endpoints, options.Config)
+		break
+	case StoreRedis:
+		sys.store, err = redis.New(options.Endpoints, options.Config)
+		break
+	case StoreZookeeper:
+		sys.store, err = zookeeper.New(options.Endpoints, options.Config)
 		break
 	default:
 		err = fmt.Errorf("StoreType:%d unsupported type", options.StoreType)
@@ -93,7 +98,7 @@ func (this *Discovery) Start() (err error) {
 		d, _ := this.Marshal(this.options.ServiceNode)
 		nodePath := this.GetNodePath()
 		if err = this.store.Put(nodePath, d, &dcore.WriteOptions{TTL: this.options.UpdateInterval * 2}); err != nil {
-			this.options.Log.Errorf("consul put path %s err: %v", nodePath, err)
+			this.options.Log.Errorf("discovery put path %s err: %v", nodePath, err)
 		}
 		go func() {
 			ticker := time.NewTicker(this.options.UpdateInterval)
@@ -109,7 +114,7 @@ func (this *Discovery) Start() (err error) {
 					nodePath := this.GetNodePath()
 					err := this.store.Put(nodePath, d, &dcore.WriteOptions{TTL: this.options.UpdateInterval * 2})
 					if err != nil {
-						this.options.Log.Error("consul put ", log.Field{Key: "nodePath", Value: nodePath}, log.Field{Key: "value", Value: string(d)}, log.Field{Key: "err", Value: err.Error()})
+						this.options.Log.Error("discovery put ", log.Field{Key: "nodePath", Value: nodePath}, log.Field{Key: "value", Value: string(d)}, log.Field{Key: "err", Value: err.Error()})
 					}
 				}
 			}

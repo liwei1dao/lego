@@ -41,7 +41,7 @@ var (
 	ErrSessionRenew = errors.New("cannot set or renew session for ttl, unable to operate on sessions")
 )
 
-func NewConsulStore(address []string, options *dcore.Config) (store *ConsulStore, err error) {
+func New(address []string, options *dcore.Config) (store *ConsulStore, err error) {
 	if len(address) > 1 {
 		return nil, ErrMultipleEndpointsUnsupported
 	}

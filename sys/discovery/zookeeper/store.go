@@ -5,15 +5,36 @@ import (
 	"time"
 
 	"github.com/go-zookeeper/zk"
+
 	"github.com/liwei1dao/lego/sys/discovery/dcore"
 )
 
 const (
 	// SOH control character
-	SOH = "\x01"
-
+	SOH            = "\x01"
 	defaultTimeout = 10 * time.Second
 )
+
+func New(endpoints []string, options *dcore.Config) (*ZookeeperStore, error) {
+	s := &ZookeeperStore{}
+	s.timeout = defaultTimeout
+
+	// Set options
+	if options != nil {
+		if options.ConnectionTimeout != 0 {
+			s.setTimeout(options.ConnectionTimeout)
+		}
+	}
+
+	// Connect to Zookeeper
+	conn, _, err := zk.Connect(endpoints, s.timeout)
+	if err != nil {
+		return nil, err
+	}
+	s.client = conn
+
+	return s, nil
+}
 
 type ZookeeperStore struct {
 	timeout time.Duration
@@ -170,7 +191,13 @@ func (this *ZookeeperStore) WatchTree(directory string, stopCh <-chan struct{}) 
 
 	return watchCh, nil
 }
+func (this *ZookeeperStore) Close() {
+	this.client.Close()
+}
 
+func (s *ZookeeperStore) setTimeout(time time.Duration) {
+	s.timeout = time
+}
 func (this *ZookeeperStore) normalize(key string) string {
 	key = dcore.Normalize(key)
 	return strings.TrimSuffix(key, "/")

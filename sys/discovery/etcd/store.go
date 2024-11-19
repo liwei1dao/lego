@@ -24,7 +24,7 @@ var (
 	ErrSessionRenew = errors.New("cannot set or renew session for ttl, unable to operate on sessions")
 )
 
-func NewEtcdStore(address []string, options *dcore.Config) (store *ETCDV3Store, err error) {
+func New(address []string, options *dcore.Config) (store *ETCDV3Store, err error) {
 	store = &ETCDV3Store{
 		done:           make(chan struct{}),
 		startKeepAlive: make(chan struct{}),
