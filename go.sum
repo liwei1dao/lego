@@ -751,8 +751,6 @@ github.com/rogpeppe/go-internal v1.8.0 h1:FCbCCtXNOY3UtUuHUYaghJg4y7Fd14rXifAYUA
 github.com/rogpeppe/go-internal v1.8.0/go.mod h1:WmiCO8CzOY8rg0OYDC4/i/2WRWAB6poM+XZ2dLUbcbE=
 github.com/rpcxio/libkv v0.5.1 h1:M0/QqwTcdXz7us0NB+2i8Kq5+wikTm7zZ4Hyb/jNgME=
 github.com/rpcxio/libkv v0.5.1/go.mod h1:zHGgtLr3cFhGtbalum0BrMPOjhFZFJXCKiws/25ewls=
-github.com/rpcxio/rpcx-consul v0.0.0-20230904043151-f6175fbe2f72 h1:Egzag//iWWxCEaOIDLdGz3HqAGmpWyFGt/1r1lZQM3M=
-github.com/rpcxio/rpcx-consul v0.0.0-20230904043151-f6175fbe2f72/go.mod h1:N4SjBS0M9HpVdq3CIIXm/MwWv6euXQ39ybhfH2iTh1c=
 github.com/rpcxio/rpcx-etcd v0.4.0 h1:mMNN07y1jXIRhKTmQBQxTbVHQ/NF5GBSz5hGMMHvZ00=
 github.com/rpcxio/rpcx-etcd v0.4.0/go.mod h1:pW2koxtHWXX/c9y8UTM1MK3ItPgddT9PGducZF40IJ0=
 github.com/rs/cors v1.8.2 h1:KCooALfAYGs415Cwu5ABvv9n9509fSiG5SQJn/AQo4U=
