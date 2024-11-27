@@ -9,7 +9,7 @@ import (
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/discovery/consul"
 	"github.com/liwei1dao/lego/sys/discovery/dcore"
-	"github.com/liwei1dao/lego/sys/discovery/etcd"
+	"github.com/liwei1dao/lego/sys/discovery/etcd3"
 	"github.com/liwei1dao/lego/sys/discovery/redis"
 	"github.com/liwei1dao/lego/sys/discovery/zookeeper"
 	"github.com/liwei1dao/lego/sys/log"
@@ -22,8 +22,8 @@ func newSys(options *Options) (sys *Discovery, err error) {
 	case StoreConsul:
 		sys.store, err = consul.New(options.Endpoints, options.Config)
 		break
-	case StoreEtcd:
-		sys.store, err = etcd.New(options.Endpoints, options.Config)
+	case StoreEtcd3:
+		sys.store, err = etcd3.New(options.Endpoints, options.Config)
 		break
 	case StoreRedis:
 		sys.store, err = redis.New(options.Endpoints, options.Config)

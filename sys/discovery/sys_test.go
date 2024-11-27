@@ -57,7 +57,7 @@ func Test_Etcd(t *testing.T) {
 		Addr: "127.0.0.1:7851",
 	}
 	if sys, err := discovery.NewSys(
-		discovery.SetStoreType(discovery.StoreEtcd),
+		discovery.SetStoreType(discovery.StoreEtcd3),
 		discovery.SetEndpoints([]string{"127.0.0.1:12379", "127.0.0.1:22379", "127.0.0.1:32379"}),
 		discovery.SetBasePath("demo"),
 		discovery.SetUpdateInterval(time.Second*10),

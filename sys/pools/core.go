@@ -26,8 +26,10 @@ func Put[T any](name string, v T) {
 }
 
 // 注册类型
-func InitType(t reflect.Type) {
-	deftypepools.Init(t)
+func InitTypes(ts ...reflect.Type) {
+	for _, t := range ts {
+		deftypepools.Init(t)
+	}
 }
 
 func GetForType(t reflect.Type) interface{} {

@@ -20,7 +20,7 @@ const (
 	StoreNUll StoreType = iota
 	StoreConsul
 	StoreZookeeper
-	StoreEtcd
+	StoreEtcd3
 	StoreRedis
 )
 
