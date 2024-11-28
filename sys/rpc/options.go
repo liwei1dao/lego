@@ -9,7 +9,7 @@ import (
 
 type Option func(*Options)
 type Options struct {
-	ServiceNode       *core.ServiceNode     //服务节点
+	ServiceNode       core.IServiceNode     //服务节点
 	ProtoVersion      byte                  //协议版本
 	SerializeType     rpccore.SerializeType //消息序列化方式 0:JSON 1:ProtoBuffer 2:MsgPack 3:Thrift
 	CompressType      rpccore.CompressType  //消息压缩模式	0:CompressNone 1:CompressGzip
@@ -23,7 +23,7 @@ type Options struct {
 	Log               log.ILogger
 }
 
-func SetServiceNode(v *core.ServiceNode) Option {
+func SetServiceNode(v core.IServiceNode) Option {
 	return func(o *Options) {
 		o.ServiceNode = v
 	}

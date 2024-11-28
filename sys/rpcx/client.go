@@ -13,6 +13,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/liwei1dao/lego/core"
 	etcd "github.com/rpcxio/rpcx-etcd/client"
 	"github.com/smallnest/rpcx/client"
 	"github.com/smallnest/rpcx/protocol"
@@ -22,7 +23,7 @@ import (
 func newClient(options *Options) (sys *Client, err error) {
 	sys = &Client{
 		options:        options,
-		metadata:       fmt.Sprintf("stag=%s&stype=%s&sid=%s&version=%s&addr=%s", options.ServiceNode.Tag, options.ServiceNode.Type, options.ServiceNode.Id, options.ServiceNode.Version, "tcp@"+options.ServiceNode.Addr),
+		metadata:       options.ServiceNode.Value(),
 		clusterClients: make(map[string]*clusterClients),
 		conns:          make(map[string]net.Conn),
 		serviceMap:     make(map[string]*service),
@@ -111,7 +112,7 @@ func (this *Client) GetServiceTags() []string {
 
 // 注册Rpc 服务
 func (this *Client) RegisterFunction(fn interface{}) (err error) {
-	_, err = this.registerFunction(this.options.ServiceNode.Type, fn, "", false)
+	_, err = this.registerFunction(this.options.ServiceNode.Type(), fn, "", false)
 	if err != nil {
 		return err
 	}
@@ -120,7 +121,7 @@ func (this *Client) RegisterFunction(fn interface{}) (err error) {
 
 // 注册Rpc 服务
 func (this *Client) RegisterFunctionName(name string, fn interface{}) (err error) {
-	_, err = this.registerFunction(this.options.ServiceNode.Type, fn, name, true)
+	_, err = this.registerFunction(this.options.ServiceNode.Type(), fn, name, true)
 	if err != nil {
 		return err
 	}
@@ -137,7 +138,7 @@ func (this *Client) Call(ctx context.Context, servicePath string, serviceMethod 
 	var (
 		_client client.XClient
 	)
-	if _client, err = this.getclient(&ctx, this.options.ServiceNode.Tag, servicePath); err != nil {
+	if _client, err = this.getclient(&ctx, this.options.ServiceNode.Tag(), servicePath); err != nil {
 		return
 	}
 	err = _client.Call(ctx, serviceMethod, args, reply)
@@ -149,7 +150,7 @@ func (this *Client) Go(ctx context.Context, servicePath string, serviceMethod st
 	var (
 		_client client.XClient
 	)
-	if _client, err = this.getclient(&ctx, this.options.ServiceNode.Tag, servicePath); err != nil {
+	if _client, err = this.getclient(&ctx, this.options.ServiceNode.Tag(), servicePath); err != nil {
 		return
 	}
 	return _client.Go(ctx, string(serviceMethod), args, reply, done)
@@ -160,7 +161,7 @@ func (this *Client) Broadcast(ctx context.Context, servicePath string, serviceMe
 	var (
 		_client client.XClient
 	)
-	if _client, err = this.getclient(&ctx, this.options.ServiceNode.Tag, servicePath); err != nil {
+	if _client, err = this.getclient(&ctx, this.options.ServiceNode.Tag(), servicePath); err != nil {
 		return
 	}
 	err = _client.Broadcast(ctx, serviceMethod, args, reply)
@@ -213,9 +214,9 @@ func (this *Client) ClusterBroadcast(ctx context.Context, servicePath string, se
 	)
 	spath = strings.Split(servicePath, "/")
 	ctx = context.WithValue(ctx, share.ReqMetaDataKey, map[string]string{
-		ServiceClusterTag: this.options.ServiceNode.Tag,
+		ServiceClusterTag: this.options.ServiceNode.Tag(),
 		CallRoutRulesKey:  servicePath,
-		ServiceAddrKey:    "tcp@" + this.options.ServiceNode.Addr,
+		ServiceAddrKey:    "tcp@" + this.options.ServiceNode.Addr(),
 		ServiceMetaKey:    this.metadata,
 	})
 	clients = make([]client.XClient, 0)
@@ -258,25 +259,25 @@ func (this *Client) ClusterBroadcast(ctx context.Context, servicePath string, se
 }
 
 // 监控服务发现，发现没有连接上的额服务端 就连接上去
-func (this *Client) UpdateServer(servers map[string]*ServiceNode) {
+func (this *Client) UpdateServer(servers map[string]core.IServiceNode) {
 	for _, v := range servers {
 		this.clusterMu.RLock()
-		cluster, ok := this.clusterClients[v.ServiceTag]
+		cluster, ok := this.clusterClients[v.Tag()]
 		this.clusterMu.RUnlock()
 		if ok {
 			cluster.Mu.RLock()
-			_, ok = cluster.clients[v.ServiceType]
+			_, ok = cluster.clients[v.Type()]
 			cluster.Mu.RUnlock()
 			if ok {
 				continue
 			}
 		}
 		//没有建立客户端 主动发起握手
-		if err := this.Call(context.Background(), fmt.Sprintf("%s/%s", v.ServiceType, v.ServiceId), RpcX_ShakeHands, this.options.ServiceNode,
-			&ServiceNode{}); err != nil {
-			this.options.Log.Errorf("ShakeHands new node addr:%s err:%v", v.ServiceAddr, err)
+		if err := this.Call(context.Background(), fmt.Sprintf("%s/%s", v.Type(), v.Id()), RpcX_ShakeHands, this.options.ServiceNode,
+			&core.ServiceNode{}); err != nil {
+			this.options.Log.Errorf("ShakeHands new node addr:%s err:%v", v.Addr(), err)
 		} else {
-			this.options.Log.Debugf("UpdateServer addr:%s ", v.ServiceAddr)
+			this.options.Log.Debugf("UpdateServer addr:%s ", v.Addr())
 		}
 	}
 }
@@ -343,9 +344,9 @@ func (this *Client) getclient(ctx *context.Context, clusterTag string, servicePa
 	}
 
 	*ctx = context.WithValue(*ctx, share.ReqMetaDataKey, map[string]string{
-		ServiceClusterTag: this.options.ServiceNode.Tag,
+		ServiceClusterTag: this.options.ServiceNode.Tag(),
 		CallRoutRulesKey:  servicePath,
-		ServiceAddrKey:    "tcp@" + this.options.ServiceNode.Addr,
+		ServiceAddrKey:    "tcp@" + this.options.ServiceNode.Addr(),
 		ServiceMetaKey:    this.metadata,
 	})
 	return

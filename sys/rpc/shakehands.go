@@ -14,8 +14,8 @@ type ShakehandsReq struct {
 type ShakehandsResp struct {
 }
 
-//握手请求
-func (this *rpc) ShakehandsRequest(ctx context.Context, client rpccore.IConnClient) (err error) {
+// 握手请求
+func (this *Client) ShakehandsRequest(ctx context.Context, client rpccore.IConnClient) (err error) {
 	var (
 		call *MessageCall
 		req  *protocol.Message
@@ -48,8 +48,8 @@ func (this *rpc) ShakehandsRequest(ctx context.Context, client rpccore.IConnClie
 	return
 }
 
-//握手请求 回应
-func (this *rpc) ShakehandsResponse(ctx context.Context, client rpccore.IConnClient, req rpccore.IMessage) (err error) {
+// 握手请求 回应
+func (this *Service) ShakehandsResponse(ctx context.Context, client rpccore.IConnClient, req rpccore.IMessage) (err error) {
 	res := req.Clone()
 	defer func() {
 		data := res.EncodeSlicePointer()
