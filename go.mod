@@ -42,8 +42,10 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 	github.com/redis/go-redis/v9 v9.6.1
 	github.com/robfig/cron/v3 v3.0.1
+	github.com/rpcxio/libkv v0.5.1
 	github.com/rpcxio/rpcx-etcd v0.4.0
 	github.com/rs/xid v1.4.0
+	github.com/samuel/go-zookeeper v0.0.0-20201211165307-7117e9ea2414
 	github.com/sashabaranov/go-openai v1.5.7
 	github.com/satori/go.uuid v1.2.0
 	github.com/smallnest/rpcx v1.7.8
@@ -57,6 +59,7 @@ require (
 	github.com/valyala/fastrand v1.1.0
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	github.com/wolfogre/go-pprof-practice v0.0.0-20220519102209-aa4ca213af99
+	go.etcd.io/etcd/client/v2 v2.305.1
 	go.etcd.io/etcd/client/v3 v3.5.1
 	go.mongodb.org/mongo-driver v1.10.0
 	go.uber.org/multierr v1.6.0
@@ -193,7 +196,6 @@ require (
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
-	github.com/rpcxio/libkv v0.5.1 // indirect
 	github.com/rs/cors v1.8.2 // indirect
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible // indirect
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca // indirect
@@ -218,7 +220,6 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	go.etcd.io/etcd/api/v3 v3.5.1 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.1 // indirect
-	go.etcd.io/etcd/client/v2 v2.305.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/zap v1.17.0 // indirect

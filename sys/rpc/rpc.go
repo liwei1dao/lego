@@ -59,7 +59,6 @@ func newSys(options *Options) (sys *rpc, err error) {
 type rpc struct {
 	options      *Options
 	cpool        rpccore.IConnPool
-	discovery    discovery.ISys
 	selector     rpccore.ISelector
 	heartbeat    []byte
 	serviceMapMu sync.RWMutex
