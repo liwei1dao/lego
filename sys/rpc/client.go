@@ -15,11 +15,11 @@ import (
 	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
 
-func NewXClient(servicePath string, discovery discovery.IDiscovery, option *Options) (client *Client, err error) {
+func NewXClient(servicePath string, discovery discovery.IDiscovery, option *Options) (client *Client) {
 	client = &Client{
-		options:   option,
-		discovery: discovery,
-		pending:   make(map[uint64]*MessageCall),
+		options:     option,
+		servicePath: servicePath,
+		discovery:   discovery,
 	}
 	pairs := discovery.GetServices()
 	sort.Slice(pairs, func(i, j int) bool {
@@ -40,16 +40,14 @@ func NewXClient(servicePath string, discovery discovery.IDiscovery, option *Opti
 }
 
 type Client struct {
-	options      *Options
-	discovery    discovery.IDiscovery
-	selector     rpccore.ISelector
-	cpool        rpccore.IConnPool
-	mu           sync.RWMutex
-	servers      map[string]core.IServiceNode
-	ch           chan []*discovery.KVPair
-	pendingmutex sync.Mutex
-	seq          uint64
-	pending      map[uint64]*MessageCall
+	options     *Options
+	servicePath string
+	discovery   discovery.IDiscovery
+	selector    rpccore.ISelector
+	cpool       rpccore.IConnPool
+	mu          sync.RWMutex
+	servers     map[string]core.IServiceNode
+	ch          chan []*discovery.KVPair
 }
 
 func (this *Client) ServiceNode() core.IServiceNode {
@@ -77,22 +75,22 @@ func (c *Client) watch(ch chan []*discovery.KVPair) {
 }
 
 // 同步执行
-func (this *Client) Call(ctx context.Context, servicePath string, serviceMethod string, req interface{}, reply interface{}) (err error) { //同步调用 等待结果
+func (this *Client) Call(ctx context.Context, serviceMethod string, req interface{}, reply interface{}) (err error) { //同步调用 等待结果
 	seq := new(uint64)
 	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
 	stime := time.Now()
-	// this.options.Log.Debug("Call Start", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
+	// this.options.Log.Debug("Call Start", log.Field{Key: "this.servicePath", Value: this.servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
 	defer func() {
 		this.options.Log.Debug("RPC Call",
 			log.Field{Key: "t", Value: time.Since(stime).Milliseconds()},
-			log.Field{Key: "servicePath", Value: servicePath},
+			log.Field{Key: "this.servicePath", Value: this.servicePath},
 			log.Field{Key: "serviceMethod", Value: serviceMethod},
 			log.Field{Key: "req", Value: req},
 			log.Field{Key: "reply", Value: reply},
 		)
 	}()
 	var call *MessageCall
-	call, err = this.call(ctx, servicePath, serviceMethod, req, reply)
+	call, err = this.call(ctx, serviceMethod, req, reply)
 	select {
 	case <-ctx.Done(): // cancel by context
 		this.pendingmutex.Lock()
@@ -111,25 +109,29 @@ func (this *Client) Call(ctx context.Context, servicePath string, serviceMethod 
 }
 
 // 异步执行 异步返回
-func (this *Client) Go(ctx context.Context, servicePath string, serviceMethod string, req interface{}, reply interface{}) (call *MessageCall, err error) { //异步调用 异步返回
+func (this *Client) Go(ctx context.Context, serviceMethod string, req interface{}, reply interface{}) (call *MessageCall, err error) { //异步调用 异步返回
 	seq := new(uint64)
 	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
 	stime := time.Now()
-	// this.options.Log.Debug("Go start!", log.Field{Key: "servicePath", Value: servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
+	// this.options.Log.Debug("Go start!", log.Field{Key: "this.servicePath", Value: this.servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
 	defer func() {
 		this.options.Log.Debug("RPC Go",
 			log.Field{Key: "t", Value: time.Since(stime).Milliseconds()},
-			log.Field{Key: "servicePath", Value: servicePath},
+			log.Field{Key: "this.servicePath", Value: this.servicePath},
 			log.Field{Key: "serviceMethod", Value: serviceMethod},
 			log.Field{Key: "req", Value: req},
 			log.Field{Key: "reply", Value: reply},
 		)
 	}()
-	call, err = this.call(ctx, servicePath, serviceMethod, req, reply)
+	call, err = this.call(ctx, serviceMethod, req, reply)
 	return
 }
 
-func (this *Client) Broadcast(ctx context.Context, servicePath string, serviceMethod string, args interface{}) (err error) {
+func (this *Client) Broadcast(ctx context.Context, serviceMethod string, args interface{}) (err error) {
+	return
+}
+
+func (this *Client) Close() (err error) {
 	return
 }
 
@@ -143,9 +145,9 @@ func filterByStateAndGroup(servers map[string]core.IServiceNode) {
 	}
 }
 
-func (this *Client) call(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) {
+func (this *Client) call(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) {
 	call = new(MessageCall)
-	call.ServicePath = servicePath
+	call.ServicePath = this.servicePath
 	call.ServiceMethod = serviceMethod
 	call.Done = make(chan *MessageCall, 10)
 	call.Args = args
@@ -159,7 +161,7 @@ func (this *Client) call(ctx context.Context, servicePath string, serviceMethod 
 		*cseq = seq
 	}
 	var client rpccore.IConnClient
-	if client, err = this.getclient(ctx, servicePath); err != nil {
+	if client, err = this.getclient(ctx); err != nil {
 		return
 	}
 	err = this.send(client, call, seq)
@@ -203,10 +205,10 @@ func (this *Client) getMessage(serviceMethod string, args interface{}, reply int
 	return
 }
 
-func (this *Client) getclient(ctx context.Context, servicePath string) (client rpccore.IConnClient, err error) {
-	nodes := this.selector.Select(ctx, servicePath)
+func (this *Client) getclient(ctx context.Context) (client rpccore.IConnClient, err error) {
+	nodes := this.selector.Select(ctx, this.servicePath)
 	if nodes == nil || len(nodes) == 0 {
-		err = fmt.Errorf("no found any node:%s", servicePath)
+		err = fmt.Errorf("no found any node:%s", this.servicePath)
 		this.options.Log.Errorln(err)
 		return
 	}
