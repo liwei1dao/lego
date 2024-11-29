@@ -33,7 +33,8 @@ type (
 		Broadcast(ctx context.Context, servicePath string, serviceMethod string, args interface{}) (err error)
 	}
 	IClinet interface {
-		Go(ctx context.Context, serviceMethod string, args interface{}, reply interface{}, done chan *MessageCall) (*MessageCall, error)
+		ServiceNode() core.IServiceNode
+		Go(ctx context.Context, serviceMethod string, args interface{}, reply interface{}, done chan *MessageCall) *MessageCall
 		Call(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) error
 		Stream(ctx context.Context, meta map[string]string) (net.Conn, error)
 		Close() error

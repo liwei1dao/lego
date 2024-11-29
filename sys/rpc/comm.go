@@ -22,7 +22,7 @@ type MessageCall struct {
 	Done          chan *MessageCall
 }
 
-func (call *MessageCall) done(log log.Ilogf) {
+func (call *MessageCall) done() {
 	select {
 	case call.Done <- call:
 		// ok

@@ -83,7 +83,7 @@ func (this *TcpConnPool) createClient(conn net.Conn, node core.IServiceNode) (cl
 		this.log.Errorln(err)
 		return
 	}
-	this.AddClient(client, node)
+	err = this.AddClient(client, node)
 	return
 }
 

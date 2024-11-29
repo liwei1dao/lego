@@ -2,229 +2,176 @@ package rpc
 
 import (
 	"context"
-	"fmt"
-	"sort"
-	"strings"
+	"errors"
 	"sync"
 	"time"
 
 	"github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/sys/discovery"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/rpc/protocol"
 	"github.com/liwei1dao/lego/sys/rpc/rpccore"
+	"github.com/smallnest/rpcx/share"
 )
 
-func NewXClient(servicePath string, discovery discovery.IDiscovery, option *Options) (client *Client) {
-	client = &Client{
-		options:     option,
-		servicePath: servicePath,
-		discovery:   discovery,
-	}
-	pairs := discovery.GetServices()
-	sort.Slice(pairs, func(i, j int) bool {
-		return strings.Compare(pairs[i].Key, pairs[j].Key) <= 0
-	})
-	servers := make(map[string]core.IServiceNode, len(pairs))
-	for _, p := range pairs {
-		servers[p.Key], _ = core.NewServiceNode(p.Value)
-	}
-	filterByStateAndGroup(servers)
-	client.servers = servers
-	ch := client.discovery.WatchService()
-	if ch != nil {
-		client.ch = ch
-		go client.watch(ch)
-	}
-	return
-}
+var (
+	ErrShutdown = errors.New("connection is shut down")
+)
 
+type seqKey struct{}
 type Client struct {
-	options     *Options
-	servicePath string
-	discovery   discovery.IDiscovery
-	selector    rpccore.ISelector
-	cpool       rpccore.IConnPool
-	mu          sync.RWMutex
-	servers     map[string]core.IServiceNode
-	ch          chan []*discovery.KVPair
+	options      *Options
+	Conn         rpccore.IConnClient
+	node         core.IServiceNode
+	mutex        sync.Mutex
+	seq          uint64
+	pending      map[uint64]*MessageCall
+	closing      bool
+	shutdown     bool
+	pluginClosed bool
 }
 
 func (this *Client) ServiceNode() core.IServiceNode {
 	return this.options.ServiceNode
 }
-
-func (c *Client) watch(ch chan []*discovery.KVPair) {
-	for pairs := range ch {
-		sort.Slice(pairs, func(i, j int) bool {
-			return strings.Compare(pairs[i].Key, pairs[j].Key) <= 0
-		})
-		servers := make(map[string]core.IServiceNode, len(pairs))
-		for _, p := range pairs {
-			servers[p.Key], _ = core.NewServiceNode(p.Value)
-		}
-		c.mu.Lock()
-		filterByStateAndGroup(servers)
-		c.servers = servers
-
-		if c.selector != nil {
-			c.selector.UpdateServer(servers)
-		}
-		c.mu.Unlock()
-	}
+func (client *Client) IsClosing() bool {
+	client.mutex.Lock()
+	defer client.mutex.Unlock()
+	return client.closing
 }
 
-// 同步执行
-func (this *Client) Call(ctx context.Context, serviceMethod string, req interface{}, reply interface{}) (err error) { //同步调用 等待结果
-	seq := new(uint64)
-	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
-	stime := time.Now()
-	// this.options.Log.Debug("Call Start", log.Field{Key: "this.servicePath", Value: this.servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
-	defer func() {
-		this.options.Log.Debug("RPC Call",
-			log.Field{Key: "t", Value: time.Since(stime).Milliseconds()},
-			log.Field{Key: "this.servicePath", Value: this.servicePath},
-			log.Field{Key: "serviceMethod", Value: serviceMethod},
-			log.Field{Key: "req", Value: req},
-			log.Field{Key: "reply", Value: reply},
-		)
-	}()
-	var call *MessageCall
-	call, err = this.call(ctx, serviceMethod, req, reply)
-	select {
-	case <-ctx.Done(): // cancel by context
-		this.pendingmutex.Lock()
-		call := this.pending[*seq]
-		delete(this.pending, *seq)
-		this.pendingmutex.Unlock()
-		if call != nil {
-			call.Error = ctx.Err()
-			call.done(this.options.Log)
-		}
-		return ctx.Err()
-	case call := <-call.Done:
-		err = call.Error
-	}
-	return
+// IsShutdown client is shutdown or not.
+func (client *Client) IsShutdown() bool {
+	client.mutex.Lock()
+	defer client.mutex.Unlock()
+	return client.shutdown
+}
+func (client *Client) Call(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}) error {
+	return client.call(ctx, servicePath, serviceMethod, args, reply)
 }
 
-// 异步执行 异步返回
-func (this *Client) Go(ctx context.Context, serviceMethod string, req interface{}, reply interface{}) (call *MessageCall, err error) { //异步调用 异步返回
-	seq := new(uint64)
-	ctx = rpccore.WithValue(ctx, rpccore.CallSeqKey, seq)
-	stime := time.Now()
-	// this.options.Log.Debug("Go start!", log.Field{Key: "this.servicePath", Value: this.servicePath}, log.Field{Key: "serviceMethod", Value: serviceMethod}, log.Field{Key: "req", Value: req})
-	defer func() {
-		this.options.Log.Debug("RPC Go",
-			log.Field{Key: "t", Value: time.Since(stime).Milliseconds()},
-			log.Field{Key: "this.servicePath", Value: this.servicePath},
-			log.Field{Key: "serviceMethod", Value: serviceMethod},
-			log.Field{Key: "req", Value: req},
-			log.Field{Key: "reply", Value: reply},
-		)
-	}()
-	call, err = this.call(ctx, serviceMethod, req, reply)
-	return
-}
-
-func (this *Client) Broadcast(ctx context.Context, serviceMethod string, args interface{}) (err error) {
-	return
-}
-
-func (this *Client) Close() (err error) {
-	return
-}
-
-// 执行远程服务---------------------------------------------------------------------------------------
-
-func filterByStateAndGroup(servers map[string]core.IServiceNode) {
-	for k, v := range servers {
-		if v.State() == "inactive" {
-			delete(servers, k)
-		}
-	}
-}
-
-func (this *Client) call(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) {
-	call = new(MessageCall)
-	call.ServicePath = this.servicePath
+func (client *Client) Go(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}, done chan *MessageCall) *MessageCall {
+	call := new(MessageCall)
+	call.ServicePath = servicePath
 	call.ServiceMethod = serviceMethod
-	call.Done = make(chan *MessageCall, 10)
+	meta := ctx.Value(rpccore.ReqMetaDataKey)
+	if meta != nil {
+		call.Metadata = meta.(map[string]string)
+	}
+
+	if !rpccore.IsShareContext(ctx) {
+		ctx = rpccore.NewContext(ctx)
+	}
+
 	call.Args = args
 	call.Reply = reply
-	this.pendingmutex.Lock()
-	seq := this.seq
-	this.seq++
-	this.pending[seq] = call
-	this.pendingmutex.Unlock()
-	if cseq, ok := ctx.Value(rpccore.CallSeqKey).(*uint64); ok {
-		*cseq = seq
-	}
-	var client rpccore.IConnClient
-	if client, err = this.getclient(ctx); err != nil {
-		return
-	}
-	err = this.send(client, call, seq)
-	return
-}
-
-// 获取请求消息对象
-func (this *Client) getMessage(serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, req *protocol.Message, err error) {
-	var data []byte
-	call = new(MessageCall)
-	call.ServiceMethod = serviceMethod
-	call.Done = make(chan *MessageCall, 10)
-	call.Args = this.ServiceNode() //自己发起握手 需要传递本服务的节点信息
-	call.Reply = reply
-	req = protocol.GetPooledMsg()
-	req.SetVersion(this.options.ProtoVersion)
-	if call.Reply != nil {
-		this.pendingmutex.Lock()
-		seq := this.seq
-		this.seq++
-		this.pending[seq] = call
-		this.pendingmutex.Unlock()
-		req.SetSeq(seq)
-		req.SetOneway(true)
+	if done == nil {
+		done = make(chan *MessageCall, 10)
 	} else {
-		req.SetOneway(false)
+		if cap(done) == 0 {
+			log.Panic("rpc: done channel is unbuffered")
+		}
+	}
+	call.Done = done
+
+	if share.Trace {
+		log.Debugf("client.Go send request for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
 	}
 
-	req.SetServiceMethod(call.ServiceMethod)
-	req.SetFrom(this.ServiceNode())
-	req.SetMessageType(rpccore.Request)
-	req.SetSerializeType(this.options.SerializeType)
-	data, err = codecs[this.options.SerializeType].Marshal(call.Args)
-	if err != nil {
-		return
+	go client.send(ctx, call)
+
+	return call
+}
+func (client *Client) call(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}) error {
+	seq := new(uint64)
+	ctx = context.WithValue(ctx, seqKey{}, seq)
+
+	if share.Trace {
+		log.Debugf("client.call for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
+		defer func() {
+			log.Debugf("client.call done for %s.%s, args: %+v in case of client call", servicePath, serviceMethod, args)
+		}()
 	}
-	if len(data) > 1024 && this.options.CompressType != rpccore.CompressNone {
-		req.SetCompressType(this.options.CompressType)
+
+	Done := client.Go(ctx, servicePath, serviceMethod, args, reply, make(chan *MessageCall, 1)).Done
+
+	var err error
+	select {
+	case <-ctx.Done(): // cancel by context
+		client.mutex.Lock()
+		call := client.pending[*seq]
+		delete(client.pending, *seq)
+		client.mutex.Unlock()
+		if call != nil {
+			call.Error = ctx.Err()
+			call.done()
+		}
+
+		return ctx.Err()
+	case call := <-Done:
+		err = call.Error
+		meta := ctx.Value(share.ResMetaDataKey)
+		if meta != nil && len(call.ResMetadata) > 0 {
+			resMeta := meta.(map[string]string)
+			locker, ok := ctx.Value(share.ContextTagsLock).(*sync.Mutex)
+			if ok {
+
+				locker.Lock()
+				for k, v := range call.ResMetadata {
+					resMeta[k] = v
+				}
+				resMeta[share.ServerAddress] = client.Conn.ServiceNode().Addr()
+				locker.Unlock()
+
+			} else {
+				for k, v := range call.ResMetadata {
+					resMeta[k] = v
+				}
+				resMeta[share.ServerAddress] = client.Conn.ServiceNode().Addr()
+			}
+		}
 	}
-	req.SetPayload(data)
-	return
+
+	return err
 }
 
-func (this *Client) getclient(ctx context.Context) (client rpccore.IConnClient, err error) {
-	nodes := this.selector.Select(ctx, this.servicePath)
-	if nodes == nil || len(nodes) == 0 {
-		err = fmt.Errorf("no found any node:%s", this.servicePath)
-		this.options.Log.Errorln(err)
-		return
-	}
-	if client, err = this.cpool.GetClient(nodes[0]); err != nil {
-		this.options.Log.Errorln(err)
-		return
-	}
-	return
-}
-
-func (this *Client) send(client rpccore.IConnClient, call *MessageCall, seq uint64) (err error) {
+func (this *Client) send(ctx context.Context, call *MessageCall) (err error) {
 	var (
 		data    []byte
 		allData *[]byte
 	)
+	this.mutex.Lock()
+	if this.shutdown || this.closing {
+		call.Error = ErrShutdown
+		this.mutex.Unlock()
+		call.done()
+		return
+	}
 
+	isHeartbeat := call.ServicePath == "" && call.ServiceMethod == ""
+	serializeType := this.options.SerializeType
+	if isHeartbeat {
+		serializeType = rpccore.MsgPack
+	}
+	codec := codecs[serializeType]
+	if codec == nil {
+		call.Error = rpccore.ErrUnsupportedCodec
+		this.mutex.Unlock()
+		call.done()
+		return
+	}
+
+	if this.pending == nil {
+		this.pending = make(map[uint64]*MessageCall)
+	}
+
+	seq := this.seq
+	this.seq++
+	this.pending[seq] = call
+	this.mutex.Unlock()
+
+	if cseq, ok := ctx.Value(rpccore.ServiceSeqKey).(*uint64); ok {
+		*cseq = seq
+	}
 	req := protocol.GetPooledMsg()
 	req.SetVersion(this.options.ProtoVersion)
 	req.SetMessageType(rpccore.Request)
@@ -239,11 +186,6 @@ func (this *Client) send(client rpccore.IConnClient, call *MessageCall, seq uint
 	req.SetServiceMethod(call.ServiceMethod)
 	req.SetFrom(this.options.ServiceNode)
 	req.SetSerializeType(this.options.SerializeType)
-	codec := codecs[this.options.SerializeType]
-	if codec == nil {
-		err = rpccore.ErrUnsupportedCodec
-		return
-	}
 	data, err = codec.Marshal(call.Args)
 	if err != nil {
 		return
@@ -257,6 +199,71 @@ func (this *Client) send(client rpccore.IConnClient, call *MessageCall, seq uint
 		protocol.PutData(allData)
 		protocol.FreeMsg(req)
 	}()
-	err = client.Write(*allData)
+	err = this.Conn.Write(*allData)
 	return
+}
+
+func (client *Client) heartbeat() {
+	t := time.NewTicker(time.Second * time.Duration(client.options.HeartbeatInterval))
+
+	if client.options.MaxWaitForHeartbeat == 0 {
+		client.options.MaxWaitForHeartbeat = 30
+	}
+
+	for range t.C {
+		if client.IsShutdown() || client.IsClosing() {
+			t.Stop()
+			return
+		}
+
+		request := time.Now().UnixNano()
+		reply := int64(0)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(client.options.MaxWaitForHeartbeat))
+		err := client.Call(ctx, "", "", &request, &reply)
+		abnormal := false
+		if ctx.Err() != nil {
+			// log.Warnf("failed to heartbeat to %s, context err: %v", client.Conn.RemoteAddr().String(), ctx.Err())
+			abnormal = true
+		}
+		cancel()
+		if err != nil {
+			// log.Warnf("failed to heartbeat to %s: %v", client.Conn.RemoteAddr().String(), err)
+			abnormal = true
+		}
+
+		if reply != request {
+			// log.Warnf("reply %d in heartbeat to %s is different from request %d", reply, client.Conn.RemoteAddr().String(), request)
+		}
+
+		if abnormal {
+			client.Close()
+		}
+	}
+}
+
+func (client *Client) Close() error {
+	client.mutex.Lock()
+
+	for seq, call := range client.pending {
+		delete(client.pending, seq)
+		if call != nil {
+			call.Error = ErrShutdown
+			call.done()
+		}
+	}
+
+	var err error
+	if !client.pluginClosed {
+		client.pluginClosed = true
+		err = client.Conn.Close()
+	}
+
+	if client.closing || client.shutdown {
+		client.mutex.Unlock()
+		return ErrShutdown
+	}
+
+	client.closing = true
+	client.mutex.Unlock()
+	return err
 }
