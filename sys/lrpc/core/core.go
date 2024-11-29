@@ -1,9 +1,7 @@
-package rpccore
+package lcore
 
 import (
-	"context"
 	"errors"
-	"time"
 
 	"github.com/liwei1dao/lego/core"
 )
@@ -15,8 +13,6 @@ var (
 	ErrXClientNoServer       = errors.New("can not found any server")
 	ErrUnsupportedCodec      = errors.New("unsupported codec")
 )
-
-
 
 type contextKey struct {
 	name string
@@ -93,14 +89,6 @@ const (
 	Error                           //错误消息
 )
 
-// 系统对象
-type ISys interface {
-	ServiceNode() core.IServiceNode                                        //服务节点路径
-	Heartbeat() []byte                                                     //心跳包数据 可以复用
-	Handle(client IConnClient, message IMessage)                           //接收到远程消息
-	ShakehandsRequest(ctx context.Context, client IConnClient) (err error) //rpc服务发起握手请求
-}
-
 // 消息对象
 type IMessage interface {
 	Clone() IMessage
@@ -133,47 +121,4 @@ type IMessage interface {
 	Payload() []byte
 	SetPayload(b []byte)
 	PrintHeader() string
-}
-
-// 路由
-type ICodec interface {
-	Marshal(v interface{}) ([]byte, error)
-	Unmarshal(data []byte, v interface{}) error
-}
-
-// 选择器
-type ISelector interface {
-	Select(ctx context.Context, servicePath string) []core.IServiceNode
-	UpdateServer(servers map[string]core.IServiceNode) (add, del, change []core.IServiceNode)
-}
-
-// 连接对象池
-type IConnPool interface {
-	Start() error
-	GetClient(node core.IServiceNode) (client IConnClient, err error)
-	AddClient(client IConnClient, node core.IServiceNode) (err error)
-	Close() error
-}
-
-type IConnClient interface {
-	ServiceNode() core.IServiceNode
-	SetServiceNode(node core.IServiceNode)
-	State() ClientState
-	Start()
-	ResetHbeat()
-	Write(msg []byte) (err error)
-	Close() (err error)
-}
-
-// 连接配置信息
-type Config struct {
-	ConnectType       ConnectType   //通信类型
-	Endpoints         []string      //节点信息
-	ConnectionTimeout time.Duration //连接超时
-	ReadTimeout       time.Duration //读取超时
-	WriteTimeout      time.Duration //写入超时
-	KeepAlivePeriod   time.Duration //保持活跃时期
-	Username          string        //用户名
-	Password          string        //密码
-	Vsersion          string        //版本
 }
