@@ -1,4 +1,4 @@
-package tcp
+package tcppool
 
 import (
 	"bufio"
@@ -10,27 +10,25 @@ import (
 
 	"github.com/liwei1dao/lego"
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/cpool"
 	"github.com/liwei1dao/lego/sys/log"
 	lcore "github.com/liwei1dao/lego/sys/lrpc/core"
-	"github.com/liwei1dao/lego/sys/lrpc/cpool"
 	"github.com/liwei1dao/lego/sys/lrpc/protocol"
 )
 
-func newClient(pool cpool.ICPool, config *cpool.Config, conn net.Conn) (client *Client, err error) {
+func newClient(pool IPool, conn net.Conn) (client *Client, err error) {
 	client = &Client{
-		pool:   pool,
-		config: config,
-		conn:   conn,
-		hbeat:  0,
-		state:  int32(lcore.ClientShakeHands),
+		pool:  pool,
+		conn:  conn,
+		hbeat: 0,
+		state: int32(lcore.ClientShakeHands),
 	}
 	go client.serveConn()
 	return
 }
 
 type Client struct {
-	pool        cpool.ICPool
-	config      *cpool.Config
+	pool        IPool
 	node        core.IServiceNode
 	conn        net.Conn
 	closeSignal chan bool
@@ -77,10 +75,10 @@ func (this *Client) Close() (err error) {
 func (this *Client) serveConn() {
 	defer lego.Recover("lrpc.serveConn")
 	if tlsConn, ok := this.conn.(*tls.Conn); ok {
-		if d := this.config.ReadTimeout; d != 0 {
+		if d := this.pool.Options().ReadTimeout; d != 0 {
 			this.conn.SetReadDeadline(time.Now().Add(d))
 		}
-		if d := this.config.WriteTimeout; d != 0 {
+		if d := this.pool.Options().WriteTimeout; d != 0 {
 			this.conn.SetWriteDeadline(time.Now().Add(d))
 		}
 		if err := tlsConn.Handshake(); err != nil {
@@ -93,41 +91,41 @@ func (this *Client) serveConn() {
 locp:
 	for {
 		t0 := time.Now()
-		if this.config.ReadTimeout > 0 {
-			this.conn.SetReadDeadline(t0.Add(this.config.ReadTimeout))
+		if this.pool.Options().ReadTimeout > 0 {
+			this.conn.SetReadDeadline(t0.Add(this.pool.Options().ReadTimeout))
 		}
 		req := protocol.GetPooledMsg()
 		err := req.Decode(r)
 		if err != nil {
-			go this.pool.CloseClient(this.node)
+			go this.pool.CloseClient(this.node.Path())
 			break locp
 		}
-		go this.pool.Handle(this, req)
+		this.pool.In() <- req
 	}
 }
 
-func (this *Client) heartbeat() {
-	var (
-		timer *time.Ticker
-		err   error
-	)
-	timer = time.NewTicker(this.config.KeepAlivePeriod)
-locp:
-	for {
-		select {
-		case <-timer.C:
-			if err = this.Write(this.pool.Heartbeat()); err != nil {
-				log.Errorf("err:%v", err)
-				go this.pool.CloseClient(this.node)
-			}
-			if atomic.LoadInt32(&this.hbeat) > 3 {
-				log.Errorf("heartbeat exception !")
-				go this.pool.CloseClient(this.node)
-			}
-		case <-this.closeSignal:
-			break locp
-		}
-	}
-	timer.Stop()
-	this.wg.Done()
-}
+// func (this *Client) heartbeat() {
+// 	var (
+// 		timer *time.Ticker
+// 		err   error
+// 	)
+// 	timer = time.NewTicker(this.config.KeepAlivePeriod)
+// locp:
+// 	for {
+// 		select {
+// 		case <-timer.C:
+// 			if err = this.Write(this.pool.Heartbeat()); err != nil {
+// 				log.Errorf("err:%v", err)
+// 				go this.pool.CloseClient(this.node)
+// 			}
+// 			if atomic.LoadInt32(&this.hbeat) > 3 {
+// 				log.Errorf("heartbeat exception !")
+// 				go this.pool.CloseClient(this.node)
+// 			}
+// 		case <-this.closeSignal:
+// 			break locp
+// 		}
+// 	}
+// 	timer.Stop()
+// 	this.wg.Done()
+// }

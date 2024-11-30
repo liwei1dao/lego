@@ -14,9 +14,9 @@ import (
 
 var bufferPool = util.NewLimitedPool(512, 4096)
 
-var Compressors = map[lcore.CompressType]Compressor{
-	lcore.CompressNone: &RawDataCompressor{},
-	lcore.CompressGzip: &GzipCompressor{},
+var Compressors = map[CompressType]Compressor{
+	CompressNone: &RawDataCompressor{},
+	CompressGzip: &GzipCompressor{},
 }
 
 var (
@@ -30,7 +30,6 @@ func NewMessage() *Message {
 
 	return &Message{
 		Header: &header,
-		from:   &core.ServiceNode{},
 	}
 }
 
@@ -149,7 +148,7 @@ func (this *Message) Decode(r io.Reader) error {
 	n = n + 4
 	this.payload = data[n:]
 
-	if this.CompressType() != lcore.CompressNone {
+	if this.CompressType() != CompressNone {
 		compressor := Compressors[this.CompressType()]
 		if compressor == nil {
 			return lcore.ErrUnsupportedCompressor
@@ -168,10 +167,10 @@ func (this *Message) Reset() {
 	this.payload = []byte{}
 	this.serviceMethod = ""
 }
-func (this Message) Clone() lcore.IMessage {
+func (this Message) Clone() IMessage {
 	header := *this.Header
 	c := GetPooledMsg()
-	header.SetCompressType(lcore.CompressNone)
+	header.SetCompressType(CompressNone)
 	c.Header = &header
 	c.serviceMethod = this.serviceMethod
 	return c
@@ -186,14 +185,14 @@ func (this *Message) EncodeSlicePointer() *[]byte {
 	// fml := len(fdata)
 	var err error
 	payload := this.payload
-	if this.CompressType() != lcore.CompressNone {
+	if this.CompressType() != CompressNone {
 		compressor := Compressors[this.CompressType()]
 		if compressor == nil {
-			this.SetCompressType(lcore.CompressNone)
+			this.SetCompressType(CompressNone)
 		} else {
 			payload, err = compressor.Zip(this.payload)
 			if err != nil {
-				this.SetCompressType(lcore.CompressNone)
+				this.SetCompressType(CompressNone)
 				payload = this.payload
 			}
 		}
@@ -247,7 +246,7 @@ func (this *Message) WriteTo(w io.Writer) (int64, error) {
 	// fml := len(fdata)
 
 	payload := this.payload
-	if this.CompressType() != lcore.CompressNone {
+	if this.CompressType() != CompressNone {
 		compressor := Compressors[this.CompressType()]
 		if compressor == nil {
 			return n, lcore.ErrUnsupportedCompressor

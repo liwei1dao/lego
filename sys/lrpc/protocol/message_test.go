@@ -6,13 +6,12 @@ import (
 	"testing"
 
 	"github.com/liwei1dao/lego/core"
-	lcore "github.com/liwei1dao/lego/sys/lrpc/core"
 )
 
 func TestMessage(t *testing.T) {
 	req := NewMessage()
 	req.SetVersion(1)
-	req.SetMessageType(lcore.Response)
+	req.SetMessageType(Response)
 	fmt.Printf("%b\n", req.Header[2])
 	req.SetShakeHands(true)
 	fmt.Printf("%b\n", req.Header[2])
@@ -20,11 +19,11 @@ func TestMessage(t *testing.T) {
 	fmt.Printf("%b\n", req.Header[2])
 	req.SetOneway(true)
 	fmt.Printf("%b\n", req.Header[2])
-	req.SetCompressType(lcore.CompressGzip)
+	req.SetCompressType(CompressGzip)
 	fmt.Printf("%b\n", req.Header[2])
-	req.SetMessageStatusType(lcore.Error)
+	req.SetMessageStatusType(Error)
 	fmt.Printf("%b\n", req.Header[2])
-	req.SetSerializeType(lcore.ProtoBuffer)
+	req.SetSerializeType(ProtoBuffer)
 	fmt.Printf("%b\n", req.Header[2])
 	req.SetSeq(1234567890)
 	node, _ := core.NewServiceNode("tag=demo&type=demo&id=demo&addr=127.0.0.1:9852")
@@ -50,7 +49,7 @@ func TestMessage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	res.SetMessageType(lcore.Response)
+	res.SetMessageType(Response)
 
 	if res.Version() != 0 {
 		t.Errorf("expect 0 but got %d", res.Version())

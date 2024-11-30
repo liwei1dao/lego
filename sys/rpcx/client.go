@@ -22,7 +22,7 @@ import (
 func newClient(options *Options) (sys *Client, err error) {
 	sys = &Client{
 		options:        options,
-		metadata:       fmt.Sprintf("stag=%s&stype=%s&sid=%s&version=%s&addr=%s", options.ServiceNode.Tag, options.ServiceNode.Type, options.ServiceNode.Id, options.ServiceNode.Version, "tcp@"+options.ServiceNode.Addr),
+		metadata:       options.ServiceNode.Value(), //   fmt.Sprintf("stag=%s&stype=%s&sid=%s&version=%s&addr=%s", options.ServiceNode.Tag, options.ServiceNode.Type, options.ServiceNode.Id, options.ServiceNode.Version, "tcp@"+options.ServiceNode.Addr),
 		clusterClients: make(map[string]*clusterClients),
 		conns:          make(map[string]net.Conn),
 		serviceMap:     make(map[string]*service),
@@ -111,7 +111,7 @@ func (this *Client) GetServiceTags() []string {
 
 // 注册Rpc 服务
 func (this *Client) RegisterFunction(fn interface{}) (err error) {
-	_, err = this.registerFunction(this.options.ServiceNode.Type, fn, "", false)
+	_, err = this.registerFunction(this.options.ServiceNode.Type(), fn, "", false)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ func (this *Client) RegisterFunction(fn interface{}) (err error) {
 
 // 注册Rpc 服务
 func (this *Client) RegisterFunctionName(name string, fn interface{}) (err error) {
-	_, err = this.registerFunction(this.options.ServiceNode.Type, fn, name, true)
+	_, err = this.registerFunction(this.options.ServiceNode.Type(), fn, name, true)
 	if err != nil {
 		return err
 	}
@@ -137,7 +137,7 @@ func (this *Client) Call(ctx context.Context, servicePath string, serviceMethod 
 	var (
 		_client client.XClient
 	)
-	if _client, err = this.getclient(&ctx, this.options.ServiceNode.Tag, servicePath); err != nil {
+	if _client, err = this.getclient(&ctx, this.options.ServiceNode.Tag(), servicePath); err != nil {
 		return
 	}
 	err = _client.Call(ctx, serviceMethod, args, reply)
@@ -149,7 +149,7 @@ func (this *Client) Go(ctx context.Context, servicePath string, serviceMethod st
 	var (
 		_client client.XClient
 	)
-	if _client, err = this.getclient(&ctx, this.options.ServiceNode.Tag, servicePath); err != nil {
+	if _client, err = this.getclient(&ctx, this.options.ServiceNode.Tag(), servicePath); err != nil {
 		return
 	}
 	return _client.Go(ctx, string(serviceMethod), args, reply, done)
@@ -160,7 +160,7 @@ func (this *Client) Broadcast(ctx context.Context, servicePath string, serviceMe
 	var (
 		_client client.XClient
 	)
-	if _client, err = this.getclient(&ctx, this.options.ServiceNode.Tag, servicePath); err != nil {
+	if _client, err = this.getclient(&ctx, this.options.ServiceNode.Tag(), servicePath); err != nil {
 		return
 	}
 	err = _client.Broadcast(ctx, serviceMethod, args, reply)
@@ -213,9 +213,9 @@ func (this *Client) ClusterBroadcast(ctx context.Context, servicePath string, se
 	)
 	spath = strings.Split(servicePath, "/")
 	ctx = context.WithValue(ctx, share.ReqMetaDataKey, map[string]string{
-		ServiceClusterTag: this.options.ServiceNode.Tag,
+		ServiceClusterTag: this.options.ServiceNode.Tag(),
 		CallRoutRulesKey:  servicePath,
-		ServiceAddrKey:    "tcp@" + this.options.ServiceNode.Addr,
+		ServiceAddrKey:    "tcp@" + this.options.ServiceNode.Addr(),
 		ServiceMetaKey:    this.metadata,
 	})
 	clients = make([]client.XClient, 0)
@@ -343,9 +343,9 @@ func (this *Client) getclient(ctx *context.Context, clusterTag string, servicePa
 	}
 
 	*ctx = context.WithValue(*ctx, share.ReqMetaDataKey, map[string]string{
-		ServiceClusterTag: this.options.ServiceNode.Tag,
+		ServiceClusterTag: this.options.ServiceNode.Tag(),
 		CallRoutRulesKey:  servicePath,
-		ServiceAddrKey:    "tcp@" + this.options.ServiceNode.Addr,
+		ServiceAddrKey:    "tcp@" + this.options.ServiceNode.Addr(),
 		ServiceMetaKey:    this.metadata,
 	})
 	return
