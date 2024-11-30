@@ -2,6 +2,9 @@ package rpcx
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"net/url"
 
 	"github.com/smallnest/rpcx/client"
 )
@@ -100,4 +103,51 @@ func AcrossClusterBroadcast(ctx context.Context, clusterTag string, servicePath 
 }
 func ClusterBroadcast(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (err error) {
 	return defsys.ClusterBroadcast(ctx, servicePath, serviceMethod, args, reply)
+}
+
+// 服务元数据转服务节点信息
+func smetaToServiceNode(meta string) (node *ServiceNode, err error) {
+	if meta == "" {
+		err = errors.New("meta is nill")
+		return
+	}
+	node = &ServiceNode{}
+	data := make(map[string]string)
+	metadata, _ := url.ParseQuery(meta)
+	for k, v := range metadata {
+		if len(v) > 0 {
+			data[k] = v[0]
+		}
+	}
+	if stag, ok := data["stag"]; !ok {
+		err = fmt.Errorf("no found stag")
+		return
+	} else {
+		node.ServiceTag = stag
+	}
+	if sid, ok := data["sid"]; !ok {
+		err = fmt.Errorf("no found sid")
+		return
+	} else {
+		node.ServiceId = sid
+	}
+	if stype, ok := data["stype"]; !ok {
+		err = fmt.Errorf("no found stype")
+		return
+	} else {
+		node.ServiceType = stype
+	}
+	if version, ok := data["version"]; !ok {
+		err = fmt.Errorf("no found version")
+		return
+	} else {
+		node.Version = version
+	}
+	if addr, ok := data["addr"]; !ok {
+		err = fmt.Errorf("no found addr")
+		return
+	} else {
+		node.ServiceAddr = addr
+	}
+	return
 }

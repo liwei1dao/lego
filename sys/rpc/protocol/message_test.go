@@ -27,11 +27,17 @@ func TestMessage(t *testing.T) {
 	req.SetSerializeType(rpccore.ProtoBuffer)
 	fmt.Printf("%b\n", req.Header[2])
 	req.SetSeq(1234567890)
-	node, _ := core.NewServiceNode("tag=demo&type=demo&id=demo&addr=127.0.0.1:9852")
-	req.SetFrom(node)
+	req.SetFrom(&core.ServiceNode{
+		Tag:  "demo",
+		Type: "demo",
+		Id:   "demo",
+		Addr: "127.0.0.1:9852",
+		Meta: map[string]string{},
+	})
+
 	m := make(map[string]string)
 	m["__ID"] = "6ba7b810-9dad-11d1-80b4-00c04fd430c9"
-	req.meta = m
+	req.metadata = m
 
 	payload := `{
 		"A": 1,
@@ -60,8 +66,8 @@ func TestMessage(t *testing.T) {
 		t.Errorf("expect 1234567890 but got %d", res.Seq())
 	}
 
-	if res.serviceMethod != "Add" || res.meta["__ID"] != "6ba7b810-9dad-11d1-80b4-00c04fd430c9" {
-		t.Errorf("got wrong metadata: %v", res.meta)
+	if res.serviceMethod != "Add" || res.metadata["__ID"] != "6ba7b810-9dad-11d1-80b4-00c04fd430c9" {
+		t.Errorf("got wrong metadata: %v", res.metadata)
 	}
 
 	if string(res.payload) != payload {

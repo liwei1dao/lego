@@ -20,7 +20,7 @@ const (
 
 type Option func(*Options)
 type Options struct {
-	ServiceNode    core.IServiceNode      //服务节点
+	ServiceNode    *core.ServiceNode      //服务节点
 	ETCDServers    []string               //ETCD集群服务地址
 	UpdateInterval int32                  //更新间隔
 	RpcxStartType  RpcxStartType          //Rpcx启动类型
@@ -31,7 +31,7 @@ type Options struct {
 	Log            log.ILogger
 }
 
-func SetServiceNode(v core.IServiceNode) Option {
+func SetServiceNode(v *core.ServiceNode) Option {
 	return func(o *Options) {
 		o.ServiceNode = v
 	}
@@ -73,7 +73,7 @@ func newOptions(config map[string]interface{}, opts ...Option) (options *Options
 	for _, o := range opts {
 		o(options)
 	}
-	if len(options.ServiceNode.Tag()) == 0 || len(options.ServiceNode.Type()) == 0 || len(options.ServiceNode.Id()) == 0 || len(options.ETCDServers) == 0 {
+	if len(options.ServiceNode.Tag) == 0 || len(options.ServiceNode.Type) == 0 || len(options.ServiceNode.Id) == 0 || len(options.ETCDServers) == 0 {
 		return options, errors.New("[Sys.RPCX] newOptions err: 启动参数异常")
 	}
 
@@ -94,7 +94,7 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 	for _, o := range opts {
 		o(options)
 	}
-	if len(options.ServiceNode.Tag()) == 0 || len(options.ServiceNode.Type()) == 0 || len(options.ServiceNode.Id()) == 0 || len(options.ETCDServers) == 0 {
+	if len(options.ServiceNode.Tag) == 0 || len(options.ServiceNode.Type) == 0 || len(options.ServiceNode.Id) == 0 || len(options.ETCDServers) == 0 {
 		return options, errors.New("[Sys.RPCX] newOptions err: 启动参数异常")
 	}
 	if options.Log = log.NewTurnlog(options.Debug, log.Clone("sys.rpc", 3)); options.Log == nil {

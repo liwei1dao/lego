@@ -9,6 +9,7 @@ import (
 
 type Option func(*Options)
 type Options struct {
+<<<<<<< HEAD
 	ServiceNode         core.IServiceNode     //服务节点
 	ProtoVersion        byte                  //协议版本
 	SerializeType       rpccore.SerializeType //消息序列化方式 0:JSON 1:ProtoBuffer 2:MsgPack 3:Thrift
@@ -24,9 +25,23 @@ type Options struct {
 	MaxWaitForHeartbeat int32                 //最大等待心跳时间 单位秒
 	Debug               bool                  //日志是否开启
 	Log                 log.ILogger
+=======
+	ServiceNode       *core.ServiceNode     //服务节点
+	ProtoVersion      byte                  //协议版本
+	SerializeType     rpccore.SerializeType //消息序列化方式 0:JSON 1:ProtoBuffer 2:MsgPack 3:Thrift
+	CompressType      rpccore.CompressType  //消息压缩模式	0:CompressNone 1:CompressGzip
+	ConnectType       rpccore.ConnectType   //RPC通信类型类型 0:Tcp 1:Kafka 2:Nats
+	CommAddrs         []string              //消息传输节点 tcp:["ip:prot"] kafka:["topic_up","topic_back"]
+	ConnectionTimeout int32                 //连接超时 单位秒
+	ReadTimeout       int32                 //读取超时 单位秒
+	WriteTimeout      int32                 //写入超时 单位秒
+	KeepAlivePeriod   int32                 //保持活跃时期 单位秒
+	Debug             bool                  //日志是否开启
+	Log               log.ILogger
+>>>>>>> parent of 4cb455e (上传框架代码)
 }
 
-func SetServiceNode(v core.IServiceNode) Option {
+func SetServiceNode(v *core.ServiceNode) Option {
 	return func(o *Options) {
 		o.ServiceNode = v
 	}

@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/liwei1dao/lego/core"
 	"github.com/rcrowley/go-metrics"
 	"github.com/rpcxio/rpcx-etcd/serverplugin"
 	"github.com/smallnest/rpcx/client"
@@ -23,10 +22,14 @@ func newService(options *Options) (sys *Service, err error) {
 	sys = &Service{
 		options:    options,
 <<<<<<< HEAD
+<<<<<<< HEAD
 		metadata:   options.ServiceNode.Value(), //fmt.Sprintf("stag=%s&stype=%s&sid=%s&version=%s&addr=%s", options.ServiceNode.Tag, options.ServiceNode.Type, options.ServiceNode.Id, options.ServiceNode.Version, "tcp@"+options.ServiceNode.Addr),
 =======
 		metadata:   options.ServiceNode.Value(),
 >>>>>>> a4295732293646da5e31a7fcdd3f8cf036137517
+=======
+		metadata:   fmt.Sprintf("stag=%s&stype=%s&sid=%s&version=%s&addr=%s", options.ServiceNode.Tag, options.ServiceNode.Type, options.ServiceNode.Id, options.ServiceNode.Version, "tcp@"+options.ServiceNode.Addr),
+>>>>>>> parent of 4cb455e (上传框架代码)
 		server:     server.NewServer(),
 		selectors:  make(map[string]ISelector),
 		clients:    make(map[string]net.Conn),
@@ -35,9 +38,9 @@ func newService(options *Options) (sys *Service, err error) {
 	}
 
 	r := &serverplugin.EtcdRegisterPlugin{
-		ServiceAddress: "tcp@" + options.ServiceNode.Addr(),
+		ServiceAddress: "tcp@" + options.ServiceNode.Addr,
 		EtcdServers:    options.ETCDServers,
-		BasePath:       options.ServiceNode.Tag(),
+		BasePath:       options.ServiceNode.Tag,
 		Metrics:        metrics.NewRegistry(),
 		UpdateInterval: time.Duration(options.UpdateInterval) * time.Second,
 	}
@@ -67,7 +70,7 @@ type Service struct {
 // RPC 服务启动
 func (this *Service) Start() (err error) {
 	go func() {
-		if err = this.server.Serve("tcp", this.options.ServiceNode.Addr()); err != nil {
+		if err = this.server.Serve("tcp", this.options.ServiceNode.Addr); err != nil {
 			this.options.Log.Warnf("rpcx server exit:%v", err)
 		}
 	}()
@@ -95,13 +98,13 @@ func (this *Service) GetServiceTags() []string {
 
 // 注册RPC 服务
 func (this *Service) RegisterFunction(fn interface{}) (err error) {
-	err = this.server.RegisterFunction(this.options.ServiceNode.Type(), fn, this.metadata)
+	err = this.server.RegisterFunction(this.options.ServiceNode.Type, fn, this.metadata)
 	return
 }
 
 // 注册RPC 服务
 func (this *Service) RegisterFunctionName(name string, fn interface{}) (err error) {
-	err = this.server.RegisterFunctionName(this.options.ServiceNode.Type(), name, fn, this.metadata)
+	err = this.server.RegisterFunctionName(this.options.ServiceNode.Type, name, fn, this.metadata)
 	return
 }
 
@@ -119,7 +122,7 @@ func (this *Service) Call(ctx context.Context, servicePath string, serviceMethod
 	)
 	seq := new(uint64)
 	ctx = context.WithValue(ctx, seqKey{}, seq)
-	if conn, done, err = this.call(&ctx, this.options.ServiceNode.Tag(), servicePath, serviceMethod, args, reply, make(chan *client.Call, 1)); err != nil {
+	if conn, done, err = this.call(&ctx, this.options.ServiceNode.Tag, servicePath, serviceMethod, args, reply, make(chan *client.Call, 1)); err != nil {
 		return
 	}
 	select {
@@ -149,13 +152,13 @@ func (this *Service) Call(ctx context.Context, servicePath string, serviceMethod
 
 // 广播调用
 func (this *Service) Broadcast(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (err error) {
-	err = this.broadcast(ctx, this.options.ServiceNode.Tag(), servicePath, serviceMethod, args, reply)
+	err = this.broadcast(ctx, this.options.ServiceNode.Tag, servicePath, serviceMethod, args, reply)
 	return
 }
 
 // 异步调用 远程服务
 func (this *Service) Go(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}, done chan *client.Call) (_call *client.Call, err error) {
-	_, _call, err = this.call(&ctx, this.options.ServiceNode.Tag(), servicePath, serviceMethod, args, reply, done)
+	_, _call, err = this.call(&ctx, this.options.ServiceNode.Tag, servicePath, serviceMethod, args, reply, done)
 	return
 }
 
@@ -297,7 +300,7 @@ func (this *Service) PostReadRequest(ctx context.Context, r *protocol.Message, e
 }
 
 // 客户端配置 AutoConnect 的默认连接函数
-func (this *Service) RpcxShakeHands(ctx context.Context, args core.IServiceNode, reply core.IServiceNode) error {
+func (this *Service) RpcxShakeHands(ctx context.Context, args *ServiceNode, reply *ServiceNode) error {
 	// this.Debugf("RpcxShakeHands:%+v", ctx.Value(share.ReqMetaDataKey).(map[string]string))
 	return nil
 }
@@ -316,15 +319,15 @@ func (this *Service) call(ctx *context.Context, clusterTag string, servicePath s
 		return
 	}
 	metadata = map[string]string{
-		ServiceClusterTag: this.options.ServiceNode.Tag(),
+		ServiceClusterTag: this.options.ServiceNode.Tag,
 		CallRoutRulesKey:  servicePath,
-		ServiceAddrKey:    "tcp@" + this.options.ServiceNode.Addr(),
+		ServiceAddrKey:    "tcp@" + this.options.ServiceNode.Addr,
 		ServiceMetaKey:    this.metadata,
 	}
 	spath = strings.Split(servicePath, "/")
 	*ctx = context.WithValue(*ctx, share.ReqMetaDataKey, map[string]string{
 		CallRoutRulesKey: servicePath,
-		ServiceAddrKey:   "tcp@" + this.options.ServiceNode.Addr(),
+		ServiceAddrKey:   "tcp@" + this.options.ServiceNode.Addr,
 		ServiceMetaKey:   this.metadata,
 	})
 	this.selectormutex.RLock()
@@ -377,15 +380,15 @@ func (this *Service) broadcast(ctx context.Context, clusterTag string, servicePa
 		return
 	}
 	metadata = map[string]string{
-		ServiceClusterTag: this.options.ServiceNode.Tag(),
+		ServiceClusterTag: this.options.ServiceNode.Tag,
 		CallRoutRulesKey:  servicePath,
-		ServiceAddrKey:    "tcp@" + this.options.ServiceNode.Addr(),
+		ServiceAddrKey:    "tcp@" + this.options.ServiceNode.Addr,
 		ServiceMetaKey:    this.metadata,
 	}
 	spath = strings.Split(servicePath, "/")
 	ctx = context.WithValue(ctx, share.ReqMetaDataKey, map[string]string{
 		CallRoutRulesKey: servicePath,
-		ServiceAddrKey:   "tcp@" + this.options.ServiceNode.Addr(),
+		ServiceAddrKey:   "tcp@" + this.options.ServiceNode.Addr,
 		ServiceMetaKey:   this.metadata,
 	})
 	this.selectormutex.RLock()
@@ -475,15 +478,15 @@ func (this *Service) clusterbroadcast(ctx context.Context, servicePath string, s
 		return
 	}
 	metadata = map[string]string{
-		ServiceClusterTag: this.options.ServiceNode.Tag(),
+		ServiceClusterTag: this.options.ServiceNode.Tag,
 		CallRoutRulesKey:  servicePath,
-		ServiceAddrKey:    "tcp@" + this.options.ServiceNode.Addr(),
+		ServiceAddrKey:    "tcp@" + this.options.ServiceNode.Addr,
 		ServiceMetaKey:    this.metadata,
 	}
 	spath = strings.Split(servicePath, "/")
 	ctx = context.WithValue(ctx, share.ReqMetaDataKey, map[string]string{
 		CallRoutRulesKey: servicePath,
-		ServiceAddrKey:   "tcp@" + this.options.ServiceNode.Addr(),
+		ServiceAddrKey:   "tcp@" + this.options.ServiceNode.Addr,
 		ServiceMetaKey:   this.metadata,
 	})
 	addrs := make(map[string]struct{})

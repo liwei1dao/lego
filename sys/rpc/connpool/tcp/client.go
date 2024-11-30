@@ -29,7 +29,7 @@ func newClient(pool *TcpConnPool, config *rpccore.Config, conn net.Conn) (client
 type Client struct {
 	pool        *TcpConnPool
 	config      *rpccore.Config
-	node        core.IServiceNode
+	node        *core.ServiceNode
 	conn        net.Conn
 	closeSignal chan bool
 	hbeat       int32 //心跳发出次数
@@ -37,11 +37,11 @@ type Client struct {
 	wg          sync.WaitGroup
 }
 
-func (this *Client) ServiceNode() core.IServiceNode {
+func (this *Client) ServiceNode() *core.ServiceNode {
 	return this.node
 }
 
-func (this *Client) SetServiceNode(node core.IServiceNode) {
+func (this *Client) SetServiceNode(node *core.ServiceNode) {
 	this.node = node
 }
 

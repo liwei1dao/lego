@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/liwei1dao/lego/sys/discovery"
 	"github.com/liwei1dao/lego/sys/discovery/dcore"
+	"github.com/smallnest/rpcx/client"
 	"github.com/smallnest/rpcx/log"
 )
 
@@ -20,20 +20,20 @@ type ZookeeperDiscovery struct {
 	basePath string
 	kv       dcore.IStore
 	pairsMu  sync.RWMutex
-	pairs    []*discovery.KVPair
-	chans    []chan []*discovery.KVPair
+	pairs    []*client.KVPair
+	chans    []chan []*client.KVPair
 	mu       sync.Mutex
 
 	// -1 means it always retry to watch until zookeeper is ok, 0 means no retry.
 	RetriesAfterWatchFailed int
 
-	filter discovery.DiscoveryFilter
+	filter client.ServiceDiscoveryFilter
 
 	stopCh chan struct{}
 }
 
-// NewFinder returns a new ZookeeperDiscovery.
-func NewFinder(basePath string, servicePath string, addr []string, options *dcore.Config) (discovery.IDiscovery, error) {
+// NewZookeeperDiscovery returns a new ZookeeperDiscovery.
+func NewZookeeperDiscovery(basePath string, servicePath string, zkAddr []string, options *dcore.Config) (*ZookeeperDiscovery, error) {
 	if basePath[0] == '/' {
 		basePath = basePath[1:]
 	}
@@ -42,17 +42,17 @@ func NewFinder(basePath string, servicePath string, addr []string, options *dcor
 		basePath = basePath[:len(basePath)-1]
 	}
 
-	kv, err := dcore.NewStore(dcore.ZK, addr, options)
+	kv, err := dcore.NewStore(dcore.ZK, zkAddr, options)
 	if err != nil {
 		log.Infof("cannot create store: %v", err)
 		return nil, err
 	}
 
-	return NewFinderWithStore(basePath+"/"+servicePath, kv)
+	return NewZookeeperDiscoveryWithStore(basePath+"/"+servicePath, kv)
 }
 
-// NewFinderWithStore returns a new ZookeeperDiscovery with specified store.
-func NewFinderWithStore(basePath string, kv dcore.IStore) (*ZookeeperDiscovery, error) {
+// NewZookeeperDiscoveryWithStore returns a new ZookeeperDiscovery with specified store.
+func NewZookeeperDiscoveryWithStore(basePath string, kv dcore.IStore) (*ZookeeperDiscovery, error) {
 	if basePath[0] == '/' {
 		basePath = basePath[1:]
 	}
@@ -65,9 +65,9 @@ func NewFinderWithStore(basePath string, kv dcore.IStore) (*ZookeeperDiscovery, 
 		return nil, err
 	}
 
-	pairs := make([]*discovery.KVPair, 0, len(ps))
+	pairs := make([]*client.KVPair, 0, len(ps))
 	for _, p := range ps {
-		pair := &discovery.KVPair{Key: p.Key, Value: string(p.Value)}
+		pair := &client.KVPair{Key: p.Key, Value: string(p.Value)}
 		if d.filter != nil && !d.filter(pair) {
 			continue
 		}
@@ -98,21 +98,21 @@ func NewZookeeperDiscoveryTemplate(basePath string, zkAddr []string, options *dc
 		return nil, err
 	}
 
-	return NewFinderWithStore(basePath, kv)
+	return NewZookeeperDiscoveryWithStore(basePath, kv)
 }
 
 // Clone clones this ServiceDiscovery with new servicePath.
-func (d *ZookeeperDiscovery) Clone(servicePath string) (discovery.IDiscovery, error) {
-	return NewFinderWithStore(d.basePath+"/"+servicePath, d.kv)
+func (d *ZookeeperDiscovery) Clone(servicePath string) (client.ServiceDiscovery, error) {
+	return NewZookeeperDiscoveryWithStore(d.basePath+"/"+servicePath, d.kv)
 }
 
 // SetFilter sets the filer.
-func (d *ZookeeperDiscovery) SetFilter(filter discovery.DiscoveryFilter) {
+func (d *ZookeeperDiscovery) SetFilter(filter client.ServiceDiscoveryFilter) {
 	d.filter = filter
 }
 
 // GetServices returns the servers
-func (d *ZookeeperDiscovery) GetServices() []*discovery.KVPair {
+func (d *ZookeeperDiscovery) GetServices() []*client.KVPair {
 	d.pairsMu.RLock()
 	defer d.pairsMu.RUnlock()
 
@@ -120,20 +120,20 @@ func (d *ZookeeperDiscovery) GetServices() []*discovery.KVPair {
 }
 
 // WatchService returns a nil chan.
-func (d *ZookeeperDiscovery) WatchService() chan []*discovery.KVPair {
+func (d *ZookeeperDiscovery) WatchService() chan []*client.KVPair {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	ch := make(chan []*discovery.KVPair, 10)
+	ch := make(chan []*client.KVPair, 10)
 	d.chans = append(d.chans, ch)
 	return ch
 }
 
-func (d *ZookeeperDiscovery) RemoveWatcher(ch chan []*discovery.KVPair) {
+func (d *ZookeeperDiscovery) RemoveWatcher(ch chan []*client.KVPair) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	var chans []chan []*discovery.KVPair
+	var chans []chan []*client.KVPair
 	for _, c := range d.chans {
 		if c == ch {
 			continue
@@ -196,7 +196,7 @@ func (d *ZookeeperDiscovery) watch() {
 				if !ok {
 					break readChanges
 				}
-				var pairs []*discovery.KVPair // latest servers
+				var pairs []*client.KVPair // latest servers
 				if ps == nil {
 					d.pairsMu.Lock()
 					d.pairs = pairs
@@ -204,7 +204,7 @@ func (d *ZookeeperDiscovery) watch() {
 					continue
 				}
 				for _, p := range ps {
-					pair := &discovery.KVPair{Key: p.Key, Value: string(p.Value)}
+					pair := &client.KVPair{Key: p.Key, Value: string(p.Value)}
 					if d.filter != nil && !d.filter(pair) {
 						continue
 					}

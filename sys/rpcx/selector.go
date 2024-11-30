@@ -6,7 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/smallnest/rpcx/share"
 	"github.com/valyala/fastrand"
@@ -16,23 +15,31 @@ var rex_nogather = regexp.MustCompile(`\!\[([^)]+)\]`)
 var rex_noid = regexp.MustCompile(`\!([^)]+)`)
 var rex_gather = regexp.MustCompile(`\[([^)]+)\]`)
 
-func newSelector(log log.ILogger, stag string, fn func(map[string]core.IServiceNode)) *Selector {
+func newSelector(log log.ILogger, stag string, fn func(map[string]*ServiceNode)) *Selector {
 	return &Selector{
 		log:               log,
 		stag:              stag,
 		updateServerEvent: fn,
-		servers:           make(map[string]core.IServiceNode),
-		serversType:       make(map[string][]core.IServiceNode),
+		servers:           make(map[string]*ServiceNode),
+		serversType:       make(map[string][]*ServiceNode),
 		i:                 make(map[string]int),
 	}
+}
+
+type ServiceNode struct {
+	ServiceTag  string `json:"stag"`    //服务集群标签
+	ServiceId   string `json:"sid"`     //服务id
+	ServiceType string `json:"stype"`   //服务类型
+	Version     string `json:"version"` //服务版本
+	ServiceAddr string `json:"addr"`    //服务地址
 }
 
 type Selector struct {
 	log               log.ILogger
 	stag              string
-	updateServerEvent func(map[string]core.IServiceNode)
-	servers           map[string]core.IServiceNode
-	serversType       map[string][]core.IServiceNode
+	updateServerEvent func(map[string]*ServiceNode)
+	servers           map[string]*ServiceNode
+	serversType       map[string][]*ServiceNode
 	lock              sync.RWMutex
 	i                 map[string]int
 }
@@ -54,7 +61,7 @@ func (this *Selector) Select(ctx context.Context, servicePath, serviceMethod str
 			this.lock.Lock()
 			this.i[service[0]] = i + 1
 			this.lock.Unlock()
-			return nodes[i].Addr()
+			return nodes[i].ServiceAddr
 		}
 	} else if leng == 2 {
 		result := this.ParseRoutRules(service[1])
@@ -69,7 +76,7 @@ func (this *Selector) Select(ctx context.Context, servicePath, serviceMethod str
 		}
 		i := fastrand.Uint32n(uint32(len(result)))
 		if node, ok := this.servers[result[i]]; ok {
-			return node.Addr()
+			return node.ServiceAddr
 		}
 	}
 	// this.log.Error("Select no found any node", log.Field{"stag", this.stag}, log.Field{"servicePath", servicePath}, log.Field{"serviceMethod", serviceMethod}, log.Field{"routrules", routrules})
@@ -81,7 +88,7 @@ func (this *Selector) Find(ctx context.Context, servicePath, serviceMethod strin
 	if nodes, ok := this.serversType[servicePath]; ok {
 		addrs := make([]string, len(nodes))
 		for i, v := range nodes {
-			addrs[i] = v.Addr()
+			addrs[i] = v.ServiceAddr
 		}
 		return addrs
 	}
@@ -90,19 +97,19 @@ func (this *Selector) Find(ctx context.Context, servicePath, serviceMethod strin
 
 // 更新服务列表
 func (this *Selector) UpdateServer(servers map[string]string) {
-	ss := make(map[string]core.IServiceNode)
-	sst := make(map[string][]core.IServiceNode)
+	ss := make(map[string]*ServiceNode)
+	sst := make(map[string][]*ServiceNode)
 	for _, v := range servers {
-		if node, err := core.NewServiceNode(v); err != nil {
+		if node, err := smetaToServiceNode(v); err != nil {
 			this.log.Errorf("smetaToServiceNode:%s err:%v", v, err)
 			continue
 		} else {
-			ss[node.Id()] = node
-			if _, ok := sst[node.Type()]; !ok {
-				sst[node.Type()] = make([]core.IServiceNode, 0)
-				sst[node.Type()] = append(sst[node.Type()], node)
+			ss[node.ServiceId] = node
+			if _, ok := sst[node.ServiceType]; !ok {
+				sst[node.ServiceType] = make([]*ServiceNode, 0)
+				sst[node.ServiceType] = append(sst[node.ServiceType], node)
 			} else {
-				sst[node.Type()] = append(sst[node.Type()], node)
+				sst[node.ServiceType] = append(sst[node.ServiceType], node)
 			}
 		}
 

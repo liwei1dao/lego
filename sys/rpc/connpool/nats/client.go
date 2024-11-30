@@ -10,7 +10,7 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-func newClient(pool *NatsConnPool, config *rpccore.Config, snode core.IServiceNode) (client *Client, err error) {
+func newClient(pool *NatsConnPool, config *rpccore.Config, snode *core.ServiceNode) (client *Client, err error) {
 	client = &Client{
 		pool:   pool,
 		config: config,
@@ -27,7 +27,7 @@ func newClient(pool *NatsConnPool, config *rpccore.Config, snode core.IServiceNo
 type Client struct {
 	pool        *NatsConnPool
 	config      *rpccore.Config
-	node        core.IServiceNode
+	node        *core.ServiceNode
 	conn        *nats.Conn
 	closeSignal chan bool
 	hbeat       int32 //心跳发出次数
@@ -35,10 +35,10 @@ type Client struct {
 	wg          sync.WaitGroup
 }
 
-func (this *Client) ServiceNode() core.IServiceNode {
+func (this *Client) ServiceNode() *core.ServiceNode {
 	return this.node
 }
-func (this *Client) SetServiceNode(node core.IServiceNode) {
+func (this *Client) SetServiceNode(node *core.ServiceNode) {
 	this.node = node
 }
 
