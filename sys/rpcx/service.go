@@ -22,7 +22,11 @@ import (
 func newService(options *Options) (sys *Service, err error) {
 	sys = &Service{
 		options:    options,
+<<<<<<< HEAD
 		metadata:   options.ServiceNode.Value(), //fmt.Sprintf("stag=%s&stype=%s&sid=%s&version=%s&addr=%s", options.ServiceNode.Tag, options.ServiceNode.Type, options.ServiceNode.Id, options.ServiceNode.Version, "tcp@"+options.ServiceNode.Addr),
+=======
+		metadata:   options.ServiceNode.Value(),
+>>>>>>> a4295732293646da5e31a7fcdd3f8cf036137517
 		server:     server.NewServer(),
 		selectors:  make(map[string]ISelector),
 		clients:    make(map[string]net.Conn),

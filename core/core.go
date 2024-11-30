@@ -1,7 +1,5 @@
 package core
 
-import "fmt"
-
 type S_Category string //服务类别 例如 网关服务 游戏服务 业务服务   主要用于服务功能分类
 type M_Modules string  //模块类型
 type S_Comps string    //服务器组件类型
@@ -33,14 +31,21 @@ type ServiceSttings struct {
 	Sys     map[string]map[string]interface{} //服务系统配置
 	Modules map[string]map[string]interface{} //服务模块配置
 }
+
 type IServiceNode interface {
 	Value() string
-	Id() string
-	Type() string
 	Tag() string
+	Type() string
+	Id() string
+	Version() string
 	Addr() string
-	Path() string
+	SetMate(name, value string)
+	GetNodePath() string
+	GetMate(name string) (value string)
+	State() string
+	Equal(other IServiceNode) bool
 }
+
 type IService interface {
 	GetId() string                                              //获取服务id
 	GetType() string                                            //获取服务类型
@@ -85,9 +90,4 @@ type IModuleComp interface {
 	Init(service IService, module IModule, comp IModuleComp, options IModuleOptions) (err error)
 	Start() (err error)
 	Destroy() (err error)
-}
-
-//服务节点路径
-func (this *ServiceNode) GetNodePath() string {
-	return fmt.Sprintf("%s/%s/%s", this.Tag, this.Type, this.Id)
 }

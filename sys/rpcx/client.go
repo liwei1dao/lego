@@ -23,7 +23,11 @@ import (
 func newClient(options *Options) (sys *Client, err error) {
 	sys = &Client{
 		options:        options,
+<<<<<<< HEAD
 		metadata:       options.ServiceNode.Value(), //   fmt.Sprintf("stag=%s&stype=%s&sid=%s&version=%s&addr=%s", options.ServiceNode.Tag, options.ServiceNode.Type, options.ServiceNode.Id, options.ServiceNode.Version, "tcp@"+options.ServiceNode.Addr),
+=======
+		metadata:       options.ServiceNode.Value(),
+>>>>>>> a4295732293646da5e31a7fcdd3f8cf036137517
 		clusterClients: make(map[string]*clusterClients),
 		conns:          make(map[string]net.Conn),
 		serviceMap:     make(map[string]*service),

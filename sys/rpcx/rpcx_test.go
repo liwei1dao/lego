@@ -18,7 +18,11 @@ func Test_Sys(t *testing.T) {
 		fmt.Printf("err:%v", err)
 		return
 	}
+<<<<<<< HEAD
 	node, _ := core.NewServiceNode("stag=damo&stype=damo&id=damo&version=1.0.0&addr=127.0.0.1")
+=======
+	node, _ := core.NewServiceNode("tag=admin&type=worker&id=worker_1&addr=127.0.0.1:9852")
+>>>>>>> a4295732293646da5e31a7fcdd3f8cf036137517
 	if sys, err := NewSys(
 		SetServiceNode(node),
 		SetETCDServers([]string{"10.0.0.9:2379"}),
