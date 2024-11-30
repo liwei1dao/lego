@@ -30,26 +30,6 @@ var (
 	ErrKeyExists = errors.New("Previous K/V pair exists, cannot complete Atomic operation")
 )
 
-type Backend string
-
-const (
-	// CONSUL backend
-	CONSUL Backend = "consul"
-	// ZK backend
-	ZK Backend = "zk"
-	// REDIS backend
-	REDIS Backend = "redis"
-)
-
-const (
-	// ETCD backend
-	ETCD Backend = "etcd"
-	// ETCDV3 backend
-	ETCDV3 Backend = "etcdv3"
-	// ETCDV3 Single backend
-	ETCDV3_SINGLE Backend = "etcdv3_single"
-)
-
 type Config struct {
 	ClientTLS         *ClientTLSConfig
 	TLS               *tls.Config
@@ -72,11 +52,7 @@ type IStore interface {
 	Delete(key string) error
 	Exists(key string) (bool, error)
 	List(directory string) ([]*KVPair, error)
-	NewLock(key string, options *LockOptions) (Locker, error)
 	WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*KVPair, error)
-	DeleteTree(directory string) error
-	AtomicPut(key string, value []byte, previous *KVPair, options *WriteOptions) (bool, *KVPair, error)
-	AtomicDelete(key string, previous *KVPair) (bool, error)
 	Close()
 }
 

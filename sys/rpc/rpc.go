@@ -75,6 +75,7 @@ type rpc struct {
 	options      *Options
 	cpool        rpccore.IConnPool
 <<<<<<< HEAD
+<<<<<<< HEAD
 	service      *Service
 	mu           sync.RWMutex
 	clients      map[string]IClinet //其他集群客户端
@@ -82,6 +83,9 @@ type rpc struct {
 	seq          uint64
 	pending      map[uint64]*MessageCall
 =======
+=======
+	discovery    discovery.ISys
+>>>>>>> parent of f7ff062 (上传框架代码)
 	selector     rpccore.ISelector
 	heartbeat    []byte
 	serviceMapMu sync.RWMutex
