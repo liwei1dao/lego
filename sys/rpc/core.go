@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"net"
 
 	"github.com/liwei1dao/lego/core"
 )
@@ -30,6 +31,13 @@ type (
 		Call(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (err error)                  //同步调用 等待结果
 		Go(ctx context.Context, servicePath string, serviceMethod string, args interface{}, reply interface{}) (call *MessageCall, err error) //异步调用 异步返回
 		Broadcast(ctx context.Context, servicePath string, serviceMethod string, args interface{}) (err error)
+	}
+	IClinet interface {
+		ServiceNode() core.IServiceNode
+		Go(ctx context.Context, serviceMethod string, args interface{}, reply interface{}, done chan *MessageCall) *MessageCall
+		Call(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) error
+		Stream(ctx context.Context, meta map[string]string) (net.Conn, error)
+		Close() error
 	}
 )
 

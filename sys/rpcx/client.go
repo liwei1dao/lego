@@ -13,6 +13,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/liwei1dao/lego/core"
 	etcd "github.com/rpcxio/rpcx-etcd/client"
 	"github.com/smallnest/rpcx/client"
 	"github.com/smallnest/rpcx/protocol"
@@ -258,25 +259,25 @@ func (this *Client) ClusterBroadcast(ctx context.Context, servicePath string, se
 }
 
 // 监控服务发现，发现没有连接上的额服务端 就连接上去
-func (this *Client) UpdateServer(servers map[string]*ServiceNode) {
+func (this *Client) UpdateServer(servers map[string]core.IServiceNode) {
 	for _, v := range servers {
 		this.clusterMu.RLock()
-		cluster, ok := this.clusterClients[v.ServiceTag]
+		cluster, ok := this.clusterClients[v.Tag()]
 		this.clusterMu.RUnlock()
 		if ok {
 			cluster.Mu.RLock()
-			_, ok = cluster.clients[v.ServiceType]
+			_, ok = cluster.clients[v.Type()]
 			cluster.Mu.RUnlock()
 			if ok {
 				continue
 			}
 		}
 		//没有建立客户端 主动发起握手
-		if err := this.Call(context.Background(), fmt.Sprintf("%s/%s", v.ServiceType, v.ServiceId), RpcX_ShakeHands, this.options.ServiceNode,
-			&ServiceNode{}); err != nil {
-			this.options.Log.Errorf("ShakeHands new node addr:%s err:%v", v.ServiceAddr, err)
+		if err := this.Call(context.Background(), fmt.Sprintf("%s/%s", v.Type(), v.Id()), RpcX_ShakeHands, this.options.ServiceNode,
+			&core.ServiceNode{}); err != nil {
+			this.options.Log.Errorf("ShakeHands new node addr:%s err:%v", v.Addr(), err)
 		} else {
-			this.options.Log.Debugf("UpdateServer addr:%s ", v.ServiceAddr)
+			this.options.Log.Debugf("UpdateServer addr:%s ", v.Addr())
 		}
 	}
 }

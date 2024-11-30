@@ -1,8 +1,10 @@
 package dcore
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
+	"net"
 	"strings"
 	"time"
 )
@@ -66,6 +68,16 @@ type ClientTLSConfig struct {
 	CACertFile string
 }
 
+type ServicePlugin interface {
+	Start() error
+	Stop() error
+	Register(name string, rcvr interface{}, metadata string) error
+	Unregister(name string) error
+	RegisterFunction(serviceName, fname string, fn interface{}, metadata string) error
+	HandleConnAccept(net.Conn) (net.Conn, bool)
+	PreCall(ctx context.Context, serviceName, methodName string, args interface{}) (interface{}, error)
+}
+
 type IStore interface {
 	Put(key string, value []byte, options *WriteOptions) error
 	Get(key string) (*KVPair, error)
@@ -85,6 +97,7 @@ type KVPair struct {
 	Value     []byte
 	LastIndex uint64
 }
+
 type WriteOptions struct {
 	IsDir bool
 	TTL   time.Duration

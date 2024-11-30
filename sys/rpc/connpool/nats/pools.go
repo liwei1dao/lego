@@ -40,7 +40,7 @@ func (this *NatsConnPool) init() (err error) {
 	this.subs, err = this.conn.SubscribeSync(this.sys.ServiceNode().GetNodePath())
 	return
 }
-func (this *NatsConnPool) GetClient(node *core.ServiceNode) (client rpccore.IConnClient, err error) {
+func (this *NatsConnPool) GetClient(node core.IServiceNode) (client rpccore.IConnClient, err error) {
 	var (
 		ok bool
 	)
@@ -71,7 +71,7 @@ func (this *NatsConnPool) Start() (err error) {
 func (this *NatsConnPool) Close() (err error) {
 	return
 }
-func (this *NatsConnPool) CloseClient(node *core.ServiceNode) (err error) {
+func (this *NatsConnPool) CloseClient(node core.IServiceNode) (err error) {
 	var (
 		client rpccore.IConnClient
 		ok     bool

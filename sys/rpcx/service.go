@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/liwei1dao/lego/core"
 	"github.com/rcrowley/go-metrics"
 	"github.com/rpcxio/rpcx-etcd/serverplugin"
 	"github.com/smallnest/rpcx/client"
@@ -292,7 +293,7 @@ func (this *Service) PostReadRequest(ctx context.Context, r *protocol.Message, e
 }
 
 // 客户端配置 AutoConnect 的默认连接函数
-func (this *Service) RpcxShakeHands(ctx context.Context, args *ServiceNode, reply *ServiceNode) error {
+func (this *Service) RpcxShakeHands(ctx context.Context, args core.IServiceNode, reply core.IServiceNode) error {
 	// this.Debugf("RpcxShakeHands:%+v", ctx.Value(share.ReqMetaDataKey).(map[string]string))
 	return nil
 }
