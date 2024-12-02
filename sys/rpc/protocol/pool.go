@@ -2,8 +2,6 @@ package protocol
 
 import (
 	"sync"
-
-	"github.com/liwei1dao/lego/core"
 )
 
 var msgPool = sync.Pool{
@@ -13,7 +11,6 @@ var msgPool = sync.Pool{
 
 		return &Message{
 			Header: &header,
-			from:   &core.ServiceNode{},
 		}
 	},
 }

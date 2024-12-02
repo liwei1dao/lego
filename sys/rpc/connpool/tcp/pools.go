@@ -52,16 +52,16 @@ func (this *TcpConnPool) Start() (err error) {
 	return
 }
 
-func (this *TcpConnPool) GetClient(node *core.ServiceNode) (client rpccore.IConnClient, err error) {
+func (this *TcpConnPool) GetClient(node core.IServiceNode) (client rpccore.IConnClient, err error) {
 	var (
 		ok   bool
 		conn net.Conn
 	)
 	this.clientMapMu.RLock()
-	client, ok = this.clients[node.GetNodePath()]
+	client, ok = this.clients[node.Path()]
 	this.clientMapMu.RUnlock()
 	if !ok {
-		if conn, err = net.DialTimeout("tcp", node.Addr, this.config.ConnectionTimeout); err != nil {
+		if conn, err = net.DialTimeout("tcp", node.Addr(), this.config.ConnectionTimeout); err != nil {
 			this.log.Error("TcpConnPool GetClient Dial Err!", log.Field{Key: "add", Value: node.Addr}, log.Field{Key: "err", Value: err.Error()})
 			return
 		}
@@ -73,8 +73,8 @@ func (this *TcpConnPool) GetClient(node *core.ServiceNode) (client rpccore.IConn
 	return
 }
 
-//创建远程连接客户端
-func (this *TcpConnPool) createClient(conn net.Conn, node *core.ServiceNode) (client rpccore.IConnClient, err error) {
+// 创建远程连接客户端
+func (this *TcpConnPool) createClient(conn net.Conn, node core.IServiceNode) (client rpccore.IConnClient, err error) {
 	if client, err = newClient(this, this.config, conn); err != nil {
 		this.log.Errorln(err)
 		return
@@ -83,7 +83,7 @@ func (this *TcpConnPool) createClient(conn net.Conn, node *core.ServiceNode) (cl
 		this.log.Errorln(err)
 		return
 	}
-	err = this.AddClient(client, node)
+	this.AddClient(client, node)
 	return
 }
 
@@ -106,18 +106,18 @@ func (this *TcpConnPool) serveListener(ln net.Listener) error {
 	}
 }
 
-func (this *TcpConnPool) AddClient(client rpccore.IConnClient, node *core.ServiceNode) (err error) {
+func (this *TcpConnPool) AddClient(client rpccore.IConnClient, node core.IServiceNode) (err error) {
 	var (
 		ok bool
 	)
 	this.clientMapMu.RLock()
-	_, ok = this.clients[node.GetNodePath()]
+	_, ok = this.clients[node.Path()]
 	this.clientMapMu.RUnlock()
 	if !ok {
 		this.log.Debug("AddClient Succ!", log.Field{Key: "node", Value: node})
 		client.SetServiceNode(node)
 		this.clientMapMu.Lock()
-		this.clients[client.ServiceNode().GetNodePath()] = client
+		this.clients[client.ServiceNode().Path()] = client
 		this.clientMapMu.Unlock()
 		client.Start()
 	} else {
@@ -127,17 +127,17 @@ func (this *TcpConnPool) AddClient(client rpccore.IConnClient, node *core.Servic
 	return
 }
 
-func (this *TcpConnPool) CloseClient(node *core.ServiceNode) (err error) {
+func (this *TcpConnPool) CloseClient(node core.IServiceNode) (err error) {
 	var (
 		client rpccore.IConnClient
 		ok     bool
 	)
 	this.clientMapMu.RLock()
-	client, ok = this.clients[node.GetNodePath()]
+	client, ok = this.clients[node.Path()]
 	this.clientMapMu.RUnlock()
 	if ok {
 		this.clientMapMu.Lock()
-		delete(this.clients, node.GetNodePath())
+		delete(this.clients, node.Path())
 		this.clientMapMu.Unlock()
 		err = client.Close()
 	}

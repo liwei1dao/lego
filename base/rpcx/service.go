@@ -44,13 +44,7 @@ func (this *RPCXService) Options() *Options {
 }
 func (this *RPCXService) Configure(option ...Option) {
 	this.option = newOptions(option...)
-	this.serviceNode = &core.ServiceNode{
-		Tag:     this.option.Setting.Tag,
-		Id:      this.option.Setting.Id,
-		Type:    this.option.Setting.Type,
-		Version: this.option.Version,
-		Meta:    make(map[string]string),
-	}
+	this.serviceNode, _ = core.NewServiceNode(fmt.Sprintf("tag:%s&type:%s&id:%s", this.option.Setting.Tag, this.option.Setting.Type, this.option.Setting.Id))
 }
 
 func (this *RPCXService) Init(service core.IService) (err error) {

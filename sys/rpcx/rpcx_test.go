@@ -18,22 +18,9 @@ func Test_Sys(t *testing.T) {
 		fmt.Printf("err:%v", err)
 		return
 	}
-<<<<<<< HEAD
-<<<<<<< HEAD
-	node, _ := core.NewServiceNode("stag=damo&stype=damo&id=damo&version=1.0.0&addr=127.0.0.1")
-=======
-	node, _ := core.NewServiceNode("tag=admin&type=worker&id=worker_1&addr=127.0.0.1:9852")
->>>>>>> a4295732293646da5e31a7fcdd3f8cf036137517
-=======
->>>>>>> parent of 4cb455e (上传框架代码)
+	node, _ := core.NewServiceNode("stag=%s&stype=%s&sid=%s&version=%s&addr=%s")
 	if sys, err := NewSys(
-		SetServiceNode(&core.ServiceNode{
-			Tag:     "admin",
-			Id:      "worker_1",
-			Type:    "worker",
-			Version: "1.0.0",
-			Addr:    "127.0.0.1:9978",
-		}),
+		SetServiceNode(node),
 		SetETCDServers([]string{"10.0.0.9:2379"}),
 	); err != nil {
 		fmt.Printf("err:%v", err)

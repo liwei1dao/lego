@@ -15,9 +15,9 @@ var rex_nogather = regexp.MustCompile(`\!\[([^)]+)\]`)
 var rex_noid = regexp.MustCompile(`\!([^)]+)`)
 var rex_gather = regexp.MustCompile(`\[([^)]+)\]`)
 
-func NewSelector(ervers []*core.ServiceNode) (selector rpccore.ISelector, err error) {
+func NewSelector(ervers []core.IServiceNode) (selector rpccore.ISelector, err error) {
 	if ervers == nil {
-		ervers = make([]*core.ServiceNode, 0)
+		ervers = make([]core.IServiceNode, 0)
 	}
 	selector = &Selector{
 		servers: ervers,
@@ -27,18 +27,18 @@ func NewSelector(ervers []*core.ServiceNode) (selector rpccore.ISelector, err er
 
 type Selector struct {
 	mutex   sync.RWMutex
-	servers []*core.ServiceNode
+	servers []core.IServiceNode
 }
 
 // /servicePath = (stype)|(stype/sid)|(stype/!sid)|(stype/[sid1,sid2])|(stype/![sid1,sid2])
-func (this *Selector) Select(ctx context.Context, servicePath string) (result []*core.ServiceNode) {
-	result = make([]*core.ServiceNode, 0)
+func (this *Selector) Select(ctx context.Context, servicePath string) (result []core.IServiceNode) {
+	result = make([]core.IServiceNode, 0)
 	service := strings.Split(servicePath, "/")
 	leng := len(service)
 	this.mutex.RLock()
 	if leng == 1 {
 		for _, v := range this.servers {
-			if v.Type == service[0] {
+			if v.Type() == service[0] {
 				result = append(result, v)
 			}
 		}
@@ -50,7 +50,7 @@ func (this *Selector) Select(ctx context.Context, servicePath string) (result []
 	return
 }
 
-func (this *Selector) UpdateServer(servers []*core.ServiceNode) (add, del, change []*core.ServiceNode) {
+func (this *Selector) UpdateServer(servers []core.IServiceNode) (add, del, change []core.IServiceNode) {
 	if servers == nil {
 		log.Error("UpdateServer 传参错误!")
 		return
@@ -58,10 +58,10 @@ func (this *Selector) UpdateServer(servers []*core.ServiceNode) (add, del, chang
 	var (
 		iskeep bool
 	)
-	add = make([]*core.ServiceNode, 0)
-	change = make([]*core.ServiceNode, 0)
+	add = make([]core.IServiceNode, 0)
+	change = make([]core.IServiceNode, 0)
 	this.mutex.RLock()
-	del = make([]*core.ServiceNode, len(this.servers))
+	del = make([]core.IServiceNode, len(this.servers))
 	for i, v := range this.servers {
 		del[i] = v
 	}
@@ -69,7 +69,7 @@ func (this *Selector) UpdateServer(servers []*core.ServiceNode) (add, del, chang
 	for _, v1 := range servers {
 		iskeep = false
 		for i, v2 := range del {
-			if v1.Tag == v2.Tag && v1.Id == v2.Id {
+			if v1.Path() == v2.Path() {
 				iskeep = true
 				if !v1.Equal(v2) { //有变化
 					change = append(change, v1)
@@ -90,12 +90,12 @@ func (this *Selector) UpdateServer(servers []*core.ServiceNode) (add, del, chang
 }
 
 // 路由规则解析
-func (this *Selector) ParseRoutRules(rules string) (result []*core.ServiceNode) {
+func (this *Selector) ParseRoutRules(rules string) (result []core.IServiceNode) {
 	if rules == "" {
 		return
 	}
 
-	result = make([]*core.ServiceNode, 0)
+	result = make([]core.IServiceNode, 0)
 
 	//解析 ![sid,sid] 格式规则
 	if out := rex_nogather.FindAllStringSubmatch(rules, -1); len(out) == 1 && len(out[0]) == 2 {
@@ -103,7 +103,7 @@ func (this *Selector) ParseRoutRules(rules string) (result []*core.ServiceNode) 
 			for _, n := range this.servers {
 				iskeep := false
 				for _, v := range nogather {
-					if n.Id == v {
+					if n.Id() == v {
 						iskeep = true
 						break
 					}
@@ -119,7 +119,7 @@ func (this *Selector) ParseRoutRules(rules string) (result []*core.ServiceNode) 
 	if out := rex_noid.FindAllStringSubmatch(rules, -1); len(out) == 1 && len(out[0]) == 2 {
 		for _, n := range this.servers {
 			iskeep := false
-			if n.Id == out[0][1] {
+			if n.Id() == out[0][1] {
 				iskeep = true
 				break
 			}
@@ -135,7 +135,7 @@ func (this *Selector) ParseRoutRules(rules string) (result []*core.ServiceNode) 
 			for _, n := range this.servers {
 				iskeep := false
 				for _, v := range nogather {
-					if n.Id == v {
+					if n.Id() == v {
 						iskeep = true
 						break
 					}
@@ -148,7 +148,7 @@ func (this *Selector) ParseRoutRules(rules string) (result []*core.ServiceNode) 
 		}
 	}
 	for _, n := range this.servers {
-		if n.Id == rules {
+		if n.Id() == rules {
 			result = append(result, n)
 		}
 	}

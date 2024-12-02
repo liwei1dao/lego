@@ -12,9 +12,9 @@ func newService(sys rpccore.ISys, config *rpccore.Config) (service *Service, err
 	service.kafka, err = kafka.NewSys(
 		kafka.SetHosts(config.Endpoints),
 		kafka.SetStartType(kafka.Consumer),
-		kafka.SetClientID(sys.ServiceNode().GetNodePath()),
+		kafka.SetClientID(sys.ServiceNode().Path()),
 		kafka.SetVersion(config.Vsersion),
-		kafka.SetTopics([]string{sys.ServiceNode().GetNodePath()}),
+		kafka.SetTopics([]string{sys.ServiceNode().Path()}),
 		kafka.SetConsumer_Offsets_Initial(-1),
 	)
 	return

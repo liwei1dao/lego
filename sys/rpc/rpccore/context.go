@@ -8,16 +8,10 @@ import (
 )
 
 const (
-	ServiceSeqKey   = "__seqKey__"       //请求序号
-	ServiceError    = "__rpcx_error__"   //服务错误信息字段
-	ServerTimeout   = "__ServerTimeout"  //服务超时字段
-	ReqMetaDataKey  = "__req_metadata"   //请求元数据字段
-	ResMetaDataKey  = "__res_metadata"   //返回元数据字段
-	ServiceAddrKey  = "__service_addr__" //服务端地址
-	CallSeqKey      = "__call_seq__"     //客户端请求id存储key
 	ContextTagsLock = "_tagsLock"
-	isShareContext  = "_isShareContext"
 )
+
+
 
 type Context struct {
 	tagsLock *sync.Mutex
@@ -108,9 +102,4 @@ func WithLocalValue(ctx *Context, key, val interface{}) *Context {
 
 	ctx.tags[key] = val
 	return ctx
-}
-
-func IsShareContext(ctx context.Context) bool {
-	ok := ctx.Value(isShareContext)
-	return ok != nil
 }

@@ -33,7 +33,16 @@ type ServiceSttings struct {
 	Sys     map[string]map[string]interface{} //服务系统配置
 	Modules map[string]map[string]interface{} //服务模块配置
 }
-
+type IServiceNode interface {
+	Value() string
+	Tag() string
+	Type() string
+	Id() string
+	Path() string
+	Addr() string
+	Set(key, value string)
+	Equal(other IServiceNode) bool
+}
 type IService interface {
 	GetId() string                                              //获取服务id
 	GetType() string                                            //获取服务类型

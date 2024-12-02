@@ -16,7 +16,15 @@ var (
 	ErrUnsupportedCodec      = errors.New("unsupported codec")
 )
 
+const (
+	ServiceError   = "__rpcx_error__"   //服务错误信息字段
+	ServerTimeout  = "__ServerTimeout"  //服务超时字段
+	ReqMetaDataKey = "__req_metadata"   //请求元数据字段
+	ResMetaDataKey = "__res_metadata"   //返回元数据字段
+	ServiceAddrKey = "__service_addr__" //服务端地址
+	CallSeqKey     = "__call_seq__"     //客户端请求id存储key
 
+)
 
 type contextKey struct {
 	name string
@@ -54,7 +62,7 @@ const (
 	RuleRobin                            //规则选择器 默认
 )
 
-//消息类型
+// 消息类型
 type MessageType byte
 
 const (
@@ -77,7 +85,7 @@ const (
 	Thrift
 )
 
-//消息压缩类型
+// 消息压缩类型
 type CompressType byte
 
 const (
@@ -85,7 +93,7 @@ const (
 	CompressGzip                     //gzip压缩
 )
 
-//消息状态
+// 消息状态
 type MessageStatusType byte
 
 const (
@@ -93,15 +101,15 @@ const (
 	Error                           //错误消息
 )
 
-//系统对象
+// 系统对象
 type ISys interface {
-	ServiceNode() *core.ServiceNode                                        //服务节点路径
+	ServiceNode() core.IServiceNode                                        //服务节点路径
 	Heartbeat() []byte                                                     //心跳包数据 可以复用
 	Handle(client IConnClient, message IMessage)                           //接收到远程消息
 	ShakehandsRequest(ctx context.Context, client IConnClient) (err error) //项目表rpc服务发起握手请求
 }
 
-//消息对象
+// 消息对象
 type IMessage interface {
 	Clone() IMessage
 	CheckMagicNumber() bool
@@ -126,8 +134,8 @@ type IMessage interface {
 	EncodeSlicePointer() *[]byte
 	ServiceMethod() string
 	SetServiceMethod(v string)
-	From() *core.ServiceNode
-	SetFrom(v *core.ServiceNode)
+	From() core.IServiceNode
+	SetFrom(v core.IServiceNode)
 	Metadata() map[string]string
 	SetMetadata(map[string]string)
 	Payload() []byte
@@ -135,29 +143,29 @@ type IMessage interface {
 	PrintHeader() string
 }
 
-//路由
+// 路由
 type ICodec interface {
 	Marshal(v interface{}) ([]byte, error)
 	Unmarshal(data []byte, v interface{}) error
 }
 
-//选择器
+// 选择器
 type ISelector interface {
-	Select(ctx context.Context, servicePath string) []*core.ServiceNode
-	UpdateServer(servers []*core.ServiceNode) (add, del, change []*core.ServiceNode)
+	Select(ctx context.Context, servicePath string) []core.IServiceNode
+	UpdateServer(servers []core.IServiceNode) (add, del, change []core.IServiceNode)
 }
 
-//连接对象池
+// 连接对象池
 type IConnPool interface {
 	Start() error
-	GetClient(node *core.ServiceNode) (client IConnClient, err error)
-	AddClient(client IConnClient, node *core.ServiceNode) (err error)
+	GetClient(node core.IServiceNode) (client IConnClient, err error)
+	AddClient(client IConnClient, node core.IServiceNode) (err error)
 	Close() error
 }
 
 type IConnClient interface {
-	ServiceNode() *core.ServiceNode
-	SetServiceNode(node *core.ServiceNode)
+	ServiceNode() core.IServiceNode
+	SetServiceNode(node core.IServiceNode)
 	State() ClientState
 	Start()
 	ResetHbeat()
@@ -165,7 +173,7 @@ type IConnClient interface {
 	Close() (err error)
 }
 
-//连接配置信息
+// 连接配置信息
 type Config struct {
 	ConnectType       ConnectType   //通信类型
 	Endpoints         []string      //节点信息

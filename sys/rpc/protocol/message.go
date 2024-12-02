@@ -10,7 +10,6 @@ import (
 	"github.com/liwei1dao/lego/utils/codec"
 	"github.com/liwei1dao/lego/utils/pools"
 	"github.com/smallnest/rpcx/util"
-	"google.golang.org/protobuf/proto"
 )
 
 var bufferPool = util.NewLimitedPool(512, 4096)
@@ -31,15 +30,15 @@ func NewMessage() *Message {
 
 	return &Message{
 		Header: &header,
-		from:   &core.ServiceNode{},
+		meta:   make(map[string]string),
 	}
 }
 
 type Message struct {
 	*Header
 	serviceMethod string
-	from          *core.ServiceNode
-	metadata      map[string]string
+	from          core.IServiceNode
+	meta          map[string]string
 	payload       []byte
 	data          []byte
 }
@@ -55,11 +54,12 @@ func (this *Message) SetServiceMethod(v string) {
 	this.serviceMethod = v
 }
 
-func (this *Message) From() *core.ServiceNode {
+func (this *Message) From() core.IServiceNode {
 	return this.from
 }
-func (this *Message) SetFrom(v *core.ServiceNode) {
-	*this.from = *v
+func (this *Message) SetFrom(v core.IServiceNode) {
+	this.meta["from"] = v.Value()
+	this.from = v
 }
 func (this *Message) Payload() []byte {
 	return this.payload
@@ -68,10 +68,12 @@ func (this *Message) SetPayload(m []byte) {
 	this.payload = m
 }
 func (this *Message) Metadata() map[string]string {
-	return this.metadata
+	return this.meta
 }
 func (this *Message) SetMetadata(m map[string]string) {
-	this.metadata = m
+	for k, v := range m {
+		this.meta[k] = v
+	}
 }
 func Read(r io.Reader) (*Message, error) {
 	msg := NewMessage()
@@ -130,14 +132,14 @@ func (this *Message) Decode(r io.Reader) error {
 	n = nEnd
 
 	// parse serviceMethod
-	l = binary.BigEndian.Uint32(data[n : n+4])
-	n = n + 4
-	nEnd = n + int(l)
-	err = proto.Unmarshal(data[n:nEnd], this.from)
-	if err != nil {
-		return err
-	}
-	n = nEnd
+	// l = binary.BigEndian.Uint32(data[n : n+4])
+	// n = n + 4
+	// nEnd = n + int(l)
+	// err = proto.Unmarshal(data[n:nEnd], this.from)
+	// if err != nil {
+	// 	return err
+	// }
+	// n = nEnd
 
 	// parse meta
 	l = binary.BigEndian.Uint32(data[n : n+4])
@@ -145,10 +147,11 @@ func (this *Message) Decode(r io.Reader) error {
 	nEnd = n + int(l)
 
 	if l > 0 {
-		this.metadata, err = decodeMetadata(l, data[n:nEnd])
+		this.meta, err = decodeMetadata(l, data[n:nEnd])
 		if err != nil {
 			return err
 		}
+		this.from, _ = core.NewServiceNode(this.meta["from"])
 	}
 	n = nEnd
 
@@ -173,7 +176,7 @@ func (this *Message) Decode(r io.Reader) error {
 }
 func (this *Message) Reset() {
 	resetHeader(this.Header)
-	this.metadata = nil
+	this.meta = nil
 	this.payload = []byte{}
 	this.serviceMethod = ""
 }
@@ -188,11 +191,11 @@ func (this Message) Clone() rpccore.IMessage {
 
 func (this *Message) EncodeSlicePointer() *[]byte {
 	bb := pools.BufferPoolGet()
-	encodeMetadata(this.metadata, bb)
-	fdata, _ := proto.Marshal(this.from)
+	encodeMetadata(this.meta, bb)
+	// fdata, _ := proto.Marshal(this.from)
 	meta := bb.Bytes()
 	smL := len(this.serviceMethod)
-	fml := len(fdata)
+	// fml := len(fdata)
 	var err error
 	payload := this.payload
 	if this.CompressType() != rpccore.CompressNone {
@@ -208,10 +211,10 @@ func (this *Message) EncodeSlicePointer() *[]byte {
 		}
 	}
 
-	totalL := (4 + smL) + (4 + fml) + (4 + len(meta)) + (4 + len(payload))
+	totalL := (4 + smL) + (4 + len(meta)) + (4 + len(payload))
 
 	// header + dataLen + spLen + sp + smLen + sm + metaL + meta + payloadLen + payload
-	metaStart := 12 + 4 + (4 + smL) + (4 + fml)
+	metaStart := 12 + 4 + (4 + smL)
 
 	payLoadStart := metaStart + (4 + len(meta))
 	l := 12 + 4 + totalL
@@ -225,8 +228,8 @@ func (this *Message) EncodeSlicePointer() *[]byte {
 	binary.BigEndian.PutUint32((*data)[16:20], uint32(smL))
 	copy((*data)[20:20+smL], util.StringToSliceByte(this.serviceMethod))
 
-	binary.BigEndian.PutUint32((*data)[20+smL:24+smL], uint32(fml))
-	copy((*data)[24+smL:metaStart], fdata)
+	// binary.BigEndian.PutUint32((*data)[20+smL:24+smL], uint32(fml))
+	// copy((*data)[24+smL:metaStart], fdata)
 
 	binary.BigEndian.PutUint32((*data)[metaStart:metaStart+4], uint32(len(meta)))
 	copy((*data)[metaStart+4:], meta)
@@ -241,7 +244,7 @@ func (this *Message) EncodeSlicePointer() *[]byte {
 
 // WriteTo writes message to writers.
 func (this *Message) WriteTo(w io.Writer) (int64, error) {
-	fdata, _ := proto.Marshal(this.from)
+	// fdata, _ := proto.Marshal(this.from)
 	nn, err := w.Write(this.Header[:])
 	n := int64(nn)
 	if err != nil {
@@ -249,11 +252,11 @@ func (this *Message) WriteTo(w io.Writer) (int64, error) {
 	}
 
 	bb := pools.BufferPoolGet()
-	encodeMetadata(this.metadata, bb)
+	encodeMetadata(this.meta, bb)
 	meta := bb.Bytes()
 
 	smL := len(this.serviceMethod)
-	fml := len(fdata)
+	// fml := len(fdata)
 
 	payload := this.payload
 	if this.CompressType() != rpccore.CompressNone {
@@ -267,7 +270,7 @@ func (this *Message) WriteTo(w io.Writer) (int64, error) {
 		}
 	}
 
-	totalL := (4 + smL) + (4 + fml) + (4 + len(meta)) + (4 + len(payload))
+	totalL := (4 + smL) + (4 + len(meta)) + (4 + len(payload))
 	err = binary.Write(w, binary.BigEndian, uint32(totalL))
 	if err != nil {
 		return n, err
@@ -283,14 +286,14 @@ func (this *Message) WriteTo(w io.Writer) (int64, error) {
 		return n, err
 	}
 	// write servicePath and serviceMethod
-	err = binary.Write(w, binary.BigEndian, uint32(fml))
-	if err != nil {
-		return n, err
-	}
-	_, err = w.Write(fdata)
-	if err != nil {
-		return n, err
-	}
+	// err = binary.Write(w, binary.BigEndian, uint32(fml))
+	// if err != nil {
+	// 	return n, err
+	// }
+	// _, err = w.Write(fdata)
+	// if err != nil {
+	// 	return n, err
+	// }
 	// write meta
 	err = binary.Write(w, binary.BigEndian, uint32(len(meta)))
 	if err != nil {

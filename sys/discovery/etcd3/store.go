@@ -3,59 +3,29 @@ package etcd3
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync"
 	"time"
 
-	"github.com/liwei1dao/lego/sys/discovery/dcore"
+	"github.com/liwei1dao/lego/sys/discovery"
+	"github.com/rpcxio/libkv/store"
 
 	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
+
+func init() {
+	discovery.AddStore(discovery.ETCDV3, New)
+}
 
 const defaultTTL = 30
 
+// EtcdConfigAutoSyncInterval give a choice to those etcd cluster could not auto sync
+// such I deploy clusters in docker they will dial tcp: lookup etcd1: Try again, can just set this to zero
 var EtcdConfigAutoSyncInterval = time.Minute * 5
-var (
-	// ErrMultipleEndpointsUnsupported is thrown when there are
-	// multiple endpoints specified for Consul
-	ErrMultipleEndpointsUnsupported = errors.New("etcd does not support multiple endpoints")
 
-	// ErrSessionRenew is thrown when the session can't be
-	// renewed because the Consul version does not support sessions
-	ErrSessionRenew = errors.New("cannot set or renew session for ttl, unable to operate on sessions")
-)
-
-func New(address []string, options *dcore.Config) (store *ETCDV3Store, err error) {
-	store = &ETCDV3Store{
-		done:           make(chan struct{}),
-		startKeepAlive: make(chan struct{}),
-		ttl:            defaultTTL,
-	}
-
-	cfg := clientv3.Config{
-		Endpoints: address,
-	}
-
-	if options != nil {
-		store.timeout = options.ConnectionTimeout
-		cfg.DialTimeout = options.ConnectionTimeout
-		cfg.DialKeepAliveTimeout = options.ConnectionTimeout
-		cfg.TLS = options.TLS
-		cfg.Username = options.Username
-		cfg.Password = options.Password
-		cfg.AutoSyncInterval = EtcdConfigAutoSyncInterval
-	}
-	if store.timeout == 0 {
-		store.timeout = 10 * time.Second
-	}
-	store.cfg = cfg
-	if err = store.init(true); err != nil {
-		return nil, err
-	}
-	go store.keepAlive()
-	return
-}
-
-type ETCDV3Store struct {
+// EtcdV3 is the receiver type for the Store interface
+type EtcdV3 struct {
 	timeout        time.Duration
 	client         *clientv3.Client
 	leaseID        clientv3.LeaseID
@@ -69,31 +39,50 @@ type ETCDV3Store struct {
 	ttl int64
 }
 
-func (this *ETCDV3Store) init(grant bool) error {
-	cli, err := clientv3.New(this.cfg)
+// New creates a new Etcd client given a list
+// of endpoints and an optional tls config
+func New(addrs []string, options *discovery.Config) (discovery.IStore, error) {
+	s := &EtcdV3{
+		done:           make(chan struct{}),
+		startKeepAlive: make(chan struct{}),
+		ttl:            defaultTTL,
+	}
+
+	cfg := clientv3.Config{
+		Endpoints: addrs,
+	}
+
+	if options != nil {
+		s.timeout = options.ConnectionTimeout
+		cfg.DialTimeout = options.ConnectionTimeout
+		cfg.DialKeepAliveTimeout = options.ConnectionTimeout
+		cfg.TLS = options.TLS
+		cfg.Username = options.Username
+		cfg.Password = options.Password
+
+		cfg.AutoSyncInterval = EtcdConfigAutoSyncInterval
+	}
+	if s.timeout == 0 {
+		s.timeout = 10 * time.Second
+	}
+	s.cfg = cfg
+	err := s.init(true)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	this.client = cli
+	go s.keepAlive()
 
-	if grant {
-
-		this.mu.RLock()
-		err = this.grant(this.ttl)
-		this.mu.RUnlock()
-	}
-
-	return err
+	return s, nil
 }
 
-func (this *ETCDV3Store) keepAlive() {
+func (s *EtcdV3) keepAlive() {
 	var ch <-chan *clientv3.LeaseKeepAliveResponse
 	var err error
 rekeepalive:
 	for {
-		if this.leaseID != 0 {
-			ch, err = this.client.KeepAlive(context.Background(), this.leaseID)
+		if s.leaseID != 0 {
+			ch, err = s.client.KeepAlive(context.Background(), s.leaseID)
 		}
 		if err == nil {
 			break
@@ -104,40 +93,65 @@ rekeepalive:
 	// KeepAlive success
 	for {
 		select {
-		case <-this.done:
+		case <-s.done:
 			return
 		case resp := <-ch: // KeepAlive channel is closed
 			if resp == nil { // connection is closed
-				this.client.Close()
+				s.client.Close()
 				for {
 					select {
-					case <-this.done:
+					case <-s.done:
 						return
 					default:
-						err = this.init(false)
+						err = s.init(false)
 						if err != nil {
 							time.Sleep(time.Second)
 							continue
 						}
 
-						this.mu.RLock()
-						err = this.grant(this.ttl)
-						this.mu.RUnlock()
+						s.mu.RLock()
+						err = s.grant(s.ttl)
+						s.mu.RUnlock()
 						if err != nil {
-							this.client.Close()
+							s.client.Close()
 							time.Sleep(time.Second)
 							continue
 						}
 						goto rekeepalive
 					}
 				}
+
 			}
 		}
 	}
+
+}
+
+func (s *EtcdV3) init(grant bool) error {
+	cli, err := clientv3.New(s.cfg)
+	if err != nil {
+		return err
+	}
+
+	s.client = cli
+
+	if grant {
+
+		s.mu.RLock()
+		err = s.grant(s.ttl)
+		s.mu.RUnlock()
+	}
+
+	return err
+}
+
+func (s *EtcdV3) normalize(key string) string {
+	key = store.Normalize(key)
+	return strings.TrimPrefix(key, "/")
 }
 
 // grant a lease.
-func (s *ETCDV3Store) grant(ttl int64) error {
+func (s *EtcdV3) grant(ttl int64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	resp, err := s.client.Grant(ctx, ttl)
 	cancel()
@@ -148,7 +162,7 @@ func (s *ETCDV3Store) grant(ttl int64) error {
 }
 
 // Put a value at the specified key
-func (s *ETCDV3Store) Put(key string, value []byte, options *dcore.WriteOptions) error {
+func (s *EtcdV3) Put(key string, value []byte, options *discovery.WriteOptions) error {
 	var ttl int64
 	if options != nil {
 		ttl = int64(options.TTL.Seconds())
@@ -168,7 +182,7 @@ func (s *ETCDV3Store) Put(key string, value []byte, options *dcore.WriteOptions)
 }
 
 // Get a value given its key
-func (s *ETCDV3Store) Get(key string) (*dcore.KVPair, error) {
+func (s *EtcdV3) Get(key string) (*discovery.KVPair, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	resp, err := s.client.Get(ctx, key)
 	cancel()
@@ -176,10 +190,10 @@ func (s *ETCDV3Store) Get(key string) (*dcore.KVPair, error) {
 		return nil, err
 	}
 	if len(resp.Kvs) == 0 {
-		return nil, dcore.ErrKeyNotFound
+		return nil, discovery.ErrKeyNotFound
 	}
 
-	pair := &dcore.KVPair{
+	pair := &discovery.KVPair{
 		Key:       key,
 		Value:     resp.Kvs[0].Value,
 		LastIndex: uint64(resp.Kvs[0].Version),
@@ -189,7 +203,7 @@ func (s *ETCDV3Store) Get(key string) (*dcore.KVPair, error) {
 }
 
 // Delete the value at the specified key
-func (s *ETCDV3Store) Delete(key string) error {
+func (s *EtcdV3) Delete(key string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	_, err := s.client.Delete(ctx, key)
 	cancel()
@@ -198,7 +212,7 @@ func (s *ETCDV3Store) Delete(key string) error {
 }
 
 // Exists verifies if a Key exists in the store
-func (s *ETCDV3Store) Exists(key string) (bool, error) {
+func (s *EtcdV3) Exists(key string) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	resp, err := s.client.Get(ctx, key)
 	cancel()
@@ -210,30 +224,30 @@ func (s *ETCDV3Store) Exists(key string) (bool, error) {
 }
 
 // Watch for changes on a key.
-func (this *ETCDV3Store) Watch(key string, stopCh <-chan struct{}) (<-chan *dcore.KVPair, error) {
-	watchCh := make(chan *dcore.KVPair)
+func (s *EtcdV3) Watch(key string, stopCh <-chan struct{}) (<-chan *discovery.KVPair, error) {
+	watchCh := make(chan *discovery.KVPair)
 
 	go func() {
 		defer close(watchCh)
 
 		// put the current value into returned channel before watch
-		pair, err := this.Get(key)
+		pair, err := s.Get(key)
 		if err != nil {
 			return
 		}
 		watchCh <- pair
 
-		rch := this.client.Watch(context.Background(), key)
+		rch := s.client.Watch(context.Background(), key)
 		for {
 			select {
-			case <-this.done:
+			case <-s.done:
 				return
 			case wresp, ok := <-rch:
 				if !ok || wresp.Canceled { // watch is canceled
 					return
 				}
 				for _, event := range wresp.Events {
-					watchCh <- &dcore.KVPair{
+					watchCh <- &discovery.KVPair{
 						Key:       string(event.Kv.Key),
 						Value:     event.Kv.Value,
 						LastIndex: uint64(event.Kv.Version),
@@ -247,11 +261,11 @@ func (this *ETCDV3Store) Watch(key string, stopCh <-chan struct{}) (<-chan *dcor
 }
 
 // WatchTree watches for changes on child nodes under a given directory
-func (this *ETCDV3Store) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*dcore.KVPair, error) {
-	watchCh := make(chan []*dcore.KVPair)
-	list, err := this.List(directory)
+func (s *EtcdV3) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*discovery.KVPair, error) {
+	watchCh := make(chan []*discovery.KVPair)
+	list, err := s.List(directory)
 	if err != nil {
-		if !this.AllowKeyNotFound || err != dcore.ErrKeyNotFound {
+		if !s.AllowKeyNotFound || err != discovery.ErrKeyNotFound {
 			return watchCh, err
 		}
 	}
@@ -260,19 +274,19 @@ func (this *ETCDV3Store) WatchTree(directory string, stopCh <-chan struct{}) (<-
 
 		watchCh <- list
 
-		rch := this.client.Watch(context.Background(), directory, clientv3.WithPrefix())
+		rch := s.client.Watch(context.Background(), directory, clientv3.WithPrefix())
 		for {
 			select {
-			case <-this.done:
+			case <-s.done:
 				return
-			case resp := <-rch:
-				if resp.Canceled { // watch is canceled
+			case resp, ok := <-rch:
+				if !ok || resp.Canceled { // watch is canceled
 					return
 				}
 
-				list, err := this.List(directory)
+				list, err := s.List(directory)
 				if err != nil {
-					if !this.AllowKeyNotFound || err != dcore.ErrKeyNotFound {
+					if !s.AllowKeyNotFound || err != discovery.ErrKeyNotFound {
 						continue
 					}
 				}
@@ -284,24 +298,36 @@ func (this *ETCDV3Store) WatchTree(directory string, stopCh <-chan struct{}) (<-
 	return watchCh, nil
 }
 
+type etcdLock struct {
+	session *concurrency.Session
+	mutex   *concurrency.Mutex
+}
+
+// NewLock creates a lock for a given key.
+// The returned Locker is not held and must be acquired
+// with `.Lock`. The Value is optional.
+func (s *EtcdV3) NewLock(key string, options *discovery.LockOptions) (discovery.Locker, error) {
+	return nil, errors.New("not implemented")
+}
+
 // List the content of a given prefix
-func (this *ETCDV3Store) List(directory string) ([]*dcore.KVPair, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), this.timeout)
+func (s *EtcdV3) List(directory string) ([]*discovery.KVPair, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
 
-	resp, err := this.client.Get(ctx, directory, clientv3.WithPrefix())
+	resp, err := s.client.Get(ctx, directory, clientv3.WithPrefix())
 	if err != nil {
 		return nil, err
 	}
 
-	kvpairs := make([]*dcore.KVPair, 0, len(resp.Kvs))
+	kvpairs := make([]*discovery.KVPair, 0, len(resp.Kvs))
 
 	if len(resp.Kvs) == 0 {
-		return nil, dcore.ErrKeyNotFound
+		return nil, discovery.ErrKeyNotFound
 	}
 
 	for _, kv := range resp.Kvs {
-		pair := &dcore.KVPair{
+		pair := &discovery.KVPair{
 			Key:       string(kv.Key),
 			Value:     kv.Value,
 			LastIndex: uint64(kv.Version),
@@ -313,7 +339,7 @@ func (this *ETCDV3Store) List(directory string) ([]*dcore.KVPair, error) {
 }
 
 // DeleteTree deletes a range of keys under a given directory
-func (s *ETCDV3Store) DeleteTree(directory string) error {
+func (s *EtcdV3) DeleteTree(directory string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	_, err := s.client.Delete(ctx, directory, clientv3.WithPrefix())
 	cancel()
@@ -323,7 +349,7 @@ func (s *ETCDV3Store) DeleteTree(directory string) error {
 
 // AtomicPut CAS operation on a single value.
 // Pass previous = nil to create a new key.
-func (s *ETCDV3Store) AtomicPut(key string, value []byte, previous *dcore.KVPair, options *dcore.WriteOptions) (bool, *dcore.KVPair, error) {
+func (s *EtcdV3) AtomicPut(key string, value []byte, previous *discovery.KVPair, options *discovery.WriteOptions) (bool, *discovery.KVPair, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
 
@@ -343,7 +369,7 @@ func (s *ETCDV3Store) AtomicPut(key string, value []byte, previous *dcore.KVPair
 				revision = presp.Header.GetRevision()
 			}
 		} else {
-			return false, nil, dcore.ErrKeyExists
+			return false, nil, discovery.ErrKeyExists
 		}
 	} else {
 
@@ -367,7 +393,7 @@ func (s *ETCDV3Store) AtomicPut(key string, value []byte, previous *dcore.KVPair
 		return false, nil, err
 	}
 
-	pair := &dcore.KVPair{
+	pair := &discovery.KVPair{
 		Key:       key,
 		Value:     value,
 		LastIndex: uint64(revision),
@@ -377,7 +403,7 @@ func (s *ETCDV3Store) AtomicPut(key string, value []byte, previous *dcore.KVPair
 }
 
 // AtomicDelete cas deletes a single value
-func (s *ETCDV3Store) AtomicDelete(key string, previous *dcore.KVPair) (bool, error) {
+func (s *EtcdV3) AtomicDelete(key string, previous *discovery.KVPair) (bool, error) {
 	deleted := false
 	var err error
 	var txresp *clientv3.TxnResponse
@@ -409,7 +435,7 @@ func (s *ETCDV3Store) AtomicDelete(key string, previous *dcore.KVPair) (bool, er
 }
 
 // Close closes the client connection
-func (s *ETCDV3Store) Close() {
+func (s *EtcdV3) Close() {
 	defer func() {
 		if recover() != nil {
 			// close of closed channel panic occur

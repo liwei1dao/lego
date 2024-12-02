@@ -9,7 +9,7 @@ import (
 	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
 
-//创建连接池对象
+// 创建连接池对象
 func NewConnPool(sys rpccore.ISys, log log.ILogger, config *rpccore.Config) (comm rpccore.IConnPool, err error) {
 	switch config.ConnectType {
 	case rpccore.Tcp:

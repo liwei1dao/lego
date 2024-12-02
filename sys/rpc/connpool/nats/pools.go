@@ -37,15 +37,15 @@ func (this *NatsConnPool) init() (err error) {
 	if this.conn, err = nats.Connect(this.config.Endpoints[0]); err != nil {
 		return
 	}
-	this.subs, err = this.conn.SubscribeSync(this.sys.ServiceNode().GetNodePath())
+	this.subs, err = this.conn.SubscribeSync(this.sys.ServiceNode().Path())
 	return
 }
-func (this *NatsConnPool) GetClient(node *core.ServiceNode) (client rpccore.IConnClient, err error) {
+func (this *NatsConnPool) GetClient(node core.IServiceNode) (client rpccore.IConnClient, err error) {
 	var (
 		ok bool
 	)
 	this.clientMapMu.RLock()
-	client, ok = this.clients[node.GetNodePath()]
+	client, ok = this.clients[node.Path()]
 	this.clientMapMu.RUnlock()
 	if !ok {
 		if client, err = newClient(this, this.config, node); err != nil {
@@ -58,7 +58,7 @@ func (this *NatsConnPool) GetClient(node *core.ServiceNode) (client rpccore.ICon
 		}
 		this.log.Debug("CreateClient Succ!", log.Field{Key: "node", Value: node})
 		this.clientMapMu.Lock()
-		this.clients[node.GetNodePath()] = client
+		this.clients[node.Path()] = client
 		this.clientMapMu.Unlock()
 		client.Start()
 	}
@@ -71,17 +71,17 @@ func (this *NatsConnPool) Start() (err error) {
 func (this *NatsConnPool) Close() (err error) {
 	return
 }
-func (this *NatsConnPool) CloseClient(node *core.ServiceNode) (err error) {
+func (this *NatsConnPool) CloseClient(node core.IServiceNode) (err error) {
 	var (
 		client rpccore.IConnClient
 		ok     bool
 	)
 	this.clientMapMu.RLock()
-	client, ok = this.clients[node.GetNodePath()]
+	client, ok = this.clients[node.Path()]
 	this.clientMapMu.RUnlock()
 	if ok {
 		this.clientMapMu.Lock()
-		delete(this.clients, node.GetNodePath())
+		delete(this.clients, node.Path())
 		this.clientMapMu.Unlock()
 		err = client.Close()
 	}
