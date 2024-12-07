@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/liwei1dao/lego/sys/discovery"
+	"github.com/liwei1dao/lego/sys/discovery/dcore"
 	metrics "github.com/rcrowley/go-metrics"
 	"github.com/smallnest/rpcx/log"
 )
@@ -34,8 +34,8 @@ type RedisRegisterPlugin struct {
 	metas          map[string]string
 	UpdateInterval time.Duration
 
-	Options *discovery.Config
-	kv      discovery.IStore
+	Options *dcore.Config
+	kv      dcore.IStore
 
 	dying chan struct{}
 	done  chan struct{}
@@ -51,7 +51,7 @@ func (p *RedisRegisterPlugin) Start() error {
 	}
 
 	if p.kv == nil {
-		kv, err := discovery.NewStore(discovery.REDIS, p.RedisServers, p.Options)
+		kv, err := dcore.NewStore(dcore.REDIS, p.RedisServers, p.Options)
 		if err != nil {
 			log.Errorf("cannot create redis registry: %v", err)
 			close(p.done)
@@ -60,7 +60,7 @@ func (p *RedisRegisterPlugin) Start() error {
 		p.kv = kv
 	}
 
-	err := p.kv.Put(p.BasePath, []byte("rpcx_path"), &discovery.WriteOptions{IsDir: true})
+	err := p.kv.Put(p.BasePath, []byte("rpcx_path"), &dcore.WriteOptions{IsDir: true})
 	if err != nil && !strings.Contains(err.Error(), "Not a file") {
 		log.Errorf("cannot create redis path %s: %v", p.BasePath, err)
 		close(p.done)
@@ -97,7 +97,7 @@ func (p *RedisRegisterPlugin) Start() error {
 							meta := p.metas[name]
 							p.metasLock.RUnlock()
 
-							err = p.kv.Put(nodePath, []byte(meta), &discovery.WriteOptions{TTL: p.UpdateInterval * 2})
+							err = p.kv.Put(nodePath, []byte(meta), &dcore.WriteOptions{TTL: p.UpdateInterval * 2})
 							if err != nil {
 								log.Errorf("cannot re-create redis path %s: %v", nodePath, err)
 							}
@@ -107,7 +107,7 @@ func (p *RedisRegisterPlugin) Start() error {
 							for key, value := range extra {
 								v.Set(key, value)
 							}
-							p.kv.Put(nodePath, []byte(v.Encode()), &discovery.WriteOptions{TTL: p.UpdateInterval * 2})
+							p.kv.Put(nodePath, []byte(v.Encode()), &dcore.WriteOptions{TTL: p.UpdateInterval * 2})
 						}
 					}
 				}
@@ -121,7 +121,7 @@ func (p *RedisRegisterPlugin) Start() error {
 // Stop unregister all services.
 func (p *RedisRegisterPlugin) Stop() error {
 	if p.kv == nil {
-		kv, err := discovery.NewStore(discovery.REDIS, p.RedisServers, p.Options)
+		kv, err := dcore.NewStore(dcore.REDIS, p.RedisServers, p.Options)
 		if err != nil {
 			log.Errorf("cannot create redis registry: %v", err)
 			return err
@@ -164,6 +164,10 @@ func (p *RedisRegisterPlugin) PreCall(_ context.Context, _, _ string, args inter
 	return args, nil
 }
 
+func (p *RedisRegisterPlugin) RegisterFunction(serviceName, fname string, fn interface{}, metadata string) error {
+	return p.Register(serviceName, fn, metadata)
+}
+
 // Register handles registering event.
 // this service is registered at BASE/serviceName/thisIpAddress node
 func (p *RedisRegisterPlugin) Register(name string, rcvr interface{}, metadata string) (err error) {
@@ -174,7 +178,7 @@ func (p *RedisRegisterPlugin) Register(name string, rcvr interface{}, metadata s
 
 	if p.kv == nil {
 		Register()
-		kv, err := discovery.NewStore(discovery.REDIS, p.RedisServers, p.Options)
+		kv, err := dcore.NewStore(dcore.REDIS, p.RedisServers, p.Options)
 		if err != nil {
 			log.Errorf("cannot create redis registry: %v", err)
 			return err
@@ -182,21 +186,21 @@ func (p *RedisRegisterPlugin) Register(name string, rcvr interface{}, metadata s
 		p.kv = kv
 	}
 
-	err = p.kv.Put(p.BasePath, []byte("rpcx_path"), &discovery.WriteOptions{IsDir: true})
+	err = p.kv.Put(p.BasePath, []byte("rpcx_path"), &dcore.WriteOptions{IsDir: true})
 	if err != nil && !strings.Contains(err.Error(), "Not a file") {
 		log.Errorf("cannot create redis path %s: %v", p.BasePath, err)
 		return err
 	}
 
 	nodePath := fmt.Sprintf("%s/%s", p.BasePath, name)
-	err = p.kv.Put(nodePath, []byte(name), &discovery.WriteOptions{IsDir: true})
+	err = p.kv.Put(nodePath, []byte(name), &dcore.WriteOptions{IsDir: true})
 	if err != nil && !strings.Contains(err.Error(), "Not a file") {
 		log.Errorf("cannot create redis path %s: %v", nodePath, err)
 		return err
 	}
 
 	nodePath = fmt.Sprintf("%s/%s/%s", p.BasePath, name, p.ServiceAddress)
-	err = p.kv.Put(nodePath, []byte(metadata), &discovery.WriteOptions{TTL: p.UpdateInterval * 2})
+	err = p.kv.Put(nodePath, []byte(metadata), &dcore.WriteOptions{TTL: p.UpdateInterval * 2})
 	if err != nil {
 		log.Errorf("cannot create redis path %s: %v", nodePath, err)
 		return err
@@ -225,7 +229,7 @@ func (p *RedisRegisterPlugin) Unregister(name string) (err error) {
 
 	if p.kv == nil {
 		Register()
-		kv, err := discovery.NewStore(discovery.REDIS, p.RedisServers, p.Options)
+		kv, err := dcore.NewStore(dcore.REDIS, p.RedisServers, p.Options)
 		if err != nil {
 			log.Errorf("cannot create redis registry: %v", err)
 			return err
@@ -233,14 +237,14 @@ func (p *RedisRegisterPlugin) Unregister(name string) (err error) {
 		p.kv = kv
 	}
 
-	err = p.kv.Put(p.BasePath, []byte("rpcx_path"), &discovery.WriteOptions{IsDir: true})
+	err = p.kv.Put(p.BasePath, []byte("rpcx_path"), &dcore.WriteOptions{IsDir: true})
 	if err != nil && !strings.Contains(err.Error(), "Not a file") {
 		log.Errorf("cannot create redis path %s: %v", p.BasePath, err)
 		return err
 	}
 
 	nodePath := fmt.Sprintf("%s/%s", p.BasePath, name)
-	err = p.kv.Put(nodePath, []byte(name), &discovery.WriteOptions{IsDir: true})
+	err = p.kv.Put(nodePath, []byte(name), &dcore.WriteOptions{IsDir: true})
 	if err != nil && !strings.Contains(err.Error(), "Not a file") {
 		log.Errorf("cannot create redis path %s: %v", nodePath, err)
 		return err

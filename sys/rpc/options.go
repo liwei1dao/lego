@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/sys/discovery"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 	"github.com/liwei1dao/lego/utils/mapstructure"
@@ -10,8 +9,8 @@ import (
 
 type Option func(*Options)
 type Options struct {
-	ServiceNode       core.IServiceNode     //服务节点
-	Discovery         discovery.IDiscovery  //服务发现
+	ServiceNode core.IServiceNode //服务节点
+
 	ProtoVersion      byte                  //协议版本
 	SerializeType     rpccore.SerializeType //消息序列化方式 0:JSON 1:ProtoBuffer 2:MsgPack 3:Thrift
 	CompressType      rpccore.CompressType  //消息压缩模式	0:CompressNone 1:CompressGzip
@@ -31,11 +30,6 @@ func SetServiceNode(v core.IServiceNode) Option {
 	}
 }
 
-func SetDiscovery(v discovery.IDiscovery) Option {
-	return func(o *Options) {
-		o.Discovery = v
-	}
-}
 func SetProtoVersion(v byte) Option {
 	return func(o *Options) {
 		o.ProtoVersion = v

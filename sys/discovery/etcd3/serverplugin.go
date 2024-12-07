@@ -10,20 +10,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/liwei1dao/lego/sys/discovery"
+	"github.com/liwei1dao/lego/sys/discovery/dcore"
 	metrics "github.com/rcrowley/go-metrics"
 	"github.com/smallnest/rpcx/log"
 	"github.com/smallnest/rpcx/share"
 )
 
 func init() {
-	discovery.AddStore(discovery.ETCDV3, New)
+	dcore.AddStore(dcore.ETCDV3, New)
 }
 
 type RegPath struct {
 	key     string
 	value   []byte
-	options *discovery.WriteOptions
+	options *dcore.WriteOptions
 }
 
 // EtcdV3RegisterPlugin implements etcd registry.
@@ -42,8 +42,8 @@ type EtcdV3RegisterPlugin struct {
 	UpdateInterval time.Duration
 	Expired        time.Duration
 
-	Options *discovery.Config
-	kv      discovery.IStore
+	Options *dcore.Config
+	kv      dcore.IStore
 
 	dying chan struct{}
 	done  chan struct{}
@@ -84,7 +84,7 @@ func (p *EtcdV3RegisterPlugin) Start() error {
 	}
 
 	if p.kv == nil {
-		kv, err := discovery.NewStore(discovery.ETCDV3, p.EtcdServers, p.Options)
+		kv, err := dcore.NewStore(dcore.ETCDV3, p.EtcdServers, p.Options)
 		if err != nil {
 			log.Errorf("cannot create etcd registry: %v", err)
 			return err
@@ -93,7 +93,7 @@ func (p *EtcdV3RegisterPlugin) Start() error {
 	}
 
 	// create root path
-	err := p.kv.Put(p.BasePath, []byte("rpcx_path"), &discovery.WriteOptions{IsDir: true, TTL: p.UpdateInterval + p.Expired})
+	err := p.kv.Put(p.BasePath, []byte("rpcx_path"), &dcore.WriteOptions{IsDir: true, TTL: p.UpdateInterval + p.Expired})
 	if err != nil && !strings.Contains(err.Error(), "Not a file") {
 		log.Errorf("cannot create etcd path %s: %v", p.BasePath, err)
 		return err
@@ -128,14 +128,14 @@ func (p *EtcdV3RegisterPlugin) Start() error {
 							meta := p.metas[name]
 							p.metasLock.RUnlock()
 
-							err = p.kv.Put(nodePath, []byte(meta), &discovery.WriteOptions{TTL: p.UpdateInterval + p.Expired})
+							err = p.kv.Put(nodePath, []byte(meta), &dcore.WriteOptions{TTL: p.UpdateInterval + p.Expired})
 							if err != nil {
 								log.Errorf("cannot re-create etcd path %s: %v", nodePath, err)
 							}
 
 							if err != nil {
 								time.Sleep(time.Second)
-								err = p.kv.Put(nodePath, []byte(meta), &discovery.WriteOptions{TTL: p.UpdateInterval + p.Expired})
+								err = p.kv.Put(nodePath, []byte(meta), &dcore.WriteOptions{TTL: p.UpdateInterval + p.Expired})
 								if err != nil {
 									log.Errorf("cannot re-create etcd path %s: %v", nodePath, err)
 								}
@@ -146,10 +146,10 @@ func (p *EtcdV3RegisterPlugin) Start() error {
 							for key, value := range extra {
 								v.Set(key, value)
 							}
-							err = p.kv.Put(nodePath, []byte(v.Encode()), &discovery.WriteOptions{TTL: p.UpdateInterval + p.Expired})
+							err = p.kv.Put(nodePath, []byte(v.Encode()), &dcore.WriteOptions{TTL: p.UpdateInterval + p.Expired})
 							if err != nil {
 								time.Sleep(time.Second)
-								err = p.kv.Put(nodePath, []byte(v.Encode()), &discovery.WriteOptions{TTL: p.UpdateInterval + p.Expired})
+								err = p.kv.Put(nodePath, []byte(v.Encode()), &dcore.WriteOptions{TTL: p.UpdateInterval + p.Expired})
 								if err != nil {
 									log.Errorf("cannot re-create etcd path %s: %v", nodePath, err)
 								}
@@ -167,7 +167,7 @@ func (p *EtcdV3RegisterPlugin) Start() error {
 // Stop unregister all services.
 func (p *EtcdV3RegisterPlugin) Stop() error {
 	if p.kv == nil {
-		kv, err := discovery.NewStore(discovery.ETCDV3, p.EtcdServers, p.Options)
+		kv, err := dcore.NewStore(dcore.ETCDV3, p.EtcdServers, p.Options)
 		if err != nil {
 			log.Errorf("cannot create etcd registry: %v", err)
 			return err
@@ -218,7 +218,7 @@ func (p *EtcdV3RegisterPlugin) Register(name string, rcvr interface{}, metadata 
 	}
 
 	if p.kv == nil {
-		kv, err := discovery.NewStore(discovery.ETCDV3, p.EtcdServers, nil)
+		kv, err := dcore.NewStore(dcore.ETCDV3, p.EtcdServers, nil)
 		if err != nil {
 			log.Errorf("cannot create etcd registry: %v", err)
 			return err
@@ -229,15 +229,15 @@ func (p *EtcdV3RegisterPlugin) Register(name string, rcvr interface{}, metadata 
 	paths := make(map[string]*RegPath)
 
 	// create root path
-	paths[p.BasePath] = &RegPath{p.BasePath, []byte("rpcx_path"), &discovery.WriteOptions{IsDir: true}}
+	paths[p.BasePath] = &RegPath{p.BasePath, []byte("rpcx_path"), &dcore.WriteOptions{IsDir: true}}
 
 	// create service path
 	nodePath := fmt.Sprintf("%s/%s", p.BasePath, name)
-	paths[nodePath] = &RegPath{nodePath, []byte(name), &discovery.WriteOptions{IsDir: true}}
+	paths[nodePath] = &RegPath{nodePath, []byte(name), &dcore.WriteOptions{IsDir: true}}
 
 	// create node
 	nodePath = fmt.Sprintf("%s/%s/%s", p.BasePath, name, p.ServiceAddress)
-	paths[nodePath] = &RegPath{nodePath, []byte(metadata), &discovery.WriteOptions{TTL: p.UpdateInterval + p.Expired}}
+	paths[nodePath] = &RegPath{nodePath, []byte(metadata), &dcore.WriteOptions{TTL: p.UpdateInterval + p.Expired}}
 
 	services := make(map[string]struct{})
 	for _, v := range p.Services {
@@ -279,7 +279,7 @@ func (p *EtcdV3RegisterPlugin) Unregister(name string) (err error) {
 	}
 
 	if p.kv == nil {
-		kv, err := discovery.NewStore(discovery.ETCDV3, p.EtcdServers, nil)
+		kv, err := dcore.NewStore(dcore.ETCDV3, p.EtcdServers, nil)
 		if err != nil {
 			log.Errorf("cannot create etcd registry: %v", err)
 			return err
@@ -287,14 +287,14 @@ func (p *EtcdV3RegisterPlugin) Unregister(name string) (err error) {
 		p.kv = kv
 	}
 
-	err = p.kv.Put(p.BasePath, []byte("rpcx_path"), &discovery.WriteOptions{IsDir: true})
+	err = p.kv.Put(p.BasePath, []byte("rpcx_path"), &dcore.WriteOptions{IsDir: true})
 	if err != nil && !strings.Contains(err.Error(), "Not a file") {
 		log.Errorf("cannot create etcd path %s: %v", p.BasePath, err)
 		return err
 	}
 
 	nodePath := fmt.Sprintf("%s/%s", p.BasePath, name)
-	err = p.kv.Put(nodePath, []byte(name), &discovery.WriteOptions{IsDir: true})
+	err = p.kv.Put(nodePath, []byte(name), &dcore.WriteOptions{IsDir: true})
 	if err != nil && !strings.Contains(err.Error(), "Not a file") {
 		log.Errorf("cannot create etcd path %s: %v", nodePath, err)
 		return err

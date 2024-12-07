@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/liwei1dao/lego/sys/discovery"
+	"github.com/liwei1dao/lego/sys/discovery/dcore"
 	"github.com/smallnest/rpcx/client"
 	"github.com/smallnest/rpcx/log"
 )
@@ -14,11 +14,11 @@ func init() {
 	Register()
 }
 
-// RedisDiscovery is a redis service discovery.
+// RedisDiscovery is a redis service dcore.
 // It always returns the registered servers in redis.
 type RedisDiscovery struct {
 	basePath string
-	kv       discovery.IStore
+	kv       dcore.IStore
 	pairsMu  sync.RWMutex
 	pairs    []*client.KVPair
 	chans    []chan []*client.KVPair
@@ -33,8 +33,8 @@ type RedisDiscovery struct {
 }
 
 // NewRedisDiscovery returns a new RedisDiscovery.
-func NewRedisDiscovery(basePath string, servicePath string, redisAddr []string, options *discovery.Config) (*RedisDiscovery, error) {
-	kv, err := discovery.NewStore(discovery.REDIS, redisAddr, options)
+func NewRedisDiscovery(basePath string, servicePath string, redisAddr []string, options *dcore.Config) (*RedisDiscovery, error) {
+	kv, err := dcore.NewStore(dcore.REDIS, redisAddr, options)
 	if err != nil {
 		log.Infof("cannot create store: %v", err)
 		return nil, err
@@ -44,7 +44,7 @@ func NewRedisDiscovery(basePath string, servicePath string, redisAddr []string, 
 }
 
 // NewRedisDiscoveryStore return a new RedisDiscovery with specified store.
-func NewRedisDiscoveryStore(basePath string, kv discovery.IStore) (*RedisDiscovery, error) {
+func NewRedisDiscoveryStore(basePath string, kv dcore.IStore) (*RedisDiscovery, error) {
 	if len(basePath) > 1 && strings.HasSuffix(basePath, "/") {
 		basePath = basePath[:len(basePath)-1]
 	}
@@ -95,12 +95,12 @@ func NewRedisDiscoveryStore(basePath string, kv discovery.IStore) (*RedisDiscove
 }
 
 // NewRedisDiscoveryTemplate returns a new RedisDiscovery template.
-func NewRedisDiscoveryTemplate(basePath string, redisAddr []string, options *discovery.Config) (*RedisDiscovery, error) {
+func NewRedisDiscoveryTemplate(basePath string, redisAddr []string, options *dcore.Config) (*RedisDiscovery, error) {
 	if len(basePath) > 1 && strings.HasSuffix(basePath, "/") {
 		basePath = basePath[:len(basePath)-1]
 	}
 
-	kv, err := discovery.NewStore(discovery.REDIS, redisAddr, options)
+	kv, err := dcore.NewStore(dcore.REDIS, redisAddr, options)
 	if err != nil {
 		log.Infof("cannot create store: %v", err)
 		return nil, err
@@ -160,7 +160,7 @@ func (d *RedisDiscovery) watch() {
 
 	for {
 		var err error
-		var c <-chan []*discovery.KVPair
+		var c <-chan []*dcore.KVPair
 		var tempDelay time.Duration
 
 		retry := d.RetriesAfterWatchFailed
@@ -194,7 +194,7 @@ func (d *RedisDiscovery) watch() {
 		for {
 			select {
 			case <-d.stopCh:
-				log.Info("discovery has been closed")
+				log.Info("dcore has been closed")
 				return
 			case ps, ok := <-c:
 				if !ok {

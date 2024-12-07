@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/liwei1dao/lego/sys/discovery"
+	"github.com/liwei1dao/lego/sys/discovery/dcore"
 	v9 "github.com/redis/go-redis/v9"
 	"github.com/rpcxio/libkv/store"
 )
@@ -31,12 +31,12 @@ var (
 
 // Register registers Redis to valkeyrie
 func Register() {
-	discovery.AddStore(discovery.REDIS, New)
+	dcore.AddStore(dcore.REDIS, New)
 }
 
 // New creates a new Redis client given a list
 // of endpoints and optional tls config
-func New(endpoints []string, options *discovery.Config) (discovery.IStore, error) {
+func New(endpoints []string, options *dcore.Config) (dcore.IStore, error) {
 	var password string
 	if len(endpoints) > 1 {
 		return nil, ErrMultipleEndpointsUnsupported
@@ -79,12 +79,12 @@ func newRedis(endpoints []string, password string, dbIndex int) (*Redis, error) 
 
 type defaultCodec struct{}
 
-func (c defaultCodec) encode(kv *discovery.KVPair) (string, error) {
+func (c defaultCodec) encode(kv *dcore.KVPair) (string, error) {
 	b, err := json.Marshal(kv)
 	return string(b), err
 }
 
-func (c defaultCodec) decode(b string, kv *discovery.KVPair) error {
+func (c defaultCodec) decode(b string, kv *dcore.KVPair) error {
 	return json.Unmarshal([]byte(b), kv)
 }
 
@@ -101,20 +101,20 @@ const (
 )
 
 // Put a value at the specified key
-func (r *Redis) Put(key string, value []byte, options *discovery.WriteOptions) error {
+func (r *Redis) Put(key string, value []byte, options *dcore.WriteOptions) error {
 	expirationAfter := noExpiration
 	if options != nil && options.TTL != 0 {
 		expirationAfter = options.TTL
 	}
 
-	return r.setTTL(normalize(key), &discovery.KVPair{
+	return r.setTTL(normalize(key), &dcore.KVPair{
 		Key:       key,
 		Value:     value,
 		LastIndex: sequenceNum(),
 	}, expirationAfter)
 }
 
-func (r *Redis) setTTL(key string, val *discovery.KVPair, ttl time.Duration) error {
+func (r *Redis) setTTL(key string, val *dcore.KVPair, ttl time.Duration) error {
 	valStr, err := r.codec.encode(val)
 	if err != nil {
 		return err
@@ -124,11 +124,11 @@ func (r *Redis) setTTL(key string, val *discovery.KVPair, ttl time.Duration) err
 }
 
 // Get a value given its key
-func (r *Redis) Get(key string) (*discovery.KVPair, error) {
+func (r *Redis) Get(key string) (*dcore.KVPair, error) {
 	return r.get(normalize(key))
 }
 
-func (r *Redis) get(key string) (*discovery.KVPair, error) {
+func (r *Redis) get(key string) (*dcore.KVPair, error) {
 	reply, err := r.client.Get(context.Background(), key).Bytes()
 	if err != nil {
 		if err == v9.Nil {
@@ -136,7 +136,7 @@ func (r *Redis) get(key string) (*discovery.KVPair, error) {
 		}
 		return nil, err
 	}
-	val := discovery.KVPair{}
+	val := dcore.KVPair{}
 	if err := r.codec.decode(string(reply), &val); err != nil {
 		return nil, err
 	}
@@ -160,8 +160,8 @@ func (r *Redis) Exists(key string) (bool, error) {
 // Watch for changes on a key
 // glitch: we use notified-then-retrieve to retrieve *store.KVPair.
 // so the responses may sometimes inaccurate
-func (r *Redis) Watch(key string, stopCh <-chan struct{}) (<-chan *discovery.KVPair, error) {
-	watchCh := make(chan *discovery.KVPair)
+func (r *Redis) Watch(key string, stopCh <-chan struct{}) (<-chan *dcore.KVPair, error) {
+	watchCh := make(chan *dcore.KVPair)
 	nKey := normalize(key)
 
 	get := getter(func() (interface{}, error) {
@@ -173,7 +173,7 @@ func (r *Redis) Watch(key string, stopCh <-chan struct{}) (<-chan *discovery.KVP
 	})
 
 	push := pusher(func(v interface{}) {
-		if val, ok := v.(*discovery.KVPair); ok {
+		if val, ok := v.(*dcore.KVPair); ok {
 			watchCh <- val
 		}
 	})
@@ -287,8 +287,8 @@ func (s *subscribe) receiveLoop(msgCh chan *v9.Message, stopCh <-chan struct{}) 
 
 // WatchTree watches for changes on child nodes under
 // a given directory
-func (r *Redis) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*discovery.KVPair, error) {
-	watchCh := make(chan []*discovery.KVPair)
+func (r *Redis) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*dcore.KVPair, error) {
+	watchCh := make(chan []*dcore.KVPair)
 	nKey := normalize(directory)
 
 	get := getter(func() (interface{}, error) {
@@ -300,10 +300,10 @@ func (r *Redis) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*d
 	})
 
 	push := pusher(func(v interface{}) {
-		if _, ok := v.([]*discovery.KVPair); !ok {
+		if _, ok := v.([]*dcore.KVPair); !ok {
 			return
 		}
-		watchCh <- v.([]*discovery.KVPair)
+		watchCh <- v.([]*dcore.KVPair)
 	})
 
 	sub, err := newSubscribe(r.client, regexWatch(nKey, true))
@@ -326,7 +326,7 @@ func (r *Redis) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*d
 // NewLock creates a lock for a given key.
 // The returned Locker is not held and must be acquired
 // with `.Lock`. The Value is optional.
-func (r *Redis) NewLock(key string, options *discovery.LockOptions) (discovery.Locker, error) {
+func (r *Redis) NewLock(key string, options *dcore.LockOptions) (dcore.Locker, error) {
 	var (
 		value []byte
 		ttl   = defaultLockTTL
@@ -351,7 +351,7 @@ func (r *Redis) NewLock(key string, options *discovery.LockOptions) (discovery.L
 
 type redisLock struct {
 	redis    *Redis
-	last     *discovery.KVPair
+	last     *dcore.KVPair
 	unlockCh chan struct{}
 
 	key   string
@@ -400,7 +400,7 @@ func (l *redisLock) tryLock(lockHeld, stopChan chan struct{}) (bool, error) {
 		l.key,
 		l.value,
 		l.last,
-		&discovery.WriteOptions{
+		&dcore.WriteOptions{
 			TTL: l.ttl,
 		})
 	if success {
@@ -423,7 +423,7 @@ func (l *redisLock) holdLock(lockHeld, stopChan chan struct{}) {
 			l.key,
 			l.value,
 			l.last,
-			&discovery.WriteOptions{
+			&dcore.WriteOptions{
 				TTL: l.ttl,
 			})
 		if err == nil {
@@ -462,11 +462,11 @@ func (l *redisLock) Unlock() error {
 }
 
 // List the content of a given prefix
-func (r *Redis) List(directory string) ([]*discovery.KVPair, error) {
+func (r *Redis) List(directory string) ([]*dcore.KVPair, error) {
 	return r.list(normalize(directory))
 }
 
-func (r *Redis) list(directory string) ([]*discovery.KVPair, error) {
+func (r *Redis) list(directory string) ([]*dcore.KVPair, error) {
 
 	var allKeys []string
 	regex := scanRegex(directory) // for all keyed with $directory
@@ -507,13 +507,13 @@ func (r *Redis) keys(regex string) ([]string, error) {
 }
 
 // mget values given their keys
-func (r *Redis) mget(directory string, keys ...string) ([]*discovery.KVPair, error) {
+func (r *Redis) mget(directory string, keys ...string) ([]*dcore.KVPair, error) {
 	replies, err := r.client.MGet(context.Background(), keys...).Result()
 	if err != nil {
 		return nil, err
 	}
 
-	pairs := []*discovery.KVPair{}
+	pairs := []*dcore.KVPair{}
 	for _, reply := range replies {
 		var sreply string
 		if _, ok := reply.(string); ok {
@@ -524,7 +524,7 @@ func (r *Redis) mget(directory string, keys ...string) ([]*discovery.KVPair, err
 			continue
 		}
 
-		newkv := &discovery.KVPair{}
+		newkv := &dcore.KVPair{}
 		if err := r.codec.decode(sreply, newkv); err != nil {
 			return nil, err
 		}
@@ -551,13 +551,13 @@ func (r *Redis) DeleteTree(directory string) error {
 // AtomicPut is an atomic CAS operation on a single value.
 // Pass previous = nil to create a new key.
 // we introduced script on this page, so atomicity is guaranteed
-func (r *Redis) AtomicPut(key string, value []byte, previous *discovery.KVPair, options *discovery.WriteOptions) (bool, *discovery.KVPair, error) {
+func (r *Redis) AtomicPut(key string, value []byte, previous *dcore.KVPair, options *dcore.WriteOptions) (bool, *dcore.KVPair, error) {
 	expirationAfter := noExpiration
 	if options != nil && options.TTL != 0 {
 		expirationAfter = options.TTL
 	}
 
-	newKV := &discovery.KVPair{
+	newKV := &dcore.KVPair{
 		Key:       key,
 		Value:     value,
 		LastIndex: sequenceNum(),
@@ -583,7 +583,7 @@ func (r *Redis) AtomicPut(key string, value []byte, previous *discovery.KVPair, 
 	return true, newKV, nil
 }
 
-func (r *Redis) setNX(key string, val *discovery.KVPair, expirationAfter time.Duration) error {
+func (r *Redis) setNX(key string, val *dcore.KVPair, expirationAfter time.Duration) error {
 	valBlob, err := r.codec.encode(val)
 	if err != nil {
 		return err
@@ -595,7 +595,7 @@ func (r *Redis) setNX(key string, val *discovery.KVPair, expirationAfter time.Du
 	return nil
 }
 
-func (r *Redis) cas(key string, old, new *discovery.KVPair, secInStr string) error {
+func (r *Redis) cas(key string, old, new *dcore.KVPair, secInStr string) error {
 	newVal, err := r.codec.encode(new)
 	if err != nil {
 		return err
@@ -617,14 +617,14 @@ func (r *Redis) cas(key string, old, new *discovery.KVPair, secInStr string) err
 
 // AtomicDelete is an atomic delete operation on a single value
 // the value will be deleted if previous matched the one stored in db
-func (r *Redis) AtomicDelete(key string, previous *discovery.KVPair) (bool, error) {
+func (r *Redis) AtomicDelete(key string, previous *dcore.KVPair) (bool, error) {
 	if err := r.cad(normalize(key), previous); err != nil {
 		return false, err
 	}
 	return true, nil
 }
 
-func (r *Redis) cad(key string, old *discovery.KVPair) error {
+func (r *Redis) cad(key string, old *dcore.KVPair) error {
 	oldVal, err := r.codec.encode(old)
 	if err != nil {
 		return err

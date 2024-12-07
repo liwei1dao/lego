@@ -1,4 +1,4 @@
-package discovery
+package dcore
 
 import (
 	"fmt"

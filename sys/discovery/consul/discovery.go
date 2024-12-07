@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/liwei1dao/lego/sys/discovery"
+	"github.com/liwei1dao/lego/sys/discovery/dcore"
 	"github.com/rpcxio/libkv/store"
 	"github.com/rpcxio/libkv/store/consul"
 	"github.com/smallnest/rpcx/client"
@@ -16,11 +16,11 @@ func init() {
 	consul.Register()
 }
 
-// ConsulDiscovery is a consul service discovery.
+// ConsulDiscovery is a consul service dcore.
 // It always returns the registered servers in consul.
 type ConsulDiscovery struct {
 	basePath string
-	kv       discovery.IStore
+	kv       dcore.IStore
 	pairsMu  sync.RWMutex
 	pairs    []*client.KVPair
 	chans    []chan []*client.KVPair
@@ -34,8 +34,8 @@ type ConsulDiscovery struct {
 }
 
 // NewConsulDiscovery returns a new ConsulDiscovery.
-func NewConsulDiscovery(basePath, servicePath string, consulAddr []string, options *discovery.Config) (*ConsulDiscovery, error) {
-	kv, err := discovery.NewStore(discovery.CONSUL, consulAddr, options)
+func NewConsulDiscovery(basePath, servicePath string, consulAddr []string, options *dcore.Config) (*ConsulDiscovery, error) {
+	kv, err := dcore.NewStore(dcore.CONSUL, consulAddr, options)
 	if err != nil {
 		log.Infof("cannot create store: %v", err)
 		return nil, err
@@ -45,7 +45,7 @@ func NewConsulDiscovery(basePath, servicePath string, consulAddr []string, optio
 }
 
 // NewConsulDiscoveryStore returns a new ConsulDiscovery with specified store.
-func NewConsulDiscoveryStore(basePath string, kv discovery.IStore) (*ConsulDiscovery, error) {
+func NewConsulDiscoveryStore(basePath string, kv dcore.IStore) (*ConsulDiscovery, error) {
 	if basePath[0] == '/' {
 		basePath = basePath[1:]
 	}
@@ -85,7 +85,7 @@ func NewConsulDiscoveryStore(basePath string, kv discovery.IStore) (*ConsulDisco
 }
 
 // NewConsulDiscoveryTemplate returns a new ConsulDiscovery template.
-func NewConsulDiscoveryTemplate(basePath string, consulAddr []string, options *discovery.Config) (*ConsulDiscovery, error) {
+func NewConsulDiscoveryTemplate(basePath string, consulAddr []string, options *dcore.Config) (*ConsulDiscovery, error) {
 	if basePath[0] == '/' {
 		basePath = basePath[1:]
 	}
@@ -94,7 +94,7 @@ func NewConsulDiscoveryTemplate(basePath string, consulAddr []string, options *d
 		basePath = basePath[:len(basePath)-1]
 	}
 
-	kv, err := discovery.NewStore(discovery.CONSUL, consulAddr, options)
+	kv, err := dcore.NewStore(dcore.CONSUL, consulAddr, options)
 	if err != nil {
 		log.Infof("cannot create store: %v", err)
 		return nil, err
@@ -152,7 +152,7 @@ func (d *ConsulDiscovery) watch() {
 	}()
 	for {
 		var err error
-		var c <-chan []*discovery.KVPair
+		var c <-chan []*dcore.KVPair
 		var tempDelay time.Duration
 
 		retry := d.RetriesAfterWatchFailed
@@ -188,7 +188,7 @@ func (d *ConsulDiscovery) watch() {
 		for {
 			select {
 			case <-d.stopCh:
-				log.Info("discovery has been closed")
+				log.Info("dcore has been closed")
 				return
 			case ps, ok := <-c:
 				if !ok {

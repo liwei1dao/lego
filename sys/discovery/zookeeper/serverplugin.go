@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/liwei1dao/lego/sys/discovery"
+	"github.com/liwei1dao/lego/sys/discovery/dcore"
 	metrics "github.com/rcrowley/go-metrics"
 	"github.com/smallnest/rpcx/log"
 )
@@ -34,8 +34,8 @@ type ZooKeeperRegisterPlugin struct {
 	metas          map[string]string
 	UpdateInterval time.Duration
 
-	Options *discovery.Config
-	kv      discovery.IStore
+	Options *dcore.Config
+	kv      dcore.IStore
 
 	dying chan struct{}
 	done  chan struct{}
@@ -69,7 +69,7 @@ func WithZkUpdateInterval(updateInterval time.Duration) ZooKeeperOpt {
 		o.UpdateInterval = updateInterval
 	}
 }
-func WithZkOptions(Options *discovery.Config) ZooKeeperOpt {
+func WithZkOptions(Options *dcore.Config) ZooKeeperOpt {
 	return func(o *ZooKeeperRegisterPlugin) {
 		o.Options = Options
 	}
@@ -92,7 +92,7 @@ func (p *ZooKeeperRegisterPlugin) Start() error {
 	}
 
 	if p.kv == nil {
-		kv, err := discovery.NewStore(discovery.ZK, p.ZooKeeperServers, p.Options)
+		kv, err := dcore.NewStore(dcore.ZK, p.ZooKeeperServers, p.Options)
 		if err != nil {
 			log.Errorf("cannot create zk registry: %v", err)
 			close(p.done)
@@ -105,7 +105,7 @@ func (p *ZooKeeperRegisterPlugin) Start() error {
 		p.BasePath = p.BasePath[1:]
 	}
 
-	err := p.kv.Put(p.BasePath, []byte("rpcx_path"), &discovery.WriteOptions{IsDir: true})
+	err := p.kv.Put(p.BasePath, []byte("rpcx_path"), &dcore.WriteOptions{IsDir: true})
 	if err != nil {
 		log.Errorf("cannot create zk path %s: %v", p.BasePath, err)
 		close(p.done)
@@ -142,7 +142,7 @@ func (p *ZooKeeperRegisterPlugin) Start() error {
 							meta := p.metas[name]
 							p.metasLock.RUnlock()
 
-							err = p.kv.Put(nodePath, []byte(meta), &discovery.WriteOptions{TTL: p.UpdateInterval * 2})
+							err = p.kv.Put(nodePath, []byte(meta), &dcore.WriteOptions{TTL: p.UpdateInterval * 2})
 							if err != nil {
 								log.Errorf("cannot re-create zookeeper path %s: %v", nodePath, err)
 							}
@@ -151,7 +151,7 @@ func (p *ZooKeeperRegisterPlugin) Start() error {
 							for key, value := range extra {
 								v.Set(key, value)
 							}
-							p.kv.Put(nodePath, []byte(v.Encode()), &discovery.WriteOptions{TTL: p.UpdateInterval * 2})
+							p.kv.Put(nodePath, []byte(v.Encode()), &dcore.WriteOptions{TTL: p.UpdateInterval * 2})
 						}
 					}
 				}
@@ -165,7 +165,7 @@ func (p *ZooKeeperRegisterPlugin) Start() error {
 // Stop unregister all services.
 func (p *ZooKeeperRegisterPlugin) Stop() error {
 	if p.kv == nil {
-		kv, err := discovery.NewStore(discovery.ZK, p.ZooKeeperServers, p.Options)
+		kv, err := dcore.NewStore(dcore.ZK, p.ZooKeeperServers, p.Options)
 		if err != nil {
 			log.Errorf("cannot create zk registry: %v", err)
 			return err
@@ -222,7 +222,7 @@ func (p *ZooKeeperRegisterPlugin) Register(name string, rcvr interface{}, metada
 
 	if p.kv == nil {
 		Register()
-		kv, err := discovery.NewStore(discovery.ZK, p.ZooKeeperServers, nil)
+		kv, err := dcore.NewStore(dcore.ZK, p.ZooKeeperServers, nil)
 		if err != nil {
 			log.Errorf("cannot create zk registry: %v", err)
 			return err
@@ -233,14 +233,14 @@ func (p *ZooKeeperRegisterPlugin) Register(name string, rcvr interface{}, metada
 	if p.BasePath[0] == '/' {
 		p.BasePath = p.BasePath[1:]
 	}
-	err = p.kv.Put(p.BasePath, []byte("rpcx_path"), &discovery.WriteOptions{IsDir: true})
+	err = p.kv.Put(p.BasePath, []byte("rpcx_path"), &dcore.WriteOptions{IsDir: true})
 	if err != nil {
 		log.Errorf("cannot create zk path %s: %v", p.BasePath, err)
 		return err
 	}
 
 	nodePath := fmt.Sprintf("%s/%s", p.BasePath, name)
-	err = p.kv.Put(nodePath, []byte(name), &discovery.WriteOptions{IsDir: true})
+	err = p.kv.Put(nodePath, []byte(name), &dcore.WriteOptions{IsDir: true})
 	if err != nil {
 		log.Errorf("cannot create zk path %s: %v", nodePath, err)
 		return err
@@ -249,7 +249,7 @@ func (p *ZooKeeperRegisterPlugin) Register(name string, rcvr interface{}, metada
 	nodePath = fmt.Sprintf("%s/%s/%s", p.BasePath, name, p.ServiceAddress)
 	// call delete first when previous is nil, if key exists already, create new key will fail.
 	p.kv.Delete(nodePath)
-	_, _, err = p.kv.AtomicPut(nodePath, []byte(metadata), nil, &discovery.WriteOptions{TTL: p.UpdateInterval * 2})
+	_, _, err = p.kv.AtomicPut(nodePath, []byte(metadata), nil, &dcore.WriteOptions{TTL: p.UpdateInterval * 2})
 	if err != nil {
 		log.Errorf("cannot create zk path %s: %v", nodePath, err)
 		return err
@@ -281,7 +281,7 @@ func (p *ZooKeeperRegisterPlugin) Unregister(name string) (err error) {
 
 	if p.kv == nil {
 		Register()
-		kv, err := discovery.NewStore(discovery.ZK, p.ZooKeeperServers, nil)
+		kv, err := dcore.NewStore(dcore.ZK, p.ZooKeeperServers, nil)
 		if err != nil {
 			log.Errorf("cannot create zk registry: %v", err)
 			return err
@@ -292,14 +292,14 @@ func (p *ZooKeeperRegisterPlugin) Unregister(name string) (err error) {
 	if p.BasePath[0] == '/' {
 		p.BasePath = p.BasePath[1:]
 	}
-	err = p.kv.Put(p.BasePath, []byte("rpcx_path"), &discovery.WriteOptions{IsDir: true})
+	err = p.kv.Put(p.BasePath, []byte("rpcx_path"), &dcore.WriteOptions{IsDir: true})
 	if err != nil {
 		log.Errorf("cannot create zk path %s: %v", p.BasePath, err)
 		return err
 	}
 
 	nodePath := fmt.Sprintf("%s/%s", p.BasePath, name)
-	err = p.kv.Put(nodePath, []byte(name), &discovery.WriteOptions{IsDir: true})
+	err = p.kv.Put(nodePath, []byte(name), &dcore.WriteOptions{IsDir: true})
 	if err != nil {
 		log.Errorf("cannot create zk path %s: %v", nodePath, err)
 		return err

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/liwei1dao/lego/sys/discovery"
+	"github.com/liwei1dao/lego/sys/discovery/dcore"
 	"github.com/rpcxio/libkv/store"
 	zk "github.com/samuel/go-zookeeper/zk"
 )
@@ -32,12 +32,12 @@ type zookeeperLock struct {
 
 // Register registers zookeeper to libkv
 func Register() {
-	discovery.AddStore(discovery.ZK, New)
+	dcore.AddStore(dcore.ZK, New)
 }
 
 // New creates a new Zookeeper client given a
 // list of endpoints and an optional tls config
-func New(endpoints []string, options *discovery.Config) (discovery.IStore, error) {
+func New(endpoints []string, options *dcore.Config) (dcore.IStore, error) {
 	s := &Zookeeper{}
 	s.timeout = defaultTimeout
 
@@ -65,7 +65,7 @@ func (s *Zookeeper) setTimeout(time time.Duration) {
 
 // Get the value at "key", returns the last modified index
 // to use in conjunction to Atomic calls
-func (s *Zookeeper) Get(key string) (pair *discovery.KVPair, err error) {
+func (s *Zookeeper) Get(key string) (pair *dcore.KVPair, err error) {
 	resp, meta, err := s.client.Get(s.normalize(key))
 
 	if err != nil {
@@ -81,7 +81,7 @@ func (s *Zookeeper) Get(key string) (pair *discovery.KVPair, err error) {
 		return s.Get(store.Normalize(key))
 	}
 
-	pair = &discovery.KVPair{
+	pair = &dcore.KVPair{
 		Key:       key,
 		Value:     resp,
 		LastIndex: uint64(meta.Version),
@@ -111,7 +111,7 @@ func (s *Zookeeper) createFullPath(path []string, ephemeral bool) error {
 }
 
 // Put a value at "key"
-func (s *Zookeeper) Put(key string, value []byte, opts *discovery.WriteOptions) error {
+func (s *Zookeeper) Put(key string, value []byte, opts *dcore.WriteOptions) error {
 	fkey := s.normalize(key)
 
 	exists, err := s.Exists(key)
@@ -154,7 +154,7 @@ func (s *Zookeeper) Exists(key string) (bool, error) {
 // on errors. Upon creation, the current value will first
 // be sent to the channel. Providing a non-nil stopCh can
 // be used to stop watching.
-func (s *Zookeeper) Watch(key string, stopCh <-chan struct{}) (<-chan *discovery.KVPair, error) {
+func (s *Zookeeper) Watch(key string, stopCh <-chan struct{}) (<-chan *dcore.KVPair, error) {
 	// Get the key first
 	pair, err := s.Get(key)
 	if err != nil {
@@ -162,7 +162,7 @@ func (s *Zookeeper) Watch(key string, stopCh <-chan struct{}) (<-chan *discovery
 	}
 
 	// Catch zk notifications and fire changes into the channel.
-	watchCh := make(chan *discovery.KVPair)
+	watchCh := make(chan *dcore.KVPair)
 	go func() {
 		defer close(watchCh)
 
@@ -196,7 +196,7 @@ func (s *Zookeeper) Watch(key string, stopCh <-chan struct{}) (<-chan *discovery
 // on errors. Upon creating a watch, the current childs values
 // will be sent to the channel .Providing a non-nil stopCh can
 // be used to stop watching.
-func (s *Zookeeper) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*discovery.KVPair, error) {
+func (s *Zookeeper) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*dcore.KVPair, error) {
 	// List the childrens first
 	entries, err := s.List(directory)
 	if err != nil {
@@ -204,7 +204,7 @@ func (s *Zookeeper) WatchTree(directory string, stopCh <-chan struct{}) (<-chan 
 	}
 
 	// Catch zk notifications and fire changes into the channel.
-	watchCh := make(chan []*discovery.KVPair)
+	watchCh := make(chan []*dcore.KVPair)
 	go func() {
 		defer close(watchCh)
 
@@ -236,7 +236,7 @@ func (s *Zookeeper) WatchTree(directory string, stopCh <-chan struct{}) (<-chan 
 }
 
 // List child nodes of a given directory
-func (s *Zookeeper) List(directory string) ([]*discovery.KVPair, error) {
+func (s *Zookeeper) List(directory string) ([]*dcore.KVPair, error) {
 	keys, stat, err := s.client.Children(s.normalize(directory))
 	if err != nil {
 		if err == zk.ErrNoNode {
@@ -245,7 +245,7 @@ func (s *Zookeeper) List(directory string) ([]*discovery.KVPair, error) {
 		return nil, err
 	}
 
-	kv := []*discovery.KVPair{}
+	kv := []*dcore.KVPair{}
 
 	// FIXME Costly Get request for each child key..
 	for _, key := range keys {
@@ -258,7 +258,7 @@ func (s *Zookeeper) List(directory string) ([]*discovery.KVPair, error) {
 			return nil, err
 		}
 
-		kv = append(kv, &discovery.KVPair{
+		kv = append(kv, &dcore.KVPair{
 			Key:       key,
 			Value:     []byte(pair.Value),
 			LastIndex: uint64(stat.Version),
@@ -290,7 +290,7 @@ func (s *Zookeeper) DeleteTree(directory string) error {
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Zookeeper) AtomicPut(key string, value []byte, previous *discovery.KVPair, opts *discovery.WriteOptions) (bool, *discovery.KVPair, error) {
+func (s *Zookeeper) AtomicPut(key string, value []byte, previous *dcore.KVPair, opts *dcore.WriteOptions) (bool, *dcore.KVPair, error) {
 	var lastIndex uint64
 	var flag int32
 	if opts != nil && opts.TTL > 0 {
@@ -344,7 +344,7 @@ func (s *Zookeeper) AtomicPut(key string, value []byte, previous *discovery.KVPa
 		lastIndex = 0 // Newly created nodes have version 0.
 	}
 
-	pair := &discovery.KVPair{
+	pair := &dcore.KVPair{
 		Key:       key,
 		Value:     value,
 		LastIndex: lastIndex,
@@ -356,7 +356,7 @@ func (s *Zookeeper) AtomicPut(key string, value []byte, previous *discovery.KVPa
 // AtomicDelete deletes a value at "key" if the key
 // has not been modified in the meantime, throws an
 // error if this is the case
-func (s *Zookeeper) AtomicDelete(key string, previous *discovery.KVPair) (bool, error) {
+func (s *Zookeeper) AtomicDelete(key string, previous *dcore.KVPair) (bool, error) {
 	if previous == nil {
 		return false, store.ErrPreviousNotSpecified
 	}
@@ -379,7 +379,7 @@ func (s *Zookeeper) AtomicDelete(key string, previous *discovery.KVPair) (bool, 
 
 // NewLock returns a handle to a lock struct which can
 // be used to provide mutual exclusion on a key
-func (s *Zookeeper) NewLock(key string, options *discovery.LockOptions) (lock discovery.Locker, err error) {
+func (s *Zookeeper) NewLock(key string, options *dcore.LockOptions) (lock dcore.Locker, err error) {
 	value := []byte("")
 
 	// Apply options

@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/liwei1dao/lego/sys/discovery"
+	"github.com/liwei1dao/lego/sys/discovery/dcore"
 	"github.com/rpcxio/libkv/store"
 	"github.com/rpcxio/rpcx-etcd/store/etcd"
 	"github.com/smallnest/rpcx/client"
@@ -16,11 +16,11 @@ func init() {
 	etcd.Register()
 }
 
-// EtcdDiscovery is a etcd service discovery.
+// EtcdDiscovery is a etcd service dcore.
 // It always returns the registered servers in etcd.
 type EtcdDiscovery struct {
 	basePath string
-	kv       discovery.IStore
+	kv       dcore.IStore
 	pairsMu  sync.RWMutex
 	pairs    []*client.KVPair
 	chans    []chan []*client.KVPair
@@ -36,8 +36,8 @@ type EtcdDiscovery struct {
 }
 
 // NewEtcdDiscovery returns a new EtcdDiscovery.
-func NewEtcdDiscovery(basePath string, servicePath string, etcdAddr []string, allowKeyNotFound bool, options *discovery.Config) (client.ServiceDiscovery, error) {
-	kv, err := discovery.NewStore(discovery.ETCD, etcdAddr, options)
+func NewEtcdDiscovery(basePath string, servicePath string, etcdAddr []string, allowKeyNotFound bool, options *dcore.Config) (client.ServiceDiscovery, error) {
+	kv, err := dcore.NewStore(dcore.ETCD, etcdAddr, options)
 	if err != nil {
 		log.Infof("cannot create store: %v", err)
 		panic(err)
@@ -47,7 +47,7 @@ func NewEtcdDiscovery(basePath string, servicePath string, etcdAddr []string, al
 }
 
 // NewEtcdDiscoveryStore return a new EtcdDiscovery with specified store.
-func NewEtcdDiscoveryStore(basePath string, kv discovery.IStore, allowKeyNotFound bool) (client.ServiceDiscovery, error) {
+func NewEtcdDiscoveryStore(basePath string, kv dcore.IStore, allowKeyNotFound bool) (client.ServiceDiscovery, error) {
 	if len(basePath) > 1 && strings.HasSuffix(basePath, "/") {
 		basePath = basePath[:len(basePath)-1]
 	}
@@ -97,12 +97,12 @@ func NewEtcdDiscoveryStore(basePath string, kv discovery.IStore, allowKeyNotFoun
 }
 
 // NewEtcdDiscoveryTemplate returns a new EtcdDiscovery template.
-func NewEtcdDiscoveryTemplate(basePath string, etcdAddr []string, allowKeyNotFound bool, options *discovery.Config) (client.ServiceDiscovery, error) {
+func NewEtcdDiscoveryTemplate(basePath string, etcdAddr []string, allowKeyNotFound bool, options *dcore.Config) (client.ServiceDiscovery, error) {
 	if len(basePath) > 1 && strings.HasSuffix(basePath, "/") {
 		basePath = basePath[:len(basePath)-1]
 	}
 
-	kv, err := discovery.NewStore(discovery.ETCD, etcdAddr, options)
+	kv, err := dcore.NewStore(dcore.ETCD, etcdAddr, options)
 	if err != nil {
 		log.Infof("cannot create store: %v", err)
 		return nil, err
@@ -169,7 +169,7 @@ func (d *EtcdDiscovery) watch() {
 rewatch:
 	for {
 		var err error
-		var c <-chan []*discovery.KVPair
+		var c <-chan []*dcore.KVPair
 		var tempDelay time.Duration
 
 		retry := d.RetriesAfterWatchFailed
@@ -202,7 +202,7 @@ rewatch:
 		for {
 			select {
 			case <-d.stopCh:
-				log.Info("discovery has been closed")
+				log.Info("dcore has been closed")
 				return
 			case ps, ok := <-c:
 				if !ok {

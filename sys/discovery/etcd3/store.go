@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/liwei1dao/lego/sys/discovery"
+	"github.com/liwei1dao/lego/sys/discovery/dcore"
 	"github.com/rpcxio/libkv/store"
 
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -15,7 +15,7 @@ import (
 )
 
 func init() {
-	discovery.AddStore(discovery.ETCDV3, New)
+	dcore.AddStore(dcore.ETCDV3, New)
 }
 
 const defaultTTL = 30
@@ -41,7 +41,7 @@ type EtcdV3 struct {
 
 // New creates a new Etcd client given a list
 // of endpoints and an optional tls config
-func New(addrs []string, options *discovery.Config) (discovery.IStore, error) {
+func New(addrs []string, options *dcore.Config) (dcore.IStore, error) {
 	s := &EtcdV3{
 		done:           make(chan struct{}),
 		startKeepAlive: make(chan struct{}),
@@ -162,7 +162,7 @@ func (s *EtcdV3) grant(ttl int64) error {
 }
 
 // Put a value at the specified key
-func (s *EtcdV3) Put(key string, value []byte, options *discovery.WriteOptions) error {
+func (s *EtcdV3) Put(key string, value []byte, options *dcore.WriteOptions) error {
 	var ttl int64
 	if options != nil {
 		ttl = int64(options.TTL.Seconds())
@@ -182,7 +182,7 @@ func (s *EtcdV3) Put(key string, value []byte, options *discovery.WriteOptions) 
 }
 
 // Get a value given its key
-func (s *EtcdV3) Get(key string) (*discovery.KVPair, error) {
+func (s *EtcdV3) Get(key string) (*dcore.KVPair, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	resp, err := s.client.Get(ctx, key)
 	cancel()
@@ -190,10 +190,10 @@ func (s *EtcdV3) Get(key string) (*discovery.KVPair, error) {
 		return nil, err
 	}
 	if len(resp.Kvs) == 0 {
-		return nil, discovery.ErrKeyNotFound
+		return nil, dcore.ErrKeyNotFound
 	}
 
-	pair := &discovery.KVPair{
+	pair := &dcore.KVPair{
 		Key:       key,
 		Value:     resp.Kvs[0].Value,
 		LastIndex: uint64(resp.Kvs[0].Version),
@@ -224,8 +224,8 @@ func (s *EtcdV3) Exists(key string) (bool, error) {
 }
 
 // Watch for changes on a key.
-func (s *EtcdV3) Watch(key string, stopCh <-chan struct{}) (<-chan *discovery.KVPair, error) {
-	watchCh := make(chan *discovery.KVPair)
+func (s *EtcdV3) Watch(key string, stopCh <-chan struct{}) (<-chan *dcore.KVPair, error) {
+	watchCh := make(chan *dcore.KVPair)
 
 	go func() {
 		defer close(watchCh)
@@ -247,7 +247,7 @@ func (s *EtcdV3) Watch(key string, stopCh <-chan struct{}) (<-chan *discovery.KV
 					return
 				}
 				for _, event := range wresp.Events {
-					watchCh <- &discovery.KVPair{
+					watchCh <- &dcore.KVPair{
 						Key:       string(event.Kv.Key),
 						Value:     event.Kv.Value,
 						LastIndex: uint64(event.Kv.Version),
@@ -261,11 +261,11 @@ func (s *EtcdV3) Watch(key string, stopCh <-chan struct{}) (<-chan *discovery.KV
 }
 
 // WatchTree watches for changes on child nodes under a given directory
-func (s *EtcdV3) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*discovery.KVPair, error) {
-	watchCh := make(chan []*discovery.KVPair)
+func (s *EtcdV3) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*dcore.KVPair, error) {
+	watchCh := make(chan []*dcore.KVPair)
 	list, err := s.List(directory)
 	if err != nil {
-		if !s.AllowKeyNotFound || err != discovery.ErrKeyNotFound {
+		if !s.AllowKeyNotFound || err != dcore.ErrKeyNotFound {
 			return watchCh, err
 		}
 	}
@@ -286,7 +286,7 @@ func (s *EtcdV3) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*
 
 				list, err := s.List(directory)
 				if err != nil {
-					if !s.AllowKeyNotFound || err != discovery.ErrKeyNotFound {
+					if !s.AllowKeyNotFound || err != dcore.ErrKeyNotFound {
 						continue
 					}
 				}
@@ -306,12 +306,12 @@ type etcdLock struct {
 // NewLock creates a lock for a given key.
 // The returned Locker is not held and must be acquired
 // with `.Lock`. The Value is optional.
-func (s *EtcdV3) NewLock(key string, options *discovery.LockOptions) (discovery.Locker, error) {
+func (s *EtcdV3) NewLock(key string, options *dcore.LockOptions) (dcore.Locker, error) {
 	return nil, errors.New("not implemented")
 }
 
 // List the content of a given prefix
-func (s *EtcdV3) List(directory string) ([]*discovery.KVPair, error) {
+func (s *EtcdV3) List(directory string) ([]*dcore.KVPair, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
 
@@ -320,14 +320,14 @@ func (s *EtcdV3) List(directory string) ([]*discovery.KVPair, error) {
 		return nil, err
 	}
 
-	kvpairs := make([]*discovery.KVPair, 0, len(resp.Kvs))
+	kvpairs := make([]*dcore.KVPair, 0, len(resp.Kvs))
 
 	if len(resp.Kvs) == 0 {
-		return nil, discovery.ErrKeyNotFound
+		return nil, dcore.ErrKeyNotFound
 	}
 
 	for _, kv := range resp.Kvs {
-		pair := &discovery.KVPair{
+		pair := &dcore.KVPair{
 			Key:       string(kv.Key),
 			Value:     kv.Value,
 			LastIndex: uint64(kv.Version),
@@ -349,7 +349,7 @@ func (s *EtcdV3) DeleteTree(directory string) error {
 
 // AtomicPut CAS operation on a single value.
 // Pass previous = nil to create a new key.
-func (s *EtcdV3) AtomicPut(key string, value []byte, previous *discovery.KVPair, options *discovery.WriteOptions) (bool, *discovery.KVPair, error) {
+func (s *EtcdV3) AtomicPut(key string, value []byte, previous *dcore.KVPair, options *dcore.WriteOptions) (bool, *dcore.KVPair, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
 
@@ -369,7 +369,7 @@ func (s *EtcdV3) AtomicPut(key string, value []byte, previous *discovery.KVPair,
 				revision = presp.Header.GetRevision()
 			}
 		} else {
-			return false, nil, discovery.ErrKeyExists
+			return false, nil, dcore.ErrKeyExists
 		}
 	} else {
 
@@ -393,7 +393,7 @@ func (s *EtcdV3) AtomicPut(key string, value []byte, previous *discovery.KVPair,
 		return false, nil, err
 	}
 
-	pair := &discovery.KVPair{
+	pair := &dcore.KVPair{
 		Key:       key,
 		Value:     value,
 		LastIndex: uint64(revision),
@@ -403,7 +403,7 @@ func (s *EtcdV3) AtomicPut(key string, value []byte, previous *discovery.KVPair,
 }
 
 // AtomicDelete cas deletes a single value
-func (s *EtcdV3) AtomicDelete(key string, previous *discovery.KVPair) (bool, error) {
+func (s *EtcdV3) AtomicDelete(key string, previous *dcore.KVPair) (bool, error) {
 	deleted := false
 	var err error
 	var txresp *clientv3.TxnResponse

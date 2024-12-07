@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/liwei1dao/lego/sys/discovery"
+	"github.com/liwei1dao/lego/sys/discovery/dcore"
 	"github.com/liwei1dao/lego/sys/log"
 )
 
@@ -41,7 +41,7 @@ var (
 	ErrSessionRenew = errors.New("cannot set or renew session for ttl, unable to operate on sessions")
 )
 
-func New(address []string, options *discovery.Config) (store *ConsulStore, err error) {
+func New(address []string, options *dcore.Config) (store *ConsulStore, err error) {
 	if len(address) > 1 {
 		return nil, ErrMultipleEndpointsUnsupported
 	}
@@ -78,7 +78,7 @@ type ConsulStore struct {
 	client *api.Client
 }
 
-func (this *ConsulStore) Get(key string) (*discovery.KVPair, error) {
+func (this *ConsulStore) Get(key string) (*dcore.KVPair, error) {
 	options := &api.QueryOptions{
 		AllowStale:        false,
 		RequireConsistent: true,
@@ -91,12 +91,12 @@ func (this *ConsulStore) Get(key string) (*discovery.KVPair, error) {
 
 	// If pair is nil then the key does not exist
 	if pair == nil {
-		return nil, discovery.ErrKeyNotFound
+		return nil, dcore.ErrKeyNotFound
 	}
 
-	return &discovery.KVPair{Key: pair.Key, Value: pair.Value, LastIndex: meta.LastIndex}, nil
+	return &dcore.KVPair{Key: pair.Key, Value: pair.Value, LastIndex: meta.LastIndex}, nil
 }
-func (this *ConsulStore) Put(key string, value []byte, opts *discovery.WriteOptions) error {
+func (this *ConsulStore) Put(key string, value []byte, opts *dcore.WriteOptions) error {
 	key = this.normalize(key)
 
 	p := &api.KVPair{
@@ -133,29 +133,29 @@ func (this *ConsulStore) Delete(key string) error {
 func (this *ConsulStore) Exists(key string) (bool, error) {
 	_, err := this.Get(key)
 	if err != nil {
-		if err == discovery.ErrKeyNotFound {
+		if err == dcore.ErrKeyNotFound {
 			return false, nil
 		}
 		return false, err
 	}
 	return true, nil
 }
-func (this *ConsulStore) List(directory string) ([]*discovery.KVPair, error) {
+func (this *ConsulStore) List(directory string) ([]*dcore.KVPair, error) {
 	pairs, _, err := this.client.KV().List(this.normalize(directory), &api.QueryOptions{WaitTime: 5 * time.Second})
 	if err != nil {
 		return nil, err
 	}
 	if len(pairs) == 0 {
-		return nil, discovery.ErrKeyNotFound
+		return nil, dcore.ErrKeyNotFound
 	}
 
-	kv := []*discovery.KVPair{}
+	kv := []*dcore.KVPair{}
 
 	for _, pair := range pairs {
 		if pair.Key == directory {
 			continue
 		}
-		kv = append(kv, &discovery.KVPair{
+		kv = append(kv, &dcore.KVPair{
 			Key:       pair.Key,
 			Value:     pair.Value,
 			LastIndex: pair.ModifyIndex,
@@ -171,9 +171,9 @@ func (this *ConsulStore) DeleteTree(directory string) error {
 	_, err := this.client.KV().DeleteTree(this.normalize(directory), nil)
 	return err
 }
-func (this *ConsulStore) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*discovery.KVPair, error) {
+func (this *ConsulStore) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*dcore.KVPair, error) {
 	kv := this.client.KV()
-	watchCh := make(chan []*discovery.KVPair)
+	watchCh := make(chan []*dcore.KVPair)
 
 	go func() {
 		defer close(watchCh)
@@ -203,12 +203,12 @@ func (this *ConsulStore) WatchTree(directory string, stopCh <-chan struct{}) (<-
 			opts.WaitIndex = meta.LastIndex
 
 			// Return children KV pairs to the channel
-			kvpairs := []*discovery.KVPair{}
+			kvpairs := []*dcore.KVPair{}
 			for _, pair := range pairs {
 				if pair.Key == directory {
 					continue
 				}
-				kvpairs = append(kvpairs, &discovery.KVPair{
+				kvpairs = append(kvpairs, &dcore.KVPair{
 					Key:       pair.Key,
 					Value:     pair.Value,
 					LastIndex: pair.ModifyIndex,
@@ -224,7 +224,7 @@ func (this *ConsulStore) Close() {
 	return
 }
 func (this *ConsulStore) normalize(key string) string {
-	key = discovery.Normalize(key)
+	key = dcore.Normalize(key)
 	return strings.TrimPrefix(key, "/")
 }
 func (this *ConsulStore) renewSession(pair *api.KVPair, ttl time.Duration) error {

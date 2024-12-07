@@ -20,6 +20,7 @@ const (
 	StoreNUll StoreType = iota
 	StoreConsul
 	StoreZookeeper
+	StoreEtcd2
 	StoreEtcd3
 	StoreRedis
 )
@@ -32,7 +33,6 @@ type Options struct {
 	StoreType      StoreType         //第三方服务类型 支持 Consul  Zookeeper Redis
 	Endpoints      []string          //服务节点集合
 	Config         *dcore.Config     //连接配置
-	Codec          ICodec            //编解码工具
 	Debug          bool              //日志是否开启
 	Log            log.ILogger
 }
@@ -67,11 +67,7 @@ func SetConfig(v *dcore.Config) Option {
 		o.Config = v
 	}
 }
-func SetCodec(v ICodec) Option {
-	return func(o *Options) {
-		o.Codec = v
-	}
-}
+
 func SetDebug(v bool) Option {
 	return func(o *Options) {
 		o.Debug = v

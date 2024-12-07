@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/discovery"
 	"github.com/liwei1dao/lego/sys/event"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/rpc/connpool"
@@ -40,6 +41,9 @@ func newSys(options *Options) (sys *rpc, err error) {
 	}); err != nil {
 		return
 	}
+
+	if sys.discovery,err = 
+
 	currnodes := sys.options.Discovery.GetServices()
 	nodes := make([]core.IServiceNode, len(currnodes))
 	for i, v := range currnodes {
@@ -52,6 +56,7 @@ func newSys(options *Options) (sys *rpc, err error) {
 type rpc struct {
 	options      *Options
 	cpool        rpccore.IConnPool
+	discovery    discovery.IDiscovery //服务发现
 	selector     rpccore.ISelector
 	heartbeat    []byte
 	serviceMapMu sync.RWMutex
