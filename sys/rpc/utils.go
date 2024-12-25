@@ -13,13 +13,13 @@ import (
 	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
 
-//获取心跳消息包
+// 获取心跳消息包
 func getHeartbeat(node *core.ServiceNode) []byte {
 	req := protocol.GetPooledMsg()
 	req.SetMessageType(rpccore.Request)
 	req.SetHeartbeat(true)
 	req.SetOneway(true)
-	req.SetServiceMethod("")
+	req.SetService("")
 	codec := codecs[rpccore.ProtoBuffer]
 	data, _ := codec.Marshal(node)
 	req.SetPayload(data)
@@ -31,13 +31,13 @@ func getHeartbeat(node *core.ServiceNode) []byte {
 	return *allData
 }
 
-//获取握手消息包
+// 获取握手消息包
 func getShakehands(node *core.ServiceNode) []byte {
 	req := protocol.GetPooledMsg()
 	req.SetMessageType(rpccore.Request)
 	req.SetHeartbeat(true)
 	req.SetOneway(true)
-	req.SetServiceMethod("")
+	req.SetService("")
 	codec := codecs[rpccore.ProtoBuffer]
 	data, _ := codec.Marshal(node)
 	req.SetPayload(data)
@@ -49,7 +49,7 @@ func getShakehands(node *core.ServiceNode) []byte {
 	return *allData
 }
 
-//解析rpc请求超时设置
+// 解析rpc请求超时设置
 func parseServerTimeout(ctx *rpccore.Context, req rpccore.IMessage) context.CancelFunc {
 	if req == nil || req.Metadata() == nil {
 		return nil
@@ -70,7 +70,7 @@ func parseServerTimeout(ctx *rpccore.Context, req rpccore.IMessage) context.Canc
 	return cancel
 }
 
-//设置消息错误信息
+// 设置消息错误信息
 func handleError(res rpccore.IMessage, err error) (rpccore.IMessage, error) {
 	res.SetMessageStatusType(rpccore.Error)
 	if res.Metadata() == nil {
@@ -80,7 +80,7 @@ func handleError(res rpccore.IMessage, err error) (rpccore.IMessage, error) {
 	return res, err
 }
 
-//是否是内置类型
+// 是否是内置类型
 func isExportedOrBuiltinType(t reflect.Type) bool {
 	for t.Kind() == reflect.Ptr {
 		t = t.Elem()

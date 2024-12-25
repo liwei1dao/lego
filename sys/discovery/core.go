@@ -6,12 +6,12 @@ import (
 )
 
 type (
-	IServicePlugin interface {
+	IDiscoveryServicePlugin interface {
 		Start() error
 		RegisterFunction(serviceName, fname string, fn interface{}, meta string) error
 		Stop() error
 	}
-	IDiscoveryClient interface {
+	IServiceDiscovery interface {
 		GetServices() []*dcore.KV
 		WatchService() chan []*dcore.KV
 	}

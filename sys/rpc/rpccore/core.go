@@ -132,8 +132,8 @@ type IMessage interface {
 	Seq() uint64
 	SetSeq(seq uint64)
 	EncodeSlicePointer() *[]byte
-	ServiceMethod() string
-	SetServiceMethod(v string)
+	GetService() string
+	SetService(v string)
 	From() core.IServiceNode
 	SetFrom(v core.IServiceNode)
 	Metadata() map[string]string
@@ -151,8 +151,8 @@ type ICodec interface {
 
 // 选择器
 type ISelector interface {
-	Select(ctx context.Context, servicePath string) []core.IServiceNode
-	UpdateServer(servers []core.IServiceNode) (add, del, change []core.IServiceNode)
+	Select(ctx context.Context) []core.IServiceNode
+	UpdateServer(servers map[string]string)
 }
 
 // 连接对象池

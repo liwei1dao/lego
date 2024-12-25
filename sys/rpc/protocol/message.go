@@ -36,22 +36,22 @@ func NewMessage() *Message {
 
 type Message struct {
 	*Header
-	serviceMethod string
-	from          core.IServiceNode
-	meta          map[string]string
-	payload       []byte
-	data          []byte
+	service string
+	from    core.IServiceNode
+	meta    map[string]string
+	payload []byte
+	data    []byte
 }
 
 func (this *Message) PrintHeader() string {
 	return fmt.Sprintf("%08b", this.Header[2])
 }
 
-func (this *Message) ServiceMethod() string {
-	return this.serviceMethod
+func (this *Message) GetService() string {
+	return this.service
 }
-func (this *Message) SetServiceMethod(v string) {
-	this.serviceMethod = v
+func (this *Message) SetService(v string) {
+	this.service = v
 }
 
 func (this *Message) From() core.IServiceNode {
@@ -128,7 +128,7 @@ func (this *Message) Decode(r io.Reader) error {
 	l = binary.BigEndian.Uint32(data[n : n+4])
 	n = n + 4
 	nEnd := n + int(l)
-	this.serviceMethod = util.SliceByteToString(data[n:nEnd])
+	this.service = util.SliceByteToString(data[n:nEnd])
 	n = nEnd
 
 	// parse serviceMethod
@@ -178,14 +178,14 @@ func (this *Message) Reset() {
 	resetHeader(this.Header)
 	this.meta = nil
 	this.payload = []byte{}
-	this.serviceMethod = ""
+	this.service = ""
 }
 func (this Message) Clone() rpccore.IMessage {
 	header := *this.Header
 	c := GetPooledMsg()
 	header.SetCompressType(rpccore.CompressNone)
 	c.Header = &header
-	c.serviceMethod = this.serviceMethod
+	c.service = this.service
 	return c
 }
 
@@ -194,7 +194,7 @@ func (this *Message) EncodeSlicePointer() *[]byte {
 	encodeMetadata(this.meta, bb)
 	// fdata, _ := proto.Marshal(this.from)
 	meta := bb.Bytes()
-	smL := len(this.serviceMethod)
+	smL := len(this.service)
 	// fml := len(fdata)
 	var err error
 	payload := this.payload
@@ -226,7 +226,7 @@ func (this *Message) EncodeSlicePointer() *[]byte {
 	binary.BigEndian.PutUint32((*data)[12:16], uint32(totalL))
 
 	binary.BigEndian.PutUint32((*data)[16:20], uint32(smL))
-	copy((*data)[20:20+smL], util.StringToSliceByte(this.serviceMethod))
+	copy((*data)[20:20+smL], util.StringToSliceByte(this.service))
 
 	// binary.BigEndian.PutUint32((*data)[20+smL:24+smL], uint32(fml))
 	// copy((*data)[24+smL:metaStart], fdata)
@@ -255,7 +255,7 @@ func (this *Message) WriteTo(w io.Writer) (int64, error) {
 	encodeMetadata(this.meta, bb)
 	meta := bb.Bytes()
 
-	smL := len(this.serviceMethod)
+	smL := len(this.service)
 	// fml := len(fdata)
 
 	payload := this.payload
@@ -281,7 +281,7 @@ func (this *Message) WriteTo(w io.Writer) (int64, error) {
 	if err != nil {
 		return n, err
 	}
-	_, err = w.Write(util.StringToSliceByte(this.serviceMethod))
+	_, err = w.Write(util.StringToSliceByte(this.service))
 	if err != nil {
 		return n, err
 	}
