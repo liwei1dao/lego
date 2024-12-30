@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/liwei1dao/lego/sys/connpool"
 	"github.com/liwei1dao/lego/sys/rpc/protocol"
 	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
@@ -49,7 +50,7 @@ type ShakehandsResp struct {
 // }
 
 // // //握手请求 回应
-func (this *rpc) ShakehandsResponse(ctx context.Context, client rpccore.IConnClient, req rpccore.IMessage) (err error) {
+func (this *rpc) ShakehandsResponse(ctx context.Context, client connpool.IConnClient, req rpccore.IMessage) (err error) {
 	res := req.Clone()
 	defer func() {
 		data := res.EncodeSlicePointer()

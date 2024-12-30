@@ -1,25 +1,39 @@
 package connpool
 
 import (
-	"fmt"
+	"context"
 
-	"github.com/liwei1dao/lego/sys/log"
-	"github.com/liwei1dao/lego/sys/rpc/connpool/kafka"
-	"github.com/liwei1dao/lego/sys/rpc/connpool/tcp"
-	"github.com/liwei1dao/lego/sys/rpc/rpccore"
+	"github.com/liwei1dao/lego/core"
 )
 
-// 创建连接池对象
-func NewConnPool(sys rpccore.ISys, log log.ILogger, config *rpccore.Config) (comm rpccore.IConnPool, err error) {
-	switch config.ConnectType {
-	case rpccore.Tcp:
-		comm, err = tcp.NewTcpConnPool(sys, log, config)
-		break
-	case rpccore.Kafka:
-		comm, err = kafka.NewKafkaConnPool(sys, log, config)
-		break
-	default:
-		err = fmt.Errorf("not support ConnectType:%v", config.ConnectType)
-	}
-	return
+type ClientState int32
+
+const (
+	ClientClose      ClientState = iota //关闭状态
+	ClientShakeHands                    //握手状态
+	ClientRuning                        //运行中
+	ClientCloseing                      //关闭中
+)
+
+type IConnClient interface {
+	ServiceNode() core.IServiceNode
+	SetServiceNode(node core.IServiceNode)
+	State() ClientState
+	Start()
+	ResetHbeat()
+	Write(msg []byte) (err error)
+	Close() (err error)
+}
+
+// 连接对象池
+type IConnPool interface {
+	Start() error
+	GetClient(node core.IServiceNode) (client IConnClient, err error)
+	AddClient(client IConnClient, node core.IServiceNode) (err error)
+	Close() error
+}
+
+// 主机对象
+type IBodyHost interface {
+	ShakehandsRequest(ctx context.Context, client IConnClient) (err error)
 }

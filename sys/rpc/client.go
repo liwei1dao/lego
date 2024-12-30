@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/connpool"
 	"github.com/liwei1dao/lego/sys/discovery"
 	"github.com/liwei1dao/lego/sys/discovery/dcore"
 	"github.com/liwei1dao/lego/sys/log"
@@ -18,7 +19,7 @@ import (
 	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
 
-func NewXClient(service string, selectMode SelectMode, discovery discovery.IServiceDiscovery, cpools rpccore.IConnPool) IClient {
+func NewXClient(service string, selectMode SelectMode, discovery discovery.IServiceDiscovery, cpools connpool.IConnPool) IClient {
 	client := &Client{
 		discovery: discovery,
 		service:   service,
@@ -52,7 +53,7 @@ type Client struct {
 	options   *Options
 	mu        sync.RWMutex
 	servers   map[string]string
-	cpools    rpccore.IConnPool
+	cpools    connpool.IConnPool
 	discovery discovery.IServiceDiscovery
 	selector  ISelector
 	ch        chan []*dcore.KV
@@ -130,7 +131,7 @@ func (this *Client) call(ctx context.Context, args interface{}, reply interface{
 	if cseq, ok := ctx.Value(rpccore.CallSeqKey).(*uint64); ok {
 		*cseq = seq
 	}
-	var client rpccore.IConnClient
+	var client connpool.IConnClient
 	if client, err = this.getclient(ctx); err != nil {
 		return
 	}
@@ -138,7 +139,7 @@ func (this *Client) call(ctx context.Context, args interface{}, reply interface{
 	return
 }
 
-func (this *Client) getclient(ctx context.Context) (client rpccore.IConnClient, err error) {
+func (this *Client) getclient(ctx context.Context) (client connpool.IConnClient, err error) {
 	var (
 		values string
 		node   core.IServiceNode
@@ -178,7 +179,7 @@ func (this *Client) watch(ch chan []*dcore.KV) {
 	}
 }
 
-func (this *Client) send(client rpccore.IConnClient, call *MessageCall, seq uint64) (err error) {
+func (this *Client) send(client connpool.IConnClient, call *MessageCall, seq uint64) (err error) {
 	var (
 		data    []byte
 		allData *[]byte

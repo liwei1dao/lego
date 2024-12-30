@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/connpool"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/rpc/protocol"
 	"github.com/liwei1dao/lego/sys/rpc/rpccore"
@@ -30,7 +31,7 @@ type NatsConnPool struct {
 	conn        *nats.Conn
 	subs        *nats.Subscription
 	clientMapMu sync.RWMutex
-	clients     map[string]rpccore.IConnClient
+	clients     map[string]connpool.IConnClient
 }
 
 func (this *NatsConnPool) init() (err error) {
@@ -40,7 +41,7 @@ func (this *NatsConnPool) init() (err error) {
 	this.subs, err = this.conn.SubscribeSync(this.sys.ServiceNode().Path())
 	return
 }
-func (this *NatsConnPool) GetClient(node core.IServiceNode) (client rpccore.IConnClient, err error) {
+func (this *NatsConnPool) GetClient(node core.IServiceNode) (client connpool.IConnClient, err error) {
 	var (
 		ok bool
 	)
@@ -73,7 +74,7 @@ func (this *NatsConnPool) Close() (err error) {
 }
 func (this *NatsConnPool) CloseClient(node core.IServiceNode) (err error) {
 	var (
-		client rpccore.IConnClient
+		client connpool.IConnClient
 		ok     bool
 	)
 	this.clientMapMu.RLock()
@@ -92,7 +93,7 @@ func (this *NatsConnPool) run() {
 		err     error
 		m       *nats.Msg
 		message *protocol.Message
-		client  rpccore.IConnClient
+		client  connpool.IConnClient
 	)
 locp:
 	for {

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/connpool"
 	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 	"github.com/nats-io/nats.go"
 )
@@ -42,8 +43,8 @@ func (this *Client) SetServiceNode(node core.IServiceNode) {
 	this.node = node
 }
 
-func (this *Client) State() rpccore.ClientState {
-	return rpccore.ClientState(atomic.LoadInt32(&this.state))
+func (this *Client) State() connpool.ClientState {
+	return connpool.ClientState(atomic.LoadInt32(&this.state))
 }
 
 func (this *Client) Start() {

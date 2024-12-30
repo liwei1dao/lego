@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/connpool"
 	"github.com/liwei1dao/lego/sys/log"
 	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
@@ -30,10 +31,10 @@ func (this *KafkaConnPool) Start() (err error) {
 	return
 }
 
-func (this *KafkaConnPool) GetClient(node core.IServiceNode) (client rpccore.IConnClient, err error) {
+func (this *KafkaConnPool) GetClient(node core.IServiceNode) (client connpool.IConnClient, err error) {
 	return
 }
-func (this *KafkaConnPool) AddClient(client rpccore.IConnClient, node core.IServiceNode) (err error) {
+func (this *KafkaConnPool) AddClient(client connpool.IConnClient, node core.IServiceNode) (err error) {
 	return
 }
 func (this *KafkaConnPool) Close() (err error) {

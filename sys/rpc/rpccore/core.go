@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/connpool"
 )
 
 var (
@@ -34,15 +35,6 @@ func (k *contextKey) String() string { return "rpcx context value " + k.name }
 
 var (
 	RemoteConnContextKey = &contextKey{"remote-conn"} //远程服务连接对象
-)
-
-type ClientState int32
-
-const (
-	ClientClose      ClientState = iota //关闭状态
-	ClientShakeHands                    //握手状态
-	ClientRuning                        //运行中
-	ClientCloseing                      //关闭中
 )
 
 type ConnectType int //通信类型
@@ -103,10 +95,10 @@ const (
 
 // 系统对象
 type ISys interface {
-	ServiceNode() core.IServiceNode                                        //服务节点路径
-	Heartbeat() []byte                                                     //心跳包数据 可以复用
-	Handle(client IConnClient, message IMessage)                           //接收到远程消息
-	ShakehandsRequest(ctx context.Context, client IConnClient) (err error) //项目表rpc服务发起握手请求
+	ServiceNode() core.IServiceNode                                                 //服务节点路径
+	Heartbeat() []byte                                                              //心跳包数据 可以复用
+	Handle(client connpool.IConnClient, message IMessage)                           //接收到远程消息
+	ShakehandsRequest(ctx context.Context, client connpool.IConnClient) (err error) //项目表rpc服务发起握手请求
 }
 
 // 消息对象
@@ -153,24 +145,6 @@ type ICodec interface {
 type ISelector interface {
 	Select(ctx context.Context) []core.IServiceNode
 	UpdateServer(servers map[string]string)
-}
-
-// 连接对象池
-type IConnPool interface {
-	Start() error
-	GetClient(node core.IServiceNode) (client IConnClient, err error)
-	AddClient(client IConnClient, node core.IServiceNode) (err error)
-	Close() error
-}
-
-type IConnClient interface {
-	ServiceNode() core.IServiceNode
-	SetServiceNode(node core.IServiceNode)
-	State() ClientState
-	Start()
-	ResetHbeat()
-	Write(msg []byte) (err error)
-	Close() (err error)
 }
 
 // 连接配置信息

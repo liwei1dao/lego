@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/connpool"
 	"github.com/liwei1dao/lego/sys/rpc/protocol"
 	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
@@ -25,7 +26,7 @@ func newSys(options *Options) (sys *rpc, err error) {
 type rpc struct {
 	options  *Options
 	metadata string
-	cpools   rpccore.IConnPool
+	cpools   connpool.IConnPool
 	server   *Server
 	mutex    sync.Mutex
 	clients  map[string]*Client
@@ -89,7 +90,7 @@ func (this *rpc) Broadcast(ctx context.Context, service string, req interface{})
 }
 
 // 接收到远程消息
-func (this *rpc) Handle(client rpccore.IConnClient, message rpccore.IMessage) {
+func (this *rpc) Handle(client connpool.IConnClient, message rpccore.IMessage) {
 	defer func() {
 		if r := recover(); r != nil {
 			buf := make([]byte, 1024)

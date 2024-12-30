@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/liwei1dao/lego/core"
+	"github.com/liwei1dao/lego/sys/connpool"
 	"github.com/liwei1dao/lego/sys/log"
-	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
 
 const (
@@ -21,38 +22,35 @@ const (
 	WriteChanSize = 1024 * 1024
 )
 
-func NewTcpConnPool(sys rpccore.ISys, log log.ILogger, config *rpccore.Config) (cpool *TcpConnPool, err error) {
+func newSys(options *Options) (cpool *TcpConnPool, err error) {
 	cpool = &TcpConnPool{
-		sys:     sys,
-		log:     log,
-		config:  config,
-		clients: make(map[string]rpccore.IConnClient),
+		options: options,
+		clients: make(map[string]connpool.IConnClient),
 	}
 	return
 }
 
 type TcpConnPool struct {
-	sys         rpccore.ISys
-	log         log.ILogger
-	config      *rpccore.Config
+	options     *Options
+	host        connpool.IBodyHost
 	doneChan    chan struct{}
 	clientMapMu sync.RWMutex
-	clients     map[string]rpccore.IConnClient
+	clients     map[string]connpool.IConnClient
 }
 
 func (this *TcpConnPool) Start() (err error) {
 	var (
 		ln net.Listener
 	)
-	if ln, err = net.Listen("tcp", this.config.Endpoints[0]); err != nil {
-		this.log.Errorf("err:%v", err)
+	if ln, err = net.Listen("tcp", this.options.ListterAddr); err != nil {
+		this.options.Log.Errorf("err:%v", err)
 	}
 	go this.serveListener(ln)
-	this.log.Debug("TcpConnPool Start Listen !", log.Field{Key: "Endpoints", Value: this.config.Endpoints})
+	this.options.Log.Debug("TcpConnPool Start Listen !", log.Field{Key: "Endpoints", Value: this.options.ListterAddr})
 	return
 }
 
-func (this *TcpConnPool) GetClient(node core.IServiceNode) (client rpccore.IConnClient, err error) {
+func (this *TcpConnPool) GetClient(node core.IServiceNode) (client connpool.IConnClient, err error) {
 	var (
 		ok   bool
 		conn net.Conn
@@ -61,12 +59,12 @@ func (this *TcpConnPool) GetClient(node core.IServiceNode) (client rpccore.IConn
 	client, ok = this.clients[node.Path()]
 	this.clientMapMu.RUnlock()
 	if !ok {
-		if conn, err = net.DialTimeout("tcp", node.Addr(), this.config.ConnectionTimeout); err != nil {
-			this.log.Error("TcpConnPool GetClient Dial Err!", log.Field{Key: "add", Value: node.Addr}, log.Field{Key: "err", Value: err.Error()})
+		if conn, err = net.DialTimeout("tcp", node.Addr(), time.Duration(this.options.ConnectionTimeout)*time.Second); err != nil {
+			this.options.Log.Error("TcpConnPool GetClient Dial Err!", log.Field{Key: "add", Value: node.Addr}, log.Field{Key: "err", Value: err.Error()})
 			return
 		}
 		if client, err = this.createClient(conn, node); err != nil {
-			this.log.Error("TcpConnPool createClient Err!", log.Field{Key: "err", Value: err.Error()})
+			this.options.Log.Error("TcpConnPool createClient Err!", log.Field{Key: "err", Value: err.Error()})
 			return
 		}
 	}
@@ -74,13 +72,13 @@ func (this *TcpConnPool) GetClient(node core.IServiceNode) (client rpccore.IConn
 }
 
 // 创建远程连接客户端
-func (this *TcpConnPool) createClient(conn net.Conn, node core.IServiceNode) (client rpccore.IConnClient, err error) {
-	if client, err = newClient(this, this.config, conn); err != nil {
-		this.log.Errorln(err)
+func (this *TcpConnPool) createClient(conn net.Conn, node core.IServiceNode) (client connpool.IConnClient, err error) {
+	if client, err = newClient(this, this.options, conn); err != nil {
+		this.options.Log.Errorln(err)
 		return
 	}
-	if err = this.sys.ShakehandsRequest(context.Background(), client); err != nil {
-		this.log.Errorln(err)
+	if err = this.host.ShakehandsRequest(context.Background(), client); err != nil {
+		this.options.Log.Errorln(err)
 		return
 	}
 	this.AddClient(client, node)
@@ -94,19 +92,19 @@ func (this *TcpConnPool) serveListener(ln net.Listener) error {
 			return e
 		}
 		if tc, ok := conn.(*net.TCPConn); ok {
-			if this.config.KeepAlivePeriod > 0 {
+			if this.options.KeepAlivePeriod > 0 {
 				tc.SetKeepAlive(true)
-				tc.SetKeepAlivePeriod(this.config.KeepAlivePeriod)
+				tc.SetKeepAlivePeriod(time.Second * time.Duration(this.options.KeepAlivePeriod))
 				tc.SetLinger(10)
 			}
 		}
-		if _, err := newClient(this, this.config, conn); err != nil {
-			this.log.Error("newClient Err!", log.Field{Key: "err", Value: err.Error()})
+		if _, err := newClient(this, this.options, conn); err != nil {
+			this.options.Log.Error("newClient Err!", log.Field{Key: "err", Value: err.Error()})
 		}
 	}
 }
 
-func (this *TcpConnPool) AddClient(client rpccore.IConnClient, node core.IServiceNode) (err error) {
+func (this *TcpConnPool) AddClient(client connpool.IConnClient, node core.IServiceNode) (err error) {
 	var (
 		ok bool
 	)
@@ -114,7 +112,7 @@ func (this *TcpConnPool) AddClient(client rpccore.IConnClient, node core.IServic
 	_, ok = this.clients[node.Path()]
 	this.clientMapMu.RUnlock()
 	if !ok {
-		this.log.Debug("AddClient Succ!", log.Field{Key: "node", Value: node})
+		this.options.Log.Debug("AddClient Succ!", log.Field{Key: "node", Value: node})
 		client.SetServiceNode(node)
 		this.clientMapMu.Lock()
 		this.clients[client.ServiceNode().Path()] = client
@@ -122,14 +120,14 @@ func (this *TcpConnPool) AddClient(client rpccore.IConnClient, node core.IServic
 		client.Start()
 	} else {
 		err = fmt.Errorf("%v client already exists", node)
-		this.log.Errorln(err)
+		this.options.Log.Errorln(err)
 	}
 	return
 }
 
 func (this *TcpConnPool) CloseClient(node core.IServiceNode) (err error) {
 	var (
-		client rpccore.IConnClient
+		client connpool.IConnClient
 		ok     bool
 	)
 	this.clientMapMu.RLock()
