@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/discovery"
 	"github.com/liwei1dao/lego/sys/discovery/dcore"
 	"github.com/liwei1dao/lego/sys/log"
@@ -17,10 +18,8 @@ import (
 	"github.com/liwei1dao/lego/sys/rpc/rpccore"
 )
 
-func NewXClient(service string, selector rpccore.ISelector, discovery discovery.IServiceDiscovery, cpools rpccore.IConnPool) IClient {
+func NewXClient(service string, selectMode SelectMode, discovery discovery.IServiceDiscovery, cpools rpccore.IConnPool) IClient {
 	client := &Client{
-
-		selector:  selector,
 		discovery: discovery,
 		service:   service,
 	}
@@ -36,7 +35,9 @@ func NewXClient(service string, selector rpccore.ISelector, discovery discovery.
 	filterByStateAndGroup(servers)
 
 	client.servers = servers
-
+	if selectMode != Closest && selectMode != SelectByUser {
+		client.selector = newSelector(selectMode, servers)
+	}
 	ch := client.discovery.WatchService()
 	if ch != nil {
 		client.ch = ch
@@ -53,7 +54,7 @@ type Client struct {
 	servers   map[string]string
 	cpools    rpccore.IConnPool
 	discovery discovery.IServiceDiscovery
-	selector  rpccore.ISelector
+	selector  ISelector
 	ch        chan []*dcore.KV
 	mutex     sync.Mutex
 	seq       uint64
@@ -138,12 +139,19 @@ func (this *Client) call(ctx context.Context, args interface{}, reply interface{
 }
 
 func (this *Client) getclient(ctx context.Context) (client rpccore.IConnClient, err error) {
-	nodes := this.selector.Select(ctx)
-	if nodes == nil || len(nodes) == 0 {
+	var (
+		values string
+		node   core.IServiceNode
+	)
+	values = this.selector.Select(ctx, this.service, nil)
+	if len(values) == 0 {
 		err = fmt.Errorf("no found any service:%s", this.service)
 		return
 	}
-	if client, err = this.cpools.GetClient(nodes[0]); err != nil {
+	if node, err = core.NewServiceNode(values); err != nil {
+		return
+	}
+	if client, err = this.cpools.GetClient(node); err != nil {
 		return
 	}
 	return

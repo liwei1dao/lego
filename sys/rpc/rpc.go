@@ -25,6 +25,7 @@ func newSys(options *Options) (sys *rpc, err error) {
 type rpc struct {
 	options  *Options
 	metadata string
+	cpools   rpccore.IConnPool
 	server   *Server
 	mutex    sync.Mutex
 	clients  map[string]*Client
@@ -53,7 +54,7 @@ func (this *rpc) Register(name string, fn interface{}) (err error) {
 }
 
 // 注销服务
-func (this *rpc) UnRegister(name string) (err error) {
+func (this *rpc) UnRegister() (err error) {
 	err = this.server.UnregisterAll()
 	return
 }
@@ -78,13 +79,22 @@ func (this *rpc) Go(ctx context.Context, service string, req interface{}, reply 
 	return
 }
 
+func (this *rpc) Broadcast(ctx context.Context, service string, req interface{}) (err error) {
+	if client, ok := this.clients[service]; ok {
+		err = client.Broadcast(ctx, req)
+	} else {
+
+	}
+	return
+}
+
 // 接收到远程消息
 func (this *rpc) Handle(client rpccore.IConnClient, message rpccore.IMessage) {
 	defer func() {
 		if r := recover(); r != nil {
 			buf := make([]byte, 1024)
 			buf = buf[:runtime.Stack(buf, true)]
-			this.options.Log.Errorf("failed to handle the request: %v， stacks: %s", r, buf)
+			this.options.Log.Errorf("failed to handle the request: %v,stacks: %s", r, buf)
 		}
 	}()
 	ctx := rpccore.WithValue(context.Background(), rpccore.RemoteConnContextKey, client)
@@ -94,7 +104,7 @@ func (this *rpc) Handle(client rpccore.IConnClient, message rpccore.IMessage) {
 			client.ResetHbeat()
 			return
 		}
-		if message.IsShakeHands() {
+		if message.IsShakeHands() { //握手
 			this.ShakehandsResponse(ctx, client, message)
 			return
 		}
@@ -120,5 +130,3 @@ func (this *rpc) Handle(client rpccore.IConnClient, message rpccore.IMessage) {
 		}
 	}
 }
-
-// 执行远程服务---------------------------------------------------------------------------------------

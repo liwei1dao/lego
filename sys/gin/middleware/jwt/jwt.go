@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/gin/engine"
 )
 
@@ -57,27 +56,27 @@ func (this *JWT) JwtMiddleware() engine.HandlerFunc {
 		tokenStr := c.Request.Header.Get(this.tokenKey)
 		//用户不存在
 		if tokenStr == "" {
-			c.JSON(http.StatusOK, engine.H{"code": core.ErrorCode_NoLogin, "msg": "用户不存在"})
+			c.JSON(http.StatusOK, engine.H{"code": -1, "msg": "用户不存在"})
 			c.Abort() //阻止执行
 			return
 		}
 		//token格式错误
 		tokenSlice := strings.Split(tokenStr, ".")
 		if len(tokenSlice) != 3 {
-			c.JSON(http.StatusOK, engine.H{"code": core.ErrorCode_NoLogin, "msg": "token格式错误"})
+			c.JSON(http.StatusOK, engine.H{"code": -1, "msg": "token格式错误"})
 			c.Abort() //阻止执行
 			return
 		}
 		//验证token
 		tokenStruck, ok := this.CheckToken(tokenStr)
 		if !ok {
-			c.JSON(http.StatusOK, engine.H{"code": core.ErrorCode_NoLogin, "msg": "token不正确"})
+			c.JSON(http.StatusOK, engine.H{"code": -1, "msg": "token不正确"})
 			c.Abort() //阻止执行
 			return
 		}
 		//token超时
 		if time.Now().Unix() > tokenStruck.ExpiresAt {
-			c.JSON(http.StatusOK, engine.H{"code": core.ErrorCode_NoLogin, "msg": "token过期"})
+			c.JSON(http.StatusOK, engine.H{"code": -1, "msg": "token过期"})
 			c.Abort() //阻止执行
 			return
 		}
