@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/liwei1dao/lego/core"
-	"github.com/liwei1dao/lego/sys/rpc/rpccore"
+	"github.com/liwei1dao/lego/sys/rpc"
 	"github.com/liwei1dao/lego/utils/codec"
 	"github.com/liwei1dao/lego/utils/pools"
 	"github.com/smallnest/rpcx/util"
@@ -14,9 +14,9 @@ import (
 
 var bufferPool = util.NewLimitedPool(512, 4096)
 
-var Compressors = map[rpccore.CompressType]Compressor{
-	rpccore.CompressNone: &RawDataCompressor{},
-	rpccore.CompressGzip: &GzipCompressor{},
+var Compressors = map[rpc.CompressType]Compressor{
+	rpc.CompressNone: &RawDataCompressor{},
+	rpc.CompressGzip: &GzipCompressor{},
 }
 
 var (
@@ -161,10 +161,10 @@ func (this *Message) Decode(r io.Reader) error {
 	n = n + 4
 	this.payload = data[n:]
 
-	if this.CompressType() != rpccore.CompressNone {
+	if this.CompressType() != rpc.CompressNone {
 		compressor := Compressors[this.CompressType()]
 		if compressor == nil {
-			return rpccore.ErrUnsupportedCompressor
+			return rpc.ErrUnsupportedCompressor
 		}
 		this.payload, err = compressor.Unzip(this.payload)
 		if err != nil {
@@ -180,10 +180,10 @@ func (this *Message) Reset() {
 	this.payload = []byte{}
 	this.service = ""
 }
-func (this Message) Clone() rpccore.IMessage {
+func (this Message) Clone() rpc.IMessage {
 	header := *this.Header
 	c := GetPooledMsg()
-	header.SetCompressType(rpccore.CompressNone)
+	header.SetCompressType(rpc.CompressNone)
 	c.Header = &header
 	c.service = this.service
 	return c
@@ -198,14 +198,14 @@ func (this *Message) EncodeSlicePointer() *[]byte {
 	// fml := len(fdata)
 	var err error
 	payload := this.payload
-	if this.CompressType() != rpccore.CompressNone {
+	if this.CompressType() != rpc.CompressNone {
 		compressor := Compressors[this.CompressType()]
 		if compressor == nil {
-			this.SetCompressType(rpccore.CompressNone)
+			this.SetCompressType(rpc.CompressNone)
 		} else {
 			payload, err = compressor.Zip(this.payload)
 			if err != nil {
-				this.SetCompressType(rpccore.CompressNone)
+				this.SetCompressType(rpc.CompressNone)
 				payload = this.payload
 			}
 		}
@@ -259,10 +259,10 @@ func (this *Message) WriteTo(w io.Writer) (int64, error) {
 	// fml := len(fdata)
 
 	payload := this.payload
-	if this.CompressType() != rpccore.CompressNone {
+	if this.CompressType() != rpc.CompressNone {
 		compressor := Compressors[this.CompressType()]
 		if compressor == nil {
-			return n, rpccore.ErrUnsupportedCompressor
+			return n, rpc.ErrUnsupportedCompressor
 		}
 		payload, err = compressor.Zip(this.payload)
 		if err != nil {
@@ -343,7 +343,7 @@ func decodeMetadata(l uint32, data []byte) (map[string]string, error) {
 		sl := binary.BigEndian.Uint32(data[n : n+4])
 		n = n + 4
 		if n+sl > l-4 {
-			return m, rpccore.ErrMetaKVMissing
+			return m, rpc.ErrMetaKVMissing
 		}
 		k := string(data[n : n+sl])
 		n = n + sl
@@ -352,7 +352,7 @@ func decodeMetadata(l uint32, data []byte) (map[string]string, error) {
 		sl = binary.BigEndian.Uint32(data[n : n+4])
 		n = n + 4
 		if n+sl > l {
-			return m, rpccore.ErrMetaKVMissing
+			return m, rpc.ErrMetaKVMissing
 		}
 		v := string(data[n : n+sl])
 		n = n + sl

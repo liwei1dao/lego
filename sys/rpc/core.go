@@ -2,64 +2,128 @@ package rpc
 
 import (
 	"context"
-)
+	"errors"
+	"io"
 
-type (
-	ISys interface {
-		Start() (err error)
-		Close() (err error)
-		Register(name string, fn interface{}) (err error)
-		UnRegister() (err error)
-		Call(ctx context.Context, service string, args interface{}, reply interface{}) (err error)                  //同步调用 等待结果
-		Go(ctx context.Context, service string, args interface{}, reply interface{}) (call *MessageCall, err error) //异步调用 异步返回
-		Broadcast(ctx context.Context, service string, args interface{}) (err error)
-	}
-
-	IClient interface {
-	}
+	"github.com/liwei1dao/lego/core"
 )
 
 var (
-	defsys ISys
+	ErrServerClosed          = errors.New("http: Server closed")                                   //服务关闭
+	ErrMetaKVMissing         = errors.New("wrong metadata lines. some keys or values are missing") //解析Meta对象错误
+	ErrUnsupportedCompressor = errors.New("unsupported compressor")                                //解压缩错误
+	ErrXClientNoServer       = errors.New("can not found any server")
+	ErrUnsupportedCodec      = errors.New("unsupported codec")
 )
 
-func OnInit(config map[string]interface{}, opt ...Option) (err error) {
-	var option *Options
-	if option, err = newOptions(config, opt...); err != nil {
-		return
-	}
-	defsys, err = newSys(option)
-	return
+// 消息类型
+type MessageType byte
+
+const (
+	Request  MessageType = iota //请求
+	Response                    //回应
+)
+
+// 消息压缩类型
+type CompressType byte
+
+const (
+	CompressNone CompressType = iota //无压缩
+	CompressGzip                     //gzip压缩
+)
+
+// 消息状态
+type MessageStatusType byte
+
+const (
+	Normal MessageStatusType = iota //正常消息
+	Error                           //错误消息
+)
+
+// 消息序列化方式
+type SerializeType byte
+
+const (
+	// JSON for payload.
+	JSON SerializeType = iota
+	// ProtoBuffer for payload.
+	ProtoBuffer
+	// MsgPack for payload
+	MsgPack
+	// Thrift
+	// Thrift for payload
+	Thrift
+)
+
+// 消息对象
+type IMessage interface {
+	Clone() IMessage
+	CheckMagicNumber() bool
+	Version() byte
+	SetVersion(v byte)
+	MessageType() MessageType
+	SetMessageType(mt MessageType)
+	IsShakeHands() bool
+	SetShakeHands(sh bool)
+	IsHeartbeat() bool
+	SetHeartbeat(hb bool)
+	CompressType() CompressType
+	SetCompressType(ct CompressType)
+	MessageStatusType() MessageStatusType
+	SetMessageStatusType(mt MessageStatusType)
+	IsOneway() bool
+	SetOneway(oneway bool)
+	SerializeType() SerializeType
+	SetSerializeType(st SerializeType)
+	Seq() uint64
+	SetSeq(seq uint64)
+	EncodeSlicePointer() *[]byte
+	GetService() string
+	SetService(v string)
+	From() core.IServiceNode
+	SetFrom(v core.IServiceNode)
+	Metadata() map[string]string
+	SetMetadata(map[string]string)
+	Payload() []byte
+	SetPayload(b []byte)
+	PrintHeader() string
 }
 
-func NewSys(opt ...Option) (sys ISys, err error) {
-	var option *Options
-	if option, err = newOptionsByOption(opt...); err != nil {
-		return
-	}
-	sys, err = newSys(option)
-	return
+type KV struct {
+	Key   string
+	Value string
 }
 
-func Start() (err error) {
-	return defsys.Start()
-}
-func Close() (err error) {
-	return defsys.Close()
+type ClientState int32
+
+const (
+	ClientClose      ClientState = iota //关闭状态
+	ClientShakeHands                    //握手状态
+	ClientRuning                        //运行中
+	ClientCloseing                      //关闭中
+)
+
+type IConnClient interface {
+	ServiceNode() core.IServiceNode
+	SetServiceNode(node core.IServiceNode)
+	State() ClientState
+	Start()
+	ResetHbeat()
+	Write(msg []byte) (err error)
+	Close() (err error)
 }
 
-func Register(name string, fn interface{}) error {
-	return defsys.Register(name, fn)
+// 连接对象池
+type IConnPool interface {
+	Start(host IBodyHost) error
+	GetClient(node core.IServiceNode) (client IConnClient, err error)
+	AddClient(client IConnClient, node core.IServiceNode) (err error)
+	Close() error
 }
-func UnRegister() {
-	defsys.UnRegister()
-}
-func Call(ctx context.Context, service string, args interface{}, reply interface{}) (err error) {
-	return defsys.Call(ctx, service, args, reply)
-}
-func Go(ctx context.Context, service string, args interface{}, reply interface{}) (call *MessageCall, err error) {
-	return defsys.Go(ctx, service, args, reply)
-}
-func Broadcast(ctx context.Context, service string, args interface{}) (err error) {
-	return defsys.Broadcast(ctx, service, args)
+
+// 主机对象
+type IBodyHost interface {
+	ReadProtocol(client IConnClient, r io.Reader) (err error)
+	Heartbeat() (buff []byte)
+	ShakehandsRequest(ctx context.Context, client IConnClient) (err error)
 }
