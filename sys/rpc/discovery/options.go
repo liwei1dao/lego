@@ -5,7 +5,6 @@ import (
 
 	"github.com/liwei1dao/lego/core"
 	"github.com/liwei1dao/lego/sys/log"
-	"github.com/liwei1dao/lego/sys/rpc/discovery/dcore"
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
 
@@ -32,7 +31,7 @@ type Options struct {
 	UpdateInterval time.Duration     //更新间隔
 	StoreType      StoreType         //第三方服务类型 支持 Consul  Zookeeper Redis
 	Endpoints      []string          //服务节点集合
-	Config         *dcore.Config     //连接配置
+	Config         *Config           //连接配置
 	Debug          bool              //日志是否开启
 	Log            log.ILogger
 }
@@ -62,7 +61,7 @@ func SetEndpoints(v []string) Option {
 		o.Endpoints = v
 	}
 }
-func SetConfig(v *dcore.Config) Option {
+func SetConfig(v *Config) Option {
 	return func(o *Options) {
 		o.Config = v
 	}
@@ -103,7 +102,7 @@ func newOptionsByOption(opts ...Option) (options *Options, err error) {
 		o(options)
 	}
 	if options.Config == nil {
-		options.Config = &dcore.Config{
+		options.Config = &Config{
 			ConnectionTimeout: 5 * time.Second,
 		}
 	}

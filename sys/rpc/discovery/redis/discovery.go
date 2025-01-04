@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/sys/discovery/dcore"
+	"github.com/liwei1dao/lego/sys/rpc"
 	"github.com/smallnest/rpcx/client"
 	"github.com/smallnest/rpcx/log"
 )
@@ -18,7 +19,7 @@ func init() {
 // It always returns the registered servers in redis.
 type RedisDiscovery struct {
 	basePath string
-	kv       dcore.IStore
+	kv       rpc.IStore
 	pairsMu  sync.RWMutex
 	pairs    []*client.KVPair
 	chans    []chan []*client.KVPair

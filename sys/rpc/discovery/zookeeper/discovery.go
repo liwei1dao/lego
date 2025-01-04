@@ -6,19 +6,16 @@ import (
 	"time"
 
 	"github.com/liwei1dao/lego/sys/rpc"
-	"github.com/liwei1dao/lego/sys/rpc/discovery/dcore"
+	"github.com/liwei1dao/lego/sys/rpc/discovery"
 	"github.com/smallnest/rpcx/log"
 )
-
-func init() {
-	Register()
-}
 
 // ZookeeperDiscovery is a zoopkeer service dcore.
 // It always returns the registered servers in zookeeper.
 type ZookeeperDiscovery struct {
+	options  *Options
 	basePath string
-	kv       dcore.IStore
+	kv       discovery.IStore
 	pairsMu  sync.RWMutex
 	pairs    []*rpc.KV
 	chans    []chan []*rpc.KV
@@ -27,13 +24,13 @@ type ZookeeperDiscovery struct {
 	// -1 means it always retry to watch until zookeeper is ok, 0 means no retry.
 	RetriesAfterWatchFailed int
 
-	filter dcore.ServiceDiscoveryFilter
+	filter discovery.ServiceDiscoveryFilter
 
 	stopCh chan struct{}
 }
 
 // NewZookeeperDiscovery returns a new ZookeeperDiscovery.
-func NewZookeeperDiscovery(basePath string, servicePath string, zkAddr []string, options *dcore.Config) (*ZookeeperDiscovery, error) {
+func NewZookeeperDiscovery(basePath string, servicePath string, options *Options) (*ZookeeperDiscovery, error) {
 	if basePath[0] == '/' {
 		basePath = basePath[1:]
 	}
@@ -42,7 +39,7 @@ func NewZookeeperDiscovery(basePath string, servicePath string, zkAddr []string,
 		basePath = basePath[:len(basePath)-1]
 	}
 
-	kv, err := dcore.NewStore(dcore.ZK, zkAddr, options)
+	kv, err := NewStore(options)
 	if err != nil {
 		log.Infof("cannot create store: %v", err)
 		return nil, err
@@ -52,7 +49,7 @@ func NewZookeeperDiscovery(basePath string, servicePath string, zkAddr []string,
 }
 
 // NewZookeeperDiscoveryWithStore returns a new ZookeeperDiscovery with specified store.
-func NewZookeeperDiscoveryWithStore(basePath string, kv dcore.IStore) (*ZookeeperDiscovery, error) {
+func NewZookeeperDiscoveryWithStore(basePath string, kv discovery.IStore) (*ZookeeperDiscovery, error) {
 	if basePath[0] == '/' {
 		basePath = basePath[1:]
 	}
@@ -83,7 +80,7 @@ func NewZookeeperDiscoveryWithStore(basePath string, kv dcore.IStore) (*Zookeepe
 }
 
 // NewZookeeperDiscoveryTemplate returns a new ZookeeperDiscovery template.
-func NewZookeeperDiscoveryTemplate(basePath string, zkAddr []string, options *dcore.Config) (*ZookeeperDiscovery, error) {
+func NewZookeeperDiscoveryTemplate(basePath string, options *Options) (*ZookeeperDiscovery, error) {
 	if basePath[0] == '/' {
 		basePath = basePath[1:]
 	}
@@ -92,7 +89,7 @@ func NewZookeeperDiscoveryTemplate(basePath string, zkAddr []string, options *dc
 		basePath = basePath[:len(basePath)-1]
 	}
 
-	kv, err := dcore.NewStore(dcore.ZK, zkAddr, options)
+	kv, err := NewStore(options)
 	if err != nil {
 		log.Infof("cannot create store: %v", err)
 		return nil, err
@@ -102,12 +99,12 @@ func NewZookeeperDiscoveryTemplate(basePath string, zkAddr []string, options *dc
 }
 
 // Clone clones this ServiceDiscovery with new servicePath.
-func (d *ZookeeperDiscovery) Clone(servicePath string) (dcore.ServiceDiscovery, error) {
+func (d *ZookeeperDiscovery) Clone(servicePath string) (discovery.ServiceDiscovery, error) {
 	return NewZookeeperDiscoveryWithStore(d.basePath+"/"+servicePath, d.kv)
 }
 
 // SetFilter sets the filer.
-func (d *ZookeeperDiscovery) SetFilter(filter dcore.ServiceDiscoveryFilter) {
+func (d *ZookeeperDiscovery) SetFilter(filter discovery.ServiceDiscoveryFilter) {
 	d.filter = filter
 }
 
@@ -152,7 +149,7 @@ func (d *ZookeeperDiscovery) watch() {
 
 	for {
 		var err error
-		var c <-chan []*dcore.KVPair
+		var c <-chan []*discovery.KVPair
 		var tempDelay time.Duration
 
 		retry := d.RetriesAfterWatchFailed
