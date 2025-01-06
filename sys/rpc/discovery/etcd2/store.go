@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/liwei1dao/lego/sys/discovery/dcore"
+	"github.com/liwei1dao/lego/sys/rpc/discovery"
 	"github.com/rpcxio/libkv/store"
 	etcd "go.etcd.io/etcd/client/v2"
 )
@@ -60,14 +60,9 @@ const (
 	defaultUpdateTime = 5 * time.Second
 )
 
-// Register registers etcd to libkv
-func Register() {
-	dcore.AddStore(dcore.ETCD, New)
-}
-
 // New creates a new Etcd client given a list
 // of endpoints and an optional tls config
-func New(addrs []string, options *dcore.Config) (dcore.IStore, error) {
+func NewStore(options *Options) (discovery.IStore, error) {
 	s := &Etcd{}
 
 	var (
@@ -75,7 +70,7 @@ func New(addrs []string, options *dcore.Config) (dcore.IStore, error) {
 		err     error
 	)
 
-	entries = store.CreateEndpoints(addrs, "http")
+	entries = store.CreateEndpoints(options.EtcdServers, "http")
 	cfg := &etcd.Config{
 		Endpoints:               entries,
 		Transport:               etcd.DefaultTransport,
@@ -85,7 +80,7 @@ func New(addrs []string, options *dcore.Config) (dcore.IStore, error) {
 	// Set options
 	if options != nil {
 		if options.TLS != nil {
-			setTLS(cfg, options.TLS, addrs)
+			setTLS(cfg, options.TLS, options.EtcdServers)
 		}
 		if options.ConnectionTimeout != 0 {
 			setTimeout(cfg, options.ConnectionTimeout)
@@ -166,7 +161,7 @@ func keyNotFound(err error) bool {
 
 // Get the value at "key", returns the last modified
 // index to use in conjunction to Atomic calls
-func (s *Etcd) Get(key string) (pair *dcore.KVPair, err error) {
+func (s *Etcd) Get(key string) (pair *discovery.KVPair, err error) {
 	getOpts := &etcd.GetOptions{
 		Quorum: true,
 	}
@@ -179,7 +174,7 @@ func (s *Etcd) Get(key string) (pair *dcore.KVPair, err error) {
 		return nil, err
 	}
 
-	pair = &dcore.KVPair{
+	pair = &discovery.KVPair{
 		Key:       key,
 		Value:     []byte(result.Node.Value),
 		LastIndex: result.Node.ModifiedIndex,
@@ -189,7 +184,7 @@ func (s *Etcd) Get(key string) (pair *dcore.KVPair, err error) {
 }
 
 // Put a value at "key"
-func (s *Etcd) Put(key string, value []byte, opts *dcore.WriteOptions) error {
+func (s *Etcd) Put(key string, value []byte, opts *discovery.WriteOptions) error {
 	setOpts := &etcd.SetOptions{}
 
 	// Set options
@@ -232,12 +227,12 @@ func (s *Etcd) Exists(key string) (bool, error) {
 // on errors. Upon creation, the current value will first
 // be sent to the channel. Providing a non-nil stopCh can
 // be used to stop watching.
-func (s *Etcd) Watch(key string, stopCh <-chan struct{}) (<-chan *dcore.KVPair, error) {
+func (s *Etcd) Watch(key string, stopCh <-chan struct{}) (<-chan *discovery.KVPair, error) {
 	opts := &etcd.WatcherOptions{Recursive: false}
 	watcher := s.client.Watcher(s.normalize(key), opts)
 
 	// watchCh is sending back events to the caller
-	watchCh := make(chan *dcore.KVPair)
+	watchCh := make(chan *discovery.KVPair)
 
 	go func() {
 		defer close(watchCh)
@@ -265,7 +260,7 @@ func (s *Etcd) Watch(key string, stopCh <-chan struct{}) (<-chan *dcore.KVPair, 
 				return
 			}
 
-			watchCh <- &dcore.KVPair{
+			watchCh <- &discovery.KVPair{
 				Key:       key,
 				Value:     []byte(result.Node.Value),
 				LastIndex: result.Node.ModifiedIndex,
@@ -281,12 +276,12 @@ func (s *Etcd) Watch(key string, stopCh <-chan struct{}) (<-chan *dcore.KVPair, 
 // on errors. Upon creating a watch, the current childs values
 // will be sent to the channel. Providing a non-nil stopCh can
 // be used to stop watching.
-func (s *Etcd) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*dcore.KVPair, error) {
+func (s *Etcd) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*discovery.KVPair, error) {
 	watchOpts := &etcd.WatcherOptions{Recursive: true}
 	watcher := s.client.Watcher(s.normalize(directory), watchOpts)
 
 	// watchCh is sending back events to the caller
-	watchCh := make(chan []*dcore.KVPair)
+	watchCh := make(chan []*discovery.KVPair)
 
 	go func() {
 		defer close(watchCh)
@@ -328,7 +323,7 @@ func (s *Etcd) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*dc
 
 // AtomicPut puts a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Etcd) AtomicPut(key string, value []byte, previous *dcore.KVPair, opts *dcore.WriteOptions) (bool, *dcore.KVPair, error) {
+func (s *Etcd) AtomicPut(key string, value []byte, previous *discovery.KVPair, opts *discovery.WriteOptions) (bool, *discovery.KVPair, error) {
 	var (
 		meta *etcd.Response
 		err  error
@@ -367,7 +362,7 @@ func (s *Etcd) AtomicPut(key string, value []byte, previous *dcore.KVPair, opts 
 		return false, nil, err
 	}
 
-	updated := &dcore.KVPair{
+	updated := &discovery.KVPair{
 		Key:       key,
 		Value:     value,
 		LastIndex: meta.Node.ModifiedIndex,
@@ -379,7 +374,7 @@ func (s *Etcd) AtomicPut(key string, value []byte, previous *dcore.KVPair, opts 
 // AtomicDelete deletes a value at "key" if the key
 // has not been modified in the meantime, throws an
 // error if this is the case
-func (s *Etcd) AtomicDelete(key string, previous *dcore.KVPair) (bool, error) {
+func (s *Etcd) AtomicDelete(key string, previous *discovery.KVPair) (bool, error) {
 	if previous == nil {
 		return false, store.ErrPreviousNotSpecified
 	}
@@ -412,7 +407,7 @@ func (s *Etcd) AtomicDelete(key string, previous *dcore.KVPair) (bool, error) {
 }
 
 // List child nodes of a given directory
-func (s *Etcd) List(directory string) ([]*dcore.KVPair, error) {
+func (s *Etcd) List(directory string) ([]*discovery.KVPair, error) {
 	getOpts := &etcd.GetOptions{
 		Quorum:    true,
 		Recursive: true,
@@ -427,9 +422,9 @@ func (s *Etcd) List(directory string) ([]*dcore.KVPair, error) {
 		return nil, err
 	}
 
-	kv := []*dcore.KVPair{}
+	kv := []*discovery.KVPair{}
 	for _, n := range resp.Node.Nodes {
-		kv = append(kv, &dcore.KVPair{
+		kv = append(kv, &discovery.KVPair{
 			Key:       n.Key,
 			Value:     []byte(n.Value),
 			LastIndex: n.ModifiedIndex,
@@ -453,7 +448,7 @@ func (s *Etcd) DeleteTree(directory string) error {
 
 // NewLock returns a handle to a lock struct which can
 // be used to provide mutual exclusion on a key
-func (s *Etcd) NewLock(key string, options *dcore.LockOptions) (lock dcore.Locker, err error) {
+func (s *Etcd) NewLock(key string, options *discovery.LockOptions) (lock discovery.Locker, err error) {
 	var value string
 	ttl := defaultLockTTL
 	renewCh := make(chan struct{})

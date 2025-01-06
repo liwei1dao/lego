@@ -1,8 +1,9 @@
 package discovery
 
-import "time"
-
-
+import (
+	"strings"
+	"time"
+)
 
 type KVPair struct {
 	Key       string
@@ -37,4 +38,19 @@ type IStore interface {
 	AtomicPut(key string, value []byte, previous *KVPair, options *WriteOptions) (bool, *KVPair, error)
 	AtomicDelete(key string, previous *KVPair) (bool, error)
 	Close()
+}
+
+func SplitKey(key string) (path []string) {
+	if strings.Contains(key, "/") {
+		path = strings.Split(key, "/")
+	} else {
+		path = []string{key}
+	}
+	return path
+}
+func join(parts []string) string {
+	return strings.Join(parts, "/")
+}
+func Normalize(key string) string {
+	return "/" + join(SplitKey(key))
 }

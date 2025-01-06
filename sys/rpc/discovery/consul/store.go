@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/liwei1dao/lego/sys/discovery/dcore"
 	"github.com/liwei1dao/lego/sys/log"
+	"github.com/liwei1dao/lego/sys/rpc/discovery"
 )
 
 const (
@@ -41,14 +41,14 @@ var (
 	ErrSessionRenew = errors.New("cannot set or renew session for ttl, unable to operate on sessions")
 )
 
-func New(address []string, options *dcore.Config) (store *ConsulStore, err error) {
-	if len(address) > 1 {
+func NewStore(options *Options) (store discovery.IStore, err error) {
+	if len(options.ConsulServers) > 1 {
 		return nil, ErrMultipleEndpointsUnsupported
 	}
 
 	config := api.DefaultConfig()
 	config.HttpClient = http.DefaultClient
-	config.Address = address[0]
+	config.Address = options.ConsulServers[0]
 	config.Scheme = "http"
 	if options != nil {
 		if options.TLS != nil {
@@ -78,7 +78,7 @@ type ConsulStore struct {
 	client *api.Client
 }
 
-func (this *ConsulStore) Get(key string) (*dcore.KVPair, error) {
+func (this *ConsulStore) Get(key string) (*discovery.KVPair, error) {
 	options := &api.QueryOptions{
 		AllowStale:        false,
 		RequireConsistent: true,
@@ -91,12 +91,12 @@ func (this *ConsulStore) Get(key string) (*dcore.KVPair, error) {
 
 	// If pair is nil then the key does not exist
 	if pair == nil {
-		return nil, dcore.ErrKeyNotFound
+		return nil, discovery.ErrKeyNotFound
 	}
 
-	return &dcore.KVPair{Key: pair.Key, Value: pair.Value, LastIndex: meta.LastIndex}, nil
+	return &discovery.KVPair{Key: pair.Key, Value: pair.Value, LastIndex: meta.LastIndex}, nil
 }
-func (this *ConsulStore) Put(key string, value []byte, opts *dcore.WriteOptions) error {
+func (this *ConsulStore) Put(key string, value []byte, opts *discovery.WriteOptions) error {
 	key = this.normalize(key)
 
 	p := &api.KVPair{
@@ -133,29 +133,29 @@ func (this *ConsulStore) Delete(key string) error {
 func (this *ConsulStore) Exists(key string) (bool, error) {
 	_, err := this.Get(key)
 	if err != nil {
-		if err == dcore.ErrKeyNotFound {
+		if err == discovery.ErrKeyNotFound {
 			return false, nil
 		}
 		return false, err
 	}
 	return true, nil
 }
-func (this *ConsulStore) List(directory string) ([]*dcore.KVPair, error) {
+func (this *ConsulStore) List(directory string) ([]*discovery.KVPair, error) {
 	pairs, _, err := this.client.KV().List(this.normalize(directory), &api.QueryOptions{WaitTime: 5 * time.Second})
 	if err != nil {
 		return nil, err
 	}
 	if len(pairs) == 0 {
-		return nil, dcore.ErrKeyNotFound
+		return nil, discovery.ErrKeyNotFound
 	}
 
-	kv := []*dcore.KVPair{}
+	kv := []*discovery.KVPair{}
 
 	for _, pair := range pairs {
 		if pair.Key == directory {
 			continue
 		}
-		kv = append(kv, &dcore.KVPair{
+		kv = append(kv, &discovery.KVPair{
 			Key:       pair.Key,
 			Value:     pair.Value,
 			LastIndex: pair.ModifyIndex,
@@ -171,9 +171,9 @@ func (this *ConsulStore) DeleteTree(directory string) error {
 	_, err := this.client.KV().DeleteTree(this.normalize(directory), nil)
 	return err
 }
-func (this *ConsulStore) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*dcore.KVPair, error) {
+func (this *ConsulStore) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*discovery.KVPair, error) {
 	kv := this.client.KV()
-	watchCh := make(chan []*dcore.KVPair)
+	watchCh := make(chan []*discovery.KVPair)
 
 	go func() {
 		defer close(watchCh)
@@ -203,12 +203,12 @@ func (this *ConsulStore) WatchTree(directory string, stopCh <-chan struct{}) (<-
 			opts.WaitIndex = meta.LastIndex
 
 			// Return children KV pairs to the channel
-			kvpairs := []*dcore.KVPair{}
+			kvpairs := []*discovery.KVPair{}
 			for _, pair := range pairs {
 				if pair.Key == directory {
 					continue
 				}
-				kvpairs = append(kvpairs, &dcore.KVPair{
+				kvpairs = append(kvpairs, &discovery.KVPair{
 					Key:       pair.Key,
 					Value:     pair.Value,
 					LastIndex: pair.ModifyIndex,
@@ -223,8 +223,20 @@ func (this *ConsulStore) WatchTree(directory string, stopCh <-chan struct{}) (<-
 func (this *ConsulStore) Close() {
 	return
 }
+func (this *ConsulStore) AtomicDelete(key string, previous *discovery.KVPair) (bool, error) {
+	return true, nil
+}
+
+func (this *ConsulStore) AtomicPut(key string, value []byte, previous *discovery.KVPair, opts *discovery.WriteOptions) (bool, *discovery.KVPair, error) {
+	return false, nil, nil
+}
+
+func (this *ConsulStore) NewLock(key string, options *discovery.LockOptions) (lock discovery.Locker, err error) {
+	return nil, nil
+}
+
 func (this *ConsulStore) normalize(key string) string {
-	key = dcore.Normalize(key)
+	key = discovery.Normalize(key)
 	return strings.TrimPrefix(key, "/")
 }
 func (this *ConsulStore) renewSession(pair *api.KVPair, ttl time.Duration) error {

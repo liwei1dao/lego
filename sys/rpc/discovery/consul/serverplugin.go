@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/liwei1dao/lego/sys/discovery/dcore"
+	"github.com/liwei1dao/lego/sys/rpc/discovery"
 	metrics "github.com/rcrowley/go-metrics"
 	"github.com/rpcxio/libkv/store/consul"
 	"github.com/smallnest/rpcx/log"
@@ -36,8 +36,8 @@ type ConsulRegisterPlugin struct {
 	UpdateInterval time.Duration
 	Expired        time.Duration
 
-	Options *dcore.Config
-	kv      dcore.IStore
+	Options *Options
+	kv      discovery.IStore
 
 	dying chan struct{}
 	done  chan struct{}
@@ -75,7 +75,7 @@ func WithConsulUpdateInterval(updateInterval time.Duration) ConsulOpt {
 	}
 }
 
-func WithConsulOptions(options *dcore.Config) ConsulOpt {
+func WithConsulOptions(options *Options) ConsulOpt {
 	return func(o *ConsulRegisterPlugin) {
 		o.Options = options
 	}
@@ -103,7 +103,7 @@ func (p *ConsulRegisterPlugin) Start() error {
 	}
 
 	if p.kv == nil {
-		kv, err := dcore.NewStore(dcore.CONSUL, p.ConsulServers, p.Options)
+		kv, err := NewStore(p.Options)
 		if err != nil {
 			log.Errorf("cannot create consul registry: %v", err)
 			close(p.done)
@@ -116,7 +116,7 @@ func (p *ConsulRegisterPlugin) Start() error {
 		p.BasePath = p.BasePath[1:]
 	}
 
-	err := p.kv.Put(p.BasePath, []byte("rpcx_path"), &dcore.WriteOptions{IsDir: true, TTL: p.UpdateInterval + p.Expired})
+	err := p.kv.Put(p.BasePath, []byte("rpcx_path"), &discovery.WriteOptions{IsDir: true, TTL: p.UpdateInterval + p.Expired})
 	if err != nil {
 		log.Errorf("cannot create consul path %s: %v", p.BasePath, err)
 		close(p.done)
@@ -154,7 +154,7 @@ func (p *ConsulRegisterPlugin) Start() error {
 							meta := p.metas[name]
 							p.metasLock.RUnlock()
 
-							err = p.kv.Put(nodePath, []byte(meta), &dcore.WriteOptions{TTL: p.UpdateInterval + p.Expired})
+							err = p.kv.Put(nodePath, []byte(meta), &discovery.WriteOptions{TTL: p.UpdateInterval + p.Expired})
 							if err != nil {
 								log.Errorf("cannot re-create consul path %s: %v", nodePath, err)
 							}
@@ -163,7 +163,7 @@ func (p *ConsulRegisterPlugin) Start() error {
 							for key, value := range extra {
 								v.Set(key, value)
 							}
-							_ = p.kv.Put(nodePath, []byte(v.Encode()), &dcore.WriteOptions{TTL: p.UpdateInterval + p.Expired})
+							_ = p.kv.Put(nodePath, []byte(v.Encode()), &discovery.WriteOptions{TTL: p.UpdateInterval + p.Expired})
 						}
 					}
 				}
@@ -177,7 +177,7 @@ func (p *ConsulRegisterPlugin) Start() error {
 // Stop unregister all services.
 func (p *ConsulRegisterPlugin) Stop() error {
 	if p.kv == nil {
-		kv, err := dcore.NewStore(dcore.CONSUL, p.ConsulServers, p.Options)
+		kv, err := NewStore(p.Options)
 		if err != nil {
 			log.Errorf("cannot create consul registry: %v", err)
 			return err
@@ -233,7 +233,7 @@ func (p *ConsulRegisterPlugin) Register(name string, rcvr interface{}, metadata 
 
 	if p.kv == nil {
 		consul.Register()
-		kv, err := dcore.NewStore(dcore.CONSUL, p.ConsulServers, nil)
+		kv, err := NewStore(p.Options)
 		if err != nil {
 			log.Errorf("cannot create consul registry: %v", err)
 			return err
@@ -244,21 +244,21 @@ func (p *ConsulRegisterPlugin) Register(name string, rcvr interface{}, metadata 
 	if p.BasePath[0] == '/' {
 		p.BasePath = p.BasePath[1:]
 	}
-	err = p.kv.Put(p.BasePath, []byte("rpcx_path"), &dcore.WriteOptions{IsDir: true})
+	err = p.kv.Put(p.BasePath, []byte("rpcx_path"), &discovery.WriteOptions{IsDir: true})
 	if err != nil {
 		log.Errorf("cannot create consul path %s: %v", p.BasePath, err)
 		return err
 	}
 
 	nodePath := fmt.Sprintf("%s/%s", p.BasePath, name)
-	err = p.kv.Put(nodePath, []byte(name), &dcore.WriteOptions{IsDir: true})
+	err = p.kv.Put(nodePath, []byte(name), &discovery.WriteOptions{IsDir: true})
 	if err != nil {
 		log.Errorf("cannot create consul path %s: %v", nodePath, err)
 		return err
 	}
 
 	nodePath = fmt.Sprintf("%s/%s/%s", p.BasePath, name, p.ServiceAddress)
-	err = p.kv.Put(nodePath, []byte(metadata), &dcore.WriteOptions{TTL: p.UpdateInterval + p.Expired})
+	err = p.kv.Put(nodePath, []byte(metadata), &discovery.WriteOptions{TTL: p.UpdateInterval + p.Expired})
 	if err != nil {
 		log.Errorf("cannot create consul path %s: %v", nodePath, err)
 		return err
@@ -290,7 +290,7 @@ func (p *ConsulRegisterPlugin) Unregister(name string) (err error) {
 
 	if p.kv == nil {
 		consul.Register()
-		kv, err := dcore.NewStore(dcore.CONSUL, p.ConsulServers, nil)
+		kv, err := NewStore(p.Options)
 		if err != nil {
 			log.Errorf("cannot create consul registry: %v", err)
 			return err
@@ -301,7 +301,7 @@ func (p *ConsulRegisterPlugin) Unregister(name string) (err error) {
 	if p.BasePath[0] == '/' {
 		p.BasePath = p.BasePath[1:]
 	}
-	err = p.kv.Put(p.BasePath, []byte("rpcx_path"), &dcore.WriteOptions{IsDir: true})
+	err = p.kv.Put(p.BasePath, []byte("rpcx_path"), &discovery.WriteOptions{IsDir: true})
 	if err != nil {
 		log.Errorf("cannot create consul path %s: %v", p.BasePath, err)
 		return err
@@ -309,7 +309,7 @@ func (p *ConsulRegisterPlugin) Unregister(name string) (err error) {
 
 	nodePath := fmt.Sprintf("%s/%s", p.BasePath, name)
 
-	err = p.kv.Put(nodePath, []byte(name), &dcore.WriteOptions{IsDir: true})
+	err = p.kv.Put(nodePath, []byte(name), &discovery.WriteOptions{IsDir: true})
 	if err != nil {
 		log.Errorf("cannot create consul path %s: %v", nodePath, err)
 		return err

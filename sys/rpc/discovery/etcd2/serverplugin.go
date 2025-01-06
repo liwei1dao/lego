@@ -10,15 +10,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/liwei1dao/lego/sys/discovery/dcore"
+	"github.com/liwei1dao/lego/sys/rpc/discovery"
 	metrics "github.com/rcrowley/go-metrics"
 	"github.com/rpcxio/rpcx-etcd/store/etcd"
 	"github.com/smallnest/rpcx/log"
 )
-
-func init() {
-	etcd.Register()
-}
 
 // EtcdRegisterPlugin implements etcd registry.
 type EtcdRegisterPlugin struct {
@@ -36,70 +32,70 @@ type EtcdRegisterPlugin struct {
 	UpdateInterval time.Duration
 	Expired        time.Duration
 
-	Options *dcore.Config
-	kv      dcore.IStore
+	Options *Options
+	kv      discovery.IStore
 
 	dying chan struct{}
 	done  chan struct{}
 }
 
 // Start starts to connect etcd cluster
-func (p *EtcdRegisterPlugin) Start() error {
-	if p.Expired == 0 {
-		p.Expired = p.UpdateInterval
+func (this *EtcdRegisterPlugin) Start() error {
+	if this.Expired == 0 {
+		this.Expired = this.UpdateInterval
 	}
 
-	if p.done == nil {
-		p.done = make(chan struct{})
+	if this.done == nil {
+		this.done = make(chan struct{})
 	}
-	if p.dying == nil {
-		p.dying = make(chan struct{})
+	if this.dying == nil {
+		this.dying = make(chan struct{})
 	}
 
-	if p.kv == nil {
-		kv, err := dcore.NewStore(dcore.ETCD, p.EtcdServers, p.Options)
+	if this.kv == nil {
+		kv, err := NewStore(this.Options)
 		if err != nil {
 			log.Errorf("cannot create etcd registry: %v", err)
 			return err
 		}
-		p.kv = kv
+		this.kv = kv
 	}
 
-	err := p.kv.Put(p.BasePath, []byte("rpcx_path"), &dcore.WriteOptions{IsDir: true, TTL: p.UpdateInterval + p.Expired})
+	err := this.kv.Put(this.BasePath, []byte("rpcx_path"), &discovery.WriteOptions{IsDir: true, TTL: this.UpdateInterval + this.Expired})
 	if err != nil && !strings.Contains(err.Error(), "Not a file") {
-		log.Errorf("cannot create etcd path %s: %v", p.BasePath, err)
+		log.Errorf("cannot create etcd path %s: %v", this.BasePath, err)
 		return err
 	}
 
-	if p.UpdateInterval > 0 {
-		ticker := time.NewTicker(p.UpdateInterval)
+	if this.UpdateInterval > 0 {
+		ticker := time.NewTicker(this.UpdateInterval)
 		go func() {
-			defer p.kv.Close()
+			defer this.kv.Close()
 
 			// refresh service TTL
 			for {
 				select {
-				case <-p.dying:
-					close(p.done)
+				case <-this.dying:
+					close(this.done)
 					return
 				case <-ticker.C:
 					extra := make(map[string]string)
-					if p.Metrics != nil {
-						extra["calls"] = fmt.Sprintf("%.2f", metrics.GetOrRegisterMeter("calls", p.Metrics).RateMean())
-						extra["connections"] = fmt.Sprintf("%.2f", metrics.GetOrRegisterMeter("connections", p.Metrics).RateMean())
+					if this.Metrics != nil {
+						extra["calls"] = fmt.Sprintf("%.2f", metrics.GetOrRegisterMeter("calls", this.Metrics).RateMean())
+						extra["connections"] = fmt.Sprintf("%.2f", metrics.GetOrRegisterMeter("connections", this.Metrics).RateMean())
 					}
 					//set this same metrics for all services at this server
-					for _, name := range p.Services {
-						nodePath := fmt.Sprintf("%s/%s/%s", p.BasePath, name, p.ServiceAddress)
-						kvPair, err := p.kv.Get(nodePath)
+					for _, name := range this.Services {
+						nodePath := fmt.Sprintf("%s/%s/%s", this.BasePath, name, this.ServiceAddress)
+						kvPair, err := this.kv.Get(nodePath)
 						if err != nil {
 							log.Infof("can't get data of node: %s, because of %v", nodePath, err.Error())
 
-							p.metasLock.RLock()
-							meta := p.metas[name]
-							p.metasLock.RUnlock()
+							this.metasLock.RLock()
+							meta := this.metas[name]
+							this.metasLock.RUnlock()
 
-							err = p.kv.Put(nodePath, []byte(meta), &dcore.WriteOptions{TTL: p.UpdateInterval + p.Expired})
+							err = this.kv.Put(nodePath, []byte(meta), &discovery.WriteOptions{TTL: this.UpdateInterval + this.Expired})
 							if err != nil {
 								log.Errorf("cannot re-create etcd path %s: %v", nodePath, err)
 							}
@@ -109,7 +105,7 @@ func (p *EtcdRegisterPlugin) Start() error {
 							for key, value := range extra {
 								v.Set(key, value)
 							}
-							p.kv.Put(nodePath, []byte(v.Encode()), &dcore.WriteOptions{TTL: p.UpdateInterval + p.Expired})
+							this.kv.Put(nodePath, []byte(v.Encode()), &discovery.WriteOptions{TTL: this.UpdateInterval + this.Expired})
 						}
 					}
 				}
@@ -121,112 +117,112 @@ func (p *EtcdRegisterPlugin) Start() error {
 }
 
 // Stop unregister all services.
-func (p *EtcdRegisterPlugin) Stop() error {
-	if p.kv == nil {
-		kv, err := dcore.NewStore(dcore.ETCD, p.EtcdServers, p.Options)
+func (this *EtcdRegisterPlugin) Stop() error {
+	if this.kv == nil {
+		kv, err := NewStore(this.Options)
 		if err != nil {
 			log.Errorf("cannot create etcd registry: %v", err)
 			return err
 		}
-		p.kv = kv
+		this.kv = kv
 	}
 
-	for _, name := range p.Services {
-		nodePath := fmt.Sprintf("%s/%s/%s", p.BasePath, name, p.ServiceAddress)
-		exist, err := p.kv.Exists(nodePath)
+	for _, name := range this.Services {
+		nodePath := fmt.Sprintf("%s/%s/%s", this.BasePath, name, this.ServiceAddress)
+		exist, err := this.kv.Exists(nodePath)
 		if err != nil {
 			log.Errorf("cannot delete path %s: %v", nodePath, err)
 			continue
 		}
 		if exist {
-			p.kv.Delete(nodePath)
+			this.kv.Delete(nodePath)
 			log.Infof("delete path %s", nodePath, err)
 		}
 	}
 
-	close(p.dying)
-	<-p.done
+	close(this.dying)
+	<-this.done
 	return nil
 }
 
 // HandleConnAccept handles connections from clients
-func (p *EtcdRegisterPlugin) HandleConnAccept(conn net.Conn) (net.Conn, bool) {
-	if p.Metrics != nil {
-		metrics.GetOrRegisterMeter("connections", p.Metrics).Mark(1)
+func (this *EtcdRegisterPlugin) HandleConnAccept(conn net.Conn) (net.Conn, bool) {
+	if this.Metrics != nil {
+		metrics.GetOrRegisterMeter("connections", this.Metrics).Mark(1)
 	}
 	return conn, true
 }
 
 // PreCall handles rpc call from clients
-func (p *EtcdRegisterPlugin) PreCall(_ context.Context, _, _ string, args interface{}) (interface{}, error) {
-	if p.Metrics != nil {
-		metrics.GetOrRegisterMeter("calls", p.Metrics).Mark(1)
+func (this *EtcdRegisterPlugin) PreCall(_ context.Context, _, _ string, args interface{}) (interface{}, error) {
+	if this.Metrics != nil {
+		metrics.GetOrRegisterMeter("calls", this.Metrics).Mark(1)
 	}
 	return args, nil
 }
 
 // Register handles registering event.
 // this service is registered at BASE/serviceName/thisIpAddress node
-func (p *EtcdRegisterPlugin) Register(name string, rcvr interface{}, metadata string) (err error) {
+func (this *EtcdRegisterPlugin) Register(name string, rcvr interface{}, metadata string) (err error) {
 	if strings.TrimSpace(name) == "" {
 		err = errors.New("Register service `name` can't be empty")
 		return
 	}
 
-	if p.kv == nil {
+	if this.kv == nil {
 		etcd.Register()
-		kv, err := dcore.NewStore(dcore.ETCD, p.EtcdServers, nil)
+		kv, err := NewStore(this.Options)
 		if err != nil {
 			log.Errorf("cannot create etcd registry: %v", err)
 			return err
 		}
-		p.kv = kv
+		this.kv = kv
 	}
 
-	err = p.kv.Put(p.BasePath, []byte("rpcx_path"), &dcore.WriteOptions{IsDir: true})
+	err = this.kv.Put(this.BasePath, []byte("rpcx_path"), &discovery.WriteOptions{IsDir: true})
 	if err != nil && !strings.Contains(err.Error(), "Not a file") {
-		log.Errorf("cannot create etcd path %s: %v", p.BasePath, err)
+		log.Errorf("cannot create etcd path %s: %v", this.BasePath, err)
 		return err
 	}
 
-	nodePath := fmt.Sprintf("%s/%s", p.BasePath, name)
-	err = p.kv.Put(nodePath, []byte(name), &dcore.WriteOptions{IsDir: true})
+	nodePath := fmt.Sprintf("%s/%s", this.BasePath, name)
+	err = this.kv.Put(nodePath, []byte(name), &discovery.WriteOptions{IsDir: true})
 	if err != nil && !strings.Contains(err.Error(), "Not a file") {
 		log.Errorf("cannot create etcd path %s: %v", nodePath, err)
 		return err
 	}
 
-	nodePath = fmt.Sprintf("%s/%s/%s", p.BasePath, name, p.ServiceAddress)
-	err = p.kv.Put(nodePath, []byte(metadata), &dcore.WriteOptions{TTL: p.UpdateInterval + p.Expired})
+	nodePath = fmt.Sprintf("%s/%s/%s", this.BasePath, name, this.ServiceAddress)
+	err = this.kv.Put(nodePath, []byte(metadata), &discovery.WriteOptions{TTL: this.UpdateInterval + this.Expired})
 	if err != nil {
 		log.Errorf("cannot create etcd path %s: %v", nodePath, err)
 		return err
 	}
 
 	services := make(map[string]struct{})
-	for _, v := range p.Services {
+	for _, v := range this.Services {
 		services[v] = struct{}{}
 	}
 
 	if _, ok := services[name]; !ok {
-		p.Services = append(p.Services, name)
+		this.Services = append(this.Services, name)
 	}
 
-	p.metasLock.Lock()
-	if p.metas == nil {
-		p.metas = make(map[string]string)
+	this.metasLock.Lock()
+	if this.metas == nil {
+		this.metas = make(map[string]string)
 	}
-	p.metas[name] = metadata
-	p.metasLock.Unlock()
+	this.metas[name] = metadata
+	this.metasLock.Unlock()
 	return
 }
 
-func (p *EtcdRegisterPlugin) RegisterFunction(serviceName, fname string, fn interface{}, metadata string) error {
-	return p.Register(serviceName, fn, metadata)
+func (this *EtcdRegisterPlugin) RegisterFunction(serviceName, fname string, fn interface{}, metadata string) error {
+	return this.Register(serviceName, fn, metadata)
 }
 
-func (p *EtcdRegisterPlugin) Unregister(name string) (err error) {
-	if len(p.Services) == 0 {
+func (this *EtcdRegisterPlugin) Unregister(name string) (err error) {
+	if len(this.Services) == 0 {
 		return nil
 	}
 
@@ -235,50 +231,50 @@ func (p *EtcdRegisterPlugin) Unregister(name string) (err error) {
 		return
 	}
 
-	if p.kv == nil {
+	if this.kv == nil {
 		etcd.Register()
-		kv, err := dcore.NewStore(dcore.ETCD, p.EtcdServers, nil)
+		kv, err := NewStore(this.Options)
 		if err != nil {
 			log.Errorf("cannot create etcd registry: %v", err)
 			return err
 		}
-		p.kv = kv
+		this.kv = kv
 	}
 
-	err = p.kv.Put(p.BasePath, []byte("rpcx_path"), &dcore.WriteOptions{IsDir: true})
+	err = this.kv.Put(this.BasePath, []byte("rpcx_path"), &discovery.WriteOptions{IsDir: true})
 	if err != nil && !strings.Contains(err.Error(), "Not a file") {
-		log.Errorf("cannot create etcd path %s: %v", p.BasePath, err)
+		log.Errorf("cannot create etcd path %s: %v", this.BasePath, err)
 		return err
 	}
 
-	nodePath := fmt.Sprintf("%s/%s", p.BasePath, name)
-	err = p.kv.Put(nodePath, []byte(name), &dcore.WriteOptions{IsDir: true})
+	nodePath := fmt.Sprintf("%s/%s", this.BasePath, name)
+	err = this.kv.Put(nodePath, []byte(name), &discovery.WriteOptions{IsDir: true})
 	if err != nil && !strings.Contains(err.Error(), "Not a file") {
 		log.Errorf("cannot create etcd path %s: %v", nodePath, err)
 		return err
 	}
 
-	nodePath = fmt.Sprintf("%s/%s/%s", p.BasePath, name, p.ServiceAddress)
+	nodePath = fmt.Sprintf("%s/%s/%s", this.BasePath, name, this.ServiceAddress)
 
-	err = p.kv.Delete(nodePath)
+	err = this.kv.Delete(nodePath)
 	if err != nil {
 		log.Errorf("cannot create consul path %s: %v", nodePath, err)
 		return err
 	}
 
-	var services = make([]string, 0, len(p.Services)-1)
-	for _, s := range p.Services {
+	var services = make([]string, 0, len(this.Services)-1)
+	for _, s := range this.Services {
 		if s != name {
 			services = append(services, s)
 		}
 	}
-	p.Services = services
+	this.Services = services
 
-	p.metasLock.Lock()
-	if p.metas == nil {
-		p.metas = make(map[string]string)
+	this.metasLock.Lock()
+	if this.metas == nil {
+		this.metas = make(map[string]string)
 	}
-	delete(p.metas, name)
-	p.metasLock.Unlock()
+	delete(this.metas, name)
+	this.metasLock.Unlock()
 	return
 }
