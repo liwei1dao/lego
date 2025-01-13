@@ -10,11 +10,10 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-func newClient(pool *NatsConnPool, options *Options, snode core.IServiceNode) (client *Client, err error) {
+func newClient(pool *NatsConnPool, options *Options) (client *Client, err error) {
 	client = &Client{
 		pool:    pool,
 		options: options,
-		node:    snode,
 		hbeat:   0,
 		state:   0,
 	}
@@ -56,7 +55,7 @@ func (this *Client) Start() {
 func (this *Client) Write(msg []byte) (err error) {
 	err = this.conn.Publish(this.node.Path(), msg)
 	if err != nil {
-		this.pool.log.Errorf("send msg err:%v", err)
+		this.options.Log.Errorf("send msg err:%v", err)
 	}
 	err = this.conn.Flush()
 	return
@@ -87,12 +86,12 @@ locp:
 	for {
 		select {
 		case <-timer.C:
-			if err = this.Write(this.pool.sys.Heartbeat()); err != nil {
-				this.pool.log.Errorf("err:%v", err)
+			if err = this.Write(this.pool.host.Heartbeat()); err != nil {
+				this.options.Log.Errorf("err:%v", err)
 				go this.pool.CloseClient(this.node)
 			}
 			if atomic.LoadInt32(&this.hbeat) > 3 {
-				this.pool.log.Errorf("heartbeat exception !")
+				this.options.Log.Errorf("heartbeat exception !")
 				go this.pool.CloseClient(this.node)
 			}
 		case <-this.closeSignal:

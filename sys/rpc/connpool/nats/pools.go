@@ -3,6 +3,7 @@ package nats
 import (
 	"bytes"
 	"context"
+	"net"
 	"sync"
 	"time"
 
@@ -38,6 +39,21 @@ func (this *NatsConnPool) init() (err error) {
 	this.subs, err = this.conn.SubscribeSync(this.options.ServiceNode().Path())
 	return
 }
+
+// 创建远程连接客户端
+func (this *NatsConnPool) createClient(conn net.Conn, node core.IServiceNode) (client rpc.IConnClient, err error) {
+	if client, err = newClient(this, this.options, conn); err != nil {
+		this.options.Log.Errorln(err)
+		return
+	}
+	if err = this.host.ShakehandsRequest(context.Background(), client); err != nil {
+		this.options.Log.Errorln(err)
+		return
+	}
+	this.AddClient(client, node)
+	return
+}
+
 func (this *NatsConnPool) GetClient(node core.IServiceNode) (client rpc.IConnClient, err error) {
 	var (
 		ok bool
@@ -46,15 +62,16 @@ func (this *NatsConnPool) GetClient(node core.IServiceNode) (client rpc.IConnCli
 	client, ok = this.clients[node.Path()]
 	this.clientMapMu.RUnlock()
 	if !ok {
-		if client, err = newClient(this, this.options, node); err != nil {
-			this.log.Errorln(err)
+		if client, err = newClient(this, this.options); err != nil {
+			this.options.Log.Errorln(err)
 			return
 		}
-		if err = this.sys.ShakehandsRequest(context.Background(), client); err != nil {
-			this.log.Errorln(err)
+		client.SetServiceNode(node)
+		if err = this.host.ShakehandsRequest(context.Background(), client); err != nil {
+			this.options.Log.Errorln(err)
 			return
 		}
-		this.log.Debug("CreateClient Succ!", log.Field{Key: "node", Value: node})
+		this.options.Log.Debug("CreateClient Succ!", log.Field{Key: "node", Value: node})
 		this.clientMapMu.Lock()
 		this.clients[node.Path()] = client
 		this.clientMapMu.Unlock()
@@ -71,7 +88,7 @@ func (this *NatsConnPool) Close() (err error) {
 }
 func (this *NatsConnPool) CloseClient(node core.IServiceNode) (err error) {
 	var (
-		client connpool.IConnClient
+		client rpc.IConnClient
 		ok     bool
 	)
 	this.clientMapMu.RLock()
@@ -90,7 +107,7 @@ func (this *NatsConnPool) run() {
 		err     error
 		m       *nats.Msg
 		message *protocol.Message
-		client  connpool.IConnClient
+		client  rpc.IConnClient
 	)
 locp:
 	for {
@@ -100,15 +117,12 @@ locp:
 		} else if err != nil {
 			break locp
 		}
-		if message, err = protocol.Read(bytes.NewReader(m.Data)); err != nil {
-			this.log.Errorf("err:%v", err)
-			continue
-		}
+
 		if client, err = this.GetClient(message.From()); err != nil {
-			this.log.Errorf("err:%v", err)
+			this.options.Log.Errorf("err:%v", err)
 			continue
 		}
-		go this.sys.Handle(client, message)
+		go this.host.ReadProtocol(client, bytes.NewReader(m.Data))
 	}
-	this.log.Warnf("connpool nats service run() exit!:%v", err)
+	this.options.Log.Warnf("connpool nats service run() exit!:%v", err)
 }
