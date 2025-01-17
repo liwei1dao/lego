@@ -4,32 +4,23 @@ import (
 	"github.com/liwei1dao/lego/utils/mapstructure"
 )
 
-type RabbitmqStartType int8 //Pulsar启动类型
-const (
-	Producer RabbitmqStartType = iota //生产者
-	Consumer                          //消费者
-	All                               //同时支持生成消费
-)
-
 type Option func(*Options)
 type Options struct {
-	StartType    RabbitmqStartType //Rabbitmq启动类型
-	RabbitmqUrl  string            //Rabbitmq连接地址 amqp://guest:guest@localhost:5672/
-	ChannelName  string            //管道名称
-	Durable      bool              //是否持久化
-	AutoDelete   bool              //是否自动删除
-	Wait         bool              //是都等待
-	ConfirmNotif bool              //确认通知
+	RabbitmqUrl string //Rabbitmq连接地址 amqp://guest:guest@localhost:5672/
+	ChannelName string //管道名称
+	Durable     bool   //是否持久化
+	AutoDelete  bool   //是否自动删除
+	Wait        bool   //是都等待
 }
 
-func SetStartType(v RabbitmqStartType) Option {
-	return func(o *Options) {
-		o.StartType = v
-	}
-}
 func SetRabbitmqUrl(v string) Option {
 	return func(o *Options) {
 		o.RabbitmqUrl = v
+	}
+}
+func SetChannelName(v string) Option {
+	return func(o *Options) {
+		o.ChannelName = v
 	}
 }
 

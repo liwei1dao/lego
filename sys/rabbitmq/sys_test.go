@@ -9,7 +9,6 @@ import (
 
 func Test_Sys_Producer(t *testing.T) {
 	if err := rabbitmq.OnInit(map[string]interface{}{
-		"StartType":   rabbitmq.Producer,
 		"RabbitmqUrl": "amqp://root:li13451234@localhost:5672/",
 	}); err != nil {
 		fmt.Printf("start sys err:%v", err)
@@ -20,7 +19,6 @@ func Test_Sys_Producer(t *testing.T) {
 }
 func Test_Sys_Consumer(t *testing.T) {
 	if err := rabbitmq.OnInit(map[string]interface{}{
-		"StartType":   rabbitmq.Producer,
 		"RabbitmqUrl": "amqp://root:li13451234@localhost:5672/",
 	}); err != nil {
 		fmt.Printf("start sys err:%v", err)

@@ -3,12 +3,14 @@ package rabbitmq
 import "github.com/streadway/amqp"
 
 type (
-	ISys interface {
-		Producer_SendAsync(msg amqp.Publishing) (err error)
-		Producer_Send(msg amqp.Publishing) (err error)
-		Consumer_Messages() (output <-chan amqp.Delivery, err error)
-	}
 	IChannel interface {
+		Producer_SendAsync(mandatory, immediate bool, msg amqp.Publishing) (err error)
+		Producer_Send(mandatory, immediate bool, msg amqp.Publishing) (err error)
+		Consumer_Messages(autoAck, exclusive, noLocal, noWait bool) (output <-chan amqp.Delivery, err error)
+	}
+	ISys interface {
+		IChannel
+		NewChannel(channelName string) (channel IChannel, err error)
 	}
 )
 
@@ -28,15 +30,15 @@ func NewSys(option ...Option) (sys ISys, err error) {
 	return
 }
 
-func Producer_SendAsync(msg amqp.Publishing) (err error) {
-	err = defsys.Producer_SendAsync(msg)
+func Producer_SendAsync(mandatory, immediate bool, msg amqp.Publishing) (err error) {
+	err = defsys.Producer_SendAsync(mandatory, immediate, msg)
 	return
 }
-func Producer_Send(msg amqp.Publishing) (err error) {
-	err = defsys.Producer_Send(msg)
+func Producer_Send(mandatory, immediate bool, msg amqp.Publishing) (err error) {
+	err = defsys.Producer_Send(mandatory, immediate, msg)
 	return
 }
-func Consumer_Messages() (output <-chan amqp.Delivery, err error) {
-	output, err = defsys.Consumer_Messages()
+func Consumer_Messages(autoAck, exclusive, noLocal, noWait bool) (output <-chan amqp.Delivery, err error) {
+	output, err = defsys.Consumer_Messages(autoAck, exclusive, noLocal, noWait)
 	return
 }
