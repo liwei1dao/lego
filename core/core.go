@@ -29,6 +29,7 @@ type ServiceSttings struct {
 	Id      string                            //服务Id
 	Type    string                            //服务类型 (相同的服务可以启动多个)
 	Tag     string                            //服务集群标签 (相同标签的集群服务可以互相发现和发现)
+	Exte    map[string]interface{}            //扩展字段
 	Comps   map[string]map[string]interface{} //服务组件配置
 	Sys     map[string]map[string]interface{} //服务系统配置
 	Modules map[string]map[string]interface{} //服务模块配置
@@ -89,7 +90,7 @@ type IModuleComp interface {
 	Destroy() (err error)
 }
 
-//服务节点路径
+// 服务节点路径
 func (this *ServiceNode) GetNodePath() string {
 	return fmt.Sprintf("%s/%s/%s", this.Tag, this.Type, this.Id)
 }
